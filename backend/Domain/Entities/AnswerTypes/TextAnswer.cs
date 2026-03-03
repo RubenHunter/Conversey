@@ -1,4 +1,4 @@
-namespace Conversey.BL.Domain.Entities;
+namespace Conversey.BL.Domain.Entities.AnswerTypes;
 
 public class TextAnswer
 {
