@@ -9,7 +9,9 @@ RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which 
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
+
+COPY . .
 
 EXPOSE 5173
 
