@@ -11,3 +11,5 @@ services:
       environment:
         #Enables hot reloading
           - CHOKIDAR_USEPOLLING=true
+          - CI=true
+      command: sh -c "pnpm install && pnpm run dev --host"
