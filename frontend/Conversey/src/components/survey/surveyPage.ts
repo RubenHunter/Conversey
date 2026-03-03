@@ -13,47 +13,45 @@ import type { ScrollNav } from '../scrollNav.ts'
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const questions = await getQuestions(project.id)
+    const organizationName = params.organizationSlug
+        .split('-')
+        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
+        .join(' ')
 
     let currentQuestionIndex = 0
     let scrollNav: ScrollNav | null = null
 
-    // Build page structure
+    // Build page structure with sticky topbar
     container.innerHTML = `
-        <div class="px-6 py-6 pb-32">
-            <div class="mb-6">
-                <p class="text-sm font-medium mb-1" style="color: var(--color-primary);">
-                    ${project.title}
-                </p>
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-bold" style="color: var(--color-text);">
-                        Survey
-                    </h2>
-                    <span class="text-sm font-medium px-3 py-1 rounded-full"
-                          style="background-color: var(--color-primary-light)20; color: var(--color-primary);"
-                          id="progress-badge">
-                        0 / ${questions.length}
-                    </span>
-                </div>
-                <div class="w-full h-2 rounded-full mt-3" style="background-color: var(--color-disabled-bg);">
-                    <div class="h-2 rounded-full transition-all duration-500"
-                         style="background-color: var(--color-primary); width: 0%;"
-                         id="progress-bar">
+        <div class="survey-topbar">
+            <div class="survey-topbar-logo">Conversey</div>
+            <div class="survey-topbar-brand">
+                <div class="survey-topbar-logo-badge">AXA</div>
+                <div class="survey-topbar-name">${organizationName}</div>
+            </div>
+        </div>
+
+        <div class="survey-header">
+            <div class="survey-header-content">
+                <h2 class="survey-title">${project.title}</h2>
+                <div class="survey-progress-container">
+                    <div class="survey-progress-bar">
+                        <div class="survey-progress-fill" id="progress-bar" style="width: 0%"></div>
                     </div>
+                    <span class="survey-progress-badge" id="progress-badge">0 / ${questions.length}</span>
                 </div>
             </div>
+        </div>
 
-            <div class="flex flex-col gap-8" id="questions-container"></div>
-
-            <div class="mt-8">
-                <button
-                    id="btn-submit"
-                    class="w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all"
-                    style="background-color: var(--color-disabled-bg); color: var(--color-disabled-text); border: none; cursor: not-allowed;"
-                    disabled
-                >
-                    Submit Survey
-                </button>
-            </div>
+        <div class="survey-content">
+            <div id="questions-container"></div>
+            <button
+                id="btn-submit"
+                class="survey-submit-btn"
+                disabled
+            >
+                Submit Survey
+            </button>
         </div>
     `
 
@@ -90,18 +88,12 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         // Enable submit if all required questions are answered
         const allRequiredAnswered = questions.every((q, i) => !q.isRequired || answeredState[i])
-        if (allRequiredAnswered) {
+        if (allRequiredAnswered && answeredCount === questions.length) {
             submitBtn.disabled = false
-            submitBtn.style.backgroundColor = 'var(--color-primary)'
-            submitBtn.style.color = 'var(--color-text-on-primary)'
-            submitBtn.style.cursor = 'pointer'
-            submitBtn.style.boxShadow = 'var(--shadow-md)'
+            submitBtn.classList.remove('disabled')
         } else {
             submitBtn.disabled = true
-            submitBtn.style.backgroundColor = 'var(--color-disabled-bg)'
-            submitBtn.style.color = 'var(--color-disabled-text)'
-            submitBtn.style.cursor = 'not-allowed'
-            submitBtn.style.boxShadow = 'none'
+            submitBtn.classList.add('disabled')
         }
     }
 
@@ -140,6 +132,29 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     })
     scrollNav.update(0, questions.length)
 
+    // Track current question index based on scroll position
+    function updateCurrentQuestionFromScroll(): void {
+        const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
+        let closestIndex = 0
+        let closestDistance = Number.POSITIVE_INFINITY
+
+        elements.forEach((el) => {
+            const rect = el.getBoundingClientRect()
+            const distance = Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2)
+            if (distance < closestDistance) {
+                closestDistance = distance
+                closestIndex = Number(el.getAttribute('data-question-index'))
+            }
+        })
+
+        currentQuestionIndex = closestIndex
+        scrollNav?.update(currentQuestionIndex, questions.length)
+    }
+
+    // Listen for scroll events
+    window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
+    updateCurrentQuestionFromScroll() // Initial update
+
     // Submit handler
     submitBtn.addEventListener('click', async () => {
         // Validate all questions
@@ -173,6 +188,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         try {
             await submitResponse({ projectId: project.id, answers })
             localStorage.setItem(`survey-completed-${project.id}`, 'true')
+            window.removeEventListener('scroll', updateCurrentQuestionFromScroll)
             scrollNav?.destroy()
             navigate('completed')
         } catch {

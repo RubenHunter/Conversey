@@ -8,30 +8,31 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const wrapper = document.createElement('div')
     wrapper.setAttribute('data-question-index', String(index))
-    wrapper.className = 'transition-all duration-300'
+    wrapper.className = 'survey-question-group'
 
     const questionNumber = index + 1
-    const requiredBadge = question.isRequired
-        ? `<span class="ml-2 text-xs font-medium px-2 py-0.5 rounded-full"
-                 style="background-color: var(--color-error-bg); color: var(--color-error);">Required</span>`
-        : ''
+    const requiredBadge = question.isRequired ? '<span class="survey-required-badge">Required</span>' : ''
 
     wrapper.innerHTML = `
-        <div class="mb-2 flex items-center flex-wrap">
-            <h3 class="font-semibold" style="font-size: var(--font-size-lg); color: var(--color-text);">
-                ${questionNumber}. ${question.text}
-            </h3>
-            ${requiredBadge}
+        <div class="survey-question-header">
+            <span class="survey-question-number">${questionNumber}</span>
+            <div class="flex-1">
+                <div class="survey-question-title">
+                    <span>${question.text}</span>
+                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-label="Read question aloud">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.26 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </div>
+                <div class="survey-question-meta">
+                    ${requiredBadge}
+                    <span class="survey-answer-hint">Free text answer</span>
+                </div>
+            </div>
         </div>
 
-        <div class="relative mt-3">
-            <div class="flex items-center justify-end mb-2">
-                <button
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-                    style="background-color: var(--color-primary-light)20; color: var(--color-primary); border: none; cursor: pointer;"
-                    title="Answer in Magic Mode (coming soon)"
-                    id="magic-btn-${question.id}"
-                >
+        <div class="survey-textarea-wrapper">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <button class="survey-magic-btn" title="Answer in Magic Mode (coming soon)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
@@ -43,15 +44,13 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             <div class="relative">
                 <textarea
                     id="textarea-${question.id}"
-                    class="w-full p-4 pr-12 rounded-xl border-2 resize-none transition-all focus:outline-none"
-                    style="background-color: var(--color-surface); border-color: var(--color-border); color: var(--color-text); font-size: var(--font-size-base); font-family: var(--font-primary); min-height: 120px;"
+                    class="survey-textarea"
                     placeholder="Type your answer here..."
                     rows="4"
                 ></textarea>
 
                 <button
-                    class="absolute bottom-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all"
-                    style="background-color: var(--color-disabled-bg); border: none; cursor: pointer; color: var(--color-text-muted);"
+                    class="survey-mic-btn"
                     title="Voice input (coming soon)"
                     id="mic-btn-${question.id}"
                 >
@@ -63,8 +62,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             </div>
         </div>
 
-        <p class="mt-2 text-sm hidden" id="error-${question.id}"
-           style="color: var(--color-error);">
+        <p class="survey-error" id="error-${question.id}">
             Please provide an answer to continue.
         </p>
     `
@@ -73,11 +71,9 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     textarea.addEventListener('focus', () => {
         if (isLocked) return
-        textarea.style.borderColor = 'var(--color-border-focus)'
     })
 
     textarea.addEventListener('blur', () => {
-        textarea.style.borderColor = 'var(--color-border)'
     })
 
     textarea.addEventListener('input', () => {
@@ -87,7 +83,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         // Hide error when user starts typing
         const errorEl = wrapper.querySelector(`#error-${question.id}`)
         if (textValue.length > 0) {
-            errorEl?.classList.add('hidden')
+            errorEl?.classList.remove('show')
         }
 
         answerCallback?.()
@@ -98,7 +94,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         validate: () => {
             if (question.isRequired && textValue.length === 0) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
-                errorEl?.classList.remove('hidden')
+                errorEl?.classList.add('show')
                 return false
             }
             return true
@@ -119,4 +115,6 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         getElement: () => wrapper,
     }
 }
+
+
 

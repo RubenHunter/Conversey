@@ -10,7 +10,8 @@ const MOCK_PROJECTS: Record<string, Project> = {
         title: 'Mental Wellbeing 2026',
         description:
             'Help us understand how young people experience stress, wellbeing, and support in their daily lives. Your answers are anonymous and will shape future initiatives.',
-        imageUrl: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=800&h=400&fit=crop',
+        imageUrl:
+            'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&w=1648&h=3660&q=90&dpr=2',
     },
 }
 
@@ -32,4 +33,3 @@ export async function getProject(orgSlug: string, projectSlug: string): Promise<
     // return apiFetch<Project>(`/organizations/${orgSlug}/projects/${projectSlug}`)
     throw new Error('Real API not yet implemented')
 }
-
