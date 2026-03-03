@@ -1,6 +1,6 @@
-using Conversey.BL.Domain.Entities.AnswerTypes;
+using Conversey.BL.Domain.Entities.Question.AnswerTypes;
 
-namespace Conversey.BL.Domain.Entities.QuestionTypes;
+namespace Conversey.BL.Domain.Entities.Question.QuestionTypes;
 
 public class SingleChoiceQuestion : Question
 {
