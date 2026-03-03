@@ -1,4 +1,6 @@
-namespace Conversey.BL.Domain.Entities.QuestionTypes;
+using Conversey.BL.Domain.Entities.Question.AnswerTypes;
+
+namespace Conversey.BL.Domain.Entities.Question.QuestionTypes;
 
 public class MultipleChoiceQuestion : Question
 {
