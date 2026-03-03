@@ -7,7 +7,5 @@ public class TextAnswer
 {
     [Required]
     public int Id { get; set; }
-    
-    public string Value { get; set; }
     public Youth Youth { get; set; }
 }

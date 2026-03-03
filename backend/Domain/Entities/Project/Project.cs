@@ -8,7 +8,10 @@ public class Project
     [Required]
     public int Id { get; set; }
 
+    [StringLength(100)]
     public string Title { get; set; }
+    
+    [StringLength(4000)]
     public string Description { get; set; }
     public Status Status { get; set; }
     public DateTime StartDate { get; set; }
