@@ -1,5 +1,13 @@
 services:
     frontend:
-        build: ./frontend/Conversey
-        ports:
-            - "5173:5173"
+      build: 
+          context: ./frontend/Conversey/
+          dockerfile: Dockerfile
+      ports:
+          - "5173:5173"
+      volumes:
+          - ./frontend/Conversey:/app
+          - /app/node_modules
+      environment:
+        #Enables hot reloading
+          - CHOKIDAR_USEPOLLING=true
