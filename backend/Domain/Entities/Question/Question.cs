@@ -9,7 +9,7 @@ public class Question
 
     private string Text { get; set; }
     private int Order { get; set; }
-    // To-Do public Image Image { get; set; }
+    public Image? Image { get; set; }
 
     /*
      public Question()
