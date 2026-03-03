@@ -10,6 +10,8 @@ services:
           - /app/node_modules
       environment:
           - CHOKIDAR_USEPOLLING=true #enables hot reloading
+          - CI=true
+      command: pnpm run dev --host
 
     backend:
       build:

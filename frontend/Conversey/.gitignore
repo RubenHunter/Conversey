@@ -7,7 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
 dist
 dist-ssr
 *.local
@@ -22,3 +21,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Node
+node_modules/
+.pnpm-store/
+frontend/Conversey/.pnpm-store/
+
+# Vite
+dist/
+
+# Logs
+*.log
+
+# .NET
+bin/
+obj/
+
+# Docker
+*.env
