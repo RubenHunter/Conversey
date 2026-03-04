@@ -31,7 +31,7 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
 
     if (isSurveyCompleted(project.id)) {
         container.innerHTML = `
-            <div class="flex flex-col items-center justify-center min-h-dvh px-6 py-10">
+            <div class="flex flex-col items-center justify-center screen-height px-6 py-10">
                 <div class="w-16 h-16 rounded-full flex items-center justify-center mb-6 completed-icon-badge">
                     <svg class="w-8 h-8 completed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -54,7 +54,7 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
     }
 
     container.innerHTML = `
-        <div class="relative flex flex-col h-dvh overflow-hidden">
+        <div class="relative flex flex-col screen-height-fixed overflow-hidden">
             <img
                 id="project-image"
                 src="${project.imageUrl}"

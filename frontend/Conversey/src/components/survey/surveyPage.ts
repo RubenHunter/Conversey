@@ -104,9 +104,17 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             const hasAnswer = answer !== null && answer !== ''
             answeredState[index] = hasAnswer
 
-            // Unlock the next question when current is answered
-            if (hasAnswer && index + 1 < components.length) {
-                components[index + 1].unlock()
+            // Only lock/unlock the immediate next question if we haven't progressed past it
+            if (index + 1 < components.length) {
+                const nextQuestion = components[index + 1]
+                const nextIndex = index + 1
+
+                // Only re-lock if next question is unanswered and we haven't reached beyond it
+                if (!hasAnswer && !answeredState[nextIndex]) {
+                    nextQuestion.lock()
+                } else if (hasAnswer) {
+                    nextQuestion.unlock()
+                }
             }
 
             updateProgress()
@@ -155,6 +163,15 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     updateCurrentQuestionFromScroll() // Initial update
 
+    function cleanupSurveyPage(): void {
+        window.removeEventListener('scroll', updateCurrentQuestionFromScroll)
+        window.removeEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
+        scrollNav?.destroy()
+        scrollNav = null
+    }
+
+    window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
+
     // Submit handler
     submitBtn.addEventListener('click', async () => {
         // Validate all questions
@@ -188,8 +205,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         try {
             await submitResponse({ projectId: project.id, answers })
             localStorage.setItem(`survey-completed-${project.id}`, 'true')
-            window.removeEventListener('scroll', updateCurrentQuestionFromScroll)
-            scrollNav?.destroy()
+            cleanupSurveyPage()
             navigate('completed')
         } catch {
             submitBtn.disabled = false

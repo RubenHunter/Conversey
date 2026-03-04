@@ -7,6 +7,13 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: calc(var(--app-vh, 1vh) * 100);
+}
+
 body {
   font-family: var(--font-primary);
   background-color: var(--color-bg);
@@ -19,8 +26,16 @@ body {
 #app {
   width: 100%;
   margin: 0 auto;
-  min-height: 100dvh;
+  min-height: calc(var(--app-vh, 1vh) * 100);
   position: relative;
+}
+
+.screen-height {
+  min-height: calc(var(--app-vh, 1vh) * 100);
+}
+
+.screen-height-fixed {
+  height: calc(var(--app-vh, 1vh) * 100);
 }
 
 .completed-icon-badge {
@@ -366,12 +381,12 @@ body {
 
 .survey-option-label:hover:not(.disabled) {
   border-color: var(--color-primary);
-  background-color: var(--color-primary-light)15;
+  background-color: color-mix(in srgb, var(--color-primary-light) 15%, transparent);
 }
 
 .survey-option-label.selected {
   border-color: var(--color-primary);
-  background-color: var(--color-primary-light)20;
+  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
 }
 
 .survey-option-label.disabled {
@@ -404,7 +419,7 @@ body {
 
 .survey-option-label.selected .survey-radio-circle {
   border-color: var(--color-primary);
-  background-color: var(--color-primary)20;
+  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 .survey-option-label.selected .survey-radio-dot {
@@ -453,7 +468,7 @@ body {
   gap: 0.5rem;
   padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem);
   border-radius: var(--radius-md);
-  background-color: var(--color-primary-light)20;
+  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
   color: var(--color-primary);
   border: none;
   cursor: pointer;
@@ -465,7 +480,7 @@ body {
 }
 
 .survey-magic-btn:hover {
-  background-color: var(--color-primary-light)30;
+  background-color: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
 }
 
 .survey-mic-btn {
@@ -486,7 +501,7 @@ body {
 }
 
 .survey-mic-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-light)20;
+  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
   color: var(--color-primary);
 }
 
