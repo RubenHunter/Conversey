@@ -194,9 +194,11 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const answers: ResponseAnswer[] = questions.map((question, index) => {
             const answer = components[index].getAnswer()
             if (question.type === QuestionType.SingleChoice) {
-                return { questionId: question.id, selectedOptionId: answer as number }
+                const selectedOptionId = answer as number
+                return { questionId: question.id, selectedOptionId, value: selectedOptionId }
             }
-            return { questionId: question.id, openTextValue: answer as string }
+            const openTextValue = answer as string
+            return { questionId: question.id, openTextValue, value: openTextValue }
         })
 
         submitBtn.disabled = true
