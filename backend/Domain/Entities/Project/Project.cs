@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Entities.Identity;
 using Conversey.BL.Domain.Enums;
 
 namespace Conversey.BL.Domain.Entities.Project;
@@ -22,4 +23,9 @@ public class Project
     public ProjectStyle Style { get; set; }
     
     public IEnumerable<Question.Question> Questions { get; set; }
+
+    [Required]
+    public Workspace Workspace { get; set; }
+
+    public IEnumerable<Youth> Youths { get; set; }
 }

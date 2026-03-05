@@ -8,4 +8,6 @@ public class Youth
     public string Token { get; set; }
 
     public Project.Project Project { get; set; }
+    
+    public string? Email { get; set; }
 }

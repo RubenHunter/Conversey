@@ -12,4 +12,6 @@ public class Workspace
     
     [Required]
     public Conversey Conversey { get; set; }
+
+    public IEnumerable<Project.Project> Projects { get; set; }
 }
