@@ -47,8 +47,10 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
 
-    let currentQuestionIndex = 0
+    let currentQuestionIndex = -1 // Start at -1 to indicate we're at hero section, not at any question yet
     let scrollNav: ScrollNav | null = null
+    let isUserScroll = false // Track whether the scroll was from user or from programmatic navigation
+    let scrollTimeoutId: number | null = null // Track pending scroll timeout to cancel if needed
 
     container.innerHTML = `
         <div class="survey-shell" id="survey-shell">
@@ -157,9 +159,40 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const el = questionsContainer.querySelector<HTMLElement>(`[data-question-index="${index}"]`)
         if (!el) return
 
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Cancel any pending scroll timeout from previous navigation
+        if (scrollTimeoutId !== null) {
+            clearTimeout(scrollTimeoutId)
+            scrollTimeoutId = null
+        }
+
+        // If navigating to question 0, allow hero to expand, otherwise keep it collapsed
+        if (index !== 0) {
+            surveyShell.classList.add('survey-hero-collapsed')
+        } else {
+            surveyShell.classList.remove('survey-hero-collapsed')
+        }
+
+        // Calculate scroll position accounting for header
+        const headerHeight = headerEl.getBoundingClientRect().height
+        const elementTop = el.getBoundingClientRect().top + window.scrollY
+        const offset = headerHeight + 80 // Increased padding to account for progress bar
+        
+        // Set flag to indicate this is a programmatic scroll
+        isUserScroll = false
+        
+        window.scrollTo({
+            top: elementTop - offset,
+            behavior: 'smooth'
+        })
+        
         currentQuestionIndex = index
         scrollNav?.update(currentQuestionIndex, questions.length)
+        
+        // Re-enable user scroll detection after scroll completes
+        scrollTimeoutId = window.setTimeout(() => {
+            isUserScroll = true
+            scrollTimeoutId = null
+        }, 700)
     }
 
     scrollNav = renderScrollNav((direction) => {
@@ -169,44 +202,64 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             scrollToQuestion(currentQuestionIndex + 1)
         }
     })
-    scrollNav.update(0, questions.length)
+    scrollNav.update(currentQuestionIndex, questions.length)
 
     function updateCurrentQuestionFromScroll(): void {
+        // Only update from scroll if this was a user scroll, not programmatic navigation
+        if (!isUserScroll) return
+        
         const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
+        const headerBottom = headerEl.getBoundingClientRect().bottom
+        
         let closestIndex = 0
         let closestDistance = Number.POSITIVE_INFINITY
 
         elements.forEach((el) => {
             const rect = el.getBoundingClientRect()
-            const distance = Math.abs(rect.top + rect.height / 2 - window.innerHeight / 2)
-            if (distance < closestDistance) {
-                closestDistance = distance
-                closestIndex = Number(el.getAttribute('data-question-index'))
+            // Calculate distance from element top to position just below header
+            const targetY = headerBottom + 100 // Consider element "current" when it's ~100px below header
+            const distance = Math.abs(rect.top - targetY)
+            
+            // Only consider elements that are visible and not scrolled past
+            if (rect.top < window.innerHeight && rect.bottom > headerBottom) {
+                if (distance < closestDistance) {
+                    closestDistance = distance
+                    closestIndex = Number(el.getAttribute('data-question-index'))
+                }
             }
         })
-
-        currentQuestionIndex = closestIndex
-        scrollNav?.update(currentQuestionIndex, questions.length)
 
         const firstQuestion = questionsContainer.querySelector<HTMLElement>('[data-question-index="0"]')
         if (!firstQuestion) return
 
-        const headerBottom = headerEl.getBoundingClientRect().bottom
         const firstTop = firstQuestion.getBoundingClientRect().top
         const shouldCollapseHero = firstTop <= headerBottom + 8
         surveyShell.classList.toggle('survey-hero-collapsed', shouldCollapseHero)
+
+        // If scrolled back to hero section (first question not visible below header), reset to -1
+        const newIndex = firstTop <= headerBottom ? -1 : closestIndex
+
+        // Update only if the index has actually changed to avoid unnecessary updates
+        if (currentQuestionIndex !== newIndex) {
+            currentQuestionIndex = newIndex
+            scrollNav?.update(currentQuestionIndex, questions.length)
+        }
     }
 
     function cleanupSurveyPage(): void {
         window.removeEventListener('scroll', updateCurrentQuestionFromScroll)
         window.removeEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
+        if (scrollTimeoutId !== null) {
+            clearTimeout(scrollTimeoutId)
+            scrollTimeoutId = null
+        }
         scrollNav?.destroy()
         scrollNav = null
     }
 
     window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
-    updateCurrentQuestionFromScroll()
+    // Don't call updateCurrentQuestionFromScroll() on initial load - keep currentQuestionIndex at -1
 
     stopEarlyBtn.addEventListener('click', () => {
         void navigate('ideas')
