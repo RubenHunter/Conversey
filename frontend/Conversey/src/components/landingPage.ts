@@ -50,6 +50,11 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                 </button>
             </div>
         `
+
+        const ideasButton = container.querySelector<HTMLButtonElement>('#btn-ideas')
+        ideasButton?.addEventListener('click', () => {
+            void navigate('ideas')
+        })
         return
     }
 

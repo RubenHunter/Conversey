@@ -3,7 +3,7 @@ export interface RouteParams {
     projectSlug: string
 }
 
-export type ViewName = 'landing' | 'survey' | 'completed'
+export type ViewName = 'landing' | 'survey' | 'completed' | 'ideas'
 
 type ViewRenderer = (container: HTMLElement, params: RouteParams) => void | Promise<void>
 
@@ -15,26 +15,24 @@ export function registerView(name: ViewName, renderer: ViewRenderer): void {
     views.set(name, renderer)
 }
 
-export function getRouteParams(): RouteParams {
-    return { ...currentParams }
-}
-
 function getViewFromPath(pathname: string): ViewName {
     const normalizedPath = pathname.replace(/^\/+|\/+$/g, '')
     const segments = normalizedPath.split('/').filter(Boolean)
     const viewSegment = segments[2]
 
-    if (viewSegment === 'survey') return 'survey'
+    if (viewSegment === 'landing') return 'landing'
     if (viewSegment === 'completed') return 'completed'
-    return 'landing'
+    if (viewSegment === 'ideas') return 'ideas'
+    return 'survey'
 }
 
 function buildPath(view: ViewName, params: RouteParams): string {
     const basePath = `/${params.organizationSlug}/${params.projectSlug}`
 
+    if (view === 'landing') return `${basePath}/landing`
     if (view === 'survey') return `${basePath}/survey`
     if (view === 'completed') return `${basePath}/completed`
-    return basePath
+    return `${basePath}/ideas`
 }
 
 export function getInitialView(): ViewName {
@@ -78,7 +76,6 @@ export async function navigate(
         }
     }
 
-    // Let pages clean up global listeners/floating UI before swap.
     window.dispatchEvent(new CustomEvent('app:before-navigate'))
 
     app.innerHTML = ''

@@ -12,6 +12,35 @@ import type { ScrollNav } from '../scrollNav.ts'
 
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    const completedKey = `survey-completed-${project.id}`
+
+    if (localStorage.getItem(completedKey) === 'true') {
+        container.innerHTML = `
+            <div class="survey-redirect-wrap screen-height">
+                <div class="survey-redirect-card">
+                    <div class="survey-redirect-check">✓</div>
+                    <h2>Survey already completed</h2>
+                    <p>Redirecting you to ideas...</p>
+                    <div class="survey-confetti" aria-hidden="true"></div>
+                </div>
+            </div>
+        `
+
+        const redirectTimer = window.setTimeout(() => {
+            void navigate('ideas', { replace: true })
+        }, 3200)
+
+        window.addEventListener(
+            'app:before-navigate',
+            () => {
+                window.clearTimeout(redirectTimer)
+            },
+            { once: true },
+        )
+
+        return
+    }
+
     const questions = await getQuestions(project.id)
     const organizationName = params.organizationSlug
         .split('-')
@@ -21,46 +50,55 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     let currentQuestionIndex = 0
     let scrollNav: ScrollNav | null = null
 
-    // Build page structure with sticky topbar
     container.innerHTML = `
-        <div class="survey-topbar">
-            <div class="survey-topbar-logo">Conversey</div>
-            <div class="survey-topbar-brand">
-                <div class="survey-topbar-logo-badge">AXA</div>
-                <div class="survey-topbar-name">${organizationName}</div>
+        <div class="survey-shell" id="survey-shell">
+            <div class="survey-topbar">
+                <div class="survey-topbar-logo">Conversey</div>
+                <div class="survey-topbar-brand">
+                    <div class="survey-topbar-logo-badge">AXA</div>
+                    <div class="survey-topbar-name">${organizationName}</div>
+                </div>
             </div>
-        </div>
 
-        <div class="survey-header">
-            <div class="survey-header-content">
-                <h2 class="survey-title">${project.title}</h2>
-                <div class="survey-progress-container">
-                    <div class="survey-progress-bar">
-                        <div class="survey-progress-fill" id="progress-bar" style="width: 0%"></div>
+            <section class="survey-hero" id="survey-hero">
+                <img src="${project.imageUrl}" alt="${project.title}" class="survey-hero-image" />
+                <div class="survey-hero-content">
+                    <h1 class="survey-hero-title">${project.title}</h1>
+                    <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
+                </div>
+            </section>
+
+            <div class="survey-header" id="survey-header">
+                <div class="survey-header-content">
+                    <h2 class="survey-title">${project.title}</h2>
+                    <div class="survey-progress-container">
+                        <div class="survey-progress-bar">
+                            <div class="survey-progress-fill" id="progress-bar"></div>
+                        </div>
+                        <span class="survey-progress-badge" id="progress-badge">0 / ${questions.length}</span>
                     </div>
-                    <span class="survey-progress-badge" id="progress-badge">0 / ${questions.length}</span>
+                </div>
+            </div>
+
+            <div class="survey-content">
+                <div id="questions-container"></div>
+                <div class="survey-action-bar" id="survey-action-bar">
+                    <button id="btn-stop-early" class="survey-stop-early-btn" aria-label="Stop survey early">Stop Survey Early</button>
+                    <button id="btn-submit" class="survey-submit-btn" disabled>Submit Survey</button>
                 </div>
             </div>
         </div>
-
-        <div class="survey-content">
-            <div id="questions-container"></div>
-            <button
-                id="btn-submit"
-                class="survey-submit-btn"
-                disabled
-            >
-                Submit Survey
-            </button>
-        </div>
     `
 
+    const surveyShell = container.querySelector<HTMLDivElement>('#survey-shell')!
+    const headerEl = container.querySelector<HTMLDivElement>('#survey-header')!
     const questionsContainer = container.querySelector<HTMLDivElement>('#questions-container')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#btn-submit')!
+    const stopEarlyBtn = container.querySelector<HTMLButtonElement>('#btn-stop-early')!
+    const actionBar = container.querySelector<HTMLDivElement>('#survey-action-bar')!
     const progressBar = container.querySelector<HTMLDivElement>('#progress-bar')!
     const progressBadge = container.querySelector<HTMLSpanElement>('#progress-badge')!
 
-    // Render all question components
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
@@ -69,7 +107,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         questionsContainer.appendChild(component.getElement())
 
-        // Lock all questions except the first
         if (index > 0) {
             component.lock()
         }
@@ -77,7 +114,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         return component
     })
 
-    // Track answered state for progressive unlock
     const answeredState = new Array<boolean>(questions.length).fill(false)
 
     function updateProgress(): void {
@@ -86,30 +122,23 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         progressBar.style.width = `${percentage}%`
         progressBadge.textContent = `${answeredCount} / ${questions.length}`
 
-        // Enable submit if all required questions are answered
         const allRequiredAnswered = questions.every((q, i) => !q.isRequired || answeredState[i])
-        if (allRequiredAnswered && answeredCount === questions.length) {
-            submitBtn.disabled = false
-            submitBtn.classList.remove('disabled')
-        } else {
-            submitBtn.disabled = true
-            submitBtn.classList.add('disabled')
-        }
+        const isReady = allRequiredAnswered && answeredCount === questions.length
+
+        submitBtn.disabled = !isReady
+        actionBar.classList.toggle('survey-ready', isReady)
     }
 
-    // Wire up answer callbacks for progressive unlock
     components.forEach((component, index) => {
         component.onAnswer(() => {
             const answer = component.getAnswer()
             const hasAnswer = answer !== null && answer !== ''
             answeredState[index] = hasAnswer
 
-            // Only lock/unlock the immediate next question if we haven't progressed past it
             if (index + 1 < components.length) {
                 const nextQuestion = components[index + 1]
                 const nextIndex = index + 1
 
-                // Only re-lock if next question is unanswered and we haven't reached beyond it
                 if (!hasAnswer && !answeredState[nextIndex]) {
                     nextQuestion.lock()
                 } else if (hasAnswer) {
@@ -121,14 +150,13 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         })
     })
 
-    // Scroll navigation
     function scrollToQuestion(index: number): void {
         const el = questionsContainer.querySelector<HTMLElement>(`[data-question-index="${index}"]`)
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            currentQuestionIndex = index
-            scrollNav?.update(currentQuestionIndex, questions.length)
-        }
+        if (!el) return
+
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        currentQuestionIndex = index
+        scrollNav?.update(currentQuestionIndex, questions.length)
     }
 
     scrollNav = renderScrollNav((direction) => {
@@ -140,7 +168,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     })
     scrollNav.update(0, questions.length)
 
-    // Track current question index based on scroll position
     function updateCurrentQuestionFromScroll(): void {
         const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
         let closestIndex = 0
@@ -157,11 +184,15 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         currentQuestionIndex = closestIndex
         scrollNav?.update(currentQuestionIndex, questions.length)
-    }
 
-    // Listen for scroll events
-    window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
-    updateCurrentQuestionFromScroll() // Initial update
+        const firstQuestion = questionsContainer.querySelector<HTMLElement>('[data-question-index="0"]')
+        if (!firstQuestion) return
+
+        const headerBottom = headerEl.getBoundingClientRect().bottom
+        const firstTop = firstQuestion.getBoundingClientRect().top
+        const shouldCollapseHero = firstTop <= headerBottom + 8
+        surveyShell.classList.toggle('survey-hero-collapsed', shouldCollapseHero)
+    }
 
     function cleanupSurveyPage(): void {
         window.removeEventListener('scroll', updateCurrentQuestionFromScroll)
@@ -170,11 +201,15 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         scrollNav = null
     }
 
+    window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
+    updateCurrentQuestionFromScroll()
 
-    // Submit handler
+    stopEarlyBtn.addEventListener('click', () => {
+        void navigate('ideas')
+    })
+
     submitBtn.addEventListener('click', async () => {
-        // Validate all questions
         let allValid = true
         let firstInvalidIndex = -1
 
@@ -190,7 +225,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             return
         }
 
-        // Build response
         const answers: ResponseAnswer[] = questions.map((question, index) => {
             const answer = components[index].getAnswer()
             if (question.type === QuestionType.SingleChoice) {
@@ -206,9 +240,9 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         try {
             await submitResponse({ projectId: project.id, answers })
-            localStorage.setItem(`survey-completed-${project.id}`, 'true')
+            localStorage.setItem(completedKey, 'true')
             cleanupSurveyPage()
-            navigate('completed')
+            await navigate('completed')
         } catch {
             submitBtn.disabled = false
             submitBtn.textContent = 'Submit Survey'

@@ -11,14 +11,12 @@ html,
 body {
   min-height: 100vh;
   min-height: 100svh;
-  min-height: calc(var(--app-vh, 1vh) * 100);
 }
 
 body {
-  font-family: var(--font-primary);
+  font-family: var(--font-primary), sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
-  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -26,16 +24,19 @@ body {
 #app {
   width: 100%;
   margin: 0 auto;
-  min-height: calc(var(--app-vh, 1vh) * 100);
+  min-height: 100vh;
+  min-height: 100svh;
   position: relative;
 }
 
 .screen-height {
-  min-height: calc(var(--app-vh, 1vh) * 100);
+  min-height: 100vh;
+  min-height: 100svh;
 }
 
 .screen-height-fixed {
-  height: calc(var(--app-vh, 1vh) * 100);
+  height: 100vh;
+  height: 100svh;
 }
 
 .completed-icon-badge {
@@ -235,6 +236,7 @@ body {
   height: 100%;
   background-color: var(--color-primary);
   transition: width 300ms ease;
+  width: 0;
 }
 
 .survey-progress-badge {
@@ -364,7 +366,7 @@ body {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
-  margin-left: clamp(0, 5vw, 2rem);
+  margin-left: clamp(0px, 5vw, 2rem);
 }
 
 .survey-option-label {
@@ -438,7 +440,7 @@ body {
   border: 2px solid var(--color-border);
   background-color: var(--color-surface);
   color: var(--color-text);
-  font-family: var(--font-primary);
+  font-family: var(--font-primary), sans-serif;
   font-size: clamp(0.875rem, 1.5vw, 1rem);
   min-height: 120px;
   resize: vertical;
@@ -459,7 +461,7 @@ body {
 .survey-textarea-wrapper {
   position: relative;
   margin-top: 1rem;
-  margin-left: clamp(0, 5vw, 2rem);
+  margin-left: clamp(0px, 5vw, 2rem);
 }
 
 .survey-magic-btn {
@@ -516,52 +518,15 @@ body {
   display: block;
 }
 
-.survey-submit-btn {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  transform: none;
-  margin: 2rem auto 0;
-  width: clamp(80%, 90vw, 400px);
-  padding: clamp(1rem, 2vw, 1.25rem);
-  border-radius: var(--radius-xl);
-  font-size: clamp(0.875rem, 1.5vw, 1.125rem);
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 200ms ease;
-  box-shadow: var(--shadow-lg);
-}
-
-.survey-submit-btn:disabled {
-  background-color: var(--color-disabled-bg);
-  color: var(--color-disabled-text);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.survey-submit-btn:not(:disabled) {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
-  box-shadow: var(--shadow-lg);
-}
-
-.survey-submit-btn:not(:disabled):hover {
-  background-color: var(--color-primary-hover);
-}
-
 .survey-scroll-nav {
   position: fixed;
-  bottom: 2rem;
-  right: 1.5rem;
+  bottom: 7rem;
+  right: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   z-index: 50;
+  transition: all 300ms ease;
 }
 
 .survey-scroll-btn {
@@ -587,4 +552,265 @@ body {
 .survey-scroll-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* Survey hero + collapse behavior */
+.survey-shell {
+  position: relative;
+}
+
+.survey-hero {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.survey-hero-image {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.survey-hero-content {
+  padding: 0.9rem clamp(1rem, 3vw, 3rem) 1rem;
+}
+
+.survey-hero-title {
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.35rem;
+}
+
+.survey-hero-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  max-height: 5.6em;
+  overflow: hidden;
+  transition: max-height 220ms ease, opacity 220ms ease, margin 220ms ease;
+}
+
+.survey-shell.survey-hero-collapsed .survey-hero-image {
+  max-height: 0;
+  opacity: 0;
+}
+
+.survey-shell.survey-hero-collapsed .survey-hero-description {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+/* Redirect animation when survey already completed */
+.survey-redirect-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: radial-gradient(circle at 20% 20%, #f0fff4 0%, #f7f8ff 45%, #ffffff 100%);
+}
+
+.survey-redirect-card {
+  position: relative;
+  width: min(420px, 100%);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.survey-redirect-card h2 {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 1.25rem;
+  color: var(--color-text);
+}
+
+.survey-redirect-card p {
+  color: var(--color-text-secondary);
+}
+
+.survey-redirect-check {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: 2rem;
+  font-weight: 700;
+  animation: survey-check-spin 900ms ease-out;
+}
+
+.survey-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 10% 20%, #6c5ce7 2px, transparent 3px),
+    radial-gradient(circle at 40% 35%, #00cec9 2px, transparent 3px),
+    radial-gradient(circle at 75% 18%, #fd79a8 2px, transparent 3px),
+    radial-gradient(circle at 20% 75%, #6c5ce7 2px, transparent 3px),
+    radial-gradient(circle at 80% 70%, #00cec9 2px, transparent 3px);
+  animation: survey-confetti-fade 2s ease forwards;
+}
+
+@keyframes survey-check-spin {
+  0% { transform: scale(0.6) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes survey-confetti-fade {
+  0% { opacity: 0; transform: translateY(-8px); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(20px); }
+}
+
+/* Bottom action behavior */
+.survey-action-bar {
+  position: relative;
+  margin-top: 2rem;
+  min-height: 56px;
+}
+
+.survey-stop-early-btn {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(280px, calc(100vw - 10rem));
+  margin: 0 auto;
+  display: block;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-xl);
+  padding: 0.9rem 1.1rem;
+  background-color: var(--color-disabled-bg);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 300ms ease;
+  z-index: 56;
+  box-shadow: none;
+}
+
+.survey-submit-btn {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 10rem));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 55;
+  padding: 0.9rem 1.1rem;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-xl);
+  font-weight: 600;
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  transition: all 300ms ease;
+}
+
+.survey-action-bar.survey-ready .survey-submit-btn {
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.survey-action-bar.survey-ready .survey-stop-early-btn {
+  left: calc(50% - min(190px, calc((100vw - 10rem) / 2)) - 4rem);
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 9999px;
+  font-size: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.survey-action-bar.survey-ready .survey-stop-early-btn::before {
+  content: '\2715';
+  font-size: 1.1rem;
+  line-height: 48px;
+  display: block;
+}
+
+.survey-action-bar.survey-ready .survey-stop-early-btn:hover {
+  background-color: var(--color-border);
+}
+
+.survey-magic-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+/* Prevent overlap with bottom action controls */
+.survey-scroll-nav {
+  position: fixed;
+  bottom: 1.2rem;
+  right: calc(50% - min(190px, calc((100vw - 10rem) / 2)) - 4rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 54;
+  transition: all 300ms ease;
+}
+
+@media (max-width: 540px) {
+  .survey-stop-early-btn {
+    width: calc(100vw - 10rem);
+  }
+
+  .survey-submit-btn {
+    width: calc(100vw - 14rem);
+  }
+
+  .survey-action-bar.survey-ready .survey-stop-early-btn {
+    left: calc(50% - calc((100vw - 14rem) / 2) - 3.25rem);
+  }
+
+  
+}
+
+@media (max-width: 400px) {
+  .survey-stop-early-btn {
+    width: calc(100vw - 10rem);
+  }
+
+  .survey-submit-btn {
+    width: calc(100vw - 16rem);
+  }
+
+  .survey-action-bar.survey-ready .survey-stop-early-btn {
+    left: calc(50% - calc((100vw - 16rem) / 2) - 3rem);
+  }
+
+}
+
+@media (max-width: 360px) {
+  .survey-stop-early-btn {
+    width: calc(100vw - 10rem);
+  }
+
+  .survey-submit-btn {
+    width: calc(100vw - 18rem);
+  }
+
+  .survey-action-bar.survey-ready .survey-stop-early-btn {
+    left: calc(50% - calc((100vw - 18rem) / 2) - 2.75rem);
+  }
+  
 }

@@ -7,14 +7,13 @@ export function renderScrollNav(
     onNavigate: (direction: 'up' | 'down') => void,
 ): ScrollNav {
     const nav = document.createElement('div')
-    nav.className = 'fixed bottom-6 right-6 flex flex-col gap-2 z-50'
+    nav.className = 'survey-scroll-nav'
     nav.id = 'scroll-nav'
 
     nav.innerHTML = `
         <button
             id="scroll-up"
-            class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-            style="background-color: var(--color-primary); color: var(--color-text-on-primary); border: none; cursor: pointer; box-shadow: var(--shadow-lg);"
+            class="survey-scroll-btn"
             aria-label="Previous question"
         >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,8 +22,7 @@ export function renderScrollNav(
         </button>
         <button
             id="scroll-down"
-            class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-            style="background-color: var(--color-primary); color: var(--color-text-on-primary); border: none; cursor: pointer; box-shadow: var(--shadow-lg);"
+            class="survey-scroll-btn"
             aria-label="Next question"
         >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,15 +40,7 @@ export function renderScrollNav(
     document.body.appendChild(nav)
 
     function setDisabled(btn: HTMLButtonElement, disabled: boolean): void {
-        if (disabled) {
-            btn.style.opacity = '0.3'
-            btn.style.cursor = 'not-allowed'
-            btn.disabled = true
-        } else {
-            btn.style.opacity = '1'
-            btn.style.cursor = 'pointer'
-            btn.disabled = false
-        }
+        btn.disabled = disabled
     }
 
     return {
@@ -63,4 +53,3 @@ export function renderScrollNav(
         },
     }
 }
-

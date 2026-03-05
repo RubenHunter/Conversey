@@ -10,7 +10,7 @@ export async function renderCompletedPage(container: HTMLElement, params: RouteP
     const project = await getProject(params.organizationSlug, params.projectSlug)
 
     if (!isSurveyCompleted(project.id)) {
-        await navigate('landing', { replace: true })
+        await navigate('survey', { replace: true })
         return
     }
 
@@ -37,6 +37,6 @@ export async function renderCompletedPage(container: HTMLElement, params: RouteP
 
     const ideasBtn = container.querySelector<HTMLButtonElement>('#btn-to-ideas')
     ideasBtn?.addEventListener('click', () => {
-        alert('Ideas phase coming soon!')
+        void navigate('ideas')
     })
 }

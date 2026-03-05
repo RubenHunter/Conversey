@@ -3,22 +3,15 @@ import { initRouter, registerView, navigate, getInitialView } from './utils/rout
 import { renderLandingPage } from './components/landingPage.ts'
 import { renderSurveyPage } from './components/survey/surveyPage.ts'
 import { renderCompletedPage } from './components/completedPage.ts'
-
-function syncViewportHeightVar(): void {
-    const vh = window.innerHeight * 0.01
-    document.documentElement.style.setProperty('--app-vh', `${vh}px`)
-}
+import { renderIdeasPage } from './components/ideasPage.ts'
 
 function init(): void {
-    syncViewportHeightVar()
-    window.addEventListener('resize', syncViewportHeightVar)
-    window.addEventListener('orientationchange', syncViewportHeightVar)
-
     initRouter()
 
     registerView('landing', renderLandingPage)
     registerView('survey', renderSurveyPage)
     registerView('completed', renderCompletedPage)
+    registerView('ideas', renderIdeasPage)
 
     const initialView = getInitialView()
     void navigate(initialView, { replace: true })
