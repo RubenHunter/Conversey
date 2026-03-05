@@ -2,10 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Conversey.BL.Domain.Entities.Identity;
 
-public class Youth
+public class ConverseyAdmin : Admin
 {
     [Required]
-    public string Token { get; set; }
-
-    public Project.Project Project { get; set; }
+    public Conversey Conversey { get; set; }
 }

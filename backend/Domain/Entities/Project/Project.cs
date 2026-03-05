@@ -17,7 +17,8 @@ public class Project
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }
-    public Topic Topic { get; set; }
+    
+    public IEnumerable<Topic> Topic { get; set; }
     public ProjectStyle Style { get; set; }
     
     public IEnumerable<Question.Question> Questions { get; set; }
