@@ -53,7 +53,10 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     container.innerHTML = `
         <div class="survey-shell" id="survey-shell">
             <div class="survey-topbar">
-                <div class="survey-topbar-logo">Conversey</div>
+                <div class="survey-topbar-left">
+                    <div class="survey-topbar-logo"><img src="/Conversey_logo.png" alt="Conversey" /></div>
+                    <div class="survey-topbar-logo-title">CONVERSEY</div>
+                </div>
                 <div class="survey-topbar-brand">
                     <div class="survey-topbar-logo-badge">AXA</div>
                     <div class="survey-topbar-name">${organizationName}</div>
