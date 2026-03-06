@@ -211,7 +211,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
         const headerBottom = headerEl.getBoundingClientRect().bottom
         
-        let closestIndex = 0
+        let closestIndex = -1 // Start at -1 (hero) instead of 0
         let closestDistance = Number.POSITIVE_INFINITY
 
         elements.forEach((el) => {
@@ -236,12 +236,20 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const shouldCollapseHero = firstTop <= headerBottom + 8
         surveyShell.classList.toggle('survey-hero-collapsed', shouldCollapseHero)
 
-        // If scrolled back to hero section (first question not visible below header), reset to -1
-        const newIndex = firstTop <= headerBottom ? -1 : closestIndex
+        // If no question is visible near the header (scrolled back to hero), set to -1
+        if (closestIndex === -1) {
+            // Check if first question is above header (meaning we're at hero)
+            if (firstTop <= headerBottom) {
+                closestIndex = -1
+            } else {
+                // If we somehow have no closest index but first question is visible, use it
+                closestIndex = 0
+            }
+        }
 
         // Update only if the index has actually changed to avoid unnecessary updates
-        if (currentQuestionIndex !== newIndex) {
-            currentQuestionIndex = newIndex
+        if (currentQuestionIndex !== closestIndex) {
+            currentQuestionIndex = closestIndex
             scrollNav?.update(currentQuestionIndex, questions.length)
         }
     }
