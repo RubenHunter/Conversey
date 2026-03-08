@@ -807,7 +807,7 @@ body {
   }
 
   .survey-submit-btn {
-    width: calc(100vw - 14rem);
+    width: calc(100vw - 12rem);
   }
 
   .survey-action-bar.survey-ready .survey-stop-early-btn {
@@ -823,7 +823,7 @@ body {
   }
 
   .survey-submit-btn {
-    width: calc(100vw - 16rem);
+    width: calc(100vw - 14rem);
   }
 
   .survey-action-bar.survey-ready .survey-stop-early-btn {
@@ -838,11 +838,11 @@ body {
   }
 
   .survey-submit-btn {
-    width: calc(100vw - 18rem);
+    width: calc(100vw - 12rem);
   }
 
   .survey-action-bar.survey-ready .survey-stop-early-btn {
-    left: calc(50% - calc((100vw - 18rem) / 2) - 2.75rem);
+    left: calc(50% - calc((100vw - 12rem) / 2) - 2.75rem);
   }
   
 }
