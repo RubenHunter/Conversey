@@ -21,7 +21,7 @@ services:
           - "5000:5000"
       volumes:
           - ./backend:/src
-          - /root/.nuget/packages #Caching nuget packages
+          - ./backend/nuget-cache:/root/.nuget/packages #Caching nuget packages
       environment:
           - DOTNET_USE_POLLING_FILE_WATCHER=1 #Enables hot reloading
       depends_on:
