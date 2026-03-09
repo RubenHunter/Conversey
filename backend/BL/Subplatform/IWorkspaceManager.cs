@@ -1,4 +1,4 @@
-namespace Conversey.BL.Workspace;
+namespace Conversey.BL.Subplatform;
 
 public interface IWorkspaceManager
 {

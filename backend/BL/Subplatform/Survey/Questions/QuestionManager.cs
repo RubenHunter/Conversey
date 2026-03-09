@@ -1,4 +1,4 @@
-namespace Conversey.BL.Workspace.Project.Question;
+namespace Conversey.BL.Subplatform.Survey.Questions;
 
 public class QuestionManager: IQuestionManager
 {
