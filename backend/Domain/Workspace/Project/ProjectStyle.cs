@@ -1,6 +1,7 @@
 using System.Drawing;
+using Conversey.BL.Domain.Entities;
 
-namespace Conversey.BL.Domain.Entities.Project;
+namespace Conversey.BL.Domain.Workspace.Project;
 
 public struct ProjectStyle
 {

@@ -1,4 +1,4 @@
-namespace Conversey.BL.Domain.Enums;
+namespace Conversey.BL.Domain.Workspace.Project;
 
 public enum Status
 {

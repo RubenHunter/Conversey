@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Entities.Question.AnswerTypes;
+using Conversey.BL.Domain.Workspace.Project.Question.Answer;
 
-namespace Conversey.BL.Domain.Entities.Question.QuestionTypes;
+namespace Conversey.BL.Domain.Workspace.Project.Question;
 
 public class MultipleChoiceQuestion : Question
 {

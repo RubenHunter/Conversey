@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Question.AnswerTypes;
+namespace Conversey.BL.Domain.Workspace.Project.Question.Answer;
 
 public sealed class OpenTextAnswer : TextAnswer
 { 

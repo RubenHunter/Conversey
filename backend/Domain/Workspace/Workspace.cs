@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Identity;
+namespace Conversey.BL.Domain.Workspace;
 
 public class Workspace
 {
@@ -9,9 +9,6 @@ public class Workspace
     
     [Required]
     public string Name { get; set; }
-    
-    [Required]
-    public Conversey Conversey { get; set; }
 
     public IEnumerable<Project.Project> Projects { get; set; }
     

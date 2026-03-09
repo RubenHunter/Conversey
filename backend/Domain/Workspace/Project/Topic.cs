@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Project;
+namespace Conversey.BL.Domain.Workspace.Project;
 
 public class Topic
 {

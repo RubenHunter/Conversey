@@ -1,5 +1,5 @@
 ﻿using Conversey.BL;
-using Conversey.BL.Domain.Entities.Identity;
+using Conversey.BL.Domain.Workspace;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 

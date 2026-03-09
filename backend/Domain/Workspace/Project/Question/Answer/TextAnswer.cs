@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Entities.Identity;
 
-namespace Conversey.BL.Domain.Entities.Question.AnswerTypes;
+namespace Conversey.BL.Domain.Workspace.Project.Question.Answer;
 
 public class TextAnswer
 {

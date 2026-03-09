@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Idea___interaction;
+namespace Conversey.BL.Domain.Workspace.Project.Idea;
 
 public class Response
 {

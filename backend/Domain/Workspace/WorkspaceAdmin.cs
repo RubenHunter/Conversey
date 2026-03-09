@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Identity;
+namespace Conversey.BL.Domain.Workspace;
 
-public class WorkspaceAdmin :  Admin
+public class WorkspaceAdmin
 {
     [Required]
     public int Id { get; set; }

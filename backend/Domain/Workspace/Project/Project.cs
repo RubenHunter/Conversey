@@ -1,9 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Conversey.BL.Domain.Entities.Identity;
-using Conversey.BL.Domain.Enums;
 
-namespace Conversey.BL.Domain.Entities.Project;
+namespace Conversey.BL.Domain.Workspace.Project;
 
 public class Project
 {

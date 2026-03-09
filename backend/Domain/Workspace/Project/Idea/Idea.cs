@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Idea___interaction;
+namespace Conversey.BL.Domain.Workspace.Project.Idea;
 
 public class Idea
 {
@@ -12,6 +12,6 @@ public class Idea
     public DateTime submissionDate { get; set; }
     public IdeaStatus Status { get; set; }
 
-    public Project.Project Project { get; set; }
+    public Project Project { get; set; }
     public IEnumerable<Response> Responses { get; set; }
 }

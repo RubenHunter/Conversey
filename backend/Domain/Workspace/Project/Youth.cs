@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities.Identity;
+namespace Conversey.BL.Domain.Workspace.Project;
 
 public class Youth
 {
@@ -8,7 +8,7 @@ public class Youth
     [Required]
     public string Token { get; set; }
 
-    public Project.Project Project { get; set; }
+    public Project Project { get; set; }
     
     public string? Email { get; set; }
 }

@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Conversey.BL.Domain.Entities;
 
-namespace Conversey.BL.Domain.Entities.Question;
+namespace Conversey.BL.Domain.Workspace.Project.Question;
 
 public class Question
 {
