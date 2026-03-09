@@ -8,8 +8,4 @@
         <RootNamespace>Conversey.BL.Domain</RootNamespace>
     </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Workspace\Project\Identity\" />
-    </ItemGroup>
-
 </Project>

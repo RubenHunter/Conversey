@@ -14,11 +14,11 @@ var repoType = builder.Configuration["Repository:Type"];
 
 if (repoType == "InMemory")
 {
-    builder.Services.AddScoped<IRepository, InMemoryRepository>();
+    builder.Services.AddScoped<IWorkspaceRepository, InMemoryWorkspaceRepository>();
 }
 else if (repoType == "Postgres")
 {
-    builder.Services.AddScoped<IRepository, Repository>();
+    builder.Services.AddScoped<IWorkspaceRepository, WorkspaceWorkspaceRepository>();
 }
 else
 {

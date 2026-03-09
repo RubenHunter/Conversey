@@ -5,15 +5,15 @@ namespace Conversey.BL;
 
 public class Manager : IManager
 {
-    private IRepository _repository;
+    private IWorkspaceRepository _workspaceRepository;
 
-    public Manager(IRepository repository)
+    public Manager(IWorkspaceRepository workspaceRepository)
     {
-        _repository = repository;
+        _workspaceRepository = workspaceRepository;
     }
 
     public IReadOnlyCollection<Workspace> GetAllWorkspaces()
     {
-        return _repository.ReadAllWorkspaces();
+        return _workspaceRepository.ReadAllWorkspaces();
     }
 }
