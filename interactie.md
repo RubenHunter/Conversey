@@ -1,4 +1,4 @@
-@startuml
+```startuml
 actor "Young person" as Youth
 boundary "Web UI" as UI
 control "ReactionController" as Controller
@@ -30,6 +30,6 @@ else idea exists
   Service --> Controller: success(savedReactionDTO)
   Controller --> UI: 201 Created + reaction data
   UI --> Youth: Show reaction under the idea
-end
+```
 
 @enduml
