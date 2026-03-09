@@ -2,6 +2,7 @@ import type { RouteParams } from '../../utils/router.ts'
 import { navigate } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
 import { getQuestions, submitResponse } from '../../services/surveyService.ts'
+import { getWorkspaceByName } from '../../services/workspaceService.ts'
 import { QuestionType } from '../../models/question.ts'
 import type { ResponseAnswer } from '../../models/response.ts'
 import { renderSingleChoiceQuestion } from './singleChoiceQuestion.ts'
@@ -42,12 +43,24 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     }
 
     const questions = await getQuestions(project.id)
-    const organizationName = params.organizationSlug
+    
+    // Load workspace name from API
+    let organizationName = params.organizationSlug
         .split('-')
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
+    
+    try {
+        const workspace = await getWorkspaceByName(organizationName)
+        if (workspace) {
+            organizationName = workspace.name
+        }
+    } catch (error) {
+        console.error('Failed to load workspace name:', error)
+        // Fall back to derived name from slug
+    }
 
-    let currentQuestionIndex = -1 // Start at -1 to indicate we're at hero section, not at any question yet
+    let currentQuestionIndex = -1 // Start at -1 to indicate we're at landing page section, not at any question yet
     let scrollNav: ScrollNav | null = null
     let isUserScroll = false // Track whether the scroll was from user or from programmatic navigation
     let scrollTimeoutId: number | null = null // Track pending scroll timeout to cancel if needed
@@ -211,7 +224,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
         const headerBottom = headerEl.getBoundingClientRect().bottom
         
-        let closestIndex = -1 // Start at -1 (hero) instead of 0
+        let closestIndex = -1
         let closestDistance = Number.POSITIVE_INFINITY
 
         elements.forEach((el) => {

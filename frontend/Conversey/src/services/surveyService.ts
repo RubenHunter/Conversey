@@ -2,12 +2,10 @@ import type { ApiQuestionDto } from '../api/dtos/questionDto.ts'
 import { mapApiQuestionsToQuestions } from '../mappers/questionMapper.ts'
 import { mapSurveyResponseToApiResponseDto } from '../mappers/responseMapper.ts'
 import type { Question } from '../models/question.ts'
-import { QuestionType } from '../models/question.ts'
 import type { SurveyResponse } from '../models/response.ts'
 import { apiFetch } from './apiService.ts'
 
-const USE_MOCK = true
-
+// TODO: Remove mock data once backend question endpoints are implemented
 const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
     1: [
         {
@@ -28,7 +26,7 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
             Id: 2,
             ProjectId: 1,
             Text: 'How often do you feel overwhelmed during a typical week?',
-            Type: QuestionType.SingleChoice,
+            Type: 'SingleChoice',
             IsRequired: true,
             Order: 2,
             Options: [
@@ -42,7 +40,7 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
             Id: 3,
             ProjectId: 1,
             Text: 'What is your preferred way to relax after a stressful day?',
-            Type: 'single_choice',
+            Type: 'SingleChoice',
             IsRequired: true,
             Order: 3,
             Options: [
@@ -78,7 +76,7 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
             Id: 6,
             ProjectId: 1,
             Text: 'What would help you manage stress better? Share your ideas.',
-            Type: 'OPEN_TEXT',
+            Type: 'OpenText',
             IsRequired: false,
             Order: 6,
         },
@@ -86,7 +84,7 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
             Id: 7,
             ProjectId: 1,
             Text: 'Do you have access to mental health resources or counseling?',
-            Type: 'singlechoice',
+            Type: 'SingleChoice',
             IsRequired: true,
             Order: 7,
             Options: [
@@ -100,7 +98,7 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
             Id: 8,
             ProjectId: 1,
             Text: 'What changes would you like to see in your school or workplace to better support mental health?',
-            Type: 'Open_Text',
+            Type: 'OpenText',
             IsRequired: false,
             Order: 8,
         },
@@ -108,44 +106,43 @@ const MOCK_QUESTIONS: Record<number, ApiQuestionDto[]> = {
 }
 
 export async function getQuestions(projectId: number): Promise<Question[]> {
-    if (USE_MOCK) {
-        const questionDtos = MOCK_QUESTIONS[projectId]
-        if (!questionDtos) {
-            throw new Error(`No questions found for project ${projectId}`)
-        }
-
-        return Promise.resolve(mapApiQuestionsToQuestions(questionDtos))
+    // TODO: Remove this mock fallback once /api/projects/{projectId}/questions is implemented
+    const mockData = MOCK_QUESTIONS[projectId]
+    
+    if (mockData) {
+        console.log('⚠️ Using mock questions - real API endpoint not yet implemented')
+        return Promise.resolve(mapApiQuestionsToQuestions(mockData))
     }
 
-    const questionDtos = await apiFetch<ApiQuestionDto[]>(`/projects/${projectId}/questions`)
-    return mapApiQuestionsToQuestions(questionDtos)
+    // When real API is ready, uncomment this:
+    // const questionDtos = await apiFetch<ApiQuestionDto[]>(`/projects/${projectId}/questions`)
+    // return mapApiQuestionsToQuestions(questionDtos)
+    
+    throw new Error(`No questions found for project ${projectId}`)
 }
 
 export async function submitResponse(response: SurveyResponse): Promise<void> {
     const requestDto = mapSurveyResponseToApiResponseDto(response)
 
-    if (USE_MOCK) {
-        const bundledData = {
-            timestamp: new Date().toISOString(),
-            projectId: requestDto.projectId,
-            totalAnswers: requestDto.answers.length,
-            answers: requestDto.answers,
-            summary: {
-                singleChoiceAnswers: requestDto.answers.filter((a) => typeof a.answerValue === 'number').length,
-                openTextAnswers: requestDto.answers.filter((a) => typeof a.answerValue === 'string').length,
-            },
-        }
-
-        console.log('========== SURVEY RESPONSE BUNDLE ==========' )
-        console.log(JSON.stringify(bundledData, null, 2))
-        console.log('========== END SURVEY RESPONSE ==========' )
-        console.log('Bundle ready to be sent to API:', bundledData)
-
-        return Promise.resolve()
+    // TODO: Implement real API endpoint once ready
+    const bundledData = {
+        timestamp: new Date().toISOString(),
+        projectId: requestDto.projectId,
+        totalAnswers: requestDto.answers.length,
+        answers: requestDto.answers,
+        summary: {
+            singleChoiceAnswers: requestDto.answers.filter((a) => typeof a.answerValue === 'number').length,
+            openTextAnswers: requestDto.answers.filter((a) => typeof a.answerValue === 'string').length,
+        },
     }
 
-    await apiFetch<void>(`/projects/${response.projectId}/responses`, {
-        method: 'POST',
-        body: JSON.stringify(requestDto),
-    })
+    console.log('========== SURVEY RESPONSE BUNDLE ==========' )
+    console.log(JSON.stringify(bundledData, null, 2))
+    console.log('========== END SURVEY RESPONSE ==========' )
+
+    // When real API is ready, uncomment this and remove mock logging:
+    // await apiFetch<void>(`/projects/${response.projectId}/responses`, {
+    //     method: 'POST',
+    //     body: JSON.stringify(requestDto),
+    // })
 }

@@ -3,8 +3,7 @@ import { mapApiProjectToProject } from '../mappers/projectMapper.ts'
 import type { Project } from '../models/project.ts'
 import { apiFetch } from './apiService.ts'
 
-const USE_MOCK = true
-
+// TODO: Remove mock data once backend project endpoints are implemented
 const MOCK_PROJECTS: Record<string, ApiProjectDto> = {
     'axa-bank/mental-wellbeing-2026': {
         Id: 1,
@@ -17,21 +16,20 @@ const MOCK_PROJECTS: Record<string, ApiProjectDto> = {
     },
 }
 
-function getMockProject(orgSlug: string, projectSlug: string): ApiProjectDto | undefined {
-    const key = `${orgSlug}/${projectSlug}`
-    return MOCK_PROJECTS[key]
-}
-
 export async function getProject(orgSlug: string, projectSlug: string): Promise<Project> {
-    if (USE_MOCK) {
-        const projectDto = getMockProject(orgSlug, projectSlug)
-        if (!projectDto) {
-            throw new Error(`Project not found: ${orgSlug}/${projectSlug}`)
-        }
-
-        return Promise.resolve(mapApiProjectToProject(projectDto, orgSlug, projectSlug))
+    // TODO: Remove this mock fallback once /api/organizations/{orgSlug}/projects/{projectSlug} is implemented
+    const mockKey = `${orgSlug}/${projectSlug}`
+    const mockData = MOCK_PROJECTS[mockKey]
+    
+    if (mockData) {
+        console.log('⚠️ Using mock project data - real API endpoint not yet implemented')
+        return Promise.resolve(mapApiProjectToProject(mockData, orgSlug, projectSlug))
     }
 
-    const projectDto = await apiFetch<ApiProjectDto>(`/organizations/${orgSlug}/projects/${projectSlug}`)
-    return mapApiProjectToProject(projectDto, orgSlug, projectSlug)
+    // When real API is ready, uncomment this:
+    // const projectDto = await apiFetch<ApiProjectDto>(`/organizations/${orgSlug}/projects/${projectSlug}`)
+    // return mapApiProjectToProject(projectDto, orgSlug, projectSlug)
+    
+    throw new Error(`Project not found: ${orgSlug}/${projectSlug}`)
 }
+

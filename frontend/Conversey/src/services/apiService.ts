@@ -12,13 +12,18 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     })
 
     if (!response.ok) {
-        throw new Error(`API error ${response.status}: ${response.statusText}`)
+        throw new Error(`API error ${response.status}: ${response.statusText} at ${url}`)
     }
 
     if (response.status === 204) {
         return undefined as T
     }
 
-    return response.json() as Promise<T>
+    try {
+        return response.json() as Promise<T>
+    } catch (error) {
+        const contentType = response.headers.get('content-type')
+        throw new Error(`Failed to parse response as JSON from ${url}. Content-Type: ${contentType}. Error: ${error instanceof Error ? error.message : String(error)}`)
+    }
 }
 
