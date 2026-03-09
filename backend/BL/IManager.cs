@@ -4,5 +4,5 @@ namespace Conversey.BL;
 
 public interface IManager
 {
-    IReadOnlyCollection<Workspace> GetAllWorkspaces();
+    IReadOnlyCollection<Domain.Workspace.Workspace> GetAllWorkspaces();
 }
