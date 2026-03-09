@@ -9,7 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IRepository, InMemoryRepository>();
 builder.Services.AddScoped<IManager, Manager>();
 
-var app = builder.Build();
+var app = builder.Build();  
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
