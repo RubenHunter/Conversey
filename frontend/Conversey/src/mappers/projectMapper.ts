@@ -1,0 +1,91 @@
+import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto, ApiProjectStyleDto } from '../api/dtos/projectDto.ts'
+import { InteractionType, ProjectStatus, type Project, type ProjectStyle, type ProjectTopic } from '../models/project.ts'
+
+function pickString(...values: Array<string | undefined>): string | undefined {
+    return values.find((value) => typeof value === 'string' && value.length > 0)
+}
+
+function toSlug(value: string): string {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+}
+
+function mapStatus(rawStatus: ApiProjectStatusDto | undefined): Project['status'] {
+    if (rawStatus === undefined) return undefined
+
+    if (typeof rawStatus === 'number') {
+        if (rawStatus === 0) return ProjectStatus.Draft
+        if (rawStatus === 1) return ProjectStatus.Active
+        if (rawStatus === 2) return ProjectStatus.Archived
+        return undefined
+    }
+
+    if (rawStatus === ProjectStatus.Draft || rawStatus.toLowerCase() === 'draft') return ProjectStatus.Draft
+    if (rawStatus === ProjectStatus.Active || rawStatus.toLowerCase() === 'active') return ProjectStatus.Active
+    if (rawStatus === ProjectStatus.Archived || rawStatus.toLowerCase() === 'archived') return ProjectStatus.Archived
+
+    return undefined
+}
+
+function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project['interactionType'] {
+    if (rawType === undefined) return undefined
+
+    if (typeof rawType === 'number') {
+        if (rawType === 0) return InteractionType.Chat
+        if (rawType === 1) return InteractionType.VerticalScroll
+        return undefined
+    }
+
+    if (rawType === InteractionType.Chat || rawType.toLowerCase() === 'chat') return InteractionType.Chat
+
+    const normalized = rawType.replace(/\s|-/g, '_').toLowerCase()
+    if (normalized === 'vertical_scroll' || normalized === 'verticalscroll') {
+        return InteractionType.VerticalScroll
+    }
+
+    return undefined
+}
+
+function mapTopic(topicDto: ApiTopicDto | undefined): ProjectTopic | undefined {
+    if (!topicDto) return undefined
+
+    const name = pickString(topicDto.name, topicDto.Name)
+    const context = pickString(topicDto.context, topicDto.Context) ?? ''
+
+    if (!name) return undefined
+
+    return { name, context }
+}
+
+function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | undefined {
+    if (!styleDto) return undefined
+
+    const primaryColors = styleDto.primaryColor ?? styleDto.PrimaryColor
+    if (!primaryColors || primaryColors.length === 0) return undefined
+
+    return { primaryColors }
+}
+
+export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint: string, projectSlugHint: string): Project {
+    const title = pickString(dto.title, dto.Title) ?? projectSlugHint
+    const slug = pickString(dto.slug, dto.Slug) ?? toSlug(title)
+
+    return {
+        id: dto.id ?? dto.Id ?? 0,
+        slug,
+        organizationSlug: pickString(dto.organizationSlug, dto.OrganizationSlug) ?? organizationSlugHint,
+        title,
+        description: pickString(dto.description, dto.Description) ?? '',
+        imageUrl: pickString(dto.imageUrl, dto.ImageUrl) ?? '',
+        status: mapStatus(dto.status ?? dto.Status),
+        startDate: pickString(dto.startDate, dto.StartDate),
+        endDate: pickString(dto.endDate, dto.EndDate),
+        interactionType: mapInteractionType(dto.interactionType ?? dto.InteractionType ?? dto.interactionForm ?? dto.InteractionForm),
+        topic: mapTopic(dto.topic ?? dto.Topic),
+        style: mapStyle(dto.style ?? dto.Style),
+    }
+}
+

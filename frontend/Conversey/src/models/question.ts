@@ -17,5 +17,7 @@ export interface Question {
     text: string
     type: QuestionType
     isRequired: boolean
+    order?: number
+    backendType?: string
     options?: AnswerOption[]
 }

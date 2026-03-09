@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Conversey.BL.Domain.Entities.Identity;
 using Conversey.BL.Domain.Enums;
 
@@ -20,6 +21,7 @@ public class Project
     public InteractionType InteractionForm { get; set; }
     
     public IEnumerable<Topic> Topic { get; set; }
+    [NotMapped]
     public ProjectStyle Style { get; set; }
     
     public IEnumerable<Question.Question> Questions { get; set; }

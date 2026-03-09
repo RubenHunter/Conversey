@@ -1,20 +1,59 @@
 using Conversey.BL;
 using Conversey.DAL;
+using Conversey.DAL.EF;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IRepository, InMemoryRepository>();
+
+// Use correct implementation of IRepository
+var repoType = builder.Configuration["Repository:Type"];
+
+if (repoType == "InMemory")
+{
+    builder.Services.AddScoped<IRepository, InMemoryRepository>();
+}
+else if (repoType == "Postgres")
+{
+    builder.Services.AddScoped<IRepository, Repository>();
+}
+else
+{
+    throw new Exception($"Unknown repository type: {repoType}");
+}
+
 builder.Services.AddScoped<IManager, Manager>();
 
-var app = builder.Build();  
+builder.Services.AddDbContext<ConverseyDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
+
+
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    // Initialize Development Database
+    if (repoType == "Postgres")
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<ConverseyDbContext>();
+            if (context.Database.EnsureCreated())
+            {
+                DataSeeder.Seed(context);
+            }
+        }
+    }
 }
 
 app.UseHttpsRedirection();
