@@ -1,6 +1,6 @@
 using Conversey.BL;
 using Conversey.DAL;
-using Conversey.DAL.EF;
+using Conversey.DAL.Subplatform;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,18 +12,7 @@ builder.Services.AddControllers();
 // Use correct implementation of IRepository
 var repoType = builder.Configuration["Repository:Type"];
 
-if (repoType == "InMemory")
-{
-    builder.Services.AddScoped<IWorkspaceRepository, InMemoryWorkspaceRepository>();
-}
-else if (repoType == "Postgres")
-{
-    builder.Services.AddScoped<IWorkspaceRepository, WorkspaceWorkspaceRepository>();
-}
-else
-{
-    throw new Exception($"Unknown repository type: {repoType}");
-}
+builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 
 builder.Services.AddScoped<IManager, Manager>();
 
