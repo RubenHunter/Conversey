@@ -1,5 +1,6 @@
 ﻿using Conversey.BL;
-using Conversey.BL.Domain.Entities.Identity;
+using Conversey.BL.Domain.Subplatform;
+using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,9 @@ namespace Conversey.REST.Controllers.Api;
 [Route("api/Workspaces")]
 public class WorkspacesController : ControllerBase
 {
-    private readonly IManager _manager;
+    private readonly IWorkspaceManager _manager;
     
-    public WorkspacesController(IManager manager)
+    public WorkspacesController(IWorkspaceManager manager)
     {
         _manager = manager;
     }

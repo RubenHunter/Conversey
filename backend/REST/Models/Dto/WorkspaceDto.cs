@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Entities.Identity;
+using Conversey.BL.Domain.Subplatform;
 
 namespace Conversey.REST.Models.Dto;
 
