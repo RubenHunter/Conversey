@@ -107,6 +107,31 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 </div>
             </div>
         </div>
+
+        <div id="idea-panel-backdrop" class="idea-panel-backdrop" hidden aria-hidden="true"></div>
+        <div id="idea-panel" class="idea-panel" role="dialog" aria-modal="true" aria-label="Idea detail" hidden>
+            <div class="idea-panel-header">
+                <h3 class="idea-panel-title">Idea</h3>
+                <button id="idea-panel-close" class="idea-panel-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="idea-panel-body">
+                <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
+                <div id="idea-panel-post" class="idea-panel-post">
+                    <div id="idea-panel-badges" class="idea-panel-badges"></div>
+                    <p id="idea-panel-text" class="idea-panel-text"></p>
+                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="React with emoji (coming soon)">
+                        <span aria-hidden="true">＋</span>
+                        <span aria-hidden="true">😊</span>
+                    </button>
+                </div>
+                <div id="idea-panel-comments" class="idea-panel-comments"></div>
+            </div>
+            <div class="idea-panel-footer">
+                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment…" rows="2"></textarea>
+                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
+            </div>
+        </div>
+    </div>
     `
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
@@ -124,6 +149,20 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
     const upBtn = container.querySelector<HTMLButtonElement>('#ideas-up')!
     const downBtn = container.querySelector<HTMLButtonElement>('#ideas-down')!
+
+    // Panel elements
+    const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
+    const panel = container.querySelector<HTMLDivElement>('#idea-panel')!
+    const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
+    const panelPinned = container.querySelector<HTMLDivElement>('#idea-panel-pinned')!
+    const panelBadges = container.querySelector<HTMLDivElement>('#idea-panel-badges')!
+    const panelText = container.querySelector<HTMLParagraphElement>('#idea-panel-text')!
+    const panelComments = container.querySelector<HTMLDivElement>('#idea-panel-comments')!
+    const panelInput = container.querySelector<HTMLTextAreaElement>('#idea-panel-input')!
+    const panelSend = container.querySelector<HTMLButtonElement>('#idea-panel-send')!
+
+    // Per-idea in-memory comment store (keyed by idea id)
+    const commentStore = new Map<number, { author: 'self' | 'other'; text: string }[]>()
 
     function getTopicById(topicId: number): IdeaTopic | undefined {
         return topics.find((topic) => topic.id === topicId)
@@ -424,6 +463,95 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
 
+    // ── Panel ────────────────────────────────────────────────────────────────────
+
+    function renderPanel(idea: Idea): void {
+        panelBadges.innerHTML = ''
+        if (idea.authorType === 'self') {
+            const b = document.createElement('span')
+            b.className = 'ideas-card-yours-badge'
+            b.textContent = 'Your idea'
+            panelBadges.appendChild(b)
+        }
+        panelText.textContent = idea.body
+
+        if (idea.authorType === 'self') {
+            panelPinned.hidden = false
+            panelPinned.innerHTML = `
+                <span class="idea-panel-pinned-label">📌 Author's note</span>
+                <p class="idea-panel-pinned-text">This is your original idea. Others can comment and react below.</p>
+            `
+        } else {
+            panelPinned.hidden = true
+            panelPinned.innerHTML = ''
+        }
+
+        const comments = commentStore.get(idea.id) ?? []
+        panelComments.innerHTML = ''
+
+        if (comments.length === 0) {
+            panelComments.innerHTML = `<p class="idea-panel-no-comments">No comments yet. Be the first!</p>`
+        } else {
+            const isOwnIdea = idea.authorType === 'self'
+            const pinnedComments = isOwnIdea ? comments.filter((c) => c.author === 'self') : []
+            const regularComments = isOwnIdea ? comments.filter((c) => c.author !== 'self') : comments
+
+            if (pinnedComments.length > 0) {
+                const pinnedLabel = document.createElement('p')
+                pinnedLabel.className = 'idea-panel-comments-label'
+                pinnedLabel.textContent = 'Pinned author comments'
+                panelComments.appendChild(pinnedLabel)
+
+                pinnedComments.forEach((c) => {
+                    const el = document.createElement('div')
+                    el.className = 'idea-panel-comment idea-panel-comment--self idea-panel-comment--pinned'
+                    el.textContent = c.text
+                    panelComments.appendChild(el)
+                })
+            }
+
+            regularComments.forEach((c) => {
+                const el = document.createElement('div')
+                el.className = `idea-panel-comment${c.author === 'self' ? ' idea-panel-comment--self' : ''}`
+                el.textContent = c.text
+                panelComments.appendChild(el)
+            })
+        }
+
+        panelInput.value = ''
+        panelSend.disabled = true
+    }
+
+    function closePanel(): void {
+        panel.classList.remove('open')
+        panelBackdrop.classList.remove('open')
+        panel.addEventListener('transitionend', () => {
+            panel.hidden = true
+            panelBackdrop.hidden = true
+        }, { once: true })
+    }
+
+    panelClose.addEventListener('click', closePanel)
+    panelBackdrop.addEventListener('click', closePanel)
+
+    panelInput.addEventListener('input', () => {
+        panelSend.disabled = panelInput.value.trim().length === 0
+    })
+
+    panelSend.addEventListener('click', () => {
+        const text = panelInput.value.trim()
+        if (text.length === 0) return
+
+        const idea = visibleIdeasCache[activeIdeaIndex]
+        if (!idea) return
+
+        const existing = commentStore.get(idea.id) ?? []
+        commentStore.set(idea.id, [...existing, { author: 'self', text }])
+        renderPanel(idea)
+    })
+
+    // ── Card click ───────────────────────────────────────────────────────────────
+
     list.addEventListener('click', (event) => {
         const target = event.target as HTMLElement
         const card = target.closest<HTMLElement>('.ideas-card')
@@ -432,10 +560,20 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         const index = Number(card.getAttribute('data-idea-index'))
         if (!Number.isFinite(index)) return
 
-        setActiveIdea(index, true)
+        if (index === activeIdeaIndex) {
+            if (!visibleIdeasCache[index]) return
+            renderPanel(visibleIdeasCache[index])
+            panel.hidden = false
+            panelBackdrop.hidden = false
+            requestAnimationFrame(() => {
+                panel.classList.add('open')
+                panelBackdrop.classList.add('open')
+            })
+            panelInput.focus()
+        } else {
+            setActiveIdea(index, true)
+        }
     })
-
-    // Placeholder-only controls for future implementation consistency with survey mode.
 
     upBtn.addEventListener('click', () => {
         if (visibleIdeasCache.length === 0 || activeIdeaIndex <= 0) return
@@ -449,3 +587,4 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     render()
 }
+
