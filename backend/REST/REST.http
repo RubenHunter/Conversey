@@ -4,3 +4,12 @@ GET {{REST_HostAddress}}/api/workspaces/
 Accept: application/json
 
 ###
+
+POST {{REST_HostAddress}}/api/ideas/
+Content-Type: application/json
+
+{
+  "Content": "Test Idea",
+  "ProjectId": 0
+}
+###

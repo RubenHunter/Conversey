@@ -1,4 +1,6 @@
 using Conversey.BL.Domain.Subplatform;
+using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
@@ -6,6 +8,11 @@ namespace Conversey.DAL;
 
 public class ConverseyDbContext : DbContext
 {
+    
+    public DbSet<Workspace> Workspaces { get; set; }
+    public DbSet<Idea> Ideas { get; set; }
+    public DbSet<Project> Projects { get; set; }
+    
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
     }
@@ -14,6 +21,7 @@ public class ConverseyDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
+        modelBuilder.Entity<Project>();
         
         // Workspace
         modelBuilder.Entity<Workspace>()
@@ -22,16 +30,15 @@ public class ConverseyDbContext : DbContext
         // Workspace 1-* Project
         modelBuilder.Entity<Workspace>()
             .HasMany(w => w.Projects);
-        
+
         modelBuilder.Entity<Workspace>()
             .Property(w => w.Name)
             .IsRequired();
-       
-        
-        
+
+
+
     }
     
-    public DbSet<Workspace> Workspaces { get; set; }
 
     public bool CreateDatabase(bool resetDatabse)
     {

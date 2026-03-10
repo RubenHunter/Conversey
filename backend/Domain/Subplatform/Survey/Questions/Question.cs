@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Conversey.BL.Domain.Entities;
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.BL.Domain.Subplatform.Survey.Questions;
 
