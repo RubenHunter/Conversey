@@ -1,4 +1,5 @@
 import './style.css'
+import './styles/ideas.css'
 import { initRouter, registerView, navigate, getInitialView } from './utils/router.ts'
 import { renderLandingPage } from './components/landingPage.ts'
 import { renderSurveyPage } from './components/survey/surveyPage.ts'
