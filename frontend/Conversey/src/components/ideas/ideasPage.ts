@@ -6,6 +6,7 @@ import { getIdeasContext, submitIdea } from '../../services/ideaService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
+import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
 import { renderTopicMenu, getActiveIdeasLabel } from './topicSwitcher.ts'
 import { renderCommunityIdeasList } from './communityList.ts'
 import { renderIdeasComposer } from './composer.ts'
@@ -41,6 +42,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     let focusTurnTimeout: number | null = null
     let listScrollUnlockTimeout: number | null = null
     let isProgrammaticListScroll = false
+    const flaggedIdeaIds = new Set<number>()
 
     container.innerHTML = `
         <div class="ideas-shell">
@@ -129,6 +131,40 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
             </div>
         </div>
+
+        <div id="safety-review-backdrop" class="safety-review-backdrop" hidden aria-hidden="true"></div>
+        <div id="safety-review-dialog" class="safety-review-dialog" role="dialog" aria-modal="true" aria-label="Content safety review" hidden>
+            <div class="safety-review-header">
+                <h3>Let's keep this space safe</h3>
+            </div>
+            <div class="safety-review-body">
+                <p class="safety-review-copy">Our AI flagged your text as potentially offensive. You can use the suggestion, edit it, or continue with your original text.</p>
+                <div class="safety-review-block">
+                    <div class="safety-review-block-head">
+                        <span class="safety-review-label">Your original message</span>
+                        <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response" title="Edit your response">
+                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
+                            <span>Edit your response</span>
+                        </button>
+                    </div>
+                    <textarea id="safety-review-original" class="safety-review-original" rows="4" readonly></textarea>
+                </div>
+                <div class="safety-review-block">
+                    <div class="safety-review-block-head">
+                        <span class="safety-review-label">AI suggestion</span>
+                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI's suggestion" title="Edit the AI's suggestion">
+                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
+                            <span>Edit the AI's suggestion</span>
+                        </button>
+                    </div>
+                    <textarea id="safety-review-suggestion" class="safety-review-suggestion" rows="4" readonly></textarea>
+                </div>
+            </div>
+            <div class="safety-review-actions">
+                <button id="safety-review-accept-suggestion" class="safety-review-btn safety-review-btn--primary" type="button">Accept suggestion</button>
+                <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
+            </div>
+        </div>
     </div>
     `
 
@@ -148,7 +184,11 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const upBtn = container.querySelector<HTMLButtonElement>('#ideas-up')!
     const downBtn = container.querySelector<HTMLButtonElement>('#ideas-down')!
 
-    const ideaPanel = createIdeaPanelController({ root: container })
+    const safetyReviewDialog = createSafetyReviewDialogController({ root: container })
+    const ideaPanel = createIdeaPanelController({
+        root: container,
+        reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
+    })
 
     function getVisibleIdeas(): Idea[] {
         if (activeView.type === 'my-ideas') {
@@ -205,6 +245,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             topics,
             upBtn,
             downBtn,
+            flaggedIdeaIds,
         })
 
         if (ideas.length > 0) {
@@ -364,15 +405,27 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         const body = textarea.value.trim()
         if (body.length === 0) return
 
+        const decision = await safetyReviewDialog.reviewBeforePost(body)
+        if (!decision.proceed) {
+            textarea.value = body
+            textarea.focus()
+            submitBtn.disabled = textarea.value.trim().length === 0
+            return
+        }
+
         submitBtn.disabled = true
         submitBtn.textContent = 'Saving...'
 
         const createdIdea = await submitIdea({
             projectId: project.id,
             topicId: activeView.topicId,
-            body,
+            body: decision.text,
             authorType: 'self',
         })
+
+        if (decision.offensiveContentDetected) {
+            flaggedIdeaIds.add(createdIdea.id)
+        }
 
         allIdeas.unshift(createdIdea)
         textarea.value = ''

@@ -1,11 +1,12 @@
 ﻿import type { Idea } from '../../models/idea.ts'
-import type { IdeaComment, IdeaPanelController } from './types.ts'
+import type { IdeaComment, IdeaPanelController, ReviewBeforePost } from './types.ts'
 
 interface CreateIdeaPanelControllerParams {
     root: ParentNode
+    reviewBeforePost: ReviewBeforePost
 }
 
-export function createIdeaPanelController({ root }: CreateIdeaPanelControllerParams): IdeaPanelController {
+export function createIdeaPanelController({ root, reviewBeforePost }: CreateIdeaPanelControllerParams): IdeaPanelController {
     const panelBackdrop = root.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panel = root.querySelector<HTMLDivElement>('#idea-panel')!
     const panelClose = root.querySelector<HTMLButtonElement>('#idea-panel-close')!
@@ -50,6 +51,14 @@ export function createIdeaPanelController({ root }: CreateIdeaPanelControllerPar
             const el = document.createElement('div')
             el.className = `idea-panel-comment${comment.author === 'self' ? ' idea-panel-comment--self' : ''}`
             el.textContent = comment.text
+
+            if (comment.offensiveContentDetected) {
+                const flagged = document.createElement('span')
+                flagged.className = 'ideas-review-flag'
+                flagged.textContent = 'Marked for review'
+                el.prepend(flagged)
+            }
+
             panelComments.appendChild(el)
         })
     }
@@ -116,12 +125,23 @@ export function createIdeaPanelController({ root }: CreateIdeaPanelControllerPar
         panelSend.disabled = panelInput.value.trim().length === 0
     })
 
-    panelSend.addEventListener('click', () => {
+    panelSend.addEventListener('click', async () => {
         const text = panelInput.value.trim()
         if (!currentIdea || text.length === 0) return
 
+        const decision = await reviewBeforePost(text)
+        if (!decision.proceed) {
+            panelInput.value = text
+            panelInput.focus()
+            panelSend.disabled = panelInput.value.trim().length === 0
+            return
+        }
+
         const existing = commentStore.get(currentIdea.id) ?? []
-        commentStore.set(currentIdea.id, [...existing, { author: 'self', text }])
+        commentStore.set(currentIdea.id, [
+            ...existing,
+            { author: 'self', text: decision.text, offensiveContentDetected: decision.offensiveContentDetected },
+        ])
         renderPanel(currentIdea)
     })
 

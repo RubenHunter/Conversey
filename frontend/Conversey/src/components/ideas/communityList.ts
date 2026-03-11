@@ -8,9 +8,10 @@ interface RenderCommunityListParams {
     topics: IdeaTopic[]
     upBtn: HTMLButtonElement
     downBtn: HTMLButtonElement
+    flaggedIdeaIds: ReadonlySet<number>
 }
 
-export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBtn, downBtn }: RenderCommunityListParams): void {
+export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBtn, downBtn, flaggedIdeaIds }: RenderCommunityListParams): void {
     list.innerHTML = ''
 
     if (ideas.length === 0) {
@@ -31,6 +32,13 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
             topicLabel.className = 'ideas-card-topic'
             topicLabel.textContent = topics.find((topic) => topic.id === idea.topicId)?.title ?? 'Unknown topic'
 
+            if (flaggedIdeaIds.has(idea.id)) {
+                const flagged = document.createElement('span')
+                flagged.className = 'ideas-review-flag'
+                flagged.textContent = 'Marked for review'
+                card.appendChild(flagged)
+            }
+
             const body = document.createElement('p')
             body.className = 'ideas-card-body'
             body.textContent = idea.body
@@ -44,6 +52,13 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
                 card.appendChild(yoursBadge)
             }
 
+            if (flaggedIdeaIds.has(idea.id)) {
+                const flagged = document.createElement('span')
+                flagged.className = 'ideas-review-flag'
+                flagged.textContent = 'Marked for review'
+                card.appendChild(flagged)
+            }
+
             const body = document.createElement('p')
             body.className = 'ideas-card-body'
             body.textContent = idea.body
@@ -54,4 +69,3 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
         list.appendChild(card)
     })
 }
-

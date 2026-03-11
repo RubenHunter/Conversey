@@ -652,3 +652,180 @@
   opacity: 0.45;
 }
 
+.ideas-review-flag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-bottom: 0.35rem;
+  padding: 0.18rem 0.42rem;
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, #c97a00 45%, transparent);
+  background-color: color-mix(in srgb, #ffd999 55%, white);
+  color: #8a4d00;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.safety-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.safety-review-backdrop.open {
+  opacity: 1;
+}
+
+.safety-review-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -46%);
+  width: min(560px, calc(100vw - 1.5rem));
+  max-height: min(88svh, 88vh);
+  overflow: auto;
+  z-index: 97;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.24);
+  opacity: 0;
+  transition: transform 240ms ease, opacity 240ms ease;
+}
+
+.safety-review-dialog.open {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+}
+
+.safety-review-header {
+  padding: 0.9rem 1rem 0.55rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.safety-review-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.safety-review-body {
+  padding: 0.85rem 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.safety-review-copy {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.safety-review-block {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.safety-review-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.safety-review-edit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.38rem 0.52rem;
+  white-space: nowrap;
+}
+
+.safety-review-edit-glyph {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.safety-review-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.safety-review-original {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg) 45%, white);
+  color: var(--color-text);
+  font-family: var(--font-primary), sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.42;
+  padding: 0.55rem 0.65rem;
+  resize: vertical;
+  min-height: 5.4rem;
+}
+
+.safety-review-original:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.safety-review-actions {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0 1rem 1rem;
+}
+
+.safety-review-btn {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.56rem 0.7rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.safety-review-btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.safety-review-btn--warn {
+  border-color: color-mix(in srgb, #c97a00 40%, transparent);
+  color: #8a4d00;
+  background: color-mix(in srgb, #ffd999 42%, white);
+}
+
+.safety-review-suggestion {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-primary), sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.42;
+  padding: 0.55rem 0.65rem;
+  resize: vertical;
+  min-height: 5.4rem;
+}
+
+.safety-review-suggestion:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
