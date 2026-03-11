@@ -18,35 +18,29 @@ public class Workspace
     [Required]
     public string Slug { get; set; }
     
-    [Required]
-    public Conversey Conversey { get; set; }
-
-    public IEnumerable<Project.Project> Projects { get; set; }
+    // [Required]
+    // public Conversey Conversey { get; set; }
     
-    public Workspace(string name, Func<string, bool> slugExists)
+    public Workspace(string name, string slug,Func<string, bool> slugExists)
     {
         Name = name;
-
-        Slug = GenerateSlug(name);
+        Slug = slug;
 
         if (slugExists(Slug))
         {
             throw new InvalidOperationException("Workspace already exists");
         }
+        
+        Projects = new List<Project>();
     }
-
-    private static string GenerateSlug(string name)
+    
+    // Parameterless constructor for EF
+    protected Workspace()
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Workspace name cannot be empty");
-        }
-
-        var slug = name.Trim().ToLower().Replace(" ", "_");
-        
-        //Remove url unfriendly symbols
-        slug = Regex.Replace(slug, @"[^a-z0-9_]", "");
-        
-        return slug;
+        Name = string.Empty;
+        Slug = string.Empty;
+        Projects = new List<Project>();
     }
+
+    
 }

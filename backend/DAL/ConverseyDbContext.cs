@@ -25,10 +25,17 @@ public class ConverseyDbContext : DbContext
         
         modelBuilder.Entity<Workspace>()
             .Property(w => w.Name)
-            .IsRequired();
-       
-        
-        
+            .IsRequired()
+            .HasMaxLength(50);
+
+
+        modelBuilder.Entity<Workspace>()
+            .Property(w => w.Slug)
+            .IsRequired()
+            .HasMaxLength(50);
+
+
+
     }
     
     public DbSet<Workspace> Workspaces { get; set; }
