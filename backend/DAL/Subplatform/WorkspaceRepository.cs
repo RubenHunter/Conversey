@@ -11,9 +11,24 @@ public class WorkspaceRepository : IWorkspaceRepository
         _context = context;
     }
 
-
     public IReadOnlyCollection<Workspace> ReadAllWorkspaces()
     {
         return _context.Workspaces.ToList().AsReadOnly();
+    }
+
+    public Workspace? ReadWorkspaceBySlug(string slug)
+    {
+        return _context.Workspaces.FirstOrDefault(w => w.Slug == slug);
+    }
+    
+    public Workspace? ReadWorkspaceById(int id)
+    {
+        return _context.Workspaces.FirstOrDefault(w => w.Id == id);
+    }
+
+    public void CreateWorkspace(Workspace workspace)
+    {
+        _context.Workspaces.Add(workspace);
+        _context.SaveChanges();
     }
 }

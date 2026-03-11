@@ -4,6 +4,7 @@ import { renderLandingPage } from './components/landingPage.ts'
 import { renderSurveyPage } from './components/survey/surveyPage.ts'
 import { renderCompletedPage } from './components/completedPage.ts'
 import { renderIdeasPage } from './components/ideasPage.ts'
+import { renderWorkspaceTestPage } from './components/workspaceTestPage.ts'
 
 function init(): void {
     initRouter()
@@ -12,6 +13,7 @@ function init(): void {
     registerView('survey', renderSurveyPage)
     registerView('completed', renderCompletedPage)
     registerView('ideas', renderIdeasPage)
+    registerView('workspace-test', renderWorkspaceTestPage)
 
     const initialView = getInitialView()
     void navigate(initialView, { replace: true })
