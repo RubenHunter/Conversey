@@ -1,22 +1,21 @@
-import type { RouteParams } from '../utils/router.ts'
-import { getProject } from '../services/projectService.ts'
-import { getWorkspaceByName } from '../services/workspaceService.ts'
-import { getIdeasContext, submitIdea } from '../services/ideaService.ts'
-import type { Idea, IdeaTopic } from '../models/idea.ts'
-
-type ActiveView = { type: 'topic'; topicId: number } | { type: 'my-ideas' }
+import '../../styles/pages/ideas.css'
+import type { RouteParams } from '../../utils/router.ts'
+import { getProject } from '../../services/projectService.ts'
+import { getWorkspaceByName } from '../../services/workspaceService.ts'
+import { getIdeasContext, submitIdea } from '../../services/ideaService.ts'
+import type { Idea } from '../../models/idea.ts'
+import { resolveInitialIdeasView } from './initialView.ts'
+import { createIdeaPanelController } from './ideaPanel.ts'
+import { renderTopicMenu, getActiveIdeasLabel } from './topicSwitcher.ts'
+import { renderCommunityIdeasList } from './communityList.ts'
+import { renderIdeasComposer } from './composer.ts'
+import type { ActiveView } from './types.ts'
 
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
         .split('-')
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
-}
-
-function getRandomTopic(topics: IdeaTopic[]): IdeaTopic | null {
-    if (topics.length === 0) return null
-    const index = Math.floor(Math.random() * topics.length)
-    return topics[index]
 }
 
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
@@ -33,9 +32,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     const topics = context.topics
     const allIdeas = [...context.ideas]
-    const defaultTopic = getRandomTopic(topics)
 
-    let activeView: ActiveView = defaultTopic ? { type: 'topic', topicId: defaultTopic.id } : { type: 'my-ideas' }
+    let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     let activeIdeaIndex = 0
     let isTopicMenuOpen = false
     let visibleIdeasCache: Idea[] = []
@@ -150,23 +148,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const upBtn = container.querySelector<HTMLButtonElement>('#ideas-up')!
     const downBtn = container.querySelector<HTMLButtonElement>('#ideas-down')!
 
-    // Panel elements
-    const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
-    const panel = container.querySelector<HTMLDivElement>('#idea-panel')!
-    const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
-    const panelPinned = container.querySelector<HTMLDivElement>('#idea-panel-pinned')!
-    const panelBadges = container.querySelector<HTMLDivElement>('#idea-panel-badges')!
-    const panelText = container.querySelector<HTMLParagraphElement>('#idea-panel-text')!
-    const panelComments = container.querySelector<HTMLDivElement>('#idea-panel-comments')!
-    const panelInput = container.querySelector<HTMLTextAreaElement>('#idea-panel-input')!
-    const panelSend = container.querySelector<HTMLButtonElement>('#idea-panel-send')!
-
-    // Per-idea in-memory comment store (keyed by idea id)
-    const commentStore = new Map<number, { author: 'self' | 'other'; text: string }[]>()
-
-    function getTopicById(topicId: number): IdeaTopic | undefined {
-        return topics.find((topic) => topic.id === topicId)
-    }
+    const ideaPanel = createIdeaPanelController({ root: container })
 
     function getVisibleIdeas(): Idea[] {
         if (activeView.type === 'my-ideas') {
@@ -178,47 +160,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     }
 
     function getActiveLabel(): string {
-        if (activeView.type === 'my-ideas') return 'My ideas'
-        const topic = getTopicById(activeView.topicId)
-        return topic ? topic.title : 'Select a topic'
-    }
-
-    function isSameActiveOption(topicId: number): boolean {
-        return activeView.type === 'topic' && activeView.topicId === topicId
-    }
-
-    function renderTopicMenu(): void {
-        topicMenu.innerHTML = ''
-
-        const myIdeasBtn = document.createElement('button')
-        myIdeasBtn.type = 'button'
-        myIdeasBtn.className = 'ideas-topic-option ideas-topic-option--my-ideas'
-        if (activeView.type === 'my-ideas') myIdeasBtn.classList.add('active')
-        myIdeasBtn.textContent = 'My ideas'
-        myIdeasBtn.addEventListener('click', () => {
-            activeView = { type: 'my-ideas' }
-            activeIdeaIndex = 0
-            closeTopicMenu()
-            render()
-        })
-        topicMenu.appendChild(myIdeasBtn)
-
-        topics.forEach((topic) => {
-            const btn = document.createElement('button')
-            btn.type = 'button'
-            btn.className = 'ideas-topic-option'
-            if (isSameActiveOption(topic.id)) {
-                btn.classList.add('active')
-            }
-            btn.textContent = topic.title
-            btn.addEventListener('click', () => {
-                activeView = { type: 'topic', topicId: topic.id }
-                activeIdeaIndex = 0
-                closeTopicMenu()
-                render()
-            })
-            topicMenu.appendChild(btn)
-        })
+        return getActiveIdeasLabel(activeView, topics)
     }
 
     function openTopicMenu(): void {
@@ -235,51 +177,39 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         topicTrigger.setAttribute('aria-expanded', 'false')
     }
 
+    function renderTopicMenuBlock(): void {
+        renderTopicMenu({
+            menu: topicMenu,
+            topics,
+            activeView,
+            onSelectMyIdeas: () => {
+                activeView = { type: 'my-ideas' }
+                activeIdeaIndex = 0
+                closeTopicMenu()
+                render()
+            },
+            onSelectTopic: (topicId) => {
+                activeView = { type: 'topic', topicId }
+                activeIdeaIndex = 0
+                closeTopicMenu()
+                render()
+            },
+        })
+    }
+
     function renderIdeasList(ideas: Idea[]): void {
-        list.innerHTML = ''
-
-        if (ideas.length === 0) {
-            list.innerHTML = `<p class="ideas-empty">${activeView.type === 'my-ideas' ? 'You have not submitted any ideas yet.' : 'No ideas yet for this view.'}</p>`
-            upBtn.disabled = true
-            downBtn.disabled = true
-            return
-        }
-
-        ideas.forEach((idea, index) => {
-            const card = document.createElement('article')
-            card.className = 'ideas-card'
-
-            if (activeView.type === 'my-ideas') {
-                card.classList.add('ideas-card--my-idea')
-
-                const topicLabel = document.createElement('p')
-                topicLabel.className = 'ideas-card-topic'
-                topicLabel.textContent = getTopicById(idea.topicId)?.title ?? 'Unknown topic'
-
-                const body = document.createElement('p')
-                body.className = 'ideas-card-body'
-                body.textContent = idea.body
-
-                card.append(topicLabel, body)
-            } else {
-                if (idea.authorType === 'self') {
-                    const yoursBadge = document.createElement('span')
-                    yoursBadge.className = 'ideas-card-yours-badge'
-                    yoursBadge.textContent = 'Your idea'
-                    card.appendChild(yoursBadge)
-                }
-
-                const body = document.createElement('p')
-                body.className = 'ideas-card-body'
-                body.textContent = idea.body
-                card.appendChild(body)
-            }
-
-            card.setAttribute('data-idea-index', String(index))
-            list.appendChild(card)
+        renderCommunityIdeasList({
+            list,
+            ideas,
+            activeView,
+            topics,
+            upBtn,
+            downBtn,
         })
 
-        setActiveIdea(activeIdeaIndex, false)
+        if (ideas.length > 0) {
+            setActiveIdea(activeIdeaIndex, false)
+        }
     }
 
     function updateArrowState(totalIdeas: number): void {
@@ -384,36 +314,25 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     }
 
     function renderComposer(): void {
-        const isMyIdeasView = activeView.type === 'my-ideas'
-        const topic = activeView.type === 'topic' ? getTopicById(activeView.topicId) : undefined
-
-        ideasGrid.classList.toggle('ideas-grid--my-ideas', isMyIdeasView)
-        ideasCompose.hidden = isMyIdeasView
-
-        if (!topic) {
-            composeTopic.textContent = 'Current view: My ideas'
-            prompt.textContent = 'Viewing all your ideas. Pick a topic to submit a new one.'
-            textarea.value = ''
-            textarea.disabled = true
-            submitBtn.disabled = true
-            magicBtn.disabled = true
-            speakBtn.disabled = true
-            return
-        }
-
-        composeTopic.textContent = `Topic question: ${topic.title}`
-        prompt.textContent = topic.prompt
-        textarea.disabled = false
-        submitBtn.disabled = textarea.value.trim().length === 0
-        magicBtn.disabled = false
-        speakBtn.disabled = false
+        renderIdeasComposer({
+            activeView,
+            topics,
+            ideasGrid,
+            ideasCompose,
+            composeTopic,
+            prompt,
+            textarea,
+            submitBtn,
+            magicBtn,
+            speakBtn,
+        })
     }
 
     function render(): void {
         topicTriggerValue.textContent = getActiveLabel()
         listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
 
-        renderTopicMenu()
+        renderTopicMenuBlock()
         visibleIdeasCache = getVisibleIdeas()
         renderIdeasList(visibleIdeasCache)
         renderComposer()
@@ -463,95 +382,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
 
-    // ── Panel ────────────────────────────────────────────────────────────────────
-
-    function renderPanel(idea: Idea): void {
-        panelBadges.innerHTML = ''
-        if (idea.authorType === 'self') {
-            const b = document.createElement('span')
-            b.className = 'ideas-card-yours-badge'
-            b.textContent = 'Your idea'
-            panelBadges.appendChild(b)
-        }
-        panelText.textContent = idea.body
-
-        if (idea.authorType === 'self') {
-            panelPinned.hidden = false
-            panelPinned.innerHTML = `
-                <span class="idea-panel-pinned-label">📌 Author's note</span>
-                <p class="idea-panel-pinned-text">This is your original idea. Others can comment and react below.</p>
-            `
-        } else {
-            panelPinned.hidden = true
-            panelPinned.innerHTML = ''
-        }
-
-        const comments = commentStore.get(idea.id) ?? []
-        panelComments.innerHTML = ''
-
-        if (comments.length === 0) {
-            panelComments.innerHTML = `<p class="idea-panel-no-comments">No comments yet. Be the first!</p>`
-        } else {
-            const isOwnIdea = idea.authorType === 'self'
-            const pinnedComments = isOwnIdea ? comments.filter((c) => c.author === 'self') : []
-            const regularComments = isOwnIdea ? comments.filter((c) => c.author !== 'self') : comments
-
-            if (pinnedComments.length > 0) {
-                const pinnedLabel = document.createElement('p')
-                pinnedLabel.className = 'idea-panel-comments-label'
-                pinnedLabel.textContent = 'Pinned author comments'
-                panelComments.appendChild(pinnedLabel)
-
-                pinnedComments.forEach((c) => {
-                    const el = document.createElement('div')
-                    el.className = 'idea-panel-comment idea-panel-comment--self idea-panel-comment--pinned'
-                    el.textContent = c.text
-                    panelComments.appendChild(el)
-                })
-            }
-
-            regularComments.forEach((c) => {
-                const el = document.createElement('div')
-                el.className = `idea-panel-comment${c.author === 'self' ? ' idea-panel-comment--self' : ''}`
-                el.textContent = c.text
-                panelComments.appendChild(el)
-            })
-        }
-
-        panelInput.value = ''
-        panelSend.disabled = true
-    }
-
-    function closePanel(): void {
-        panel.classList.remove('open')
-        panelBackdrop.classList.remove('open')
-        panel.addEventListener('transitionend', () => {
-            panel.hidden = true
-            panelBackdrop.hidden = true
-        }, { once: true })
-    }
-
-    panelClose.addEventListener('click', closePanel)
-    panelBackdrop.addEventListener('click', closePanel)
-
-    panelInput.addEventListener('input', () => {
-        panelSend.disabled = panelInput.value.trim().length === 0
-    })
-
-    panelSend.addEventListener('click', () => {
-        const text = panelInput.value.trim()
-        if (text.length === 0) return
-
-        const idea = visibleIdeasCache[activeIdeaIndex]
-        if (!idea) return
-
-        const existing = commentStore.get(idea.id) ?? []
-        commentStore.set(idea.id, [...existing, { author: 'self', text }])
-        renderPanel(idea)
-    })
-
-    // ── Card click ───────────────────────────────────────────────────────────────
-
     list.addEventListener('click', (event) => {
         const target = event.target as HTMLElement
         const card = target.closest<HTMLElement>('.ideas-card')
@@ -561,15 +391,9 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         if (!Number.isFinite(index)) return
 
         if (index === activeIdeaIndex) {
-            if (!visibleIdeasCache[index]) return
-            renderPanel(visibleIdeasCache[index])
-            panel.hidden = false
-            panelBackdrop.hidden = false
-            requestAnimationFrame(() => {
-                panel.classList.add('open')
-                panelBackdrop.classList.add('open')
-            })
-            panelInput.focus()
+            const selectedIdea = visibleIdeasCache[index]
+            if (!selectedIdea) return
+            ideaPanel.open(selectedIdea)
         } else {
             setActiveIdea(index, true)
         }

@@ -1,0 +1,78 @@
+﻿.survey-topbar {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  --survey-topbar-pad-x: clamp(1rem, 3vw, 3rem);
+  --survey-topbar-pad-y: clamp(0.75rem, 1.5vw, 1rem);
+  padding: var(--survey-topbar-pad-y) var(--survey-topbar-pad-x);
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: visible;
+}
+
+.survey-topbar-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-left: calc(var(--survey-topbar-pad-x) * -1);
+  padding-left: 0.5rem;
+  min-width: 0;
+}
+
+.survey-topbar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  margin-top: calc(var(--survey-topbar-pad-y) * -1);
+  margin-bottom: calc(var(--survey-topbar-pad-y) * -1);
+}
+
+.survey-topbar-logo img {
+  height: clamp(44px, 8vw, 56px);
+  width: auto;
+  max-height: none;
+  object-fit: contain;
+  display: block;
+}
+
+.survey-topbar-logo-title {
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.survey-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.survey-topbar-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.45rem;
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.survey-topbar-name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
