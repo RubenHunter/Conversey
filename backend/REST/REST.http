@@ -1,6 +1,6 @@
-@REST_HostAddress = http://localhost:5231
+@REST_HostAddress = http://localhost:5001
 
-GET {{REST_HostAddress}}/api/workspaces/
+GET {{REST_HostAddress}}/api/ai/
 Accept: application/json
 
 ###
