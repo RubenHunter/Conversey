@@ -16,14 +16,14 @@ public class WorkspaceRepository : IWorkspaceRepository
         return _context.Workspaces.ToList().AsReadOnly();
     }
 
-    public Workspace? ReadWorkspaceBySlug(string slug)
+    public Workspace ReadWorkspaceBySlug(string slug)
     {
-        return _context.Workspaces.FirstOrDefault(w => w.Slug == slug);
+        return _context.Workspaces.FirstOrDefault(w => w.Slug == slug) ?? throw new KeyNotFoundException($"Workspace with slug: {slug} not found");
     }
     
-    public Workspace? ReadWorkspaceById(int id)
+    public Workspace ReadWorkspaceById(int id)
     {
-        return _context.Workspaces.FirstOrDefault(w => w.Id == id);
+        return _context.Workspaces.FirstOrDefault(w => w.Id == id) ?? throw new KeyNotFoundException($"Workspace with id: {id} not found");
     }
 
     public void CreateWorkspace(Workspace workspace)

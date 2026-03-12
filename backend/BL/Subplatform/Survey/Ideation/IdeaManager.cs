@@ -24,7 +24,7 @@ public class IdeaManager: IIdeaManager
         {
             throw new Exception("Project not found");
         }
-        
+
         var idea = new Idea
         {
             Content = content,

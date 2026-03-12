@@ -4,7 +4,7 @@ namespace Conversey.DAL.Subplatform.Survey;
 
 public class ProjectRepository : IProjectRepository
 {
-    
+
     private readonly ConverseyDbContext _dbContext;
 
     public ProjectRepository(ConverseyDbContext dbContext)
@@ -14,6 +14,6 @@ public class ProjectRepository : IProjectRepository
 
     public Project ReadProjectById(int projectId)
     {
-        return _dbContext.Projects.Single(p => p.Id == projectId);
+        return _dbContext.Projects.Single(p => p.Id == projectId) ?? throw new Exception($"Project with id {projectId} not found.");
     }
 }
