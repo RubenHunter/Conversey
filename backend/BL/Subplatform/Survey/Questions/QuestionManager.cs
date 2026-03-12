@@ -5,7 +5,7 @@ using Conversey.DAL.Subplatform.Survey.Questions;
 
 namespace Conversey.BL.Subplatform.Survey.Questions;
 
-public class QuestionManager : IQuestionManager
+public class QuestionManager: IQuestionManager
 {
     private readonly IQuestionRepository _questionRepository;
 

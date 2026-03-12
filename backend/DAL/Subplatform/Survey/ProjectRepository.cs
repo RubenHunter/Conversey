@@ -20,7 +20,7 @@ public class ProjectRepository : IProjectRepository
             .Include(p => p.Topic)
             .Include(p => p.Youths)
             .Include(p => p.Questions)
-            .Single(p => p.Id == projectId);
+            .Single(p => p.Id == projectId) ?? throw new KeyNotFoundException($"Project with id {projectId} not found.");
     }
 
     public IReadOnlyCollection<Project> ReadAllProjects()
