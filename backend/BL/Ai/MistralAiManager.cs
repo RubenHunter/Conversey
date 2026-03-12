@@ -20,7 +20,7 @@ public class MistralAiManager : IAiManager
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
     }
     
-    public async Task<string> GenerateResponseAsync(string prompt)
+    public async Task<string> GenerateAiAlternativeAsync(string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
             throw new ArgumentException("Prompt cannot be empty.", nameof(prompt));
@@ -30,32 +30,38 @@ public class MistralAiManager : IAiManager
         var request = new
         {
             model = _modelName,
-            messages = new[]
+            temperature = 0.2,
+            messages = new object[]
             {
-                new { role = "user", content = prompt }
+                new
+                {
+                    role = "system",
+                    content = "You rewrite offensive or toxic user text into a respectful and safe alternative for a youth platform. Preserve the original meaning as much as possible, but remove insults, hate, threats, sexual harassment, and other inappropriate language. Return only the rewritten alternative text and nothing else."
+                },
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
             }
         };
         
         var json = JsonSerializer.Serialize(request);
-        Console.WriteLine($"Verzonden request: {json}");
+        Console.WriteLine($"Verzonden alternative request: {json}");
         
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         try
         {
             var response = await _httpClient.PostAsync("chat/completions", content);
-            response.EnsureSuccessStatusCode();
 
             var responseJson = await response.Content.ReadAsStringAsync();
             
-            Console.WriteLine($"Response status: {response.StatusCode}"); // Log de statuscode
-            Console.WriteLine($"Response body: {responseJson}"); // Log de response body
+            Console.WriteLine($"Alternative response status: {response.StatusCode}");
+            Console.WriteLine($"Alternative response body: {responseJson}");
 
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Mistral API returned status code: {response.StatusCode}. Response: {responseJson}");
-            }
-            
+            response.EnsureSuccessStatusCode();
+
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
@@ -68,9 +74,14 @@ public class MistralAiManager : IAiManager
                 throw new Exception($"Ongeldige response van Mistral API: Geen 'choices' gevonden. Response: {responseJson}");
             }
 
-            Console.WriteLine($"AI response content: {result.Choices[0].Message.Content}");
+            var alternativeText = result.Choices[0].Message.Content?.Trim();
+            
+            if (string.IsNullOrWhiteSpace(alternativeText))
+            {
+                throw new Exception("Mistral API gaf geen alternatieve tekst terug.");
+            }
 
-            return result.Choices[0].Message.Content;
+            return alternativeText;
         }
         catch (HttpRequestException ex)
         {
@@ -108,7 +119,6 @@ public class MistralAiManager : IAiManager
             var response = await _httpClient.PostAsync("moderations", httpContent);
             var responseJson = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine($"Response status: {response.StatusCode}");
             Console.WriteLine($"Response body: {responseJson}");
 
             response.EnsureSuccessStatusCode();

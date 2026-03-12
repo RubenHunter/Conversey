@@ -8,6 +8,4 @@ public class ModerationInfo
     public bool DangerousAndCriminalContent { get; set; }
     public bool SelfHarm { get; set; }
     public bool Pii { get; set; }
-    public string? Reason { get; set; }
-    public bool RequiresAdminReview { get; set; }
 }

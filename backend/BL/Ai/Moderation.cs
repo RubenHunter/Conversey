@@ -14,6 +14,12 @@ public class ModerationResult
     public ModerationCategories Categories { get; set; } = new();
 }
 
+public class ModerationDecision
+{
+    public bool IsAllowed { get; set; }
+    public ModerationCategories Categories { get; set; } = new();
+}
+
 public class ModerationCategories
 {
     [JsonPropertyName("sexual")]
@@ -33,10 +39,4 @@ public class ModerationCategories
 
     [JsonPropertyName("pii")]
     public bool Pii { get; set; }
-}
-
-public class ModerationDecision
-{
-    public bool IsAllowed { get; set; }
-    public ModerationCategories Categories { get; set; } = new();
 }

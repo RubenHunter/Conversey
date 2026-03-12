@@ -21,7 +21,7 @@ public interface IAiManager
            Het beoordelen van ideeën of inhoud.
            Het maken van samenvattingen, vertalingen, of suggesties.
      */
-    Task<string> GenerateResponseAsync(string prompt);
+    Task<string> GenerateAiAlternativeAsync(string prompt);
     
     // krijgt ai gaat kijken of er toxic/offensive language is
     Task<ModerationDecision> ModerateContentAsync(string ideaDescription);

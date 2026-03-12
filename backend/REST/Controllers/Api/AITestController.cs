@@ -21,7 +21,7 @@ public class AiTestController : ControllerBase
     /// <param name="ideaDescription">De beschrijving van het idee.</param>
     /// <returns>True als het idee is goedgekeurd, anders false.</returns>
     [HttpPost("check-idea")]
-    public async Task<ActionResult<ModerationDecision>> CheckIdea([FromBody] string ideaDescription)
+    public async Task<ActionResult<string>> CheckIdea([FromBody] string ideaDescription)
     {
         if (string.IsNullOrWhiteSpace(ideaDescription))
         {
@@ -30,8 +30,8 @@ public class AiTestController : ControllerBase
 
         try
         {
-            var isAllowed = await _ideaManager.IsIdeaAllowedAsync(ideaDescription);
-            return Ok(new { IsAllowed = isAllowed });
+            var isAllowed = await _ideaManager.ReviewIdeaAsync(ideaDescription);
+            return Ok(isAllowed);
         }
         catch (Exception ex)
         {
@@ -54,7 +54,7 @@ public class AiTestController : ControllerBase
 
         try
         {
-            var response = await _ideaManager.GenerateAISuggestionAsync(prompt);
+            var response = await _ideaManager.GenerateAIAlternativeAsync(prompt);
             return Ok(new { Response = response });
         }
         catch (Exception ex)
