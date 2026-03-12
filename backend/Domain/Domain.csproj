@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <Nullable>disable</Nullable>
         <AssemblyName>Conversey.BL.Domain</AssemblyName>
         <RootNamespace>Conversey.BL.Domain</RootNamespace>
     </PropertyGroup>

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Entities;
+namespace Conversey.BL.Domain.Common;
 
 public struct Image
 {
