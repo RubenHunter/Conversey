@@ -20,19 +20,6 @@ public class MistralAiManager : IAiManager
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
     }
     
-    // tijdelijk
-    public string GetApiKey()
-    {
-        return string.IsNullOrWhiteSpace(_apiKey) ? "*****" : "leeg";
-    }
-
-    public string GetModelName()
-    {
-        return _modelName;
-    }
-    // —————————————
-
-
     public async Task<string> GenerateResponseAsync(string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
@@ -102,66 +89,71 @@ public class MistralAiManager : IAiManager
         }
     }
 
-    public async Task<bool> IsContentAllowedAsync(string content)
-{
-    if (string.IsNullOrWhiteSpace(content))
-        throw new ArgumentException("Inhoud mag niet leeg zijn.", nameof(content));
-
-    var request = new
+    public async Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        model = _moderationModel,
-        input = new[] { content }
-    };
+        if (string.IsNullOrWhiteSpace(content))
+            throw new ArgumentException("Inhoud mag niet leeg zijn.", nameof(content));
 
-    var json = JsonSerializer.Serialize(request);
-    var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-    try
-    {
-        var response = await _httpClient.PostAsync("chat/moderations", httpContent);
-        var responseJson = await response.Content.ReadAsStringAsync();
-
-        Console.WriteLine($"Response status: {response.StatusCode}");
-        Console.WriteLine($"Response body: {responseJson}");
-
-        response.EnsureSuccessStatusCode();
-
-        var options = new JsonSerializerOptions
+        var request = new
         {
-            PropertyNameCaseInsensitive = true
+            model = _moderationModel,
+            input = new[] { content }
         };
 
-        var result = JsonSerializer.Deserialize<ModerationResponse>(responseJson, options);
+        var json = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
-        if (result?.Results == null || result.Results.Length == 0)
-            throw new Exception("Ongeldige moderation response: geen results gevonden.");
+        try
+        {
+            var response = await _httpClient.PostAsync("moderations", httpContent);
+            var responseJson = await response.Content.ReadAsStringAsync();
 
-        var moderation = result.Results[0];
+            Console.WriteLine($"Response status: {response.StatusCode}");
+            Console.WriteLine($"Response body: {responseJson}");
 
-        // Eenvoudige policy:
-        // blokkeer als één van deze categorieën flagged is
-        var blocked =
-            moderation.Categories.HateAndDiscrimination ||
-            moderation.Categories.ViolenceAndThreats ||
-            moderation.Categories.DangerousAndCriminalContent ||
-            moderation.Categories.SelfHarm;
+            response.EnsureSuccessStatusCode();
 
-        return !blocked;
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var result = JsonSerializer.Deserialize<ModerationResponse>(responseJson, options);
+
+            if (result?.Results == null || result.Results.Length == 0)
+                throw new Exception("Ongeldige moderation response: geen results gevonden.");
+
+            var moderation = result.Results[0];
+            var categories = moderation.Categories;
+
+            var blocked =
+                categories.Sexual ||
+                categories.HateAndDiscrimination ||
+                categories.ViolenceAndThreats ||
+                categories.DangerousAndCriminalContent ||
+                categories.SelfHarm ||
+                categories.Pii;
+
+            return new ModerationDecision
+            {
+                IsAllowed = !blocked,
+                Categories = categories
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"HttpRequestException: {ex.Message}");
+            throw new Exception($"Fout bij het aanroepen van Mistral API: {ex.Message}", ex);
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"JsonException: {ex.Message}");
+            throw new Exception($"Fout bij het deserialiseren van de API-response: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception: {ex.Message}");
+            throw;
+        }
     }
-    catch (HttpRequestException ex)
-    {
-        Console.WriteLine($"HttpRequestException: {ex.Message}");
-        throw new Exception($"Fout bij het aanroepen van Mistral API: {ex.Message}", ex);
-    }
-    catch (JsonException ex)
-    {
-        Console.WriteLine($"JsonException: {ex.Message}");
-        throw new Exception($"Fout bij het deserialiseren van de API-response: {ex.Message}", ex);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Exception: {ex.Message}");
-        throw;
-    }
-}
 }

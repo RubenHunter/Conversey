@@ -23,6 +23,6 @@ public interface IAiManager
      */
     Task<string> GenerateResponseAsync(string prompt);
     
-    // krijgt een text (string) en ai gaat kijken of er toxic/offensive language is en geeft een bool terug
-    Task<bool> IsContentAllowedAsync(string content);
+    // krijgt ai gaat kijken of er toxic/offensive language is
+    Task<ModerationDecision> ModerateContentAsync(string ideaDescription);
 }

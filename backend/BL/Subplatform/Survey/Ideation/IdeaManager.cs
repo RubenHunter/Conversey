@@ -5,7 +5,6 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 
 public class IdeaManager: IIdeaManager
 {
-    
     private readonly IIdeaRepository _ideaRepository;
     private readonly IAiManager _aiManager;
 
@@ -15,11 +14,11 @@ public class IdeaManager: IIdeaManager
         _aiManager = aiManager;
     }
 
-    public async Task<bool> IsIdeaAllowedAsync(string ideaDescription)
+    public async Task<ModerationDecision> IsIdeaAllowedAsync(string ideaDescription)
     {
-        var prompt = $"Beoordeel of het volgende idee geschikt is voor publicatie op een platform voor jongeren. Antwoord alleen met 'ja' of 'nee': {ideaDescription}";
-        var response = await _aiManager.GenerateResponseAsync(prompt);
-        return response.Trim().Equals("ja", StringComparison.OrdinalIgnoreCase);
+        var decision = await _aiManager.ModerateContentAsync(ideaDescription);
+        
+        return decision;
     }
     
     public async Task<string> GenerateAISuggestionAsync(string prompt)

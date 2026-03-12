@@ -12,9 +12,6 @@ public class ModerationResult
 {
     [JsonPropertyName("categories")]
     public ModerationCategories Categories { get; set; } = new();
-
-    [JsonPropertyName("category_scores")]
-    public ModerationCategoryScores CategoryScores { get; set; } = new();
 }
 
 public class ModerationCategories
@@ -38,23 +35,8 @@ public class ModerationCategories
     public bool Pii { get; set; }
 }
 
-public class ModerationCategoryScores
+public class ModerationDecision
 {
-    [JsonPropertyName("sexual")]
-    public double Sexual { get; set; }
-
-    [JsonPropertyName("hate_and_discrimination")]
-    public double HateAndDiscrimination { get; set; }
-
-    [JsonPropertyName("violence_and_threats")]
-    public double ViolenceAndThreats { get; set; }
-
-    [JsonPropertyName("dangerous_and_criminal_content")]
-    public double DangerousAndCriminalContent { get; set; }
-
-    [JsonPropertyName("selfharm")]
-    public double SelfHarm { get; set; }
-
-    [JsonPropertyName("pii")]
-    public double Pii { get; set; }
+    public bool IsAllowed { get; set; }
+    public ModerationCategories Categories { get; set; } = new();
 }
