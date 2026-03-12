@@ -1,43 +1,63 @@
+using System.Text.RegularExpressions;
 using Conversey.BL.Domain.Subplatform;
 
 namespace Conversey.DAL;
 
 public class DataSeeder
 {
+    private static ConverseyDbContext? _context;
     public static void Seed(ConverseyDbContext context)
     {
-        context.CreateDatabase(false);
-
-        // Check if tables are populated
-        if (context.Workspaces.Any())
-        {
-            return;
-        }
-
+        _context = context;
+        _context.CreateDatabase(false);
+        
         
         // Create Lists
         List<Workspace> workspaces =
         [
-            new Workspace
-            {
-                Id = 1,
-                Name = "Gemeente"
-            },
-            new Workspace
-            {
-                Id = 2,
-                Name = "School"
-            }
+            CreateWorkspace
+            (
+                "Gemeente"
+            ),
+            CreateWorkspace
+            (
+                "School"
+            ),
+            CreateWorkspace
+            (
+                "Axa Bank"
+            )
         ];
         
         
         // Add to database
-        context.Workspaces.AddRange(workspaces);
+        _context.Workspaces.AddRange(workspaces);
         
         
         
         
-        context.SaveChanges();
+        _context.SaveChanges();
         
+    }
+
+    private static Workspace CreateWorkspace(string name)
+    {
+        var slugExists = new Func<string, bool>(slug => _context!.Workspaces.Any(w => w.Slug == slug));
+        return new Workspace(name, GenerateSlug(name), slugExists);
+    }
+    
+    private static string GenerateSlug(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Workspace name cannot be empty");
+        }
+
+        var slug = name.Trim().ToLower().Replace(" ", "-");
+        
+        //Remove url unfriendly symbols
+        slug = Regex.Replace(slug, @"[^a-z0-9_-]", "");
+        
+        return slug;
     }
 }
