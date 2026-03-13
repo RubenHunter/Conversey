@@ -14,6 +14,6 @@ public class ProjectRepository : IProjectRepository
 
     public Project ReadProjectById(int projectId)
     {
-        return _dbContext.Projects.SingleOrDefault(p => p.Id == projectId, null);
+        return _dbContext.Projects.SingleOrDefault(p => p.Id == projectId);
     }
 }

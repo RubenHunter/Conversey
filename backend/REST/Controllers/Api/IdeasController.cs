@@ -1,4 +1,5 @@
-﻿using Conversey.BL.Subplatform.Survey.Ideation;
+﻿using Conversey.BL.Subplatform.Survey;
+using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +19,14 @@ public class IdeasController : ControllerBase
     [HttpPost]
     public ActionResult Create(IdeaDto idea)
     {
-        _manager.AddIdea(idea.Content, idea.ProjectId);
-        return Ok();
+        try
+        {
+            _manager.AddIdea(idea.Content, idea.ProjectId);
+            return Ok();
+        }
+        catch (ProjectNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
     }
 }

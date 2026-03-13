@@ -19,11 +19,8 @@ public class IdeaManager: IIdeaManager
 
     public void AddIdea(string content, int projectId)
     {
-        Project forProject = _projectRepository.ReadProjectById(projectId);
-        if (forProject == null)
-        {
-            throw new ArgumentException(nameof(projectId) + " with value " + projectId + " does not exist.");
-        }
+        Project forProject = _projectRepository.ReadProjectById(projectId) 
+                             ?? throw new ProjectNotFoundException(projectId.ToString());
         
         var idea = new Idea
         {
