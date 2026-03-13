@@ -15,25 +15,28 @@ export async function renderCompletedPage(container: HTMLElement, params: RouteP
     }
 
     container.innerHTML = `
-        <div class="flex flex-col items-center justify-center screen-height px-6 py-10">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6 completed-icon-badge">
-                <svg class="w-10 h-10 completed-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
+        <div class="survey-redirect-wrap screen-height">
+            <div class="survey-redirect-card">
+                <div class="survey-redirect-check">✓</div>
+                <h2>Thank you for filling out this survey!</h2>
+                <p>Could you also help us by sharing your ideas?</p>
+                <button id="btn-to-ideas" class="survey-redirect-cta completed-cta">Continue to Ideas</button>
+                <div class="survey-confetti" aria-hidden="true"></div>
             </div>
-            <h1 class="text-2xl font-bold text-center mb-3 completed-heading">
-                Thank You!
-            </h1>
-            <p class="text-center mb-8 leading-relaxed completed-text">
-                Your survey responses have been submitted successfully. Your input helps us make a real difference.
-            </p>
-            <button
-                id="btn-to-ideas"
-                class="w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-[0.98] completed-cta">
-                Continue to Ideas
-            </button>
         </div>
     `
+
+    const redirectTimer = window.setTimeout(() => {
+        void navigate('ideas', { replace: true })
+    }, 3200)
+
+    window.addEventListener(
+        'app:before-navigate',
+        () => {
+            window.clearTimeout(redirectTimer)
+        },
+        { once: true },
+    )
 
     const ideasBtn = container.querySelector<HTMLButtonElement>('#btn-to-ideas')
     ideasBtn?.addEventListener('click', () => {

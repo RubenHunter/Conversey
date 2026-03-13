@@ -3,7 +3,7 @@ export interface RouteParams {
     projectSlug: string
 }
 
-export type ViewName = 'landing' | 'survey' | 'completed' | 'ideas'
+export type ViewName = 'landing' | 'survey' | 'completed' | 'ideas' | 'workspace-test'
 
 type ViewRenderer = (container: HTMLElement, params: RouteParams) => void | Promise<void>
 
@@ -23,6 +23,7 @@ function getViewFromPath(pathname: string): ViewName {
     if (viewSegment === 'landing') return 'landing'
     if (viewSegment === 'completed') return 'completed'
     if (viewSegment === 'ideas') return 'ideas'
+    if (viewSegment === 'workspace-test') return 'workspace-test'
     return 'survey'
 }
 
@@ -32,6 +33,7 @@ function buildPath(view: ViewName, params: RouteParams): string {
     if (view === 'landing') return `${basePath}/landing`
     if (view === 'survey') return `${basePath}/survey`
     if (view === 'completed') return `${basePath}/completed`
+    if (view === 'workspace-test') return `${basePath}/workspace-test`
     return `${basePath}/ideas`
 }
 

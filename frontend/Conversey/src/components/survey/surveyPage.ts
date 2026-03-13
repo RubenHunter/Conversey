@@ -189,18 +189,18 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const headerHeight = headerEl.getBoundingClientRect().height
         const elementTop = el.getBoundingClientRect().top + window.scrollY
         const offset = headerHeight + 80 // Increased padding to account for progress bar
-        
+
         // Set flag to indicate this is a programmatic scroll
         isUserScroll = false
-        
+
         window.scrollTo({
             top: elementTop - offset,
             behavior: 'smooth'
         })
-        
+
         currentQuestionIndex = index
         scrollNav?.update(currentQuestionIndex, questions.length)
-        
+
         // Re-enable user scroll detection after scroll completes
         scrollTimeoutId = window.setTimeout(() => {
             isUserScroll = true
@@ -220,10 +220,10 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     function updateCurrentQuestionFromScroll(): void {
         // Only update from scroll if this was a user scroll, not programmatic navigation
         if (!isUserScroll) return
-        
+
         const elements = questionsContainer.querySelectorAll<HTMLElement>('[data-question-index]')
         const headerBottom = headerEl.getBoundingClientRect().bottom
-        
+
         let closestIndex = -1
         let closestDistance = Number.POSITIVE_INFINITY
 
@@ -232,7 +232,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             // Calculate distance from element top to position just below header
             const targetY = headerBottom + 100 // Consider element "current" when it's ~100px below header
             const distance = Math.abs(rect.top - targetY)
-            
+
             // Only consider elements that are visible and not scrolled past
             if (rect.top < window.innerHeight && rect.bottom > headerBottom) {
                 if (distance < closestDistance) {

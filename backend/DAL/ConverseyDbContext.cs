@@ -30,20 +30,27 @@ public class ConverseyDbContext : DbContext
 
         modelBuilder.Entity<Workspace>()
             .Property(w => w.Name)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(50);
+
+
+        modelBuilder.Entity<Workspace>()
+            .Property(w => w.Slug)
+            .IsRequired()
+            .HasMaxLength(50);
 
 
 
     }
     
 
-    public bool CreateDatabase(bool resetDatabse)
+    public bool CreateDatabase(bool resetDatabase)
     {
-        if (resetDatabse)
+        if (resetDatabase)
         {
             Database.EnsureDeleted();
         }
-        
+
         return Database.EnsureCreated();
     }
 }

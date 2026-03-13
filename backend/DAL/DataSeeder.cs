@@ -1,40 +1,34 @@
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 
 namespace Conversey.DAL;
 
-public class DataSeeder
+public static class DataSeeder
 {
     public static void Seed(ConverseyDbContext context)
     {
-        context.CreateDatabase(true);
+        context.CreateDatabase(false);
 
-        // Check if tables are populated
-        if (context.Workspaces.Any())
+
+        #region SeedWorkspaces
+
+        var gemeente = new Workspace
         {
-            return;
-        }
+            Name = "Gemeente"
+        };
+        gemeente.Slug = Slug.FromName(gemeente.Name);
 
+
+        var school = new Workspace
+        {
+            Name = "School",
+        };
+        school.Slug = Slug.FromName(school.Name);
         
-        // Create Lists
-        List<Workspace> workspaces =
-        [
-            new Workspace
-            {
-                Id = 1,
-                Name = "Gemeente"
-            },
-            new Workspace
-            {
-                Id = 2,
-                Name = "School"
-            }
-        ];
-        
-        
-        // Add to database
-        context.Workspaces.AddRange(workspaces);
-        
-        
+        context.Workspaces.Add(gemeente);
+        context.Workspaces.Add(school);
+
+        #endregion
         
         
         context.SaveChanges();

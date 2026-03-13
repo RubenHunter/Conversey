@@ -3,7 +3,7 @@ import { initRouter, registerView, navigate, getInitialView } from './utils/rout
 import { renderLandingPage } from './components/landingPage.ts'
 import { renderSurveyPage } from './components/survey/surveyPage.ts'
 import { renderCompletedPage } from './components/completedPage.ts'
-import { renderIdeasPage } from './components/ideasPage.ts'
+import { renderIdeasPage } from './components/ideas/ideasPage.ts'
 
 function init(): void {
     initRouter()
