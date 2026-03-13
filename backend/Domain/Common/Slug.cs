@@ -1,4 +1,6 @@
-﻿namespace Conversey.BL.Domain.Common;
+﻿using System.Text.RegularExpressions;
+
+namespace Conversey.BL.Domain.Common;
 
 public record struct Slug
 {
@@ -8,7 +10,7 @@ public record struct Slug
     {
         return new Slug
         {
-            Text = name
+            Text = Regex.Replace(name.Trim().ToLower().Replace(" ", "-"), @"[^a-z0-9_-]", "")
         };
     }
 }
