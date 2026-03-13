@@ -7,9 +7,9 @@ public class Idea
     [Required]
     public int Id { get; set; }
 
-    public string content { get; set; }
+    public string Content { get; set; }
     public string Summary { get; set; }
-    public DateTime submissionDate { get; set; } = DateTime.Now;
+    public DateTime SubmissionDate { get; set; } = DateTime.Now;
     public IdeaStatus Status { get; set; }
     public ModerationInfo? ModerationInfo { get; set; }
 

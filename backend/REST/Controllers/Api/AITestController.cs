@@ -1,5 +1,6 @@
 using Conversey.BL.Ai;
 using Conversey.BL.Subplatform.Survey.Ideation;
+using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.REST.Controllers.Api;
@@ -20,22 +21,18 @@ public class AiTestController : ControllerBase
     /// </summary>
     /// <param name="ideaDescription">De beschrijving van het idee.</param>
     /// <returns>True als het idee is goedgekeurd, anders false.</returns>
-    [HttpPost("check-idea")]
-    public async Task<ActionResult<string>> CheckIdea([FromBody] string ideaDescription)
+    [HttpPost("submit-idea")]
+    public ActionResult<string> SubmitIdea([FromBody] IdeaSubmitionDto ideaSubmition)
     {
-        if (string.IsNullOrWhiteSpace(ideaDescription))
-        {
-            return BadRequest("Idee-beschrijving mag niet leeg zijn.");
-        }
-
         try
         {
-            var isAllowed = await _ideaManager.ReviewIdeaAsync(ideaDescription);
+            var isAllowed = _ideaManager.SubmitIdea(ideaSubmition.Content, ideaSubmition.ForceSubmit);
             return Ok(isAllowed);
         }
-        catch (Exception ex)
+        catch (InvalidSubmitionException ex)
         {
-            return StatusCode(500, new { Error = $"Er is een fout opgetreden: {ex.Message}" });
+            // TODO: return text toevoegen;
+            return BadRequest();
         }
     }
 
@@ -45,7 +42,7 @@ public class AiTestController : ControllerBase
     /// <param name="prompt">De prompt voor de AI.</param>
     /// <returns>De gegenereerde reactie van de AI.</returns>
     [HttpPost("generate-response")]
-    public async Task<ActionResult<string>> GenerateResponse([FromBody] string prompt)
+    public ActionResult<string> GenerateResponse([FromBody] string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
         {
@@ -54,7 +51,7 @@ public class AiTestController : ControllerBase
 
         try
         {
-            var response = await _ideaManager.GenerateAIAlternativeAsync(prompt);
+            var response = _ideaManager.GenerateAiAlternative(prompt);
             return Ok(new { Response = response });
         }
         catch (Exception ex)

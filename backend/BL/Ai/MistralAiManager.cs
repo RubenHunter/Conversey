@@ -20,7 +20,7 @@ public class MistralAiManager : IAiManager
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
     }
     
-    public async Task<string> GenerateAiAlternativeAsync(string prompt)
+    public string GenerateAiAlternative(string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
             throw new ArgumentException("Prompt cannot be empty.", nameof(prompt));
@@ -53,11 +53,9 @@ public class MistralAiManager : IAiManager
 
         try
         {
-            var response = await _httpClient.PostAsync("chat/completions", content);
-
-            var responseJson = await response.Content.ReadAsStringAsync();
+            var response = _httpClient.PostAsync("chat/completions", content).Result;
+            var responseJson = response.Content.ReadAsStringAsync().Result;
             
-            Console.WriteLine($"Alternative response status: {response.StatusCode}");
             Console.WriteLine($"Alternative response body: {responseJson}");
 
             response.EnsureSuccessStatusCode();
@@ -100,7 +98,7 @@ public class MistralAiManager : IAiManager
         }
     }
 
-    public async Task<ModerationDecision> ModerateContentAsync(string content)
+    public ModerationDecision ModerateContent(string content)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Inhoud mag niet leeg zijn.", nameof(content));
@@ -116,8 +114,8 @@ public class MistralAiManager : IAiManager
 
         try
         {
-            var response = await _httpClient.PostAsync("moderations", httpContent);
-            var responseJson = await response.Content.ReadAsStringAsync();
+            var response = _httpClient.PostAsync("moderations", httpContent).Result;
+            var responseJson = response.Content.ReadAsStringAsync().Result;
 
             Console.WriteLine($"Response body: {responseJson}");
 

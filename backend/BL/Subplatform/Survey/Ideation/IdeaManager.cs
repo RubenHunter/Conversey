@@ -1,5 +1,4 @@
 using Conversey.BL.Ai;
-using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.DAL.Subplatform.Survey.Ideas;
 
@@ -16,31 +15,35 @@ public class IdeaManager: IIdeaManager
         _aiManager = aiManager;
     }
 
-    public async Task<string> ReviewIdeaAsync(string contentText)
+    public string  SubmitIdea(string contentText, bool forceSubmit = false)
     {
+        Idea idea = new Idea
+        {
+            
+        };
+        
         if (string.IsNullOrWhiteSpace(contentText))
-            throw new ArgumentException("Idea text mag niet leeg zijn.", nameof(contentText));
+            throw new InvalidSubmitionException();
 
-        var moderationDecision = await IsIdeaAllowedAsync(contentText);
+        ModerationDecision moderationDecision = IsIdeaAllowed(contentText);
 
         if (moderationDecision.IsAllowed)
         {
             return $"IsAllowed:True";
         }
         
-        var alternativeText = await GenerateAIAlternativeAsync(contentText);
+        var alternativeText = GenerateAiAlternative(contentText);
         
         return $"IsAllowed:False,AlternativeText:{alternativeText}";
     }
     
-    public async Task<ModerationDecision> IsIdeaAllowedAsync(string ideaDescription)
+    public ModerationDecision IsIdeaAllowed(string ideaDescription)
     {
-        var decision = await _aiManager.ModerateContentAsync(ideaDescription);
-        return decision;
+        return _aiManager.ModerateContent(ideaDescription);
     }
     
-    public async Task<string> GenerateAIAlternativeAsync(string prompt)
+    public string GenerateAiAlternative(string prompt)
     {
-        return await _aiManager.GenerateAiAlternativeAsync(prompt);
+        return _aiManager.GenerateAiAlternative(prompt);
     }
 }

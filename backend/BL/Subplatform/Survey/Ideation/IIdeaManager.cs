@@ -5,7 +5,7 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 
 public interface IIdeaManager
 {
-    Task<string> ReviewIdeaAsync(string contentText);
-    Task<ModerationDecision> IsIdeaAllowedAsync(string ideaDescription);
-    Task<string> GenerateAIAlternativeAsync(string prompt);
+    string SubmitIdea(string contentText, bool forceSubmit);
+    ModerationDecision IsIdeaAllowed(string ideaDescription);
+    string GenerateAiAlternative(string prompt);
 }
