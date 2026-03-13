@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-
 public class ConverseyDbContext : DbContext
 {
     
@@ -20,8 +19,6 @@ public class ConverseyDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        modelBuilder.Entity<Project>();
         
         // Workspace
         modelBuilder.Entity<Workspace>()

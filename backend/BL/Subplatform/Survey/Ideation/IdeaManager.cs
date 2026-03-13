@@ -22,7 +22,7 @@ public class IdeaManager: IIdeaManager
         Project forProject = _projectRepository.ReadProjectById(projectId);
         if (forProject == null)
         {
-            throw new Exception("Project not found");
+            throw new ArgumentException(nameof(projectId) + " with value " + projectId + " does not exist.");
         }
         
         var idea = new Idea

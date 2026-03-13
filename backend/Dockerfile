@@ -1,14 +1,16 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
-WORKDIR /Conversey
+WORKDIR /backend
 
 # Copy csproj first for caching restores
-COPY *.csproj ./
-RUN dotnet restore
+COPY *.sln ./
+COPY BL/*.csproj BL/
+COPY DAL/*.csproj DAL/
+COPY Domain/*.csproj Domain/
+COPY REST/*.csproj REST/
 
-# Copy the rest of the code
-COPY . ./
+RUN dotnet restore
 
 EXPOSE 5000
 
-ENTRYPOINT ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:5000"]
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "REST/REST.csproj", "--urls", "http://0.0.0.0:5000"]

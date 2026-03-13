@@ -6,7 +6,7 @@ public class DataSeeder
 {
     public static void Seed(ConverseyDbContext context)
     {
-        context.CreateDatabase(false);
+        context.CreateDatabase(true);
 
         // Check if tables are populated
         if (context.Workspaces.Any())

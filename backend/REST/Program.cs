@@ -1,4 +1,3 @@
-using Conversey.BL;
 using Conversey.BL.Subplatform;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
@@ -16,9 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// Use correct implementation of IRepository
-var repoType = builder.Configuration["Repository:Type"];
-
 // Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
@@ -32,29 +28,18 @@ builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
+    options.UseNpgsql("Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
 
 var app = builder.Build();
 
+InitializeDatabase(true);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-
-    // Initialize Development Database
-    using (var scope = app.Services.CreateScope())
-    {
-        var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<ConverseyDbContext>();
-        if (context.Database.EnsureCreated())
-        {
-            DataSeeder.Seed(context);
-        }
-    }
 }
 
 app.UseHttpsRedirection();
@@ -64,3 +49,13 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+void InitializeDatabase(bool drop)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+        if (!dbCtx.CreateDatabase(drop)) return;
+        DataSeeder.Seed(dbCtx);
+    }
+}
