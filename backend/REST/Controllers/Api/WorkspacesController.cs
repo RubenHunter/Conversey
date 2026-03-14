@@ -1,5 +1,4 @@
-﻿using Conversey.BL;
-using Conversey.BL.Domain.Common;
+﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
@@ -55,11 +54,11 @@ public class WorkspacesController : ControllerBase
     }
     
     [HttpGet("{slug}")]
-    public IActionResult GetBySlug(string slug)
+    public IActionResult GetBySlug(Slug slug)
     {
         try
         {
-            var workspace = _manager.GetWorkspaceBySlug(new Slug{Text = slug});
+            var workspace = _manager.GetWorkspaceBySlug(slug);
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)

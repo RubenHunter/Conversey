@@ -13,8 +13,7 @@ public class Workspace
     public string Name { get; set; }
 
     public IEnumerable<Project> Projects { get; set; }
-
-
+    
     [Required] public Slug Slug { get; set; }
     
     // [Required]

@@ -7,4 +7,6 @@ public class TextAnswer
     [Required]
     public int Id { get; set; }
     public Youth Youth { get; set; }
+    public Question Question { get; set; }
 }
+

@@ -30,8 +30,8 @@ public static class DataSeeder
 
         #endregion
         
-        
         context.SaveChanges();
         
     }
+    
 }

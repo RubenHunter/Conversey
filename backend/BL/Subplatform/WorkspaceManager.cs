@@ -19,18 +19,19 @@ public class WorkspaceManager: IWorkspaceManager
         return _workspaceRepository.ReadAllWorkspaces();
     }
 
+    public IReadOnlyCollection<Workspace> GetAllWorkspacesWithProjects()
+    {
+        return _workspaceRepository.ReadAllWorkspacesWithProjects();
+    }
+
     public Workspace CreateWorkspace(string name, Slug slug)
     {
-        if (SlugExists(slug))
-        {
-            throw new ArgumentException("Slug already exists");
-        }
-        
         var workspace = new Workspace
         {
             Name = name,
             Slug = slug
         };
+        if (SlugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
         
         Validate(workspace);
         
@@ -41,21 +42,33 @@ public class WorkspaceManager: IWorkspaceManager
     public Workspace GetWorkspaceBySlug(Slug slug)
     {
         var workspace = _workspaceRepository.ReadWorkspaceBySlug(slug);
-        return workspace ?? throw new KeyNotFoundException("Workspace not found");
+        return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
     }
-    
+
+    public Workspace GetWorkspaceBySlugWithProjects(Slug slug)
+    {
+        var workspace = _workspaceRepository.ReadWorkspaceBySlugWithProjects(slug);
+        return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
+    }
+
     public Workspace GetWorkspaceById(int id)
     {
         var workspace = _workspaceRepository.ReadWorkspaceById(id);
-        return workspace ?? throw new KeyNotFoundException("Workspace not found");
+        return workspace ?? throw new WorkspaceNotFoundException(id.ToString());
     }
-    
+
+    public Workspace GetWorkspaceByIdWithProjects(int id)
+    {
+        var workspace = _workspaceRepository.ReadWorkspaceByIdWithProjects(id);
+        return workspace ?? throw new WorkspaceNotFoundException(id.ToString());
+    }
+
     private bool SlugExists(Slug slug)
     {
         return _workspaceRepository.ReadWorkspaceBySlug(slug) != null;
     }
-    
-    private static void Validate(object obj)
+
+    private void Validate(object obj)
     {
         var validationResults = new List<ValidationResult>();
         var context = new ValidationContext(obj);
@@ -65,11 +78,5 @@ public class WorkspaceManager: IWorkspaceManager
             throw new ValidationException(string.Join("; ", validationResults.Select(r => r.ErrorMessage)));
         }
     }
-    
-    
-    
-    
-    
-    
 
 }

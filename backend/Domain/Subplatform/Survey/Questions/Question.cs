@@ -10,10 +10,12 @@ public class Question
     public int Id { get; set; }
 
     [StringLength(500)]
-    private string Text { get; set; }
-    private int Order { get; set; }
+    public string Text { get; set; }
+    public int Order { get; set; }
     [NotMapped]
     public Image? Image { get; set; }
+
+    public Project Project { get; set; }
 
     /*
      public Question()
@@ -22,3 +24,4 @@ public class Question
     }
     */
 }
+
