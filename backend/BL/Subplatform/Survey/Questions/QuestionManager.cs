@@ -16,7 +16,12 @@ public class QuestionManager: IQuestionManager
 
     public Question GetQuestionById(int questionId)
     {
-        return _questionRepository.ReadQuestionById(questionId);
+        return _questionRepository.ReadQuestionById(questionId) ?? throw new QuestionNotFoundException(questionId.ToString());
+    }
+
+    public Question GetQuestionByIdWithProject(int questionId)
+    {
+        return _questionRepository.ReadQuestionByIdWithProject(questionId) ?? throw new QuestionNotFoundException(questionId.ToString());
     }
 
     public IReadOnlyCollection<Question> GetAllQuestions()
@@ -24,9 +29,19 @@ public class QuestionManager: IQuestionManager
         return _questionRepository.ReadAllQuestions();
     }
 
+    public IReadOnlyCollection<Question> GetAllQuestionsWithProject()
+    {
+        return _questionRepository.ReadAllQuestionsWithProject();
+    }
+
     public IReadOnlyCollection<Question> GetQuestionsByProjectId(int projectId)
     {
         return _questionRepository.ReadQuestionsByProjectId(projectId);
+    }
+
+    public IReadOnlyCollection<Question> GetQuestionsByProjectIdWithProject(int projectId)
+    {
+        return _questionRepository.ReadQuestionsByProjectIdWithProject(projectId);
     }
 
     public Question AddQuestion(Question question)
@@ -36,7 +51,7 @@ public class QuestionManager: IQuestionManager
         return question;
     }
 
-    public Question EditQuestion(Question question)
+    public Question ChangeQuestion(Question question)
     {
         Validate(question);
         _questionRepository.UpdateQuestion(question);
@@ -45,17 +60,50 @@ public class QuestionManager: IQuestionManager
 
     public void RemoveQuestion(int questionId)
     {
-        _questionRepository.DeleteQuestion(questionId);
+        if (!_questionRepository.DeleteQuestion(questionId))
+        {
+            throw new QuestionNotFoundException(questionId.ToString());
+        }
     }
 
     public TextAnswer GetTextAnswerById(int answerId)
     {
-        return _questionRepository.ReadTextAnswerById(answerId);
+        return _questionRepository.ReadTextAnswerById(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
+    }
+
+    public TextAnswer GetTextAnswerByIdWithYouth(int answerId)
+    {
+        return _questionRepository.ReadTextAnswerByIdWithYouth(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
+    }
+
+    public TextAnswer GetTextAnswerByIdWithQuestion(int answerId)
+    {
+        return _questionRepository.ReadTextAnswerByIdWithQuestion(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
+    }
+
+    public TextAnswer GetTextAnswerByIdWithYouthAndQuestion(int answerId)
+    {
+        return _questionRepository.ReadTextAnswerByIdWithYouthAndQuestion(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
     }
 
     public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionId(int questionId)
     {
         return _questionRepository.ReadTextAnswersByQuestionId(questionId);
+    }
+
+    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithYouth(int questionId)
+    {
+        return _questionRepository.ReadTextAnswersByQuestionIdWithYouth(questionId);
+    }
+
+    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithQuestion(int questionId)
+    {
+        return _questionRepository.ReadTextAnswersByQuestionIdWithQuestion(questionId);
+    }
+
+    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithYouthAndQuestion(int questionId)
+    {
+        return _questionRepository.ReadTextAnswersByQuestionIdWithYouthAndQuestion(questionId);
     }
 
     public TextAnswer AddTextAnswer(TextAnswer answer)
@@ -65,7 +113,7 @@ public class QuestionManager: IQuestionManager
         return answer;
     }
 
-    public TextAnswer EditTextAnswer(TextAnswer answer)
+    public TextAnswer ChangeTextAnswer(TextAnswer answer)
     {
         Validate(answer);
         _questionRepository.UpdateTextAnswer(answer);
@@ -74,17 +122,50 @@ public class QuestionManager: IQuestionManager
 
     public void RemoveTextAnswer(int answerId)
     {
-        _questionRepository.DeleteTextAnswer(answerId);
+        if (!_questionRepository.DeleteTextAnswer(answerId))
+        {
+            throw new TextAnswerNotFoundException(answerId.ToString());
+        }
     }
 
     public IntegerAnswer GetIntegerAnswerById(int answerId)
     {
-        return _questionRepository.ReadIntegerAnswerById(answerId);
+        return _questionRepository.ReadIntegerAnswerById(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
+    }
+
+    public IntegerAnswer GetIntegerAnswerByIdWithYouth(int answerId)
+    {
+        return _questionRepository.ReadIntegerAnswerByIdWithYouth(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
+    }
+
+    public IntegerAnswer GetIntegerAnswerByIdWithQuestion(int answerId)
+    {
+        return _questionRepository.ReadIntegerAnswerByIdWithQuestion(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
+    }
+
+    public IntegerAnswer GetIntegerAnswerByIdWithYouthAndQuestion(int answerId)
+    {
+        return _questionRepository.ReadIntegerAnswerByIdWithYouthAndQuestion(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
     }
 
     public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionId(int questionId)
     {
         return _questionRepository.ReadIntegerAnswersByQuestionId(questionId);
+    }
+
+    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithYouth(int questionId)
+    {
+        return _questionRepository.ReadIntegerAnswersByQuestionIdWithYouth(questionId);
+    }
+
+    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithQuestion(int questionId)
+    {
+        return _questionRepository.ReadIntegerAnswersByQuestionIdWithQuestion(questionId);
+    }
+
+    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId)
+    {
+        return _questionRepository.ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(questionId);
     }
 
     public IntegerAnswer AddIntegerAnswer(IntegerAnswer answer)
@@ -94,7 +175,7 @@ public class QuestionManager: IQuestionManager
         return answer;
     }
 
-    public IntegerAnswer EditIntegerAnswer(IntegerAnswer answer)
+    public IntegerAnswer ChangeIntegerAnswer(IntegerAnswer answer)
     {
         Validate(answer);
         _questionRepository.UpdateIntegerAnswer(answer);
@@ -103,7 +184,10 @@ public class QuestionManager: IQuestionManager
 
     public void RemoveIntegerAnswer(int answerId)
     {
-        _questionRepository.DeleteIntegerAnswer(answerId);
+        if (!_questionRepository.DeleteIntegerAnswer(answerId))
+        {
+            throw new IntegerAnswerNotFoundException(answerId.ToString());
+        }
     }
 
     private void Validate(object obj)
@@ -117,4 +201,3 @@ public class QuestionManager: IQuestionManager
         }
     }
 }
-

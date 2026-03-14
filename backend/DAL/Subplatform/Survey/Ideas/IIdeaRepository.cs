@@ -6,13 +6,26 @@ public interface IIdeaRepository
 {
     void CreateIdea(Idea idea);
     Idea ReadIdeaById(int ideaId);
+    Idea ReadIdeaByIdWithProject(int ideaId);
+    Idea ReadIdeaByIdWithResponses(int ideaId);
+    Idea ReadIdeaByIdWithProjectAndResponses(int ideaId);
+
     IReadOnlyCollection<Idea> ReadAllIdeas();
-    IReadOnlyCollection<Idea> ReadIdeasByProjectId(int projectId);
+    IReadOnlyCollection<Idea> ReadAllIdeasWithProject();
+    IReadOnlyCollection<Idea> ReadAllIdeasWithResponses();
+    IReadOnlyCollection<Idea> ReadAllIdeasWithProjectAndResponses();
+
+    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(int projectId);
+    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(int projectId);
+
     void UpdateIdea(Idea idea);
-    void DeleteIdea(int ideaId);
+    bool DeleteIdea(int ideaId);
+
     void CreateResponse(Response response);
     Response ReadResponseById(int responseId);
-    IReadOnlyCollection<Response> ReadResponsesByIdeaId(int ideaId);
+    Response ReadResponseByIdWithIdea(int responseId);
+    IReadOnlyCollection<Response> ReadResponsesFromIdeaByIdeaId(int ideaId);
+    IReadOnlyCollection<Response> ReadResponsesFromIdeaByIdeaIdWithIdea(int ideaId);
     void UpdateResponse(Response response);
-    void DeleteResponse(int responseId);
+    bool DeleteResponse(int responseId);
 }

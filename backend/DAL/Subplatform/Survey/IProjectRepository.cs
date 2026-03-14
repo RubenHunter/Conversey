@@ -1,24 +1,47 @@
-﻿using Conversey.BL.Domain.Subplatform.Survey;
+﻿using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Subplatform.Survey;
 
 namespace Conversey.DAL.Subplatform.Survey;
 
 public interface IProjectRepository
 {
     public Project ReadProjectById(int projectId);
+    Project ReadProjectByIdWithTopics(int projectId);
+    Project ReadProjectByIdWithQuestions(int projectId);
+    Project ReadProjectByIdWithTopicsAndQuestions(int projectId);
+    Project ReadProjectByIdWithWorkspaceAndQuestions(int projectId);
+    Project ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(int projectId);
+
+    Project ReadProjectBySlug(Slug slug);
+    Project ReadProjectBySlugWithTopics(Slug slug);
+    Project ReadProjectBySlugWithQuestions(Slug slug);
+    Project ReadProjectBySlugWithTopicsAndQuestions(Slug slug);
+    Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug slug);
+    Project ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(Slug slug);
+
     IReadOnlyCollection<Project> ReadAllProjects();
-    IReadOnlyCollection<Project> ReadProjectsByWorkspaceId(int workspaceId);
-    IReadOnlyCollection<Topic> ReadTopicsByProjectId(int projectId);
-    IReadOnlyCollection<Youth> ReadYouthsByProjectId(int projectId);
+    IReadOnlyCollection<Project> ReadAllProjectsWithTopics();
+    IReadOnlyCollection<Project> ReadAllProjectsWithQuestions();
+    IReadOnlyCollection<Project> ReadAllProjectsWithTopicsAndQuestions();
+
+    IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceId(int workspaceId);
+    IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(int workspaceId);
+    IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(int workspaceId);
+    IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(int workspaceId);
+
+    IReadOnlyCollection<Topic> ReadTopicsFromProjectByProjectId(int projectId);
+    IReadOnlyCollection<Youth> ReadYouthsFromProjectByProjectId(int projectId);
     void CreateProject(Project project);
     void UpdateProject(Project project);
-    void DeleteProject(int projectId);
+    bool DeleteProject(int projectId);
     Topic ReadTopicById(int topicId);
+    Topic ReadTopicByIdWithProject(int topicId);
     void CreateTopic(Topic topic);
     void UpdateTopic(Topic topic);
-    void DeleteTopic(int topicId);
+    bool DeleteTopic(int topicId);
     Youth ReadYouthByToken(string token);
+    Youth ReadYouthByTokenWithProject(string token);
     void CreateYouth(Youth youth);
     void UpdateYouth(Youth youth);
-    void DeleteYouth(string token);
+    bool DeleteYouth(string token);
 }
-

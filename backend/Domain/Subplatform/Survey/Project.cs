@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey.Questions;
 
 namespace Conversey.BL.Domain.Subplatform.Survey;
@@ -8,6 +9,9 @@ public class Project
 {
     [Required]
     public int Id { get; set; }
+    
+    [Required]
+    public Slug Slug { get; set; }
 
     [StringLength(100)]
     public string Title { get; set; }
@@ -29,4 +33,6 @@ public class Project
     public Workspace Workspace { get; set; }
 
     public IEnumerable<Youth> Youths { get; set; }
+    
+    
 }

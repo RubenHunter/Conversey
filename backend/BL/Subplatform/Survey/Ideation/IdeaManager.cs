@@ -8,7 +8,6 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 
 public class IdeaManager: IIdeaManager
 {
-
     private readonly IIdeaRepository _repository;
     private readonly IProjectRepository _projectRepository;
 
@@ -23,7 +22,7 @@ public class IdeaManager: IIdeaManager
         Project forProject = _projectRepository.ReadProjectById(projectId);
         if (forProject == null)
         {
-            throw new Exception($"Project with id {projectId} not found");
+            throw new ProjectNotFoundException(projectId.ToString());
         }
 
         var idea = new Idea
@@ -36,7 +35,22 @@ public class IdeaManager: IIdeaManager
 
     public Idea GetIdeaById(int ideaId)
     {
-        return _repository.ReadIdeaById(ideaId);
+        return _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+    }
+
+    public Idea GetIdeaByIdWithProject(int ideaId)
+    {
+        return _repository.ReadIdeaByIdWithProject(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+    }
+
+    public Idea GetIdeaByIdWithResponses(int ideaId)
+    {
+        return _repository.ReadIdeaByIdWithResponses(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+    }
+
+    public Idea GetIdeaByIdWithProjectAndResponses(int ideaId)
+    {
+        return _repository.ReadIdeaByIdWithProjectAndResponses(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
     }
 
     public IReadOnlyCollection<Idea> GetAllIdeas()
@@ -44,12 +58,32 @@ public class IdeaManager: IIdeaManager
         return _repository.ReadAllIdeas();
     }
 
-    public IReadOnlyCollection<Idea> GetIdeasByProjectId(int projectId)
+    public IReadOnlyCollection<Idea> GetAllIdeasWithProject()
     {
-        return _repository.ReadIdeasByProjectId(projectId);
+        return _repository.ReadAllIdeasWithProject();
     }
 
-    public Idea EditIdea(Idea idea)
+    public IReadOnlyCollection<Idea> GetAllIdeasWithResponses()
+    {
+        return _repository.ReadAllIdeasWithResponses();
+    }
+
+    public IReadOnlyCollection<Idea> GetAllIdeasWithProjectAndResponses()
+    {
+        return _repository.ReadAllIdeasWithProjectAndResponses();
+    }
+
+    public IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectId(int projectId)
+    {
+        return _repository.ReadIdeasFromProjectByProjectId(projectId);
+    }
+
+    public IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectIdWithResponses(int projectId)
+    {
+        return _repository.ReadIdeasFromProjectByProjectIdWithResponses(projectId);
+    }
+
+    public Idea ChangeIdea(Idea idea)
     {
         Validate(idea);
         _repository.UpdateIdea(idea);
@@ -58,12 +92,17 @@ public class IdeaManager: IIdeaManager
 
     public void RemoveIdea(int ideaId)
     {
-        _repository.DeleteIdea(ideaId);
+        if (!_repository.DeleteIdea(ideaId))
+        {
+            throw new IdeaNotFoundException(ideaId.ToString());
+        }
     }
 
     public Response AddResponse(string text, int ideaId)
     {
         var idea = _repository.ReadIdeaById(ideaId);
+        if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
+
         var response = new Response
         {
             text = text,
@@ -77,15 +116,25 @@ public class IdeaManager: IIdeaManager
 
     public Response GetResponseById(int responseId)
     {
-        return _repository.ReadResponseById(responseId);
+        return _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public IReadOnlyCollection<Response> GetResponsesByIdeaId(int ideaId)
+    public Response GetResponseByIdWithIdea(int responseId)
     {
-        return _repository.ReadResponsesByIdeaId(ideaId);
+        return _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public Response EditResponse(Response response)
+    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId)
+    {
+        return _repository.ReadResponsesFromIdeaByIdeaId(ideaId);
+    }
+
+    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId)
+    {
+        return _repository.ReadResponsesFromIdeaByIdeaIdWithIdea(ideaId);
+    }
+
+    public Response ChangeResponse(Response response)
     {
         Validate(response);
         _repository.UpdateResponse(response);
@@ -94,7 +143,10 @@ public class IdeaManager: IIdeaManager
 
     public void RemoveResponse(int responseId)
     {
-        _repository.DeleteResponse(responseId);
+        if (!_repository.DeleteResponse(responseId))
+        {
+            throw new ResponseNotFoundException(responseId.ToString());
+        }
     }
 
     private void Validate(object obj)
@@ -108,4 +160,3 @@ public class IdeaManager: IIdeaManager
         }
     }
 }
-

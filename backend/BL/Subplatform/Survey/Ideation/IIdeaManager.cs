@@ -5,14 +5,28 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 public interface IIdeaManager
 {
     void AddIdea(string content, int projectId);
+
     Idea GetIdeaById(int ideaId);
+    Idea GetIdeaByIdWithProject(int ideaId);
+    Idea GetIdeaByIdWithResponses(int ideaId);
+    Idea GetIdeaByIdWithProjectAndResponses(int ideaId);
+
     IReadOnlyCollection<Idea> GetAllIdeas();
-    IReadOnlyCollection<Idea> GetIdeasByProjectId(int projectId);
-    Idea EditIdea(Idea idea);
+    IReadOnlyCollection<Idea> GetAllIdeasWithProject();
+    IReadOnlyCollection<Idea> GetAllIdeasWithResponses();
+    IReadOnlyCollection<Idea> GetAllIdeasWithProjectAndResponses();
+
+    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectId(int projectId);
+    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectIdWithResponses(int projectId);
+
+    Idea ChangeIdea(Idea idea);
     void RemoveIdea(int ideaId);
+
     Response AddResponse(string text, int ideaId);
     Response GetResponseById(int responseId);
-    IReadOnlyCollection<Response> GetResponsesByIdeaId(int ideaId);
-    Response EditResponse(Response response);
+    Response GetResponseByIdWithIdea(int responseId);
+    IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId);
+    IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId);
+    Response ChangeResponse(Response response);
     void RemoveResponse(int responseId);
 }

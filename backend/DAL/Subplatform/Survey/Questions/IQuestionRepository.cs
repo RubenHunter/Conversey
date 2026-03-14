@@ -6,19 +6,43 @@ namespace Conversey.DAL.Subplatform.Survey.Questions;
 public interface IQuestionRepository
 {
     Question ReadQuestionById(int questionId);
+    Question ReadQuestionByIdWithProject(int questionId);
+
     IReadOnlyCollection<Question> ReadAllQuestions();
+    IReadOnlyCollection<Question> ReadAllQuestionsWithProject();
+
     IReadOnlyCollection<Question> ReadQuestionsByProjectId(int projectId);
+    IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(int projectId);
+
     void CreateQuestion(Question question);
     void UpdateQuestion(Question question);
-    void DeleteQuestion(int questionId);
+    bool DeleteQuestion(int questionId);
+
     TextAnswer ReadTextAnswerById(int answerId);
+    TextAnswer ReadTextAnswerByIdWithYouth(int answerId);
+    TextAnswer ReadTextAnswerByIdWithQuestion(int answerId);
+    TextAnswer ReadTextAnswerByIdWithYouthAndQuestion(int answerId);
+
     IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionId(int questionId);
+    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouth(int questionId);
+    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithQuestion(int questionId);
+    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouthAndQuestion(int questionId);
+
     void CreateTextAnswer(TextAnswer answer);
     void UpdateTextAnswer(TextAnswer answer);
-    void DeleteTextAnswer(int answerId);
+    bool DeleteTextAnswer(int answerId);
+
     IntegerAnswer ReadIntegerAnswerById(int answerId);
+    IntegerAnswer ReadIntegerAnswerByIdWithYouth(int answerId);
+    IntegerAnswer ReadIntegerAnswerByIdWithQuestion(int answerId);
+    IntegerAnswer ReadIntegerAnswerByIdWithYouthAndQuestion(int answerId);
+
     IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionId(int questionId);
+    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouth(int questionId);
+    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithQuestion(int questionId);
+    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId);
+
     void CreateIntegerAnswer(IntegerAnswer answer);
     void UpdateIntegerAnswer(IntegerAnswer answer);
-    void DeleteIntegerAnswer(int answerId);
+    bool DeleteIntegerAnswer(int answerId);
 }

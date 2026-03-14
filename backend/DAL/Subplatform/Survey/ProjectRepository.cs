@@ -1,4 +1,5 @@
-﻿using Conversey.BL.Domain.Subplatform.Survey;
+﻿using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Subplatform.Survey;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL.Subplatform.Survey;
@@ -16,11 +17,93 @@ public class ProjectRepository : IProjectRepository
     public Project ReadProjectById(int projectId)
     {
         return _dbContext.Projects
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectByIdWithTopics(int projectId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectByIdWithQuestions(int projectId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectByIdWithTopicsAndQuestions(int projectId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectByIdWithWorkspaceAndQuestions(int projectId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Workspace)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(int projectId)
+    {
+        return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
             .Include(p => p.Youths)
             .Include(p => p.Questions)
-            .Single(p => p.Id == projectId) ?? throw new KeyNotFoundException($"Project with id {projectId} not found.");
+            .SingleOrDefault(p => p.Id == projectId);
+    }
+
+    public Project ReadProjectBySlug(Slug slug)
+    {
+        return _dbContext.Projects
+            .SingleOrDefault(p => p.Slug == slug);
+    }
+
+    public Project ReadProjectBySlugWithTopics(Slug slug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .SingleOrDefault(p => p.Slug == slug);
+    }
+
+    public Project ReadProjectBySlugWithQuestions(Slug slug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == slug);
+    }
+
+    public Project ReadProjectBySlugWithTopicsAndQuestions(Slug slug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == slug);
+    }
+
+    public Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug slug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Workspace)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == slug);
+    }
+
+    public Project ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(Slug slug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Workspace)
+            .Include(p => p.Topic)
+            .Include(p => p.Youths)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == slug);
     }
 
     public IReadOnlyCollection<Project> ReadAllProjects()
@@ -32,7 +115,29 @@ public class ProjectRepository : IProjectRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Project> ReadProjectsByWorkspaceId(int workspaceId)
+    public IReadOnlyCollection<Project> ReadAllProjectsWithTopics()
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Project> ReadAllProjectsWithQuestions()
+    {
+        return _dbContext.Projects
+            .Include(p => p.Questions)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Project> ReadAllProjectsWithTopicsAndQuestions()
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Include(p => p.Questions)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceId(int workspaceId)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
@@ -41,14 +146,39 @@ public class ProjectRepository : IProjectRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Topic> ReadTopicsByProjectId(int projectId)
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(int workspaceId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Where(p => p.Workspace.Id == workspaceId)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(int workspaceId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Questions)
+            .Where(p => p.Workspace.Id == workspaceId)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(int workspaceId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Include(p => p.Questions)
+            .Where(p => p.Workspace.Id == workspaceId)
+            .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Topic> ReadTopicsFromProjectByProjectId(int projectId)
     {
         return _dbContext.Topics
             .Where(t => t.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Youth> ReadYouthsByProjectId(int projectId)
+    public IReadOnlyCollection<Youth> ReadYouthsFromProjectByProjectId(int projectId)
     {
         return _dbContext.Youths
             .Where(y => y.Project.Id == projectId)
@@ -67,20 +197,28 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public void DeleteProject(int projectId)
+    public bool DeleteProject(int projectId)
     {
-        var project = _dbContext.Projects.Find(projectId)
-            ?? throw new KeyNotFoundException($"Project with id {projectId} not found.");
+        var project = _dbContext.Projects
+            .SingleOrDefault(p => p.Id == projectId);
+        if (project == null) return false;
+
         _dbContext.Projects.Remove(project);
         _dbContext.SaveChanges();
+        return true;
     }
 
     public Topic ReadTopicById(int topicId)
     {
         return _dbContext.Topics
+            .SingleOrDefault(t => t.Id == topicId);
+    }
+
+    public Topic ReadTopicByIdWithProject(int topicId)
+    {
+        return _dbContext.Topics
             .Include(t => t.Project)
-            .FirstOrDefault(t => t.Id == topicId)
-            ?? throw new KeyNotFoundException($"Topic with id {topicId} not found.");
+            .SingleOrDefault(t => t.Id == topicId);
     }
 
     public void CreateTopic(Topic topic)
@@ -95,20 +233,28 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public void DeleteTopic(int topicId)
+    public bool DeleteTopic(int topicId)
     {
-        var topic = _dbContext.Topics.Find(topicId)
-            ?? throw new KeyNotFoundException($"Topic with id {topicId} not found.");
+        var topic = _dbContext.Topics
+            .SingleOrDefault(t => t.Id == topicId);
+        if (topic == null) return false;
+
         _dbContext.Topics.Remove(topic);
         _dbContext.SaveChanges();
+        return true;
     }
 
     public Youth ReadYouthByToken(string token)
     {
         return _dbContext.Youths
+            .SingleOrDefault(y => y.Token == token);
+    }
+
+    public Youth ReadYouthByTokenWithProject(string token)
+    {
+        return _dbContext.Youths
             .Include(y => y.Project)
-            .FirstOrDefault(y => y.Token == token)
-            ?? throw new KeyNotFoundException($"Youth with token {token} not found.");
+            .SingleOrDefault(y => y.Token == token);
     }
 
     public void CreateYouth(Youth youth)
@@ -123,11 +269,15 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public void DeleteYouth(string token)
+    public bool DeleteYouth(string token)
     {
-        var youth = _dbContext.Youths.Find(token)
-            ?? throw new KeyNotFoundException($"Youth with token {token} not found.");
+        var youth = _dbContext.Youths
+            .SingleOrDefault(y => y.Token == token);
+        if (youth == null) return false;
+
         _dbContext.Youths.Remove(youth);
         _dbContext.SaveChanges();
+        return true;
     }
 }
+
