@@ -12,7 +12,7 @@ public class WorkspaceDto
         return new WorkspaceDto
         {
             Name = workspace.Name,
-            Slug = workspace.Slug
+            Slug = workspace.Slug.Text
         };
     }
 }

@@ -1,11 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 
 namespace Conversey.DAL;
 
 public class DataSeeder
 {
-    private static ConverseyDbContext? _context;
+    private static ConverseyDbContext _context;
     public static void Seed(ConverseyDbContext context)
     {
         _context = context;
@@ -42,22 +44,28 @@ public class DataSeeder
 
     private static Workspace CreateWorkspace(string name)
     {
-        var slugExists = new Func<string, bool>(slug => _context!.Workspaces.Any(w => w.Slug == slug));
-        return new Workspace(name, GenerateSlug(name), slugExists);
+        var slugExists = new Func<Slug, bool>(slug => _context!.Workspaces.Any(w => w.Slug == slug));
+        var workspace = new Workspace
+        {
+            Name = name,
+            Slug = Slug.FromName(name)
+        };
+        if (slugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
+        
+        Validate(workspace);
+        _context.Workspaces.Add(workspace);
+        return workspace;;
     }
     
-    private static string GenerateSlug(string name)
+    
+    private static void Validate(object obj)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Workspace name cannot be empty");
-        }
+        var validationResults = new List<ValidationResult>();
+        var context = new ValidationContext(obj);
 
-        var slug = name.Trim().ToLower().Replace(" ", "-");
-        
-        //Remove url unfriendly symbols
-        slug = Regex.Replace(slug, @"[^a-z0-9_-]", "");
-        
-        return slug;
+        if (!Validator.TryValidateObject(obj, context, validationResults, true))
+        {
+            throw new ValidationException(string.Join("; ", validationResults.Select(r => r.ErrorMessage)));
+        }
     }
 }

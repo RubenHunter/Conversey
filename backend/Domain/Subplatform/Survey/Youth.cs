@@ -9,6 +9,6 @@ public class Youth
     public string Token { get; set; }
 
     public Subplatform.Survey.Project Project { get; set; }
-    
-    public string? Email { get; set; }
+
+    public string Email { get; set; } = "";
 }

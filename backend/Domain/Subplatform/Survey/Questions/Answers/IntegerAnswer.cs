@@ -8,4 +8,6 @@ public class IntegerAnswer
     public int Id { get; set; }
     public int Value { get; set; }
     public Youth Youth { get; set; }
+    public Question Question { get; set; }
 }
+
