@@ -1,3 +1,4 @@
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
@@ -30,7 +31,11 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Workspace>()
             .Property(w => w.Slug)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .HasConversion(
+                slug => slug.ToString(),
+                str => Slug.FromName(str));
+
 
         // Workspace 1-* Project
         modelBuilder.Entity<Workspace>()
@@ -45,6 +50,14 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Project>()
             .Property(p => p.Title)
             .HasMaxLength(100);
+        
+        modelBuilder.Entity<Project>()
+            .Property(p => p.Slug)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasConversion(
+                slug => slug.ToString(),
+                str => Slug.FromName(str));
 
         modelBuilder.Entity<Project>()
             .Property(p => p.Description)
