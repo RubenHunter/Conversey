@@ -107,7 +107,7 @@ public class QuestionRepository : IQuestionRepository
     public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionId(int questionId)
     {
         return _dbContext.TextAnswers
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -115,7 +115,7 @@ public class QuestionRepository : IQuestionRepository
     {
         return _dbContext.TextAnswers
             .Include(a => a.Youth)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -123,7 +123,7 @@ public class QuestionRepository : IQuestionRepository
     {
         return _dbContext.TextAnswers
             .Include(a => a.Question)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -132,7 +132,7 @@ public class QuestionRepository : IQuestionRepository
         return _dbContext.TextAnswers
             .Include(a => a.Youth)
             .Include(a => a.Question)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -190,7 +190,7 @@ public class QuestionRepository : IQuestionRepository
     public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionId(int questionId)
     {
         return _dbContext.IntegerAnswers
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -198,7 +198,7 @@ public class QuestionRepository : IQuestionRepository
     {
         return _dbContext.IntegerAnswers
             .Include(a => a.Youth)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -206,7 +206,7 @@ public class QuestionRepository : IQuestionRepository
     {
         return _dbContext.IntegerAnswers
             .Include(a => a.Question)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 
@@ -215,7 +215,7 @@ public class QuestionRepository : IQuestionRepository
         return _dbContext.IntegerAnswers
             .Include(a => a.Youth)
             .Include(a => a.Question)
-            .Where(a => a.Question.Id == questionId)
+            .Where(a => a.QuestionId == questionId)
             .ToList().AsReadOnly();
     }
 

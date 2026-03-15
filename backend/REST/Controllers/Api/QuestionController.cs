@@ -105,7 +105,9 @@ public class QuestionController : ControllerBase
 
                     _questionManager.AddTextAnswer(new OpenTextAnswer
                     {
+                        YouthToken = youth.Token,
                         Youth = youth,
+                        QuestionId = question.Id,
                         Question = question,
                         Value = answer.OpenTextValue.Trim()
                     });
@@ -119,7 +121,9 @@ public class QuestionController : ControllerBase
                     {
                         _questionManager.AddIntegerAnswer(new IntegerAnswer
                         {
+                            YouthToken = youth.Token,
                             Youth = youth,
+                            QuestionId = question.Id,
                             Question = question,
                             Value = answer.SelectedOptionId.Value
                         });
@@ -140,7 +144,9 @@ public class QuestionController : ControllerBase
 
                     _questionManager.AddTextAnswer(new ClosedTextAnswer
                     {
+                        YouthToken = youth.Token,
                         Youth = youth,
+                        QuestionId = question.Id,
                         Question = question,
                         Value = selectedOption.Text
                     });

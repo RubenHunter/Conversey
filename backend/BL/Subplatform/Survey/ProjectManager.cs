@@ -132,7 +132,7 @@ public class ProjectManager: IProjectManager
             EndDate = endDate,
             InteractionForm = interactionForm,
             Workspace = workspace,
-            Topics = new List<Topic>(),
+            Topic = new List<Topic>(),
             Questions = new List<Question>(),
             Youths = new List<Youth>()
         };
@@ -168,10 +168,6 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadTopicsFromProjectByProjectId(projectId);
     }
 
-    public IReadOnlyCollection<Idea> GetIdeasFromTopicByProjectIdAndTopicId(int projectId, int topicId)
-    {
-        return _projectRepository.ReadIdeasFromTopicByProjectIdAndTopicId(projectId, topicId);
-    }
 
     public Topic AddTopic(string name, string context, int projectId)
     {

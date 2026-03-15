@@ -36,7 +36,6 @@ public interface IProjectManager
     void RemoveProject(int projectId);
     Topic GetTopicById(int topicId);
     IReadOnlyCollection<Topic> GetTopicsFromProjectByProjectId(int projectId);
-    IReadOnlyCollection<Idea> GetIdeasFromTopicByProjectIdAndTopicId(int projectId, int topicId);
     Topic AddTopic(string name, string context, int projectId);
     Topic ChangeTopic(Topic topic);
     void RemoveTopic(int topicId);

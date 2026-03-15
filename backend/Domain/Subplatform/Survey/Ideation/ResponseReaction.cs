@@ -2,19 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
-public class Response
+public class ResponseReaction
 {
     [Required]
     public int Id { get; set; }
 
-    public int IdeaId { get; set; }
+    public int ResponseId { get; set; }
 
     [Required]
-    public Idea Idea { get; set; }
+    public Response Response { get; set; }
 
     [Required]
-    [StringLength(4000)]
-    public string Text { get; set; } = string.Empty;
+    [StringLength(32)]
+    public string Emoji { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
 
@@ -23,6 +23,5 @@ public class Response
 
     [Required]
     public Youth Youth { get; set; }
-
-    public ICollection<ResponseReaction> Reactions { get; set; } = new List<ResponseReaction>();
 }
+
