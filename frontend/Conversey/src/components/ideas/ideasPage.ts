@@ -118,15 +118,21 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             </div>
             <div class="idea-panel-body">
                 <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
-                <div id="idea-panel-post" class="idea-panel-post">
-                    <div id="idea-panel-badges" class="idea-panel-badges"></div>
-                    <p id="idea-panel-text" class="idea-panel-text"></p>
-                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
-                        <span aria-hidden="true">+</span>
-                        <span aria-hidden="true">:)</span>
-                    </button>
+                <div class="idea-panel-section idea-panel-section--idea">
+                    <p class="idea-panel-section-label">Original idea</p>
+                    <div id="idea-panel-post" class="idea-panel-post">
+                        <div id="idea-panel-badges" class="idea-panel-badges"></div>
+                        <p id="idea-panel-text" class="idea-panel-text"></p>
+                        <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
+                            <span aria-hidden="true">+</span>
+                            <span aria-hidden="true">:)</span>
+                        </button>
+                    </div>
                 </div>
-                <div id="idea-panel-comments" class="idea-panel-comments"></div>
+                <div class="idea-panel-section idea-panel-section--responses">
+                    <p class="idea-panel-section-label">Responses</p>
+                    <div id="idea-panel-comments" class="idea-panel-comments"></div>
+                </div>
             </div>
             <div class="idea-panel-footer">
                 <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>

@@ -32,7 +32,6 @@ export function createIdeaPanelController({
     const panelBackdrop = root.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panel = root.querySelector<HTMLDivElement>('#idea-panel')!
     const panelClose = root.querySelector<HTMLButtonElement>('#idea-panel-close')!
-    const panelPinned = root.querySelector<HTMLDivElement>('#idea-panel-pinned')!
     const panelBadges = root.querySelector<HTMLDivElement>('#idea-panel-badges')!
     const panelText = root.querySelector<HTMLParagraphElement>('#idea-panel-text')!
     const panelPost = root.querySelector<HTMLDivElement>('#idea-panel-post')!
@@ -57,8 +56,6 @@ export function createIdeaPanelController({
     ideaReactionRow.className = 'idea-panel-reactions-row'
     const ideaReactionSummary = document.createElement('div')
     ideaReactionSummary.className = 'idea-panel-reactions-summary'
-    const ideaReactionPicker = document.createElement('div')
-    ideaReactionPicker.className = 'idea-panel-reaction-picker'
     panelPost.append(ideaReactionRow)
 
     function getResponses(ideaId: number): IdeaResponse[] {
@@ -185,7 +182,6 @@ export function createIdeaPanelController({
         const reactions = getIdeaReactions(idea)
         ideaReactionRow.innerHTML = ''
         ideaReactionSummary.innerHTML = ''
-        ideaReactionPicker.innerHTML = ''
 
         reactions.forEach((reaction) => {
             const summaryChip = document.createElement('button')
@@ -207,15 +203,18 @@ export function createIdeaPanelController({
         panelIdeaEmoji.classList.toggle('open', pickerTarget?.kind === 'idea')
 
         if (pickerTarget?.kind === 'idea') {
-            ideaReactionPicker.replaceChildren(
+            ideaReactionRow.append(
+                ideaReactionSummary,
+                panelIdeaEmoji,
                 createReactionPicker({ kind: 'idea' }, (emoji) => {
                     pickerTarget = null
                     void handleIdeaReaction(idea, emoji)
                 }),
             )
+            return
         }
 
-        ideaReactionRow.append(ideaReactionSummary, panelIdeaEmoji, ideaReactionPicker)
+        ideaReactionRow.append(ideaReactionSummary, panelIdeaEmoji)
     }
 
     function createResponseReactionRow(idea: Idea, response: IdeaResponse): HTMLElement {
@@ -341,16 +340,7 @@ export function createIdeaPanelController({
         }
         panelText.textContent = idea.body
 
-        if (idea.authorType === 'self') {
-            panelPinned.hidden = false
-            panelPinned.innerHTML = `
-                <span class="idea-panel-pinned-label">📌 Author's note</span>
-                <p class="idea-panel-pinned-text">This is your original idea. Your responses appear pinned below.</p>
-            `
-        } else {
-            panelPinned.hidden = true
-            panelPinned.innerHTML = ''
-        }
+        
 
         renderIdeaReactionRow(idea)
         renderComments(idea)

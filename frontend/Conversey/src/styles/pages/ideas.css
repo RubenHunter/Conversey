@@ -519,7 +519,29 @@
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.95rem;
+}
+
+.idea-panel-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.idea-panel-section-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.idea-panel-section--idea .idea-panel-section-label {
+  color: color-mix(in srgb, var(--color-primary) 72%, #2f4858);
+}
+
+.idea-panel-section--responses .idea-panel-section-label {
+  color: color-mix(in srgb, var(--color-secondary) 72%, #3c3c3c);
 }
 
 /* Pinned author note */
@@ -547,10 +569,15 @@
 
 /* Original idea post */
 .idea-panel-post {
-  border: 1px solid var(--color-border);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border));
   border-radius: var(--radius-lg);
-  padding: 0.65rem 0.75rem 0.5rem;
-  background: color-mix(in srgb, var(--color-bg) 55%, white);
+  padding: 0.72rem 0.8rem 0.58rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-primary-light) 22%, white) 0%,
+    color-mix(in srgb, var(--color-bg) 62%, white) 100%
+  );
+  box-shadow: 0 6px 16px rgba(25, 45, 75, 0.08);
   position: relative;
 }
 
@@ -610,12 +637,13 @@
 }
 
 .idea-panel-comment {
-  background: color-mix(in srgb, var(--color-bg) 45%, white);
+  background: color-mix(in srgb, var(--color-bg) 42%, white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 0.55rem 0.65rem;
   display: grid;
   gap: 0.45rem;
+  border-left: 4px solid color-mix(in srgb, var(--color-secondary) 30%, transparent);
 }
 
 .idea-panel-comment-text {
@@ -642,6 +670,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
+  position: relative;
 }
 
 .idea-panel-reactions-summary {
@@ -690,6 +719,15 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.32rem;
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 6;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
 }
 
 .idea-panel-reaction-picker-btn {
