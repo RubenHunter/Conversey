@@ -192,7 +192,7 @@ public class IdeaResponsesController : ControllerBase
     private Idea GetIdeaForRoute(Project project, int topicId, int ideaId)
     {
         var idea = _ideaManager.GetIdeaById(ideaId);
-        if (idea.ProjectId != project.Id || idea.TopicId != topicId)
+        if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
         {
             throw new IdeaNotFoundException(ideaId.ToString());
         }
@@ -210,7 +210,7 @@ public class IdeaResponsesController : ControllerBase
     {
         _ = GetIdeaForRoute(project, topicId, ideaId);
         var response = _ideaManager.GetResponseById(responseId);
-        if (response.IdeaId != ideaId)
+        if (response.Idea.Id != ideaId)
         {
             throw new ResponseNotFoundException(responseId.ToString());
         }

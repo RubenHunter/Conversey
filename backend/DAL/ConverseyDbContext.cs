@@ -145,26 +145,30 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Project)
             .WithMany()
-            .HasForeignKey(i => i.ProjectId)
+            .HasForeignKey("ProjectId")   
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Topic)
             .WithMany(t => t.Ideas)
-            .HasForeignKey(i => i.TopicId)
+            .HasForeignKey("TopicId")
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Youth)
             .WithMany(y => y.Ideas)
-            .HasForeignKey(i => i.YouthToken)
+            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasMany(i => i.Responses)
             .WithOne(r => r.Idea)
-            .HasForeignKey(r => r.IdeaId)
+            .HasForeignKey("IdeaId")
             .IsRequired();
+        
+        modelBuilder.Entity<Idea>()
+            .Property(i => i.ModerationInfo)
+            .HasConversion(m => m.Serialize(), b => ModerationInfo.Deserialize(b));
 
         // Response
         modelBuilder.Entity<Response>()
@@ -178,14 +182,18 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Response>()
             .HasOne(r => r.Youth)
             .WithMany(y => y.Responses)
-            .HasForeignKey(r => r.YouthToken)
+            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<Response>()
             .HasMany(r => r.Reactions)
             .WithOne(rr => rr.Response)
-            .HasForeignKey(rr => rr.ResponseId)
+            .HasForeignKey("ResponseId")
             .IsRequired();
+        
+        modelBuilder.Entity<Response>()
+            .Property(r => r.ModerationInfo)
+            .HasConversion(m => m.Serialize(), b => ModerationInfo.Deserialize(b));
 
         // ResponseReaction
         modelBuilder.Entity<ResponseReaction>()
@@ -199,7 +207,7 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<ResponseReaction>()
             .HasOne(rr => rr.Youth)
             .WithMany(y => y.ResponseReactions)
-            .HasForeignKey(rr => rr.YouthToken)
+            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<ResponseReaction>()
@@ -214,13 +222,13 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<TextAnswer>()
             .HasOne(a => a.Youth)
             .WithMany()
-            .HasForeignKey(a => a.YouthToken)
+            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<TextAnswer>()
             .HasOne(a => a.Question)
             .WithMany()
-            .HasForeignKey(a => a.QuestionId)
+            .HasForeignKey("QuestionId")
             .IsRequired();
 
         modelBuilder.Entity<OpenTextAnswer>()
@@ -236,13 +244,13 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<IntegerAnswer>()
             .HasOne(a => a.Youth)
             .WithMany()
-            .HasForeignKey(a => a.YouthToken)
+            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<IntegerAnswer>()
             .HasOne(a => a.Question)
             .WithMany()
-            .HasForeignKey(a => a.QuestionId)
+            .HasForeignKey("QuestionId")
             .IsRequired();
 
         // WorkspaceAdmin

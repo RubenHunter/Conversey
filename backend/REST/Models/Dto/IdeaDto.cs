@@ -18,9 +18,9 @@ public class IdeaDto
         {
             Id = idea.Id,
             Content = idea.Content,
-            ProjectId = idea.ProjectId,
-            TopicId = idea.TopicId,
-            YouthToken = idea.YouthToken,
+            ProjectId = idea.Project.Id,
+            TopicId = idea.Topic.Id,
+            YouthToken = idea.Youth.Token,
             SubmissionDate = idea.SubmissionDate,
             Status = idea.Status
         };

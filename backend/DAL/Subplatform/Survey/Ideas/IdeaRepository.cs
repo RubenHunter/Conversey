@@ -99,7 +99,7 @@ public class IdeaRepository : IIdeaRepository
     public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(int projectId)
     {
         return _dbContext.Ideas
-            .Where(i => i.ProjectId == projectId)
+            .Where(i => i.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
@@ -111,7 +111,7 @@ public class IdeaRepository : IIdeaRepository
             .ThenInclude(r => r.Youth)
             .Include(i => i.Responses)
             .ThenInclude(r => r.Reactions)
-            .Where(i => i.ProjectId == projectId)
+            .Where(i => i.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
@@ -120,7 +120,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Topic)
             .Include(i => i.Youth)
-            .Where(i => i.ProjectId == projectId && i.YouthToken == youthToken)
+            .Where(i => i.Project.Id == projectId && i.Youth.Token == youthToken)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -130,7 +130,7 @@ public class IdeaRepository : IIdeaRepository
     {
         return _dbContext.Ideas
             .Include(i => i.Youth)
-            .Where(i => i.Project.Slug == projectSlug && i.TopicId == topicId)
+            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -181,7 +181,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Responses
             .Include(r => r.Youth)
             .Include(r => r.Reactions)
-            .Where(r => r.IdeaId == ideaId)
+            .Where(r => r.Idea.Id == ideaId)
             .OrderBy(r => r.CreatedAt)
             .ThenBy(r => r.Id)
             .ToList().AsReadOnly();
@@ -193,7 +193,7 @@ public class IdeaRepository : IIdeaRepository
             .Include(r => r.Idea)
             .Include(r => r.Youth)
             .Include(r => r.Reactions)
-            .Where(r => r.IdeaId == ideaId)
+            .Where(r => r.Idea.Id == ideaId)
             .OrderBy(r => r.CreatedAt)
             .ThenBy(r => r.Id)
             .ToList().AsReadOnly();

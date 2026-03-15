@@ -33,13 +33,10 @@ public class IdeaManager: IIdeaManager
         var idea = new Idea
         {
             Content = content.Trim(),
-            ProjectId = forProject.Id,
             Project = forProject,
             Status = status,
             SubmissionDate = DateTime.UtcNow,
-            TopicId = forTopic.Id,
             Topic = forTopic,
-            YouthToken = author.Token,
             Youth = author
         };
         Validate(idea);
@@ -128,15 +125,13 @@ public class IdeaManager: IIdeaManager
         var idea = _repository.ReadIdeaById(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
-        Youth author = GetYouthForProject(youthToken, idea.ProjectId);
+        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
 
         var response = new Response
         {
             Text = text.Trim(),
-            IdeaId = idea.Id,
             Idea = idea,
             CreatedAt = DateTime.UtcNow,
-            YouthToken = author.Token,
             Youth = author
         };
         Validate(response);
@@ -182,7 +177,7 @@ public class IdeaManager: IIdeaManager
     public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
     {
         var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
-        Youth author = GetYouthForProject(youthToken, response.Idea.ProjectId);
+        Youth author = GetYouthForProject(youthToken, response.Idea.Project.Id);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
         var existingReaction = _repository.ReadResponseReaction(responseId, author.Token, normalizedEmoji);

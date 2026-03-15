@@ -16,10 +16,10 @@ public class ResponseDto
         return new ResponseDto
         {
             Id = response.Id,
-            IdeaId = response.IdeaId,
+            IdeaId = response.Idea.Id,
             Text = response.Text,
             CreatedAt = response.CreatedAt,
-            YouthToken = response.YouthToken,
+            YouthToken = response.Youth.Token,
             Reactions = ResponseReactionSummaryDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
         };
     }

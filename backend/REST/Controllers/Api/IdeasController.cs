@@ -100,7 +100,7 @@ public class IdeasController : ControllerBase
         {
             var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
             var idea = _manager.GetIdeaById(ideaId);
-            if (idea.ProjectId != project.Id || idea.TopicId != topicId)
+            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
             {
                 return NotFound();
             }
@@ -124,7 +124,7 @@ public class IdeasController : ControllerBase
         {
             var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
             var idea = _manager.GetIdeaByIdWithProjectAndResponses(ideaId);
-            if (idea.ProjectId != project.Id || idea.TopicId != topicId)
+            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
             {
                 return NotFound();
             }
