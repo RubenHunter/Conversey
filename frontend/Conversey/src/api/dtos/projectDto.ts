@@ -20,6 +20,8 @@ export interface ApiProjectDto {
     Slug?: string
     organizationSlug?: string
     OrganizationSlug?: string
+    organizationName?: string
+    OrganizationName?: string
     title?: string
     Title?: string
     description?: string
@@ -41,4 +43,3 @@ export interface ApiProjectDto {
     style?: ApiProjectStyleDto
     Style?: ApiProjectStyleDto
 }
-

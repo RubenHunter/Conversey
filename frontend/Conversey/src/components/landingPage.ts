@@ -21,13 +21,20 @@ if (typeof window !== 'undefined') {
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
         .split('-')
+        .filter((part) => part.length > 0)
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
 }
 
+function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
+    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
+    return clean.slice(0, 3).toUpperCase() || 'ORG'
+}
+
 export async function renderLandingPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const organizationName = formatOrganizationName(project.organizationSlug)
+    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
+    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
 
     if (isSurveyCompleted(project.id)) {
         container.innerHTML = `
@@ -71,7 +78,7 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                 <div class="landing-topbar" aria-label="Survey branding">
                     <div class="landing-logo">Conversey</div>
                     <div class="landing-owner-brand" aria-label="Organization branding">
-                        <div class="landing-owner-logo" aria-hidden="true">AXA</div>
+                        <div class="landing-owner-logo" aria-hidden="true">${organizationBadge}</div>
                         <div class="landing-owner-name">${organizationName}</div>
                     </div>
                 </div>
@@ -89,6 +96,9 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                     </h1>
                     <p class="leading-relaxed landing-description">
                         ${project.description}
+                    </p>
+                    <p class="mt-3 text-xs uppercase tracking-[0.18em] opacity-80">
+                        Loaded from backend API
                     </p>
                 </div>
 

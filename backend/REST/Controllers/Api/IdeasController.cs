@@ -36,6 +36,7 @@ public class IdeasController : ControllerBase
                     Content = pending.idea.Content,
                 }
                     , pending.suggestion),
+                _ => throw new InvalidOperationException("Unknown submission response type")
             });
         }
         catch (ProjectNotFoundException e)

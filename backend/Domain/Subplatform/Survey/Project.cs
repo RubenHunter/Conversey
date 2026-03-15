@@ -18,6 +18,9 @@ public class Project
     
     [StringLength(4000)]
     public string Description { get; set; }
+
+    [StringLength(2048)]
+    public string ImageUrl { get; set; }
     public Status Status { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

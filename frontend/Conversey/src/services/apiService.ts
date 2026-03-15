@@ -19,11 +19,21 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
         return undefined as T
     }
 
+    const contentType = response.headers.get('content-type') ?? ''
+    const rawBody = await response.text()
+
+    if (rawBody.length === 0) {
+        return undefined as T
+    }
+
+    if (!contentType.toLowerCase().includes('application/json')) {
+        const preview = rawBody.slice(0, 120).replace(/\s+/g, ' ').trim()
+        throw new Error(`Expected JSON from ${url} but received '${contentType || 'unknown'}'. Body starts with: ${preview}`)
+    }
+
     try {
-        return response.json() as Promise<T>
+        return JSON.parse(rawBody) as T
     } catch (error) {
-        const contentType = response.headers.get('content-type')
-        throw new Error(`Failed to parse response as JSON from ${url}. Content-Type: ${contentType}. Error: ${error instanceof Error ? error.message : String(error)}`)
+        throw new Error(`Failed to parse JSON from ${url}: ${error instanceof Error ? error.message : String(error)}`)
     }
 }
-

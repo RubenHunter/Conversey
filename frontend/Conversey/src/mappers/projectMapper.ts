@@ -77,6 +77,7 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         id: dto.id ?? dto.Id ?? 0,
         slug,
         organizationSlug: pickString(dto.organizationSlug, dto.OrganizationSlug) ?? organizationSlugHint,
+        organizationName: pickString(dto.organizationName, dto.OrganizationName),
         title,
         description: pickString(dto.description, dto.Description) ?? '',
         imageUrl: pickString(dto.imageUrl, dto.ImageUrl) ?? '',
@@ -88,4 +89,3 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         style: mapStyle(dto.style ?? dto.Style),
     }
 }
-

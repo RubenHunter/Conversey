@@ -10,7 +10,6 @@ namespace Conversey.DAL;
 
 public class ConverseyDbContext : DbContext
 {
-    
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<WorkspaceAdmin> WorkspaceAdmins { get; set; }
     public DbSet<Project> Projects { get; set; }
@@ -19,9 +18,12 @@ public class ConverseyDbContext : DbContext
     public DbSet<Idea> Ideas { get; set; }
     public DbSet<Response> Responses { get; set; }
     public DbSet<Question> Questions { get; set; }
+    public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<TextAnswer> TextAnswers { get; set; }
+    public DbSet<OpenTextAnswer> OpenTextAnswers { get; set; }
+    public DbSet<ClosedTextAnswer> ClosedTextAnswers { get; set; }
     public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
-    
+
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
     }
@@ -44,8 +46,8 @@ public class ConverseyDbContext : DbContext
             .IsRequired()
             .HasMaxLength(50)
             .HasConversion(
-                slug => slug.ToString(),
-                str => Slug.FromName(str));
+                slug => slug.Text,
+                str => new Slug { Text = str });
 
 
         // Workspace 1-* Project
@@ -67,12 +69,16 @@ public class ConverseyDbContext : DbContext
             .IsRequired()
             .HasMaxLength(50)
             .HasConversion(
-                slug => slug.ToString(),
-                str => Slug.FromName(str));
+                slug => slug.Text,
+                str => new Slug { Text = str });
 
         modelBuilder.Entity<Project>()
             .Property(p => p.Description)
             .HasMaxLength(4000);
+
+        modelBuilder.Entity<Project>()
+            .Property(p => p.ImageUrl)
+            .HasMaxLength(2048);
 
         // Project 1-* Topic
         modelBuilder.Entity<Project>()
@@ -105,6 +111,23 @@ public class ConverseyDbContext : DbContext
             .Property(q => q.Text)
             .HasMaxLength(500);
 
+        modelBuilder.Entity<OpenQuestion>();
+        modelBuilder.Entity<SingleChoiceQuestion>();
+        modelBuilder.Entity<MultipleChoiceQuestion>();
+        modelBuilder.Entity<ScaleQuestion>();
+
+        modelBuilder.Entity<Question>()
+            .HasMany(q => q.Options)
+            .WithOne(o => o.Question)
+            .IsRequired();
+
+        modelBuilder.Entity<QuestionOption>()
+            .HasKey(o => o.Id);
+
+        modelBuilder.Entity<QuestionOption>()
+            .Property(o => o.Text)
+            .HasMaxLength(250);
+
         // Idea
         modelBuilder.Entity<Idea>()
             .HasKey(i => i.Id);
@@ -131,7 +154,14 @@ public class ConverseyDbContext : DbContext
 
         // TextAnswer
         modelBuilder.Entity<TextAnswer>()
+            .ToTable("TextAnswers")
             .HasKey(a => a.Id);
+
+        modelBuilder.Entity<OpenTextAnswer>()
+            .ToTable("OpenTextAnswers");
+
+        modelBuilder.Entity<ClosedTextAnswer>()
+            .ToTable("ClosedTextAnswers");
 
         // IntegerAnswer
         modelBuilder.Entity<IntegerAnswer>()

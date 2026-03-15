@@ -1,7 +1,6 @@
 import '../../styles/pages/ideas.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
-import { getWorkspaceByName } from '../../services/workspaceService.ts'
 import { getIdeasContext, submitIdea } from '../../services/ideaService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
@@ -15,21 +14,22 @@ import type { ActiveView } from './types.ts'
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
         .split('-')
+        .filter((part) => part.length > 0)
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
+}
+
+function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
+    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
+    return clean.slice(0, 3).toUpperCase() || 'ORG'
 }
 
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(project.id)
 
-    let organizationName = formatOrganizationName(project.organizationSlug)
-    try {
-        const workspace = await getWorkspaceByName(organizationName)
-        if (workspace) organizationName = workspace.name
-    } catch {
-        // Keep formatted organization fallback.
-    }
+    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
+    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
 
     const topics = context.topics
     const allIdeas = [...context.ideas]
@@ -52,7 +52,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="survey-topbar-logo-title">CONVERSEY</div>
                 </div>
                 <div class="survey-topbar-brand">
-                    <div class="survey-topbar-logo-badge">AXA</div>
+                    <div class="survey-topbar-logo-badge">${organizationBadge}</div>
                     <div class="survey-topbar-name">${organizationName}</div>
                 </div>
             </div>
@@ -64,7 +64,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                             <span class="ideas-topic-trigger-kicker">Selected topic</span>
                             <span id="ideas-topic-trigger-value" class="ideas-topic-trigger-value"></span>
                         </span>
-                        <span class="ideas-topic-chevron" aria-hidden="true">▾</span>
+                        <span class="ideas-topic-chevron" aria-hidden="true">v</span>
                     </button>
                     <div id="ideas-topic-menu" class="ideas-topic-menu" role="listbox"></div>
                 </section>
@@ -74,8 +74,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         <div class="ideas-community-head">
                             <h2 id="ideas-list-title" class="ideas-community-title"></h2>
                             <div class="ideas-list-controls">
-                                <button id="ideas-up" class="ideas-control-btn" aria-label="Previous idea">↑</button>
-                                <button id="ideas-down" class="ideas-control-btn" aria-label="Next idea">↓</button>
+                                <button id="ideas-up" class="ideas-control-btn" aria-label="Previous idea">Up</button>
+                                <button id="ideas-down" class="ideas-control-btn" aria-label="Next idea">Down</button>
                             </div>
                         </div>
                         <div id="ideas-list" class="ideas-list"></div>
@@ -120,14 +120,14 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div id="idea-panel-badges" class="idea-panel-badges"></div>
                     <p id="idea-panel-text" class="idea-panel-text"></p>
                     <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="React with emoji (coming soon)">
-                        <span aria-hidden="true">＋</span>
-                        <span aria-hidden="true">😊</span>
+                        <span aria-hidden="true">+</span>
+                        <span aria-hidden="true">:)</span>
                     </button>
                 </div>
                 <div id="idea-panel-comments" class="idea-panel-comments"></div>
             </div>
             <div class="idea-panel-footer">
-                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment…" rows="2"></textarea>
+                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>
                 <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
             </div>
         </div>
@@ -143,7 +143,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">Your original message</span>
                         <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response" title="Edit your response">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
+                            <span class="safety-review-edit-glyph" aria-hidden="true">E</span>
                             <span>Edit your response</span>
                         </button>
                     </div>
@@ -152,9 +152,9 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <div class="safety-review-block">
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">AI suggestion</span>
-                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI's suggestion" title="Edit the AI's suggestion">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
-                            <span>Edit the AI's suggestion</span>
+                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI suggestion" title="Edit the AI suggestion">
+                            <span class="safety-review-edit-glyph" aria-hidden="true">E</span>
+                            <span>Edit the AI suggestion</span>
                         </button>
                     </div>
                     <textarea id="safety-review-suggestion" class="safety-review-suggestion" rows="4" readonly></textarea>
@@ -165,7 +165,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
             </div>
         </div>
-    </div>
     `
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
@@ -195,12 +194,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             return allIdeas.filter((idea) => idea.authorType === 'self')
         }
 
-        const topicId = activeView.topicId
-        return allIdeas.filter((idea) => idea.topicId === topicId)
-    }
-
-    function getActiveLabel(): string {
-        return getActiveIdeasLabel(activeView, topics)
+        return allIdeas.filter((idea) => idea.topicId === activeView.topicId)
     }
 
     function openTopicMenu(): void {
@@ -235,22 +229,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 render()
             },
         })
-    }
-
-    function renderIdeasList(ideas: Idea[]): void {
-        renderCommunityIdeasList({
-            list,
-            ideas,
-            activeView,
-            topics,
-            upBtn,
-            downBtn,
-            flaggedIdeaIds,
-        })
-
-        if (ideas.length > 0) {
-            setActiveIdea(activeIdeaIndex, false)
-        }
     }
 
     function updateArrowState(totalIdeas: number): void {
@@ -292,7 +270,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             if (focusTurnTimeout !== null) {
                 window.clearTimeout(focusTurnTimeout)
             }
-            // Reflow lets the animation replay on repeated selections.
             void activeCard.offsetWidth
             activeCard.classList.add('turn-focus')
             focusTurnTimeout = window.setTimeout(() => {
@@ -310,7 +287,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
         activeCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
-        // Keep scroll-sync paused until smooth scrolling settles.
         listScrollUnlockTimeout = window.setTimeout(() => {
             isProgrammaticListScroll = false
             listScrollUnlockTimeout = null
@@ -354,7 +330,27 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         })
     }
 
-    function renderComposer(): void {
+    function render(): void {
+        topicTriggerValue.textContent = getActiveIdeasLabel(activeView, topics)
+        listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
+
+        renderTopicMenuBlock()
+        visibleIdeasCache = getVisibleIdeas()
+
+        renderCommunityIdeasList({
+            list,
+            ideas: visibleIdeasCache,
+            activeView,
+            topics,
+            upBtn,
+            downBtn,
+            flaggedIdeaIds,
+        })
+
+        if (visibleIdeasCache.length > 0) {
+            setActiveIdea(activeIdeaIndex, false)
+        }
+
         renderIdeasComposer({
             activeView,
             topics,
@@ -367,16 +363,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             magicBtn,
             speakBtn,
         })
-    }
-
-    function render(): void {
-        topicTriggerValue.textContent = getActiveLabel()
-        listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
-
-        renderTopicMenuBlock()
-        visibleIdeasCache = getVisibleIdeas()
-        renderIdeasList(visibleIdeasCache)
-        renderComposer()
     }
 
     topicTrigger.addEventListener('click', () => {
@@ -393,6 +379,30 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         if (!topicMenu.contains(target) && !topicTrigger.contains(target)) {
             closeTopicMenu()
         }
+    })
+
+    list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
+
+    list.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement
+        const card = target.closest<HTMLElement>('.ideas-card')
+        if (!card) return
+
+        const index = Number(card.getAttribute('data-idea-index'))
+        if (!Number.isFinite(index) || index < 0 || index >= visibleIdeasCache.length) return
+
+        setActiveIdea(index, true)
+        ideaPanel.open(visibleIdeasCache[index])
+    })
+
+    upBtn.addEventListener('click', () => {
+        if (visibleIdeasCache.length === 0) return
+        setActiveIdea(activeIdeaIndex - 1, true)
+    })
+
+    downBtn.addEventListener('click', () => {
+        if (visibleIdeasCache.length === 0) return
+        setActiveIdea(activeIdeaIndex + 1, true)
     })
 
     textarea.addEventListener('input', () => {
@@ -416,52 +426,27 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         submitBtn.disabled = true
         submitBtn.textContent = 'Saving...'
 
-        const createdIdea = await submitIdea({
-            projectId: project.id,
-            topicId: activeView.topicId,
-            body: decision.text,
-            authorType: 'self',
-        })
+        try {
+            const idea = await submitIdea({
+                projectId: project.id,
+                topicId: activeView.topicId,
+                body: decision.text,
+                authorType: 'self',
+            })
 
-        if (decision.offensiveContentDetected) {
-            flaggedIdeaIds.add(createdIdea.id)
+            allIdeas.unshift(idea)
+            if (decision.offensiveContentDetected) {
+                flaggedIdeaIds.add(idea.id)
+            }
+
+            textarea.value = ''
+            activeIdeaIndex = 0
+            render()
+        } finally {
+            submitBtn.textContent = 'Submit Idea'
+            submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
         }
-
-        allIdeas.unshift(createdIdea)
-        textarea.value = ''
-        submitBtn.textContent = 'Submit Idea'
-        render()
-    })
-
-    list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
-
-    list.addEventListener('click', (event) => {
-        const target = event.target as HTMLElement
-        const card = target.closest<HTMLElement>('.ideas-card')
-        if (!card) return
-
-        const index = Number(card.getAttribute('data-idea-index'))
-        if (!Number.isFinite(index)) return
-
-        if (index === activeIdeaIndex) {
-            const selectedIdea = visibleIdeasCache[index]
-            if (!selectedIdea) return
-            ideaPanel.open(selectedIdea)
-        } else {
-            setActiveIdea(index, true)
-        }
-    })
-
-    upBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0 || activeIdeaIndex <= 0) return
-        setActiveIdea(activeIdeaIndex - 1, true)
-    })
-
-    downBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0 || activeIdeaIndex >= visibleIdeasCache.length - 1) return
-        setActiveIdea(activeIdeaIndex + 1, true)
     })
 
     render()
 }
-
