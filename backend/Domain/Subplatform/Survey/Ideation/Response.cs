@@ -7,8 +7,6 @@ public class Response
     [Required]
     public int Id { get; set; }
 
-    public int IdeaId { get; set; }
-
     [Required]
     public Idea Idea { get; set; }
 
@@ -19,10 +17,10 @@ public class Response
     public DateTime CreatedAt { get; set; }
 
     [Required]
-    public string YouthToken { get; set; } = string.Empty;
-
-    [Required]
     public Youth Youth { get; set; }
 
     public ICollection<ResponseReaction> Reactions { get; set; } = new List<ResponseReaction>();
+    
+    public IdeaStatus Status { get; set; }
+    public ModerationInfo ModerationInfo { get; set; }
 }

@@ -16,19 +16,13 @@ public class Idea
 
     public DateTime SubmissionDate { get; set; }
     public IdeaStatus Status { get; set; }
-
-    public int ProjectId { get; set; }
+    public ModerationInfo ModerationInfo { get; set; }
 
     [Required]
     public Project Project { get; set; }
 
-    public int TopicId { get; set; }
-
     [Required]
     public Topic Topic { get; set; }
-
-    [Required]
-    public string YouthToken { get; set; } = string.Empty;
 
     [Required]
     public Youth Youth { get; set; }
