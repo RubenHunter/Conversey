@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Common;
+﻿﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Microsoft.EntityFrameworkCore;
 
@@ -134,7 +134,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId)
+            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId && i.Status == IdeaStatus.Approved)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();

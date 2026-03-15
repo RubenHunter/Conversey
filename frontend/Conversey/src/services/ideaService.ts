@@ -81,12 +81,25 @@ export async function getIdeasContext(workspaceSlug: string, projectSlug: string
     }
 }
 
-export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<Idea> {
+export interface IdeaSubmitResult {
+    idea: Idea
+    /** Present when backend flagged the content and generated an AI alternative */
+    aiSuggestion: string | null
+}
+
+export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<IdeaSubmitResult> {
     const youthToken = getIdeasYouthToken(request.projectId)
     const requestDto = mapSubmitIdeaRequestToApiSubmitIdeaRequest(request, youthToken)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${request.topicId}/ideas`
 
-    const result = await apiFetch<{ idea?: ApiIdeaDto; Idea?: ApiIdeaDto; suggestion?: string; Suggestion?: string }>(endpoint, {
+    console.log('[AI moderation] sending idea to backend for moderation...', { content: request.body })
+
+    const result = await apiFetch<{
+        idea?: ApiIdeaDto
+        Idea?: ApiIdeaDto
+        suggestion?: string
+        Suggestion?: string
+    }>(endpoint, {
         method: 'POST',
         body: JSON.stringify(requestDto),
     })
@@ -96,5 +109,57 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
         throw new Error('Unexpected idea submission response: missing idea payload')
     }
 
-    return mapApiIdeaToIdea(ideaDto, youthToken)
+    const aiSuggestion = result.suggestion ?? result.Suggestion ?? null
+    const trimmedSuggestion = aiSuggestion && aiSuggestion.trim().length > 0 ? aiSuggestion.trim() : null
+
+    if (trimmedSuggestion) {
+        console.log('[AI moderation] ⚠️ content flagged by Mistral AI')
+        console.log('[AI moderation] AI suggestion:', trimmedSuggestion)
+        console.log('[AI moderation] idea saved as Pending in DB, awaiting user decision')
+    } else {
+        console.log('[AI moderation] ✅ content approved by Mistral AI — idea saved as Approved')
+    }
+
+    return {
+        idea: mapApiIdeaToIdea(ideaDto, youthToken),
+        aiSuggestion: trimmedSuggestion,
+    }
+}
+
+interface UpdateIdeaAfterSafetyReviewRequest {
+    projectId: number
+    content: string
+    youthToken: string
+    markForReview: boolean
+}
+
+export async function updateIdeaAfterSafetyReview(
+    workspaceSlug: string,
+    projectSlug: string,
+    topicId: number,
+    ideaId: number,
+    projectId: number,
+    content: string,
+    markForReview: boolean,
+): Promise<Idea> {
+    const youthToken = getIdeasYouthToken(projectId)
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/${ideaId}`
+
+    const payload: UpdateIdeaAfterSafetyReviewRequest = {
+        projectId,
+        content,
+        youthToken,
+        markForReview,
+    }
+
+    const dto = await apiFetch<ApiIdeaDto>(endpoint, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    })
+
+    console.log(
+        `[AI moderation] updated idea ${ideaId} after safety dialog; status=${markForReview ? 'Pending' : 'Approved'}`,
+    )
+
+    return mapApiIdeaToIdea(dto, youthToken)
 }

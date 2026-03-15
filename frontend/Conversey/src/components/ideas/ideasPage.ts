@@ -1,7 +1,7 @@
 import '../../styles/pages/ideas.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
-import { getIdeasContext, getIdeasYouthToken, submitIdea } from '../../services/ideaService.ts'
+import { getIdeasContext, getIdeasYouthToken, submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
 import { addIdeaReaction, addIdeaResponse, addResponseReaction, getIdeaResponses, removeIdeaReaction, removeResponseReaction } from '../../services/ideaResponseService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
@@ -145,7 +145,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">Your original message</span>
                         <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response" title="Edit your response">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">E</span>
+                            <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                            </svg>
                             <span>Edit your response</span>
                         </button>
                     </div>
@@ -155,7 +158,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">AI suggestion</span>
                         <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI suggestion" title="Edit the AI suggestion">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">E</span>
+                            <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                            </svg>
                             <span>Edit the AI suggestion</span>
                         </button>
                     </div>
@@ -446,24 +452,99 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         }
 
         submitBtn.disabled = true
-        submitBtn.textContent = 'Saving...'
+        submitBtn.textContent = 'Checking...'
+
+        console.log('[ideas] submitting idea, waiting for AI moderation...')
 
         try {
-            const idea = await submitIdea(params.organizationSlug, params.projectSlug, {
+            // First submit — backend runs Mistral moderation
+            const result = await submitIdea(params.organizationSlug, params.projectSlug, {
                 projectId: project.id,
                 topicId: activeView.topicId,
-                body: decision.text,
+                body,
                 authorType: 'self',
             })
 
-            allIdeas.unshift(idea)
-            if (decision.offensiveContentDetected) {
-                flaggedIdeaIds.add(idea.id)
+            if (result.aiSuggestion) {
+                // Backend flagged it — show dialog with real AI suggestion
+                // The idea is already saved as Pending in the DB
+                console.log('[ideas] showing safety review dialog to user')
+                submitBtn.textContent = 'Submit Idea'
+                submitBtn.disabled = false
+
+                const decision = await safetyReviewDialog.reviewWithSuggestion(body, result.aiSuggestion)
+
+                if (!decision.proceed) {
+                    // User cancelled — leave textarea as-is
+                    console.log('[ideas] user dismissed safety dialog — idea stays Pending in DB')
+                    return
+                }
+
+                if (decision.useOriginal) {
+                    // Keep original idea pending; if edited, persist the edited text as pending.
+                    if (decision.edited) {
+                        await updateIdeaAfterSafetyReview(
+                            params.organizationSlug,
+                            params.projectSlug,
+                            activeView.topicId,
+                            result.idea.id,
+                            project.id,
+                            decision.text,
+                            true,
+                        )
+                        result.idea.body = decision.text
+                    }
+
+                    console.log('[ideas] user chose original text — idea stays Pending in DB')
+                    allIdeas.unshift({ ...result.idea, authorType: 'self' })
+                    flaggedIdeaIds.add(result.idea.id)
+                    textarea.value = ''
+                    activeIdeaIndex = 0
+                    render()
+                    return
+                }
+
+                // User accepted AI suggestion. If edited, keep it pending for review.
+                if (decision.edited) {
+                    await updateIdeaAfterSafetyReview(
+                        params.organizationSlug,
+                        params.projectSlug,
+                        activeView.topicId,
+                        result.idea.id,
+                        project.id,
+                        decision.text,
+                        true,
+                    )
+
+                    console.log('[ideas] edited AI suggestion saved as Pending for review')
+                    allIdeas.unshift({ ...result.idea, body: decision.text, authorType: 'self' })
+                    flaggedIdeaIds.add(result.idea.id)
+                } else {
+                    // Unedited AI suggestion can be approved immediately.
+                    await updateIdeaAfterSafetyReview(
+                        params.organizationSlug,
+                        params.projectSlug,
+                        activeView.topicId,
+                        result.idea.id,
+                        project.id,
+                        decision.text,
+                        false,
+                    )
+
+                    console.log('[ideas] unedited AI suggestion accepted and approved')
+                    allIdeas.unshift({ ...result.idea, body: decision.text, authorType: 'self' })
+                }
+            } else {
+                // Approved — add directly
+                console.log('[ideas] idea approved and added to list')
+                allIdeas.unshift({ ...result.idea, authorType: 'self' })
             }
 
             textarea.value = ''
             activeIdeaIndex = 0
             render()
+        } catch (err) {
+            console.error('[ideas] submit failed', err)
         } finally {
             submitBtn.textContent = 'Submit Idea'
             submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'

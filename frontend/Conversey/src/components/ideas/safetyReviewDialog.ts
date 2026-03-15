@@ -4,6 +4,10 @@ export interface PostSafetyDecision {
     proceed: boolean
     text: string
     offensiveContentDetected: boolean
+    /** true when the user chose to post the original (flagged) text */
+    useOriginal?: boolean
+    /** true when the user edited the text in the dialog before posting */
+    edited?: boolean
 }
 
 interface CreateSafetyReviewDialogParams {
@@ -12,6 +16,7 @@ interface CreateSafetyReviewDialogParams {
 
 export interface SafetyReviewDialogController {
     reviewBeforePost: (input: string) => Promise<PostSafetyDecision>
+    reviewWithSuggestion: (original: string, suggestion: string) => Promise<PostSafetyDecision>
 }
 
 export function createSafetyReviewDialogController({ root }: CreateSafetyReviewDialogParams): SafetyReviewDialogController {
@@ -25,6 +30,8 @@ export function createSafetyReviewDialogController({ root }: CreateSafetyReviewD
     const postAnywayBtn = root.querySelector<HTMLButtonElement>('#safety-review-post-anyway')!
 
     let activeResolver: ((decision: PostSafetyDecision) => void) | null = null
+    let baselineOriginal = ''
+    let baselineSuggestion = ''
 
     function closeDialog(): void {
         dialog.classList.remove('open')
@@ -47,40 +54,45 @@ export function createSafetyReviewDialogController({ root }: CreateSafetyReviewD
     editOriginalBtn.addEventListener('click', () => {
         originalInput.readOnly = false
         originalInput.focus()
-        const length = originalInput.value.length
-        originalInput.setSelectionRange(length, length)
+        originalInput.setSelectionRange(originalInput.value.length, originalInput.value.length)
     })
 
     editSuggestionBtn.addEventListener('click', () => {
         suggestionInput.readOnly = false
         suggestionInput.focus()
-        const length = suggestionInput.value.length
-        suggestionInput.setSelectionRange(length, length)
+        suggestionInput.setSelectionRange(suggestionInput.value.length, suggestionInput.value.length)
     })
 
     acceptSuggestionBtn.addEventListener('click', () => {
         const text = suggestionInput.value.trim()
         if (text.length === 0) return
-        resolve({ proceed: true, text, offensiveContentDetected: false })
+        resolve({
+            proceed: true,
+            text,
+            offensiveContentDetected: false,
+            useOriginal: false,
+            edited: text !== baselineSuggestion,
+        })
     })
 
     postAnywayBtn.addEventListener('click', () => {
         const original = originalInput.value.trim()
         if (original.length === 0) return
-        resolve({ proceed: true, text: original, offensiveContentDetected: true })
+        resolve({
+            proceed: true,
+            text: original,
+            offensiveContentDetected: true,
+            useOriginal: true,
+            edited: original !== baselineOriginal,
+        })
     })
 
-    async function reviewBeforePost(input: string): Promise<PostSafetyDecision> {
-        const result = await reviewContentForSafety(input)
-        if (!result.flagged || !result.suggestion) {
-            return { proceed: true, text: input, offensiveContentDetected: false }
-        }
-
-        const suggestionText = result.suggestion
-
-        return await new Promise<PostSafetyDecision>((resolveDecision) => {
+    function openDialog(originalText: string, suggestionText: string): Promise<PostSafetyDecision> {
+        return new Promise<PostSafetyDecision>((resolveDecision) => {
             activeResolver = resolveDecision
-            originalInput.value = input
+            baselineOriginal = originalText.trim()
+            baselineSuggestion = suggestionText.trim()
+            originalInput.value = originalText
             originalInput.readOnly = true
             suggestionInput.value = suggestionText
             suggestionInput.readOnly = true
@@ -94,7 +106,20 @@ export function createSafetyReviewDialogController({ root }: CreateSafetyReviewD
         })
     }
 
+    async function reviewBeforePost(input: string): Promise<PostSafetyDecision> {
+        const result = await reviewContentForSafety(input)
+        if (!result.flagged || !result.suggestion) {
+            return { proceed: true, text: input, offensiveContentDetected: false }
+        }
+        return openDialog(input, result.suggestion)
+    }
+
+    async function reviewWithSuggestion(original: string, suggestion: string): Promise<PostSafetyDecision> {
+        return openDialog(original, suggestion)
+    }
+
     return {
         reviewBeforePost,
+        reviewWithSuggestion,
     }
 }

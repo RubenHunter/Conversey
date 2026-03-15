@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
+using IdeaResponse = Conversey.BL.Domain.Subplatform.Survey.Ideation.Response;
 
 namespace Conversey.BL.Subplatform.Survey.Ideation;
 
@@ -11,11 +13,13 @@ public class IdeaManager: IIdeaManager
 {
     private readonly IIdeaRepository _repository;
     private readonly IProjectRepository _projectRepository;
+    private readonly IAiManager _aiManager;
 
-    public IdeaManager(IIdeaRepository repository, IProjectRepository projectRepository)
+    public IdeaManager(IIdeaRepository repository, IProjectRepository projectRepository, IAiManager aiManager)
     {
         _repository = repository;
         _projectRepository = projectRepository;
+        _aiManager = aiManager;
     }
 
     public SubmissionResponse SubmitIdea(string content, int projectId, int topicId, string youthToken) 
@@ -120,14 +124,14 @@ public class IdeaManager: IIdeaManager
         }
     }
 
-    public Response AddResponse(string text, int ideaId, string youthToken)
+    public IdeaResponse AddResponse(string text, int ideaId, string youthToken)
     {
         var idea = _repository.ReadIdeaById(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
 
-        var response = new Response
+        var response = new IdeaResponse
         {
             Text = text.Trim(),
             Idea = idea,
@@ -139,27 +143,27 @@ public class IdeaManager: IIdeaManager
         return response;
     }
 
-    public Response GetResponseById(int responseId)
+    public IdeaResponse GetResponseById(int responseId)
     {
         return _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public Response GetResponseByIdWithIdea(int responseId)
+    public IdeaResponse GetResponseByIdWithIdea(int responseId)
     {
         return _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> GetResponsesFromIdeaByIdeaId(int ideaId)
     {
         return _repository.ReadResponsesFromIdeaByIdeaId(ideaId);
     }
 
-    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId)
     {
         return _repository.ReadResponsesFromIdeaByIdeaIdWithIdea(ideaId);
     }
 
-    public Response ChangeResponse(Response response)
+    public IdeaResponse ChangeResponse(IdeaResponse response)
     {
         Validate(response);
         _repository.UpdateResponse(response);
@@ -274,11 +278,42 @@ public class IdeaManager: IIdeaManager
         return string.IsNullOrWhiteSpace(emoji) ? string.Empty : emoji.Trim();
     }
 
-    private static bool EvaluateIdeaModeration(string content, out string suggestion)
+    private bool EvaluateIdeaModeration(string content, out string suggestion)
     {
-        _ = content;
         suggestion = string.Empty;
-        return true;
+
+        Console.WriteLine($"[IdeaManager] 🔍 Sending content to Mistral AI for moderation: \"{content}\"");
+
+        try
+        {
+            var decision = _aiManager.ModerateContent(content);
+
+            if (decision.IsAllowed)
+            {
+                Console.WriteLine("[IdeaManager] ✅ Mistral AI: content is ALLOWED");
+                return true;
+            }
+
+            Console.WriteLine("[IdeaManager] ⚠️ Mistral AI: content is FLAGGED — generating alternative...");
+
+            try
+            {
+                suggestion = _aiManager.GenerateAiAlternative(content);
+                Console.WriteLine($"[IdeaManager] 💬 AI alternative: \"{suggestion}\"");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdeaManager] Failed to generate AI alternative: {ex.Message}");
+                suggestion = "Please rephrase your idea in a respectful way.";
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaManager] ❌ Moderation check failed, allowing by default: {ex.Message}");
+            return true;
+        }
     }
 
     private void Validate(object obj)

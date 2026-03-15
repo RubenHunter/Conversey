@@ -134,6 +134,8 @@ public class MistralAiManager : IAiManager
             var moderation = result.Results[0];
             var categories = moderation.Categories;
 
+            Console.WriteLine($"[Mistral] Category flags — sexual={categories.Sexual}, hate={categories.HateAndDiscrimination}, violence={categories.ViolenceAndThreats}, dangerous={categories.DangerousAndCriminalContent}, selfharm={categories.SelfHarm}, pii={categories.Pii}");
+
             var blocked =
                 categories.Sexual ||
                 categories.HateAndDiscrimination ||

@@ -1,21 +1,34 @@
+using System.Text.Json.Serialization;
+
 namespace Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 public struct ModerationInfo
 {
+    [JsonPropertyName("sexual")]
     public bool Sexual { get; set; }
+
+    [JsonPropertyName("hate_and_discrimination")]
     public bool HateAndDiscrimination { get; set; }
+
+    [JsonPropertyName("violence_and_threats")]
     public bool ViolenceAndThreats { get; set; }
+
+    [JsonPropertyName("dangerous_and_criminal_content")]
     public bool DangerousAndCriminalContent { get; set; }
+
+    [JsonPropertyName("selfharm")]
     public bool SelfHarm { get; set; }
+
+    [JsonPropertyName("pii")]
     public bool Pii { get; set; }
 
     public byte Serialize()
     {
-        return (byte)(ToByte(Sexual) &
-                      ToByte(HateAndDiscrimination) << 1 &
-                      ToByte(ViolenceAndThreats) << 2 &
-                      ToByte(DangerousAndCriminalContent) << 3 &
-                      ToByte(SelfHarm) << 4 &
+        return (byte)(ToByte(Sexual) |
+                      ToByte(HateAndDiscrimination) << 1 |
+                      ToByte(ViolenceAndThreats) << 2 |
+                      ToByte(DangerousAndCriminalContent) << 3 |
+                      ToByte(SelfHarm) << 4 |
                       ToByte(Pii) << 5);
     }
 

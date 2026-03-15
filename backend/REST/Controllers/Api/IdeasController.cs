@@ -238,6 +238,64 @@ public class IdeasController : ControllerBase
         }
     }
 
+    [HttpPut("{ideaId}")]
+    public ActionResult<IdeaDto> UpdateAfterSafetyReview(
+        string workspaceSlug,
+        string projectSlug,
+        int topicId,
+        int ideaId,
+        [FromBody] UpdateIdeaAfterSafetyReviewDto request)
+    {
+        try
+        {
+            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+
+            if (request.ProjectId != project.Id)
+            {
+                return BadRequest("ProjectId in payload does not match route project.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.YouthToken))
+            {
+                return BadRequest("YouthToken is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+            {
+                return BadRequest("Content is required.");
+            }
+
+            var idea = _manager.GetIdeaByIdWithProject(ideaId);
+            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
+            {
+                return NotFound();
+            }
+
+            if (!string.Equals(idea.Youth.Token, request.YouthToken.Trim(), StringComparison.Ordinal))
+            {
+                return Forbid();
+            }
+
+            idea.Content = request.Content.Trim();
+            idea.Status = request.MarkForReview ? IdeaStatus.Pending : IdeaStatus.Approved;
+            var updated = _manager.ChangeIdea(idea);
+
+            return Ok(IdeaDto.From(updated));
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
     private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
     {
         var project = _projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));

@@ -1,15 +1,33 @@
 ﻿.ideas-shell {
   height: 100vh;
   height: 100svh;
+  /* #app has items-center which would shrink this — force full width */
+  width: 100%;
+  align-self: stretch;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg);
 }
 
+/* Shell is now truly full-width so the topbar vw-bleed resolves to zero shift.
+   Override it to sit flat without any horizontal offset. */
+.ideas-shell .survey-topbar {
+  width: 100%;
+  margin-left: 0;
+  box-sizing: border-box;
+}
+
+/* Restore the logo alignment the shared topbar-left relies on */
+.ideas-shell .survey-topbar-left {
+  margin-left: calc(var(--survey-topbar-pad-x) * -1);
+  padding-left: 0.5rem;
+}
+
 .ideas-body {
   flex: 1;
   min-height: 0;
+  /* Cap content width and center — shell is full-width so this is safe */
   width: min(100%, 1000px);
   margin: 0 auto;
   display: flex;
@@ -17,17 +35,6 @@
   overflow: hidden;
   padding: 0 0.85rem 1rem;
   gap: 0.75rem;
-}
-
-/* Keep ideas topbar fully visible on wide screens (no offscreen bleed hack). */
-.ideas-shell .survey-topbar {
-  width: 100%;
-  margin-left: 0;
-}
-
-.ideas-shell .survey-topbar-left {
-  margin-left: 0;
-  padding-left: 0;
 }
 
 .ideas-topic-switcher {
@@ -901,8 +908,9 @@
 }
 
 .safety-review-edit-glyph {
-  font-size: 0.92rem;
-  font-weight: 700;
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
 }
 
 .safety-review-label {
