@@ -27,6 +27,7 @@ export interface Project {
     id: number
     slug: string
     organizationSlug: string
+    organizationName?: string
     title: string
     description: string
     imageUrl: string
