@@ -22,6 +22,8 @@ dist-ssr
 *.sln
 *.sw?
 
+*.idea
+
 # Node
 node_modules/
 .pnpm-store/
@@ -29,7 +31,8 @@ frontend/Conversey/.pnpm-store/
 
 # Vite
 dist/
-
+.idea
+idea/*
 # Logs
 *.log
 
