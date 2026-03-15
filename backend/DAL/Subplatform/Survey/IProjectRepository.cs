@@ -1,5 +1,6 @@
 ﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 namespace Conversey.DAL.Subplatform.Survey;
 
@@ -36,6 +37,7 @@ public interface IProjectRepository
     bool DeleteProject(int projectId);
     Topic ReadTopicById(int topicId);
     Topic ReadTopicByIdWithProject(int topicId);
+    IReadOnlyCollection<Idea> ReadIdeasFromTopicByProjectIdAndTopicId(int projectId, int topicId);
     void CreateTopic(Topic topic);
     void UpdateTopic(Topic topic);
     bool DeleteTopic(int topicId);

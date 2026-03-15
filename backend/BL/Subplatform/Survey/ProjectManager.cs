@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.BL.Domain.Subplatform.Survey.Questions;
 using Conversey.BL.Subplatform;
 using Conversey.DAL.Subplatform.Survey;
@@ -131,7 +132,7 @@ public class ProjectManager: IProjectManager
             EndDate = endDate,
             InteractionForm = interactionForm,
             Workspace = workspace,
-            Topic = new List<Topic>(),
+            Topics = new List<Topic>(),
             Questions = new List<Question>(),
             Youths = new List<Youth>()
         };
@@ -167,6 +168,11 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadTopicsFromProjectByProjectId(projectId);
     }
 
+    public IReadOnlyCollection<Idea> GetIdeasFromTopicByProjectIdAndTopicId(int projectId, int topicId)
+    {
+        return _projectRepository.ReadIdeasFromTopicByProjectIdAndTopicId(projectId, topicId);
+    }
+
     public Topic AddTopic(string name, string context, int projectId)
     {
         var project = _projectRepository.ReadProjectById(projectId);
@@ -176,7 +182,8 @@ public class ProjectManager: IProjectManager
         {
             Name = name,
             Context = context,
-            Project = project
+            Project = project,
+            Ideas = new List<Idea>()
         };
         Validate(topic);
         _projectRepository.CreateTopic(topic);

@@ -76,7 +76,7 @@ public class ConverseyDbContext : DbContext
 
         // Project 1-* Topic
         modelBuilder.Entity<Project>()
-            .HasMany(p => p.Topic)
+            .HasMany(p => p.Topics)
             .WithOne(t => t.Project);
 
         // Project 1-* Youth
@@ -114,7 +114,12 @@ public class ConverseyDbContext : DbContext
             .HasOne(i => i.Project)
             .WithMany()
             .IsRequired();
-
+        
+        // Topics 1-* Idea
+        modelBuilder.Entity<Idea>()
+            .HasOne(i => i.Topic)
+            .WithMany(t => t.Ideas);
+        
         // Idea 1-* Response
         modelBuilder.Entity<Idea>()
             .HasMany(i => i.Responses)

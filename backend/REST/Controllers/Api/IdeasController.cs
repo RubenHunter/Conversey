@@ -1,4 +1,5 @@
-﻿using Conversey.BL.Subplatform.Survey;
+﻿using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ public class IdeasController : ControllerBase
     {
         try
         {
-            SubmissionResponse response = _manager.SubmitIdea(idea.Content, idea.ProjectId);
+            SubmissionResponse response = _manager.SubmitIdea(idea.Content, idea.ProjectId, idea.TopicId);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(new IdeaDto
@@ -38,6 +39,35 @@ public class IdeasController : ControllerBase
             });
         }
         catch (ProjectNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpGet]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetAllIdeas()
+    {
+        IReadOnlyCollection<Idea> ideas = _manager.GetAllIdeas();
+        return Ok(ideas.Select(i => new IdeaDto
+        {
+            ProjectId = i.Project.Id,
+            Content = i.Content,
+        }).ToList());
+    }
+
+    [HttpGet("{ideaId}")]
+    public ActionResult<IdeaDto> GetIdeaById(int ideaId)
+    {
+        try
+        {
+            Idea idea = _manager.GetIdeaById(ideaId);
+            return Ok(new IdeaDto
+            {
+                ProjectId = idea.Project.Id,
+                Content = idea.Content,
+            });
+        }
+        catch (IdeaNotFoundException e)
         {
             return NotFound(e.Message);
         }

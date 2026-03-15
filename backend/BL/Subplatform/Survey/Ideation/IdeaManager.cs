@@ -17,10 +17,12 @@ public class IdeaManager: IIdeaManager
         _projectRepository = projectRepository;
     }
 
-    public SubmissionResponse SubmitIdea(string content, int projectId) 
+    public SubmissionResponse SubmitIdea(string content, int projectId, int topicId) 
     {
         Project forProject = _projectRepository.ReadProjectById(projectId) 
                              ?? throw new ProjectNotFoundException(projectId.ToString());
+        Topic forTopic = forProject.Topics.SingleOrDefault(t => t.Id == topicId) 
+                         ?? throw new TopicNotFoundException(topicId.ToString());
         
         //check if idea is allowed by AI
         bool allowed = true;
@@ -38,6 +40,7 @@ public class IdeaManager: IIdeaManager
             Content = content,
             Project = forProject,
             Status = status,
+            Topic = forTopic
         };
         _repository.CreateIdea(idea);
 

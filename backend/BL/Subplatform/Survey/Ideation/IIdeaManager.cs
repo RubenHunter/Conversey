@@ -5,7 +5,7 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 public interface IIdeaManager
 {
     
-    SubmissionResponse SubmitIdea(string content, int projectId);
+    SubmissionResponse SubmitIdea(string content, int projectId, int topicId);
 
     Idea GetIdeaById(int ideaId);
     Idea GetIdeaByIdWithProject(int ideaId);

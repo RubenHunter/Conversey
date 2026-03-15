@@ -15,5 +15,8 @@ public class Idea
 
     [Required]
     public Project Project { get; set; }
+    
+    [Required]
+    public Topic Topic { get; set; }
     public IEnumerable<Response> Responses { get; set; }
 }

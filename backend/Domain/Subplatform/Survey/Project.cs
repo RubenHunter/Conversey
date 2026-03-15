@@ -23,7 +23,7 @@ public class Project
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }
     
-    public IEnumerable<Topic> Topic { get; set; }
+    public IEnumerable<Topic> Topics { get; set; }
     [NotMapped]
     public ProjectStyle Style { get; set; }
     
