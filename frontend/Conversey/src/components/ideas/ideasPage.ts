@@ -26,7 +26,7 @@ function getOrganizationBadge(organizationName: string, organizationSlug: string
 
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const context = await getIdeasContext(project.id)
+    const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
 
     const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
     const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
@@ -64,7 +64,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                             <span class="ideas-topic-trigger-kicker">Selected topic</span>
                             <span id="ideas-topic-trigger-value" class="ideas-topic-trigger-value"></span>
                         </span>
-                        <span class="ideas-topic-chevron" aria-hidden="true">v</span>
+                        <span class="ideas-topic-chevron" aria-hidden="true">▾</span>
                     </button>
                     <div id="ideas-topic-menu" class="ideas-topic-menu" role="listbox"></div>
                 </section>
@@ -74,8 +74,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         <div class="ideas-community-head">
                             <h2 id="ideas-list-title" class="ideas-community-title"></h2>
                             <div class="ideas-list-controls">
-                                <button id="ideas-up" class="ideas-control-btn" aria-label="Previous idea">Up</button>
-                                <button id="ideas-down" class="ideas-control-btn" aria-label="Next idea">Down</button>
+                                <button id="ideas-up" class="ideas-control-btn" aria-label="Previous idea">↑</button>
+                                <button id="ideas-down" class="ideas-control-btn" aria-label="Next idea">↓</button>
                             </div>
                         </div>
                         <div id="ideas-list" class="ideas-list"></div>
@@ -194,7 +194,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             return allIdeas.filter((idea) => idea.authorType === 'self')
         }
 
-        return allIdeas.filter((idea) => idea.topicId === activeView.topicId)
+        const topicId = activeView.topicId
+        return allIdeas.filter((idea) => idea.topicId === topicId)
     }
 
     function openTopicMenu(): void {
@@ -427,7 +428,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         submitBtn.textContent = 'Saving...'
 
         try {
-            const idea = await submitIdea({
+            const idea = await submitIdea(params.organizationSlug, params.projectSlug, {
                 projectId: project.id,
                 topicId: activeView.topicId,
                 body: decision.text,

@@ -52,12 +52,23 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
 function mapTopic(topicDto: ApiTopicDto | undefined): ProjectTopic | undefined {
     if (!topicDto) return undefined
 
+    const id = (topicDto.id ?? topicDto.Id) ?? 0
     const name = pickString(topicDto.name, topicDto.Name)
     const context = pickString(topicDto.context, topicDto.Context) ?? ''
 
     if (!name) return undefined
 
-    return { name, context }
+    return { id, name, context }
+}
+
+function mapTopics(topicDtos: ApiTopicDto[] | undefined): ProjectTopic[] | undefined {
+    if (!topicDtos || topicDtos.length === 0) return undefined
+
+    const topics = topicDtos
+        .map(mapTopic)
+        .filter((topic): topic is ProjectTopic => topic !== undefined)
+
+    return topics.length > 0 ? topics : undefined
 }
 
 function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | undefined {
@@ -72,6 +83,7 @@ function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | unde
 export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint: string, projectSlugHint: string): Project {
     const title = pickString(dto.title, dto.Title) ?? projectSlugHint
     const slug = pickString(dto.slug, dto.Slug) ?? toSlug(title)
+    const topics = mapTopics(dto.topics ?? dto.Topics)
 
     return {
         id: dto.id ?? dto.Id ?? 0,
@@ -85,7 +97,8 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         startDate: pickString(dto.startDate, dto.StartDate),
         endDate: pickString(dto.endDate, dto.EndDate),
         interactionType: mapInteractionType(dto.interactionType ?? dto.InteractionType ?? dto.interactionForm ?? dto.InteractionForm),
-        topic: mapTopic(dto.topic ?? dto.Topic),
+        topic: mapTopic(dto.topic ?? dto.Topic) ?? topics?.[0],
+        topics,
         style: mapStyle(dto.style ?? dto.Style),
     }
 }

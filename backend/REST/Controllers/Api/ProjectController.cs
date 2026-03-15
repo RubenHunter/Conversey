@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Common;
+﻿﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.REST.Models.Dto;
@@ -33,7 +33,7 @@ public class ProjectController : ControllerBase
 
     private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
     {
-        var project = _manager.GetProjectBySlugWithWorkspaceAndQuestions(ToSlug(projectSlug));
+        var project = _manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
 
         if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
         {

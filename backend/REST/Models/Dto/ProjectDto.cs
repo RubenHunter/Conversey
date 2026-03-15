@@ -17,10 +17,15 @@ public class ProjectDto
     public DateTime? EndDate { get; set; }
     public string InteractionForm { get; set; }
     public ProjectTopicDto? Topic { get; set; }
+    public IReadOnlyCollection<ProjectTopicDto> Topics { get; set; } = Array.Empty<ProjectTopicDto>();
 
     public static ProjectDto From(Project project)
     {
-        Topic? topic = project.Topic?.FirstOrDefault();
+        Topic? firstTopic = project.Topic?.FirstOrDefault();
+        IReadOnlyCollection<ProjectTopicDto> topics = (project.Topic ?? Array.Empty<Topic>())
+            .Select(ProjectTopicDto.From)
+            .ToList()
+            .AsReadOnly();
 
         return new ProjectDto
         {
@@ -35,13 +40,15 @@ public class ProjectDto
             StartDate = project.StartDate == default ? null : project.StartDate,
             EndDate = project.EndDate == default ? null : project.EndDate,
             InteractionForm = project.InteractionForm.ToString(),
-            Topic = topic is null ? null : ProjectTopicDto.From(topic)
+            Topic = firstTopic is null ? null : ProjectTopicDto.From(firstTopic),
+            Topics = topics
         };
     }
 }
 
 public class ProjectTopicDto
 {
+    public int Id { get; set; }
     public string Name { get; set; }
     public string Context { get; set; }
 
@@ -49,6 +56,7 @@ public class ProjectTopicDto
     {
         return new ProjectTopicDto
         {
+            Id = topic.Id,
             Name = topic.Name,
             Context = topic.Context ?? string.Empty
         };

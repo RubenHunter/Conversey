@@ -20,16 +20,21 @@ export interface ApiIdeaDto {
     TopicId?: number
     body?: string
     Body?: string
+    content?: string
+    Content?: string
     authorType?: 'self' | 'other'
     AuthorType?: 'self' | 'other'
+    youthToken?: string
+    YouthToken?: string
     createdAt?: string
     CreatedAt?: string
+    submissionDate?: string
+    SubmissionDate?: string
 }
 
 export interface ApiSubmitIdeaRequestDto {
     projectId: number
     topicId: number
-    body: string
-    authorType: 'self' | 'other'
+    content: string
+    youthToken: string
 }
-

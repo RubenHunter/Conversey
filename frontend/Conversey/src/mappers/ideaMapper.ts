@@ -21,23 +21,24 @@ export function mapApiIdeaTopicToIdeaTopic(dto: ApiIdeaTopicDto): IdeaTopic {
     }
 }
 
-export function mapApiIdeaToIdea(dto: ApiIdeaDto): Idea {
+export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): Idea {
+    const youthToken = pickString(dto.youthToken, dto.YouthToken)
+
     return {
         id: pickNumber(dto.id, dto.Id) ?? 0,
         projectId: pickNumber(dto.projectId, dto.ProjectId) ?? 0,
         topicId: pickNumber(dto.topicId, dto.TopicId) ?? 0,
-        body: pickString(dto.body, dto.Body) ?? '',
-        authorType: dto.authorType ?? dto.AuthorType ?? 'other',
-        createdAt: pickString(dto.createdAt, dto.CreatedAt) ?? new Date().toISOString(),
+        body: pickString(dto.body, dto.Body, dto.content, dto.Content) ?? '',
+        authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? 'self' : dto.authorType ?? dto.AuthorType ?? 'other',
+        createdAt: pickString(dto.createdAt, dto.CreatedAt, dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
     }
 }
 
-export function mapSubmitIdeaRequestToApiSubmitIdeaRequest(request: SubmitIdeaRequest): ApiSubmitIdeaRequestDto {
+export function mapSubmitIdeaRequestToApiSubmitIdeaRequest(request: SubmitIdeaRequest, youthToken: string): ApiSubmitIdeaRequestDto {
     return {
         projectId: request.projectId,
         topicId: request.topicId,
-        body: request.body,
-        authorType: request.authorType,
+        content: request.body,
+        youthToken,
     }
 }
-
