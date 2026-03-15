@@ -17,20 +17,31 @@ public class IdeaManager: IIdeaManager
         _projectRepository = projectRepository;
     }
 
-    public void AddIdea(string content, int projectId)
+    public SubmissionResponse SubmitIdea(string content, int projectId) 
     {
-        Project forProject = _projectRepository.ReadProjectById(projectId);
-        if (forProject == null)
+        Project forProject = _projectRepository.ReadProjectById(projectId) 
+                             ?? throw new ProjectNotFoundException(projectId.ToString());
+        
+        //check if idea is allowed by AI
+        bool allowed = true;
+        string suggestion = "";
+
+        IdeaStatus status = IdeaStatus.Approved;
+        if (!allowed)
         {
-            throw new ProjectNotFoundException(projectId.ToString());
+            status = IdeaStatus.Pending;
+            suggestion = "a suggestion";
         }
 
         var idea = new Idea
         {
             Content = content,
-            Project = forProject
+            Project = forProject,
+            Status = status,
         };
         _repository.CreateIdea(idea);
+
+        return allowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, suggestion);
     }
 
     public Idea GetIdeaById(int ideaId)
