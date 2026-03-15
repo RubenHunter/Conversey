@@ -1,71 +1,59 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
+using Conversey.BL.Domain.Subplatform.Survey;
 
 namespace Conversey.DAL;
 
-public class DataSeeder
+public static class DataSeeder
 {
-    private static ConverseyDbContext _context;
     public static void Seed(ConverseyDbContext context)
     {
-        _context = context;
-        _context.CreateDatabase(false);
-        
-        
-        // Create Lists
-        List<Workspace> workspaces =
-        [
-            CreateWorkspace
-            (
-                "Gemeente"
-            ),
-            CreateWorkspace
-            (
-                "School"
-            ),
-            CreateWorkspace
-            (
-                "Axa Bank"
-            )
-        ];
-        
-        
-        // Add to database
-        _context.Workspaces.AddRange(workspaces);
-        
-        
-        
-        
-        _context.SaveChanges();
-        
-    }
+        context.CreateDatabase(false);
 
-    private static Workspace CreateWorkspace(string name)
-    {
-        var slugExists = new Func<Slug, bool>(slug => _context!.Workspaces.Any(w => w.Slug == slug));
-        var workspace = new Workspace
+
+        #region SeedWorkspaces
+
+        var gemeente = new Workspace
         {
-            Name = name,
-            Slug = Slug.FromName(name)
+            Name = "Gemeente"
         };
-        if (slugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
-        
-        Validate(workspace);
-        _context.Workspaces.Add(workspace);
-        return workspace;;
-    }
-    
-    
-    private static void Validate(object obj)
-    {
-        var validationResults = new List<ValidationResult>();
-        var context = new ValidationContext(obj);
+        gemeente.Slug = Slug.FromName(gemeente.Name);
 
-        if (!Validator.TryValidateObject(obj, context, validationResults, true))
+
+        var school = new Workspace
         {
-            throw new ValidationException(string.Join("; ", validationResults.Select(r => r.ErrorMessage)));
-        }
+            Name = "School",
+        };
+        school.Slug = Slug.FromName(school.Name);
+        
+        context.Workspaces.Add(gemeente);
+        context.Workspaces.Add(school);
+
+        #endregion
+        
+        #region SeedProjects
+
+        var openbaarVervoer = new Project
+        {
+            Title = "Openbaar Vervoer",
+            Workspace = gemeente,
+        };
+        openbaarVervoer.Slug = Slug.FromName(openbaarVervoer.Title);
+
+        var mentaal = new Project
+        {
+            Title = "Mentale gezondheid",
+            Workspace = school,
+        };
+        mentaal.Slug = Slug.FromName(mentaal.Title);
+        
+        context.Projects.Add(openbaarVervoer);
+        context.Projects.Add(mentaal);
+
+        #endregion
+        
+        context.SaveChanges();
+        
     }
+    
 }

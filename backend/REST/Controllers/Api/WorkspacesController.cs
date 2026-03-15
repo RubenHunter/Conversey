@@ -1,5 +1,4 @@
-﻿using Conversey.BL;
-using Conversey.BL.Domain.Common;
+﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
@@ -41,7 +40,7 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name, dto.Slug);
+            var workspace = _manager.CreateWorkspace(dto.Name, new Slug{Text = dto.Slug});
 
             return CreatedAtAction(
                 nameof(GetBySlug),

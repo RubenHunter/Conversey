@@ -8,9 +8,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-
 public class ConverseyDbContext : DbContext
 {
+    
+    public DbSet<Workspace> Workspaces { get; set; }
+    public DbSet<WorkspaceAdmin> WorkspaceAdmins { get; set; }
+    public DbSet<Project> Projects { get; set; }
+    public DbSet<Topic> Topics { get; set; }
+    public DbSet<Youth> Youths { get; set; }
+    public DbSet<Idea> Ideas { get; set; }
+    public DbSet<Response> Responses { get; set; }
+    public DbSet<Question> Questions { get; set; }
+    public DbSet<TextAnswer> TextAnswers { get; set; }
+    public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
+    
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
     }
@@ -18,7 +29,7 @@ public class ConverseyDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
+        
         // Workspace
         modelBuilder.Entity<Workspace>()
             .HasKey(w => w.Id);
@@ -129,17 +140,6 @@ public class ConverseyDbContext : DbContext
             .HasOne(wa => wa.Workspace);
     }
 
-    public DbSet<Workspace> Workspaces { get; set; }
-    public DbSet<WorkspaceAdmin> WorkspaceAdmins { get; set; }
-    public DbSet<Project> Projects { get; set; }
-    public DbSet<Topic> Topics { get; set; }
-    public DbSet<Youth> Youths { get; set; }
-    public DbSet<Idea> Ideas { get; set; }
-    public DbSet<Response> Responses { get; set; }
-    public DbSet<Question> Questions { get; set; }
-    public DbSet<TextAnswer> TextAnswers { get; set; }
-    public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
-
     public bool CreateDatabase(bool resetDatabase)
     {
         if (resetDatabase)
@@ -150,4 +150,3 @@ public class ConverseyDbContext : DbContext
         return Database.EnsureCreated();
     }
 }
-

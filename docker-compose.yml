@@ -14,23 +14,6 @@ services:
           - BACKEND_URL=http://backend:5000
       command: pnpm run dev --host
 
-    backend:
-      build:
-          context: ./backend/
-          dockerfile: Dockerfile
-      ports:
-          - "5231:5231"
-      volumes:
-          - ./backend:/src
-          - ./backend/nuget-cache:/root/.nuget/packages #Caching nuget packages
-      environment:
-          - DOTNET_USE_POLLING_FILE_WATCHER=1 #Enables hot reloading
-          - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=devdb;Username=devuser;Password=devpass
-          - Repository__Type=Postgres
-      depends_on:
-        postgres:
-          condition: service_healthy
-
 
       #PostgreSQL for development
     postgres:

@@ -1,8 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey;
 using Conversey.DAL.Subplatform;
 
 namespace Conversey.BL.Subplatform;
@@ -26,16 +24,17 @@ public class WorkspaceManager: IWorkspaceManager
         return _workspaceRepository.ReadAllWorkspacesWithProjects();
     }
 
-    public Workspace CreateWorkspace(string name, string slug)
+    public Workspace CreateWorkspace(string name, Slug slug)
     {
         var workspace = new Workspace
         {
             Name = name,
-            Slug = Slug.FromName(slug)
+            Slug = slug
         };
         if (SlugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
         
         Validate(workspace);
+        
         _workspaceRepository.CreateWorkspace(workspace);
         return workspace;
     }

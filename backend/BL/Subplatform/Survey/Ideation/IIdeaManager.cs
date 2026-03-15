@@ -4,7 +4,8 @@ namespace Conversey.BL.Subplatform.Survey.Ideation;
 
 public interface IIdeaManager
 {
-    void AddIdea(string content, int projectId);
+    
+    SubmissionResponse SubmitIdea(string content, int projectId);
 
     Idea GetIdeaById(int ideaId);
     Idea GetIdeaByIdWithProject(int ideaId);

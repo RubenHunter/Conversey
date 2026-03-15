@@ -1,9 +1,16 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 
-WORKDIR /src
+WORKDIR /backend
 
-EXPOSE 5231
+# Copy csproj first for caching restores
+COPY *.sln ./
+COPY BL/*.csproj BL/
+COPY DAL/*.csproj DAL/
+COPY Domain/*.csproj Domain/
+COPY REST/*.csproj REST/
 
-ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+RUN dotnet restore
 
-CMD ["sh", "-c", "dotnet restore && dotnet watch --project REST/REST.csproj run --urls http://0.0.0.0:5231"]
+EXPOSE 5000
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "REST/REST.csproj", "--urls", "http://0.0.0.0:5000"]

@@ -10,6 +10,6 @@ Content-Type: application/json
 
 {
   "Content": "Test Idea",
-  "ProjectId": 0
+  "ProjectId": 1 
 }
 ###
