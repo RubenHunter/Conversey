@@ -22,6 +22,7 @@ public class IdeaRepository : IIdeaRepository
     public Idea ReadIdeaById(int ideaId)
     {
         return _dbContext.Ideas
+            .Include(i => i.Reactions)
             .SingleOrDefault(i => i.Id == ideaId);
     }
 
@@ -31,6 +32,7 @@ public class IdeaRepository : IIdeaRepository
             .Include(i => i.Project)
             .Include(i => i.Topic)
             .Include(i => i.Youth)
+            .Include(i => i.Reactions)
             .SingleOrDefault(i => i.Id == ideaId);
     }
 
@@ -120,6 +122,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Topic)
             .Include(i => i.Youth)
+            .Include(i => i.Reactions)
             .Where(i => i.Project.Id == projectId && i.Youth.Token == youthToken)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
@@ -130,6 +133,7 @@ public class IdeaRepository : IIdeaRepository
     {
         return _dbContext.Ideas
             .Include(i => i.Youth)
+            .Include(i => i.Reactions)
             .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
@@ -212,6 +216,38 @@ public class IdeaRepository : IIdeaRepository
         if (response == null) return false;
 
         _dbContext.Responses.Remove(response);
+        _dbContext.SaveChanges();
+        return true;
+    }
+
+    public void CreateIdeaReaction(IdeaReaction reaction)
+    {
+        _dbContext.IdeaReactions.Add(reaction);
+        _dbContext.SaveChanges();
+    }
+
+    public IdeaReaction ReadIdeaReaction(int ideaId, string youthToken, string emoji)
+    {
+        return _dbContext.IdeaReactions
+            .SingleOrDefault(ir => ir.IdeaId == ideaId && ir.YouthToken == youthToken && ir.Emoji == emoji);
+    }
+
+    public IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId)
+    {
+        return _dbContext.IdeaReactions
+            .Where(ir => ir.IdeaId == ideaId)
+            .OrderBy(ir => ir.Emoji)
+            .ThenBy(ir => ir.Id)
+            .ToList().AsReadOnly();
+    }
+
+    public bool DeleteIdeaReaction(int ideaId, string youthToken, string emoji)
+    {
+        var reaction = _dbContext.IdeaReactions
+            .SingleOrDefault(ir => ir.IdeaId == ideaId && ir.YouthToken == youthToken && ir.Emoji == emoji);
+        if (reaction == null) return false;
+
+        _dbContext.IdeaReactions.Remove(reaction);
         _dbContext.SaveChanges();
         return true;
     }

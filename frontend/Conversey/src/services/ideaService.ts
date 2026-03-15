@@ -11,7 +11,7 @@ interface IdeasContext {
     ideas: Idea[]
 }
 
-function getStoredUserId(projectId: number): string {
+export function getIdeasYouthToken(projectId: number): string {
     const key = `${IDEAS_USER_KEY}-${projectId}`
     const existing = localStorage.getItem(key)
     if (existing) return existing
@@ -66,7 +66,7 @@ function mergeIdeas(communityIdeas: Idea[], myIdeas: Idea[]): Idea[] {
 
 export async function getIdeasContext(workspaceSlug: string, projectSlug: string, project: Project): Promise<IdeasContext> {
     const topics = mapProjectTopicsToIdeaTopics(project)
-    const youthToken = getStoredUserId(project.id)
+    const youthToken = getIdeasYouthToken(project.id)
 
     const communityPerTopic = await Promise.all(
         topics.map((topic) => getCommunityIdeasForTopic(workspaceSlug, projectSlug, topic.id, youthToken)),
@@ -82,7 +82,7 @@ export async function getIdeasContext(workspaceSlug: string, projectSlug: string
 }
 
 export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<Idea> {
-    const youthToken = getStoredUserId(request.projectId)
+    const youthToken = getIdeasYouthToken(request.projectId)
     const requestDto = mapSubmitIdeaRequestToApiSubmitIdeaRequest(request, youthToken)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${request.topicId}/ideas`
 

@@ -16,6 +16,7 @@ public class ConverseyDbContext : DbContext
     public DbSet<Topic> Topics { get; set; }
     public DbSet<Youth> Youths { get; set; }
     public DbSet<Idea> Ideas { get; set; }
+    public DbSet<IdeaReaction> IdeaReactions { get; set; }
     public DbSet<Response> Responses { get; set; }
     public DbSet<ResponseReaction> ResponseReactions { get; set; }
     public DbSet<Question> Questions { get; set; }
@@ -165,10 +166,35 @@ public class ConverseyDbContext : DbContext
             .WithOne(r => r.Idea)
             .HasForeignKey("IdeaId")
             .IsRequired();
+
+        modelBuilder.Entity<Idea>()
+            .HasMany(i => i.Reactions)
+            .WithOne(ir => ir.Idea)
+            .HasForeignKey("IdeaId")
+            .IsRequired();
         
         modelBuilder.Entity<Idea>()
             .Property(i => i.ModerationInfo)
             .HasConversion(m => m.Serialize(), b => ModerationInfo.Deserialize(b));
+
+        // IdeaReaction
+        modelBuilder.Entity<IdeaReaction>()
+            .HasKey(ir => ir.Id);
+
+        modelBuilder.Entity<IdeaReaction>()
+            .Property(ir => ir.Emoji)
+            .IsRequired()
+            .HasMaxLength(32);
+
+        modelBuilder.Entity<IdeaReaction>()
+            .HasOne(ir => ir.Youth)
+            .WithMany(y => y.IdeaReactions)
+            .HasForeignKey("YouthToken")
+            .IsRequired();
+
+        modelBuilder.Entity<IdeaReaction>()
+            .HasIndex(ir => new { ir.IdeaId, ir.YouthToken, ir.Emoji })
+            .IsUnique();
 
         // Response
         modelBuilder.Entity<Response>()

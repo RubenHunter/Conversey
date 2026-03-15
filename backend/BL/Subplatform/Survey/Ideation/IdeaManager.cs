@@ -174,6 +174,47 @@ public class IdeaManager: IIdeaManager
         }
     }
 
+    public IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken)
+    {
+        var idea = _repository.ReadIdeaByIdWithProject(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
+        string normalizedEmoji = NormalizeEmoji(emoji);
+
+        var existingReaction = _repository.ReadIdeaReaction(ideaId, author.Token, normalizedEmoji);
+        if (existingReaction != null)
+        {
+            return existingReaction;
+        }
+
+        var reaction = new IdeaReaction
+        {
+            IdeaId = idea.Id,
+            Idea = idea,
+            Emoji = normalizedEmoji,
+            CreatedAt = DateTime.UtcNow,
+            YouthToken = author.Token,
+            Youth = author
+        };
+        Validate(reaction);
+        _repository.CreateIdeaReaction(reaction);
+        return reaction;
+    }
+
+    public IReadOnlyCollection<IdeaReaction> GetIdeaReactionsFromIdeaByIdeaId(int ideaId)
+    {
+        _ = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+        return _repository.ReadIdeaReactionsFromIdeaByIdeaId(ideaId);
+    }
+
+    public void RemoveIdeaReaction(int ideaId, string youthToken, string emoji)
+    {
+        string normalizedEmoji = NormalizeEmoji(emoji);
+        if (!_repository.DeleteIdeaReaction(ideaId, youthToken, normalizedEmoji))
+        {
+            throw new IdeaReactionNotFoundException(ideaId, youthToken, normalizedEmoji);
+        }
+    }
+
     public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
     {
         var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());

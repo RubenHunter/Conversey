@@ -9,8 +9,19 @@ public class ResponseReactionSummaryDto
 
     public static IReadOnlyCollection<ResponseReactionSummaryDto> From(IEnumerable<ResponseReaction> reactions)
     {
-        return reactions
-            .GroupBy(reaction => reaction.Emoji)
+        return FromEmojis(reactions.Select(reaction => reaction.Emoji));
+    }
+
+    public static IReadOnlyCollection<ResponseReactionSummaryDto> From(IEnumerable<IdeaReaction> reactions)
+    {
+        return FromEmojis(reactions.Select(reaction => reaction.Emoji));
+    }
+
+    public static IReadOnlyCollection<ResponseReactionSummaryDto> FromEmojis(IEnumerable<string> emojis)
+    {
+        return emojis
+            .Where(emoji => !string.IsNullOrWhiteSpace(emoji))
+            .GroupBy(emoji => emoji)
             .Select(group => new ResponseReactionSummaryDto
             {
                 Emoji = group.Key,
@@ -22,4 +33,3 @@ public class ResponseReactionSummaryDto
             .AsReadOnly();
     }
 }
-
