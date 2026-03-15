@@ -15,6 +15,8 @@ public class Youth
 
     public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
 
+    public ICollection<IdeaReaction> IdeaReactions { get; set; } = new List<IdeaReaction>();
+
     public ICollection<Response> Responses { get; set; } = new List<Response>();
 
     public ICollection<ResponseReaction> ResponseReactions { get; set; } = new List<ResponseReaction>();

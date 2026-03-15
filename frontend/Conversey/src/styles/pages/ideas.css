@@ -580,6 +580,11 @@
   background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
 }
 
+.idea-panel-emoji-btn.open {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 22%, transparent);
+}
+
 /* Comments */
 .idea-panel-no-comments {
   font-size: 0.83rem;
@@ -602,6 +607,12 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 0.55rem 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.idea-panel-comment-text {
+  margin: 0;
   font-size: 0.86rem;
   line-height: 1.45;
   color: var(--color-text);
@@ -617,6 +628,129 @@
   align-self: stretch;
   background: color-mix(in srgb, var(--color-secondary) 9%, white);
   border-color: color-mix(in srgb, var(--color-secondary) 30%, transparent);
+}
+
+.idea-panel-reactions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.idea-panel-reactions-summary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.idea-panel-reactions-quick {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.idea-panel-reaction-chip,
+.idea-panel-reaction-add-btn {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  padding: 0.18rem 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.idea-panel-reaction-chip:hover,
+.idea-panel-reaction-add-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.idea-panel-reaction-chip:disabled,
+.idea-panel-reaction-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.idea-panel-reaction-add-btn.open {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 18%, white);
+}
+
+.idea-panel-reaction-picker {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.idea-panel-reaction-picker-btn {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  padding: 0.16rem 0.42rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(-0.35rem) scale(0.96);
+  animation: reaction-picker-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: calc(var(--reaction-index, 0) * 28ms);
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.idea-panel-reaction-picker-btn:hover {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
+}
+
+.idea-panel-reaction-picker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.idea-panel-reaction-picker-empty {
+  font-size: 0.76rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.idea-panel-reaction-chip.is-selected-reaction,
+.idea-panel-reaction-picker-btn.is-selected-reaction {
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  color: var(--color-text);
+}
+
+.idea-panel-reaction-chip.reaction-count-pop {
+  animation: reaction-count-pop 320ms ease;
+}
+
+@keyframes reaction-picker-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.35rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes reaction-count-pop {
+  0% {
+    transform: scale(1);
+    background: var(--color-surface);
+  }
+  45% {
+    transform: scale(1.13);
+    background: color-mix(in srgb, var(--color-primary-light) 24%, white);
+  }
+  100% {
+    transform: scale(1);
+    background: var(--color-surface);
+  }
 }
 
 /* Footer input */

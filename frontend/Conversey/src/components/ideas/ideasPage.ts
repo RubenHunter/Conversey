@@ -1,7 +1,8 @@
 import '../../styles/pages/ideas.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
-import { getIdeasContext, submitIdea } from '../../services/ideaService.ts'
+import { getIdeasContext, getIdeasYouthToken, submitIdea } from '../../services/ideaService.ts'
+import { addIdeaReaction, addIdeaResponse, addResponseReaction, getIdeaResponses, removeIdeaReaction, removeResponseReaction } from '../../services/ideaResponseService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
@@ -27,6 +28,7 @@ function getOrganizationBadge(organizationName: string, organizationSlug: string
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
+    const youthToken = getIdeasYouthToken(project.id)
 
     const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
     const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
@@ -119,7 +121,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <div id="idea-panel-post" class="idea-panel-post">
                     <div id="idea-panel-badges" class="idea-panel-badges"></div>
                     <p id="idea-panel-text" class="idea-panel-text"></p>
-                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="React with emoji (coming soon)">
+                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
                         <span aria-hidden="true">+</span>
                         <span aria-hidden="true">:)</span>
                     </button>
@@ -187,6 +189,25 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
+        loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
+        submitResponse: async (idea, text, offensiveContentDetected) => {
+            const response = await addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text)
+            return {
+                ...response,
+                offensiveContentDetected,
+            }
+        },
+        reactToResponse: (idea, responseId, emoji) =>
+            addResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
+        unreactToResponse: (idea, responseId, emoji) =>
+            removeResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
+        reactToIdea: (idea, emoji) => addIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+        unreactToIdea: (idea, emoji) => removeIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+        onIdeaReactionsUpdated: (ideaId, reactions) => {
+            const ideaIndex = allIdeas.findIndex((item) => item.id === ideaId)
+            if (ideaIndex < 0) return
+            allIdeas[ideaIndex] = { ...allIdeas[ideaIndex], reactions }
+        },
     })
 
     function getVisibleIdeas(): Idea[] {

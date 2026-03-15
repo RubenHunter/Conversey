@@ -11,6 +11,7 @@ public class IdeaDto
     public string YouthToken { get; set; } = string.Empty;
     public DateTime SubmissionDate { get; set; }
     public IdeaStatus Status { get; set; }
+    public IReadOnlyCollection<ResponseReactionSummaryDto> Reactions { get; set; } = Array.Empty<ResponseReactionSummaryDto>();
 
     public static IdeaDto From(Idea idea)
     {
@@ -22,7 +23,8 @@ public class IdeaDto
             TopicId = idea.Topic.Id,
             YouthToken = idea.Youth.Token,
             SubmissionDate = idea.SubmissionDate,
-            Status = idea.Status
+            Status = idea.Status,
+            Reactions = ResponseReactionSummaryDto.From(idea.Reactions ?? Array.Empty<IdeaReaction>())
         };
     }
 }

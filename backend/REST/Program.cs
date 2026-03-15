@@ -68,7 +68,8 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
 
 var app = builder.Build();
 
-InitializeDatabase(true);
+var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
+InitializeDatabase(resetDatabaseOnStart);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

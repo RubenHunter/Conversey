@@ -35,6 +35,10 @@ public interface IIdeaManager
     Response ChangeResponse(Response response);
     void RemoveResponse(int responseId);
 
+    IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken);
+    IReadOnlyCollection<IdeaReaction> GetIdeaReactionsFromIdeaByIdeaId(int ideaId);
+    void RemoveIdeaReaction(int ideaId, string youthToken, string emoji);
+
     ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken);
     IReadOnlyCollection<ResponseReaction> GetResponseReactionsFromResponseByResponseId(int responseId);
     void RemoveResponseReaction(int responseId, string youthToken, string emoji);

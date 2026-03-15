@@ -34,6 +34,11 @@ public interface IIdeaRepository
     void UpdateResponse(Response response);
     bool DeleteResponse(int responseId);
 
+    void CreateIdeaReaction(IdeaReaction reaction);
+    IdeaReaction ReadIdeaReaction(int ideaId, string youthToken, string emoji);
+    IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId);
+    bool DeleteIdeaReaction(int ideaId, string youthToken, string emoji);
+
     void CreateResponseReaction(ResponseReaction reaction);
     ResponseReaction ReadResponseReaction(int responseId, string youthToken, string emoji);
     IReadOnlyCollection<ResponseReaction> ReadResponseReactionsFromResponseByResponseId(int responseId);
