@@ -280,6 +280,215 @@ public static class DataSeeder
                 Project = mentaalWelzijnActieplan,
                 Topic = topics[3],
                 Youth = students[1]
+            },
+            new()
+            {
+                Content = "Publiceer per vak een duidelijke weekplanning met geschatte studietijd, zodat we beter kunnen inschatten wat haalbaar is.",
+                Summary = "Weekplanning met studietijd",
+                SubmissionDate = now.AddDays(-3),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[2]
+            },
+            new()
+            {
+                Content = "Voorkom dat meerdere grote deadlines op dezelfde dag vallen door vakoverschrijdende afstemming binnen de opleiding.",
+                Summary = "Deadlines beter afstemmen",
+                SubmissionDate = now.AddDays(-3).AddHours(2),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[3]
+            },
+            new()
+            {
+                Content = "Geef per semester minstens twee welzijnsmomenten zonder evaluatie, met ruimte voor vragen en planning.",
+                Summary = "Welzijnsmomenten zonder evaluatie",
+                SubmissionDate = now.AddDays(-2),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[5]
+            },
+            new()
+            {
+                Content = "Voorzie een korte check-in in elke lesweek waarin docenten aangeven wat echt prioritair is voor de volgende deadline.",
+                Summary = "Wekelijkse prioriteiten-check",
+                SubmissionDate = now.AddDays(-2).AddHours(1),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[7]
+            },
+            new()
+            {
+                Content = "Werk met een centraal dashboard per klasgroep waar alle deadlines chronologisch en kleurgecodeerd staan.",
+                Summary = "Centraal deadline-dashboard",
+                SubmissionDate = now.AddDays(-2).AddHours(3),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[0]
+            },
+            new()
+            {
+                Content = "Laat studenten bij uitzonderlijke overbelasting een korte aanvraag doen voor een eenmalige deadlineverschuiving.",
+                Summary = "Eenmalige deadlineverschuiving",
+                SubmissionDate = now.AddDays(-1).AddHours(2),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[4]
+            },
+            new()
+            {
+                Content = "Plan in drukkere weken geen onverwachte tussentoetsen, zodat studenten hun planning realistisch kunnen houden.",
+                Summary = "Geen onverwachte toetsen in piekweken",
+                SubmissionDate = now.AddDays(-1).AddHours(4),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[6]
+            },
+            new()
+            {
+                Content = "Voor groepswerken: verplicht een tussentijdse feedbackronde zodat last-minute stress en misverstanden verminderen.",
+                Summary = "Tussentijdse feedback bij groepswerk",
+                SubmissionDate = now.AddDays(-1).AddHours(6),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[1]
+            },
+            new()
+            {
+                Content = "Maak een richtlijn dat grote opdrachten minimum drie weken op voorhand volledig gecommuniceerd moeten worden.",
+                Summary = "Opdrachten vroeger communiceren",
+                SubmissionDate = now.AddDays(-1).AddHours(8),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[3]
+            },
+            new()
+            {
+                Content = "Voorzie in elke module een korte workshop over studieplanning en energiemanagement, afgestemd op de examenperiode.",
+                Summary = "Workshop studieplanning",
+                SubmissionDate = now.AddHours(-10),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[5]
+            },
+            new()
+            {
+                Content = "Organiseer een jaarlijkse welzijnsbeurs waar studenten alle ondersteuningsmogelijkheden kunnen ontdekken en uitproberen.",
+                Summary = "Jaarlijkse welzijnsbeurs",
+                SubmissionDate = now.AddHours(-9),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[7]
+            },
+            new()
+            {
+                Content = "Introduceer een buddy-systeem waarbij eerstejaars studenten gekoppeld worden aan ervaren studenten voor ondersteuning.",
+                Summary = "Buddy-systeem voor eerstejaars",
+                SubmissionDate = now.AddHours(-8),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[6]
+            },
+            new()
+            {
+                Content = "Zorg voor een centrale online kalender waar alle belangrijke data, deadlines en evenementen per opleiding in staan.",
+                Summary = "Centrale online kalender",
+                SubmissionDate = now.AddHours(-7),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[5]
+            },
+            new()
+            {
+                Content = "Voorzie meer ruimte voor informele ontmoetingen tussen studenten en docenten, zowel fysiek als digitaal.",
+                Summary = "Meer informele ontmoetingen",
+                SubmissionDate = now.AddHours(-6),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[4]
+            },
+            new()
+            {
+                Content = "Stimuleer opleidingen om gezamenlijke evenementen te organiseren, zodat studenten uit verschillende jaren elkaar leren kennen.",
+                Summary = "Gezamenlijke evenementen tussen jaren",
+                SubmissionDate = now.AddHours(-5),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[3]
+            },
+            new()
+            {
+                Content = "Bied een online cursus aan over timemanagement en studievaardigheden, specifiek gericht op hogeschoolstudenten.",
+                Summary = "Online cursus timemanagement",
+                SubmissionDate = now.AddHours(-4),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[2]
+            },
+            new()
+            {
+                Content = "Maak het mogelijk om in plaats van een examen een extra opdracht te doen voor wie meer tijd nodig heeft om te studeren.",
+                Summary = "Extra opdracht in plaats van examen",
+                SubmissionDate = now.AddHours(-3),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[1]
+            },
+            new()
+            {
+                Content = "Voorzie tijdens de blokperiode extra ondersteuning door studentenpsychologen, met een focus op stress- en tijdsmanagement.",
+                Summary = "Extra ondersteuning tijdens blok",
+                SubmissionDate = now.AddHours(-2),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[0]
+            },
+            new()
+            {
+                Content = "Zorg voor een anonieme feedbacktool waar studenten op elk moment van het semester feedback kunnen geven over hun werload en welzijn.",
+                Summary = "Anonieme feedbacktool voor studenten",
+                SubmissionDate = now.AddHours(-1),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = mentaalWelzijnActieplan,
+                Topic = topics[0],
+                Youth = students[7]
             }
         };
 
@@ -409,6 +618,371 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(reactions);
+
+        #endregion
+
+        #region Case2_SeedWorkspaces
+
+        var stadLinden = new Workspace
+        {
+            Name = "Stad Linden"
+        };
+        stadLinden.Slug = Slug.FromName(stadLinden.Name);
+
+        context.Workspaces.Add(stadLinden);
+
+        #endregion
+
+        #region Case2_SeedProjects
+
+        var vergroeningEnRecreatiePlan = new Project
+        {
+            Title = "Jong in een Groene Stad 2026-2028",
+            Description = "Stad Linden betrekt jongeren van 18 tot 30 actief bij keuzes rond vergroening, klimaatmaatregelen en verdeling van stedelijke recreatie.",
+            ImageUrl = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80",
+            Status = Status.Active,
+            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            InteractionForm = InteractionType.Chat,
+            Workspace = stadLinden
+        };
+        vergroeningEnRecreatiePlan.Slug = Slug.FromName(vergroeningEnRecreatiePlan.Title);
+
+        context.Projects.Add(vergroeningEnRecreatiePlan);
+
+        #endregion
+
+        #region Case2_SeedYouths
+
+        var cityYouths = new List<Youth>
+        {
+            new() { Token = "city-juna-18", Email = "juna@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-faris-22", Email = "faris@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-nora-24", Email = "nora@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-daan-27", Email = "daan@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-ayla-29", Email = "ayla@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-bram-21", Email = "bram@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-ines-23", Email = "ines@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Token = "city-yara-26", Email = "yara@stadlinden.be", Project = vergroeningEnRecreatiePlan }
+        };
+
+        context.Youths.AddRange(cityYouths);
+
+        #endregion
+
+        #region Case2_SeedTopics
+
+        var cityTopics = new List<Topic>
+        {
+            new()
+            {
+                Name = "Vergroening van buurten",
+                Context = "Welke straten en wijken hebben volgens jongeren dringend meer groen, schaduw en klimaatbestendige inrichting nodig?",
+                Project = vergroeningEnRecreatiePlan
+            },
+            new()
+            {
+                Name = "Recreatie en publieke ruimte",
+                Context = "Hoe kunnen pleinen, parken en ontmoetingsplekken beter verdeeld en toegankelijk gemaakt worden voor jongeren?",
+                Project = vergroeningEnRecreatiePlan
+            },
+            new()
+            {
+                Name = "Verkeersveiligheid en leefbaarheid",
+                Context = "Welke ingrepen maken buurten veiliger, rustiger en aantrekkelijker voor jongeren die zich te voet of met de fiets verplaatsen?",
+                Project = vergroeningEnRecreatiePlan
+            },
+            new()
+            {
+                Name = "Jongerenparticipatie in beleid",
+                Context = "Hoe wil de doelgroep betrokken worden bij keuzes, prioriteiten en communicatie rond klimaat en leefomgeving?",
+                Project = vergroeningEnRecreatiePlan
+            },
+            new()
+            {
+                Name = "Lokale klimaatacties",
+                Context = "Welke concrete maatregelen kunnen stad en jongeren samen opnemen om de stad duurzamer te maken?",
+                Project = vergroeningEnRecreatiePlan
+            }
+        };
+
+        context.Topics.AddRange(cityTopics);
+
+        #endregion
+
+        #region Case2_SeedQuestions
+
+        context.Questions.AddRange(
+            CreateSingleChoiceQuestion(
+                vergroeningEnRecreatiePlan,
+                1,
+                "Hoe ervaar je de leefbaarheid van je stad of gemeente vandaag?",
+                true,
+                "Heel positief",
+                "Eerder positief",
+                "Neutraal",
+                "Eerder negatief",
+                "Heel negatief"
+            ),
+            CreateSingleChoiceQuestion(
+                vergroeningEnRecreatiePlan,
+                2,
+                "Vind je je stad voldoende groen en klimaatvriendelijk?",
+                true,
+                "Ja, zeker",
+                "Grotendeels",
+                "Eerder niet",
+                "Nee, duidelijk te weinig"
+            ),
+            CreateSingleChoiceQuestion(
+                vergroeningEnRecreatiePlan,
+                3,
+                "Waar ervaar je de grootste tekorten in je buurt?",
+                true,
+                "Te weinig groen en schaduw",
+                "Te druk of onveilig verkeer",
+                "Te weinig toegankelijke ontmoetingsplekken",
+                "Onvoldoende onderhoud van publieke ruimte"
+            ),
+            CreateSingleChoiceQuestion(
+                vergroeningEnRecreatiePlan,
+                4,
+                "In welke mate voel je je vandaag betrokken bij stedelijke beslissingen rond klimaat en leefomgeving?",
+                true,
+                "Sterk betrokken",
+                "Soms betrokken",
+                "Nauwelijks betrokken",
+                "Helemaal niet betrokken"
+            ),
+            CreateOpenQuestion(
+                vergroeningEnRecreatiePlan,
+                5,
+                "Welke plek in de stad verdient volgens jou als eerste extra aandacht op vlak van vergroening?",
+                true
+            ),
+            CreateOpenQuestion(
+                vergroeningEnRecreatiePlan,
+                6,
+                "Welke concrete maatregel moet de stad volgend jaar prioritair uitvoeren?",
+                true
+            ),
+            CreateOpenQuestion(
+                vergroeningEnRecreatiePlan,
+                7,
+                "Hoe zie jij je eigen rol in een duurzamere en groenere stad?",
+                false
+            ),
+            CreateSingleChoiceQuestion(
+                vergroeningEnRecreatiePlan,
+                8,
+                "Hoe wil je in de toekomst het liefst participeren aan stadsbeleid?",
+                true,
+                "Online bevragingen",
+                "Workshops of burgerpanels",
+                "Korte ideesessies op locatie",
+                "Combinatie van bovenstaande"
+            )
+        );
+
+        #endregion
+
+        #region Case2_SeedIdeas
+
+        var cityIdeas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Maak van het Stationsplein een hittebestendig plein met extra bomen, zitbanken in de schaduw en een gratis drinkwaterpunt.",
+                Summary = "Stationsplein vergroenen en verkoelen",
+                SubmissionDate = now.AddDays(-9),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[0],
+                Youth = cityYouths[0]
+            },
+            new()
+            {
+                Content = "Voorzie in elk stadsdeel minstens een jeugdvriendelijke ontmoetingszone waar je veilig kan chillen zonder iets te moeten kopen.",
+                Summary = "Jeugdvriendelijke ontmoetingszones",
+                SubmissionDate = now.AddDays(-8),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[1],
+                Youth = cityYouths[1]
+            },
+            new()
+            {
+                Content = "Voer autoluwe school- en campusstraten in tijdens piekuren zodat fietsen en stappen veiliger wordt voor jongeren.",
+                Summary = "Autoluwe piekuren rond scholen",
+                SubmissionDate = now.AddDays(-7),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[2],
+                Youth = cityYouths[2]
+            },
+            new()
+            {
+                Content = "Start een jongerenklimaatpanel dat elk kwartaal samenkomt met schepenen om prioriteiten in het klimaatplan te bespreken.",
+                Summary = "Jongerenklimaatpanel",
+                SubmissionDate = now.AddDays(-6),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[3],
+                Youth = cityYouths[3]
+            },
+            new()
+            {
+                Content = "Lanceer een subsidie voor geveltuintjes en mini-buurttuinen zodat jongeren zelf hun straat mee groener kunnen maken.",
+                Summary = "Subsidie voor geveltuintjes",
+                SubmissionDate = now.AddDays(-5),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[4],
+                Youth = cityYouths[4]
+            },
+            new()
+            {
+                Content = "Gebruik braakliggende terreinen tijdelijk als pop-up sport en recreatiezones met veel groen, vooral in drukke wijken.",
+                Summary = "Pop-up sport en groen",
+                SubmissionDate = now.AddDays(-4),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[1],
+                Youth = cityYouths[5]
+            },
+            new()
+            {
+                Content = "Maak een interactieve kaart waarop jongeren gevaarlijke verkeerspunten en kansen voor vergroening kunnen pinnen.",
+                Summary = "Interactieve knelpuntenkaart",
+                SubmissionDate = now.AddDays(-3),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[3],
+                Youth = cityYouths[6]
+            },
+            new()
+            {
+                Content = "Plant meer avondvriendelijke groene routes met betere verlichting, zodat parken en verbindingen ook na zonsondergang veilig aanvoelen.",
+                Summary = "Veilige groene avondroutes",
+                SubmissionDate = now.AddDays(-2),
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = vergroeningEnRecreatiePlan,
+                Topic = cityTopics[2],
+                Youth = cityYouths[7]
+            }
+        };
+
+        context.Ideas.AddRange(cityIdeas);
+
+        #endregion
+
+        #region Case2_SeedResponses
+
+        var cityResponses = new List<Response>
+        {
+            new()
+            {
+                Idea = cityIdeas[0],
+                Text = "Helemaal mee eens, op warme dagen is dat plein nu bijna niet bruikbaar in de namiddag.",
+                CreatedAt = now.AddDays(-8).AddHours(2),
+                Youth = cityYouths[2],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[1],
+                Text = "Zeker in het centrum missen we plekken waar je gewoon kan zitten zonder verplicht iets te bestellen.",
+                CreatedAt = now.AddDays(-7).AddHours(5),
+                Youth = cityYouths[0],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[2],
+                Text = "Autoluwe momenten rond de campus zouden echt een groot verschil maken voor fietsveiligheid.",
+                CreatedAt = now.AddDays(-6).AddHours(1),
+                Youth = cityYouths[5],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[3],
+                Text = "Als de stad de feedback van zo'n panel ook zichtbaar terugkoppelt, gaan meer jongeren deelnemen.",
+                CreatedAt = now.AddDays(-5).AddHours(4),
+                Youth = cityYouths[4],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[4],
+                Text = "Top. Met een eenvoudig stappenplan kunnen veel jongeren meteen starten in hun straat.",
+                CreatedAt = now.AddDays(-4).AddHours(2),
+                Youth = cityYouths[7],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[5],
+                Text = "Pop-up zones zijn ideaal, zeker als er ook rustige groene hoekjes zijn naast sportruimte.",
+                CreatedAt = now.AddDays(-3).AddHours(6),
+                Youth = cityYouths[1],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[6],
+                Text = "Die kaart zou ook handig zijn voor meldingen van kapotte bankjes of te weinig schaduwplekken.",
+                CreatedAt = now.AddDays(-2).AddHours(7),
+                Youth = cityYouths[3],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = cityIdeas[7],
+                Text = "Veiligere avondroutes zouden het voor veel jongeren makkelijker maken om zich duurzaam te verplaatsen.",
+                CreatedAt = now.AddDays(-1).AddHours(3),
+                Youth = cityYouths[6],
+                Status = IdeaStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            }
+        };
+
+        context.Responses.AddRange(cityResponses);
+
+        #endregion
+
+        #region Case2_SeedResponseReactions
+
+        var cityReactions = new List<ResponseReaction>
+        {
+            new() { Response = cityResponses[0], Emoji = "🔥", CreatedAt = now.AddDays(-8).AddHours(3), Youth = cityYouths[1], YouthToken = cityYouths[1].Token },
+            new() { Response = cityResponses[0], Emoji = "💡", CreatedAt = now.AddDays(-8).AddHours(4), Youth = cityYouths[4], YouthToken = cityYouths[4].Token },
+            new() { Response = cityResponses[1], Emoji = "❤️", CreatedAt = now.AddDays(-7).AddHours(6), Youth = cityYouths[2], YouthToken = cityYouths[2].Token },
+            new() { Response = cityResponses[2], Emoji = "🙏", CreatedAt = now.AddDays(-6).AddHours(2), Youth = cityYouths[0], YouthToken = cityYouths[0].Token },
+            new() { Response = cityResponses[2], Emoji = "👍", CreatedAt = now.AddDays(-6).AddHours(3), Youth = cityYouths[7], YouthToken = cityYouths[7].Token },
+            new() { Response = cityResponses[3], Emoji = "🙌", CreatedAt = now.AddDays(-5).AddHours(5), Youth = cityYouths[5], YouthToken = cityYouths[5].Token },
+            new() { Response = cityResponses[4], Emoji = "✅", CreatedAt = now.AddDays(-4).AddHours(3), Youth = cityYouths[3], YouthToken = cityYouths[3].Token },
+            new() { Response = cityResponses[5], Emoji = "👏", CreatedAt = now.AddDays(-3).AddHours(7), Youth = cityYouths[6], YouthToken = cityYouths[6].Token },
+            new() { Response = cityResponses[6], Emoji = "🧠", CreatedAt = now.AddDays(-2).AddHours(8), Youth = cityYouths[4], YouthToken = cityYouths[4].Token },
+            new() { Response = cityResponses[7], Emoji = "🎯", CreatedAt = now.AddDays(-1).AddHours(4), Youth = cityYouths[2], YouthToken = cityYouths[2].Token }
+        };
+
+        context.ResponseReactions.AddRange(cityReactions);
 
         #endregion
 
