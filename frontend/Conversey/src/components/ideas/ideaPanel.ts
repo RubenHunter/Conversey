@@ -1,12 +1,25 @@
 import type { Idea, IdeaReactionSummary } from '../../models/idea.ts'
 import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse.ts'
 import type { IdeaPanelController, ReviewBeforePost } from './types.ts'
+import type { PostSafetyDecision } from './safetyReviewDialog.ts'
+
+interface ResponseSubmitResult {
+    response: IdeaResponse
+    aiSuggestion: string | null
+}
 
 interface CreateIdeaPanelControllerParams {
     root: ParentNode
     reviewBeforePost: ReviewBeforePost
+    reviewWithSuggestion: (original: string, suggestion: string) => Promise<PostSafetyDecision>
     loadResponses: (idea: Idea) => Promise<IdeaResponse[]>
-    submitResponse: (idea: Idea, text: string, offensiveContentDetected: boolean) => Promise<IdeaResponse>
+    submitResponse: (idea: Idea, text: string) => Promise<ResponseSubmitResult>
+    updateResponseAfterSafetyReview: (
+        idea: Idea,
+        responseId: number,
+        text: string,
+        markForReview: boolean,
+    ) => Promise<IdeaResponse>
     reactToResponse: (idea: Idea, responseId: number, emoji: string) => Promise<ResponseReactionSummary[]>
     unreactToResponse: (idea: Idea, responseId: number, emoji: string) => Promise<ResponseReactionSummary[]>
     reactToIdea: (idea: Idea, emoji: string) => Promise<IdeaReactionSummary[]>
@@ -21,8 +34,10 @@ const REACTION_PICK_OPTIONS = ['❤️', '👍', '💡', '🔥', '😂', '👏']
 export function createIdeaPanelController({
     root,
     reviewBeforePost,
+    reviewWithSuggestion,
     loadResponses,
     submitResponse,
+    updateResponseAfterSafetyReview,
     reactToResponse,
     unreactToResponse,
     reactToIdea,
@@ -302,6 +317,14 @@ export function createIdeaPanelController({
             pinnedComments.forEach((comment) => {
                 const el = document.createElement('div')
                 el.className = 'idea-panel-comment idea-panel-comment--self idea-panel-comment--pinned'
+
+                if (comment.offensiveContentDetected) {
+                    const flagged = document.createElement('span')
+                    flagged.className = 'ideas-review-flag'
+                    flagged.textContent = 'Marked for review'
+                    el.appendChild(flagged)
+                }
+
                 const copy = document.createElement('p')
                 copy.className = 'idea-panel-comment-text'
                 copy.textContent = comment.text
@@ -475,8 +498,9 @@ export function createIdeaPanelController({
         const text = panelInput.value.trim()
         if (!currentIdea || text.length === 0 || isSubmittingResponse) return
 
-        const decision = await reviewBeforePost(text)
-        if (!decision.proceed) {
+        // Keep existing local pre-check behavior if enabled in future.
+        const localDecision = await reviewBeforePost(text)
+        if (!localDecision.proceed) {
             panelInput.value = text
             panelInput.focus()
             panelSend.disabled = panelInput.value.trim().length === 0 || isSubmittingResponse
@@ -488,9 +512,40 @@ export function createIdeaPanelController({
         panelSend.textContent = 'Posting...'
 
         try {
-            const response = await submitResponse(currentIdea, decision.text, decision.offensiveContentDetected)
+            const submitResult = await submitResponse(currentIdea, localDecision.text)
+            let finalResponse = submitResult.response
+
+            if (submitResult.aiSuggestion) {
+                const decision = await reviewWithSuggestion(localDecision.text, submitResult.aiSuggestion)
+
+                if (!decision.proceed) {
+                    panelInput.value = text
+                    panelInput.focus()
+                    return
+                }
+
+                if (decision.useOriginal) {
+                    if (decision.edited) {
+                        finalResponse = await updateResponseAfterSafetyReview(currentIdea, finalResponse.id, decision.text, true)
+                    }
+                    finalResponse = {
+                        ...finalResponse,
+                        text: decision.text,
+                        offensiveContentDetected: true,
+                    }
+                } else if (decision.edited) {
+                    finalResponse = await updateResponseAfterSafetyReview(currentIdea, finalResponse.id, decision.text, true)
+                    finalResponse = {
+                        ...finalResponse,
+                        offensiveContentDetected: true,
+                    }
+                } else {
+                    finalResponse = await updateResponseAfterSafetyReview(currentIdea, finalResponse.id, decision.text, false)
+                }
+            }
+
             const existing = getResponses(currentIdea.id)
-            responseStore.set(currentIdea.id, [...existing, response])
+            responseStore.set(currentIdea.id, [...existing, finalResponse])
             renderPanel(currentIdea)
         } finally {
             isSubmittingResponse = false

@@ -21,6 +21,7 @@ export interface Idea {
     authorType: IdeaAuthorType
     createdAt: string
     reactions: IdeaReactionSummary[]
+    pendingReview: boolean
 }
 
 export interface SubmitIdeaRequest {

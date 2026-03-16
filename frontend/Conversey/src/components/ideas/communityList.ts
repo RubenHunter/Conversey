@@ -32,7 +32,7 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
             topicLabel.className = 'ideas-card-topic'
             topicLabel.textContent = topics.find((topic) => topic.id === idea.topicId)?.title ?? 'Unknown topic'
 
-            if (flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
@@ -52,7 +52,7 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
                 card.appendChild(yoursBadge)
             }
 
-            if (flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'

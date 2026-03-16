@@ -9,6 +9,7 @@ public class ResponseDto
     public string Text { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string YouthToken { get; set; } = string.Empty;
+    public IdeaStatus Status { get; set; }
     public IReadOnlyCollection<ResponseReactionSummaryDto> Reactions { get; set; } = Array.Empty<ResponseReactionSummaryDto>();
 
     public static ResponseDto From(Response response)
@@ -20,8 +21,8 @@ public class ResponseDto
             Text = response.Text,
             CreatedAt = response.CreatedAt,
             YouthToken = response.Youth.Token,
+            Status = response.Status,
             Reactions = ResponseReactionSummaryDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
         };
     }
 }
-

@@ -27,7 +27,7 @@ public interface IIdeaManager
     Idea ChangeIdea(Idea idea);
     void RemoveIdea(int ideaId);
     
-    Response AddResponse(string text, int ideaId, string youthToken);
+    ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken);
     Response GetResponseById(int responseId);
     Response GetResponseByIdWithIdea(int responseId);
     IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId);

@@ -16,6 +16,19 @@ export function mapApiReactionSummaryToReactionSummary(dto: ApiResponseReactionS
     }
 }
 
+function isPendingStatus(status: unknown): boolean {
+    if (typeof status === 'number') {
+        return status === 0
+    }
+
+    if (typeof status === 'string') {
+        const normalized = status.trim().toLowerCase()
+        return normalized === 'pending' || normalized === '0'
+    }
+
+    return false
+}
+
 export function mapApiIdeaResponseToIdeaResponse(dto: ApiIdeaResponseDto, youthToken: string): IdeaResponse {
     const authorToken = pickString(dto.youthToken, dto.YouthToken) ?? ''
     const rawReactions = dto.reactions ?? dto.Reactions ?? []
@@ -27,6 +40,7 @@ export function mapApiIdeaResponseToIdeaResponse(dto: ApiIdeaResponseDto, youthT
         createdAt: pickString(dto.createdAt, dto.CreatedAt) ?? new Date().toISOString(),
         youthToken: authorToken,
         author: authorToken.length > 0 && authorToken === youthToken ? 'self' : 'other',
+        offensiveContentDetected: isPendingStatus(dto.status ?? dto.Status),
         reactions: rawReactions.map(mapApiReactionSummaryToReactionSummary),
     }
 }

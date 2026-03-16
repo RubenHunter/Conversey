@@ -22,6 +22,8 @@ export interface ApiIdeaDto {
     Body?: string
     content?: string
     Content?: string
+    status?: string | number
+    Status?: string | number
     authorType?: 'self' | 'other'
     AuthorType?: 'self' | 'other'
     youthToken?: string

@@ -21,6 +21,20 @@ export function mapApiIdeaTopicToIdeaTopic(dto: ApiIdeaTopicDto): IdeaTopic {
     }
 }
 
+function isPendingStatus(status: unknown): boolean {
+    if (typeof status === 'number') {
+        // C# enum IdeaStatus: Pending=0, Approved=1, Rejected=2
+        return status === 0
+    }
+
+    if (typeof status === 'string') {
+        const normalized = status.trim().toLowerCase()
+        return normalized === 'pending' || normalized === '0'
+    }
+
+    return false
+}
+
 export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): Idea {
     const youthToken = pickString(dto.youthToken, dto.YouthToken)
     const rawReactions = dto.reactions ?? dto.Reactions ?? []
@@ -39,6 +53,7 @@ export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): I
         authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? 'self' : dto.authorType ?? dto.AuthorType ?? 'other',
         createdAt: pickString(dto.createdAt, dto.CreatedAt, dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
         reactions,
+        pendingReview: isPendingStatus(dto.status ?? dto.Status),
     }
 }
 

@@ -2,7 +2,15 @@ import '../../styles/pages/ideas.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
 import { getIdeasContext, getIdeasYouthToken, submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
-import { addIdeaReaction, addIdeaResponse, addResponseReaction, getIdeaResponses, removeIdeaReaction, removeResponseReaction } from '../../services/ideaResponseService.ts'
+import {
+    addIdeaReaction,
+    addIdeaResponse,
+    addResponseReaction,
+    getIdeaResponses,
+    removeIdeaReaction,
+    removeResponseReaction,
+    updateIdeaResponseAfterSafetyReview,
+} from '../../services/ideaResponseService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
@@ -201,14 +209,19 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
+        reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
         loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
-        submitResponse: async (idea, text, offensiveContentDetected) => {
-            const response = await addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text)
-            return {
-                ...response,
-                offensiveContentDetected,
-            }
-        },
+        submitResponse: (idea, text) => addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text),
+        updateResponseAfterSafetyReview: (idea, responseId, text, markForReview) =>
+            updateIdeaResponseAfterSafetyReview(
+                params.organizationSlug,
+                params.projectSlug,
+                idea,
+                responseId,
+                youthToken,
+                text,
+                markForReview,
+            ),
         reactToResponse: (idea, responseId, emoji) =>
             addResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
         unreactToResponse: (idea, responseId, emoji) =>

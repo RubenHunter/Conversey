@@ -23,12 +23,16 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<ResponseDto>> GetResponses(string workspaceSlug, string projectSlug, int topicId, int ideaId)
+    public ActionResult<IReadOnlyCollection<ResponseDto>> GetResponses(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromQuery] string? youthToken = null)
     {
         try
         {
             _ = GetIdeaForRoute(workspaceSlug, projectSlug, topicId, ideaId);
+            var normalizedToken = string.IsNullOrWhiteSpace(youthToken) ? null : youthToken.Trim();
+
             var responses = _ideaManager.GetResponsesFromIdeaByIdeaId(ideaId)
+                .Where(response => response.Status == IdeaStatus.Approved ||
+                                   (normalizedToken != null && string.Equals(response.Youth.Token, normalizedToken, StringComparison.Ordinal)))
                 .Select(ResponseDto.From)
                 .ToList()
                 .AsReadOnly();
@@ -46,7 +50,7 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<ResponseDto> AddResponse(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromBody] CreateResponseRequestDto request)
+    public ActionResult<ResponseSubmissionResponseDto> AddResponse(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromBody] CreateResponseRequestDto request)
     {
         try
         {
@@ -59,14 +63,78 @@ public class IdeaResponsesController : ControllerBase
             }
 
             ResolveYouth(project, request.YouthToken);
-            var response = _ideaManager.AddResponse(request.Text, ideaId, request.YouthToken.Trim());
-            return Ok(ResponseDto.From(response));
+
+            var submission = _ideaManager.AddResponse(request.Text, ideaId, request.YouthToken.Trim());
+            return Ok(submission switch
+            {
+                ResponseSubmissionResponse.Approved approved => new ResponseSubmissionResponseDto.Approved(ResponseDto.From(approved.Response)),
+                ResponseSubmissionResponse.Pending pending => new ResponseSubmissionResponseDto.Pending(ResponseDto.From(pending.Response), pending.Suggestion),
+                _ => throw new InvalidOperationException("Unknown response submission type")
+            });
         }
         catch (ProjectNotFoundException)
         {
             return NotFound();
         }
         catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpPut("{responseId}")]
+    public ActionResult<ResponseDto> UpdateAfterSafetyReview(
+        string workspaceSlug,
+        string projectSlug,
+        int topicId,
+        int ideaId,
+        int responseId,
+        [FromBody] UpdateResponseAfterSafetyReviewDto request)
+    {
+        try
+        {
+            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+            _ = GetIdeaForRoute(project, topicId, ideaId);
+
+            if (string.IsNullOrWhiteSpace(request.YouthToken))
+            {
+                return BadRequest("YouthToken is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Text))
+            {
+                return BadRequest("Text is required.");
+            }
+
+            var response = _ideaManager.GetResponseByIdWithIdea(responseId);
+            if (response.Idea.Id != ideaId)
+            {
+                return NotFound();
+            }
+
+            if (!string.Equals(response.Youth.Token, request.YouthToken.Trim(), StringComparison.Ordinal))
+            {
+                return Forbid();
+            }
+
+            response.Text = request.Text.Trim();
+            response.Status = request.MarkForReview ? IdeaStatus.Pending : IdeaStatus.Approved;
+            var updated = _ideaManager.ChangeResponse(response);
+            return Ok(ResponseDto.From(updated));
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ResponseNotFoundException e)
         {
             return NotFound(e.Message);
         }

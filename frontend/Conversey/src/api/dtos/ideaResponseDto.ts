@@ -16,6 +16,8 @@ export interface ApiIdeaResponseDto {
     CreatedAt?: string
     youthToken?: string
     YouthToken?: string
+    status?: string | number
+    Status?: string | number
     reactions?: ApiResponseReactionSummaryDto[]
     Reactions?: ApiResponseReactionSummaryDto[]
 }
@@ -28,4 +30,17 @@ export interface ApiCreateIdeaResponseRequestDto {
 export interface ApiCreateResponseReactionRequestDto {
     emoji: string
     youthToken: string
+}
+
+export interface ApiResponseSubmissionResultDto {
+    response?: ApiIdeaResponseDto
+    Response?: ApiIdeaResponseDto
+    suggestion?: string
+    Suggestion?: string
+}
+
+export interface ApiUpdateResponseAfterSafetyReviewRequestDto {
+    text: string
+    youthToken: string
+    markForReview: boolean
 }

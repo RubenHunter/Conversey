@@ -124,23 +124,28 @@ public class IdeaManager: IIdeaManager
         }
     }
 
-    public IdeaResponse AddResponse(string text, int ideaId, string youthToken)
+    public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
     {
         var idea = _repository.ReadIdeaById(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
+        bool allowed = EvaluateIdeaModeration(text, out string suggestion);
 
         var response = new IdeaResponse
         {
             Text = text.Trim(),
             Idea = idea,
             CreatedAt = DateTime.UtcNow,
-            Youth = author
+            Youth = author,
+            Status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending
         };
         Validate(response);
         _repository.CreateResponse(response);
-        return response;
+
+        return allowed
+            ? new ResponseSubmissionResponse.Approved(response)
+            : new ResponseSubmissionResponse.Pending(response, suggestion);
     }
 
     public IdeaResponse GetResponseById(int responseId)

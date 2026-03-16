@@ -1,4 +1,11 @@
-import type { ApiCreateIdeaResponseRequestDto, ApiCreateResponseReactionRequestDto, ApiIdeaResponseDto, ApiResponseReactionSummaryDto } from '../api/dtos/ideaResponseDto.ts'
+import type {
+    ApiCreateIdeaResponseRequestDto,
+    ApiCreateResponseReactionRequestDto,
+    ApiIdeaResponseDto,
+    ApiResponseReactionSummaryDto,
+    ApiResponseSubmissionResultDto,
+    ApiUpdateResponseAfterSafetyReviewRequestDto,
+} from '../api/dtos/ideaResponseDto.ts'
 import { mapApiIdeaResponseToIdeaResponse, mapApiReactionSummaryToReactionSummary } from '../mappers/ideaResponseMapper.ts'
 import type { Idea } from '../models/idea.ts'
 import type { IdeaResponse, ResponseReactionSummary } from '../models/ideaResponse.ts'
@@ -24,21 +31,60 @@ async function getIdeaReactionSummary(workspaceSlug: string, projectSlug: string
     return dtos.map(mapApiReactionSummaryToReactionSummary)
 }
 
+export interface IdeaResponseSubmitResult {
+    response: IdeaResponse
+    aiSuggestion: string | null
+}
+
 export async function getIdeaResponses(workspaceSlug: string, projectSlug: string, idea: Idea, youthToken: string): Promise<IdeaResponse[]> {
-    const endpoint = getResponsesEndpoint(workspaceSlug, projectSlug, idea)
+    const endpoint = `${getResponsesEndpoint(workspaceSlug, projectSlug, idea)}?youthToken=${encodeURIComponent(youthToken)}`
     const dtos = await apiFetch<ApiIdeaResponseDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaResponseToIdeaResponse(dto, youthToken))
 }
 
-export async function addIdeaResponse(workspaceSlug: string, projectSlug: string, idea: Idea, youthToken: string, text: string): Promise<IdeaResponse> {
+export async function addIdeaResponse(workspaceSlug: string, projectSlug: string, idea: Idea, youthToken: string, text: string): Promise<IdeaResponseSubmitResult> {
     const endpoint = getResponsesEndpoint(workspaceSlug, projectSlug, idea)
     const requestDto: ApiCreateIdeaResponseRequestDto = {
         text,
         youthToken,
     }
 
-    const dto = await apiFetch<ApiIdeaResponseDto>(endpoint, {
+    const result = await apiFetch<ApiResponseSubmissionResultDto>(endpoint, {
         method: 'POST',
+        body: JSON.stringify(requestDto),
+    })
+
+    const responseDto = result.response ?? result.Response
+    if (!responseDto) {
+        throw new Error('Unexpected response submission payload: missing response')
+    }
+
+    const suggestion = result.suggestion ?? result.Suggestion ?? null
+
+    return {
+        response: mapApiIdeaResponseToIdeaResponse(responseDto, youthToken),
+        aiSuggestion: suggestion && suggestion.trim().length > 0 ? suggestion.trim() : null,
+    }
+}
+
+export async function updateIdeaResponseAfterSafetyReview(
+    workspaceSlug: string,
+    projectSlug: string,
+    idea: Idea,
+    responseId: number,
+    youthToken: string,
+    text: string,
+    markForReview: boolean,
+): Promise<IdeaResponse> {
+    const endpoint = `${getResponsesEndpoint(workspaceSlug, projectSlug, idea)}/${responseId}`
+    const requestDto: ApiUpdateResponseAfterSafetyReviewRequestDto = {
+        text,
+        youthToken,
+        markForReview,
+    }
+
+    const dto = await apiFetch<ApiIdeaResponseDto>(endpoint, {
+        method: 'PUT',
         body: JSON.stringify(requestDto),
     })
 
