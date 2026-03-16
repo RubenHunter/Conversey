@@ -11,7 +11,7 @@ namespace Conversey.REST.Controllers.Api;
 public class WorkspacesController : ControllerBase
 {
     private readonly IWorkspaceManager _manager;
-    
+
     public WorkspacesController(IWorkspaceManager manager)
     {
         _manager = manager;
@@ -26,7 +26,7 @@ public class WorkspacesController : ControllerBase
         {
             return NoContent();
         }
-        
+
         IReadOnlyCollection<WorkspaceDto> dtos = workspaces
             .Select(WorkspaceDto.From)
             .ToList()
@@ -34,13 +34,13 @@ public class WorkspacesController : ControllerBase
 
         return Ok(dtos);
     }
-    
+
     [HttpPost]
     public IActionResult Create([FromBody] WorkspaceDto dto)
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name, new Slug{Text = dto.Slug});
+            var workspace = _manager.CreateWorkspace(dto.Name, new Slug { Text = dto.Slug });
 
             return CreatedAtAction(
                 nameof(GetBySlug),
@@ -52,7 +52,7 @@ public class WorkspacesController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
-    
+
     [HttpGet("{slug}")]
     public IActionResult GetBySlug(Slug slug)
     {

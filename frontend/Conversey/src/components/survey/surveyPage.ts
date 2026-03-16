@@ -1,8 +1,7 @@
 import type { RouteParams } from '../../utils/router.ts'
 import { navigate } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
-import { getQuestions, submitResponse } from '../../services/surveyService.ts'
-import { getWorkspaceByName } from '../../services/workspaceService.ts'
+import { getQuestions, submitAnswers } from '../../services/surveyService.ts'
 import { QuestionType } from '../../models/question.ts'
 import type { ResponseAnswer } from '../../models/response.ts'
 import { renderSingleChoiceQuestion } from './singleChoiceQuestion.ts'
@@ -10,6 +9,19 @@ import type { QuestionComponent } from './singleChoiceQuestion.ts'
 import { renderOpenTextQuestion } from './openTextQuestion.ts'
 import { renderScrollNav } from '../scrollNav.ts'
 import type { ScrollNav } from '../scrollNav.ts'
+
+function formatOrganizationName(organizationSlug: string): string {
+    return organizationSlug
+        .split('-')
+        .filter((part) => part.length > 0)
+        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
+        .join(' ')
+}
+
+function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
+    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
+    return clean.slice(0, 3).toUpperCase() || 'ORG'
+}
 
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -42,23 +54,10 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         return
     }
 
-    const questions = await getQuestions(project.id)
-    
-    // Load workspace name from API
-    let organizationName = params.organizationSlug
-        .split('-')
-        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
-        .join(' ')
-    
-    try {
-        const workspace = await getWorkspaceByName(organizationName)
-        if (workspace) {
-            organizationName = workspace.name
-        }
-    } catch (error) {
-        console.error('Failed to load workspace name:', error)
-        // Fall back to derived name from slug
-    }
+    const questions = await getQuestions(params.organizationSlug, params.projectSlug)
+
+    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
+    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
 
     let currentQuestionIndex = -1 // Start at -1 to indicate we're at landing page section, not at any question yet
     let scrollNav: ScrollNav | null = null
@@ -73,7 +72,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                     <div class="survey-topbar-logo-title">CONVERSEY</div>
                 </div>
                 <div class="survey-topbar-brand">
-                    <div class="survey-topbar-logo-badge">AXA</div>
+                    <div class="survey-topbar-logo-badge">${organizationBadge}</div>
                     <div class="survey-topbar-name">${organizationName}</div>
                 </div>
             </div>
@@ -83,6 +82,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                 <div class="survey-hero-content">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
+                    <p class="mt-3 text-xs uppercase tracking-[0.18em] opacity-80">Loaded from backend API</p>
                 </div>
             </section>
 
@@ -316,7 +316,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         submitBtn.textContent = 'Submitting...'
 
         try {
-            await submitResponse({ projectId: project.id, answers })
+            await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: project.id, answers })
             localStorage.setItem(completedKey, 'true')
             cleanupSurveyPage()
             await navigate('completed')
@@ -327,4 +327,3 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         }
     })
 }
-

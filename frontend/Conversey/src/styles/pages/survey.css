@@ -316,6 +316,8 @@
 /* Survey hero + collapse behavior */
 .survey-shell {
   position: relative;
+  width: 100%;
+  align-self: stretch;
 }
 
 .survey-hero {

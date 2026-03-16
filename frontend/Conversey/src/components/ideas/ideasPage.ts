@@ -1,8 +1,16 @@
 import '../../styles/pages/ideas.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
-import { getWorkspaceByName } from '../../services/workspaceService.ts'
-import { getIdeasContext, submitIdea } from '../../services/ideaService.ts'
+import { getIdeasContext, getIdeasYouthToken, submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
+import {
+    addIdeaReaction,
+    addIdeaResponse,
+    addResponseReaction,
+    getIdeaResponses,
+    removeIdeaReaction,
+    removeResponseReaction,
+    updateIdeaResponseAfterSafetyReview,
+} from '../../services/ideaResponseService.ts'
 import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
@@ -15,21 +23,23 @@ import type { ActiveView } from './types.ts'
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
         .split('-')
+        .filter((part) => part.length > 0)
         .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
         .join(' ')
 }
 
+function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
+    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
+    return clean.slice(0, 3).toUpperCase() || 'ORG'
+}
+
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const context = await getIdeasContext(project.id)
+    const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
+    const youthToken = getIdeasYouthToken(project.id)
 
-    let organizationName = formatOrganizationName(project.organizationSlug)
-    try {
-        const workspace = await getWorkspaceByName(organizationName)
-        if (workspace) organizationName = workspace.name
-    } catch {
-        // Keep formatted organization fallback.
-    }
+    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
+    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
 
     const topics = context.topics
     const allIdeas = [...context.ideas]
@@ -52,7 +62,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="survey-topbar-logo-title">CONVERSEY</div>
                 </div>
                 <div class="survey-topbar-brand">
-                    <div class="survey-topbar-logo-badge">AXA</div>
+                    <div class="survey-topbar-logo-badge">${organizationBadge}</div>
                     <div class="survey-topbar-name">${organizationName}</div>
                 </div>
             </div>
@@ -116,18 +126,24 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             </div>
             <div class="idea-panel-body">
                 <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
-                <div id="idea-panel-post" class="idea-panel-post">
-                    <div id="idea-panel-badges" class="idea-panel-badges"></div>
-                    <p id="idea-panel-text" class="idea-panel-text"></p>
-                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="React with emoji (coming soon)">
-                        <span aria-hidden="true">＋</span>
-                        <span aria-hidden="true">😊</span>
-                    </button>
+                <div class="idea-panel-section idea-panel-section--idea">
+                    <p class="idea-panel-section-label">Original idea</p>
+                    <div id="idea-panel-post" class="idea-panel-post">
+                        <div id="idea-panel-badges" class="idea-panel-badges"></div>
+                        <p id="idea-panel-text" class="idea-panel-text"></p>
+                        <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
+                            <span aria-hidden="true">+</span>
+                            <span aria-hidden="true">:)</span>
+                        </button>
+                    </div>
                 </div>
-                <div id="idea-panel-comments" class="idea-panel-comments"></div>
+                <div class="idea-panel-section idea-panel-section--responses">
+                    <p class="idea-panel-section-label">Responses</p>
+                    <div id="idea-panel-comments" class="idea-panel-comments"></div>
+                </div>
             </div>
             <div class="idea-panel-footer">
-                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment…" rows="2"></textarea>
+                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>
                 <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
             </div>
         </div>
@@ -143,7 +159,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">Your original message</span>
                         <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response" title="Edit your response">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
+                            <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                            </svg>
                             <span>Edit your response</span>
                         </button>
                     </div>
@@ -152,9 +171,12 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <div class="safety-review-block">
                     <div class="safety-review-block-head">
                         <span class="safety-review-label">AI suggestion</span>
-                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI's suggestion" title="Edit the AI's suggestion">
-                            <span class="safety-review-edit-glyph" aria-hidden="true">✎</span>
-                            <span>Edit the AI's suggestion</span>
+                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI suggestion" title="Edit the AI suggestion">
+                            <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                            </svg>
+                            <span>Edit the AI suggestion</span>
                         </button>
                     </div>
                     <textarea id="safety-review-suggestion" class="safety-review-suggestion" rows="4" readonly></textarea>
@@ -165,7 +187,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
             </div>
         </div>
-    </div>
     `
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
@@ -188,6 +209,30 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
+        reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
+        loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
+        submitResponse: (idea, text) => addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text),
+        updateResponseAfterSafetyReview: (idea, responseId, text, markForReview) =>
+            updateIdeaResponseAfterSafetyReview(
+                params.organizationSlug,
+                params.projectSlug,
+                idea,
+                responseId,
+                youthToken,
+                text,
+                markForReview,
+            ),
+        reactToResponse: (idea, responseId, emoji) =>
+            addResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
+        unreactToResponse: (idea, responseId, emoji) =>
+            removeResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
+        reactToIdea: (idea, emoji) => addIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+        unreactToIdea: (idea, emoji) => removeIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+        onIdeaReactionsUpdated: (ideaId, reactions) => {
+            const ideaIndex = allIdeas.findIndex((item) => item.id === ideaId)
+            if (ideaIndex < 0) return
+            allIdeas[ideaIndex] = { ...allIdeas[ideaIndex], reactions }
+        },
     })
 
     function getVisibleIdeas(): Idea[] {
@@ -197,10 +242,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
         const topicId = activeView.topicId
         return allIdeas.filter((idea) => idea.topicId === topicId)
-    }
-
-    function getActiveLabel(): string {
-        return getActiveIdeasLabel(activeView, topics)
     }
 
     function openTopicMenu(): void {
@@ -235,22 +276,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 render()
             },
         })
-    }
-
-    function renderIdeasList(ideas: Idea[]): void {
-        renderCommunityIdeasList({
-            list,
-            ideas,
-            activeView,
-            topics,
-            upBtn,
-            downBtn,
-            flaggedIdeaIds,
-        })
-
-        if (ideas.length > 0) {
-            setActiveIdea(activeIdeaIndex, false)
-        }
     }
 
     function updateArrowState(totalIdeas: number): void {
@@ -292,7 +317,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             if (focusTurnTimeout !== null) {
                 window.clearTimeout(focusTurnTimeout)
             }
-            // Reflow lets the animation replay on repeated selections.
             void activeCard.offsetWidth
             activeCard.classList.add('turn-focus')
             focusTurnTimeout = window.setTimeout(() => {
@@ -310,7 +334,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
         activeCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
-        // Keep scroll-sync paused until smooth scrolling settles.
         listScrollUnlockTimeout = window.setTimeout(() => {
             isProgrammaticListScroll = false
             listScrollUnlockTimeout = null
@@ -354,7 +377,27 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         })
     }
 
-    function renderComposer(): void {
+    function render(): void {
+        topicTriggerValue.textContent = getActiveIdeasLabel(activeView, topics)
+        listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
+
+        renderTopicMenuBlock()
+        visibleIdeasCache = getVisibleIdeas()
+
+        renderCommunityIdeasList({
+            list,
+            ideas: visibleIdeasCache,
+            activeView,
+            topics,
+            upBtn,
+            downBtn,
+            flaggedIdeaIds,
+        })
+
+        if (visibleIdeasCache.length > 0) {
+            setActiveIdea(activeIdeaIndex, false)
+        }
+
         renderIdeasComposer({
             activeView,
             topics,
@@ -367,16 +410,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             magicBtn,
             speakBtn,
         })
-    }
-
-    function render(): void {
-        topicTriggerValue.textContent = getActiveLabel()
-        listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
-
-        renderTopicMenuBlock()
-        visibleIdeasCache = getVisibleIdeas()
-        renderIdeasList(visibleIdeasCache)
-        renderComposer()
     }
 
     topicTrigger.addEventListener('click', () => {
@@ -393,6 +426,30 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         if (!topicMenu.contains(target) && !topicTrigger.contains(target)) {
             closeTopicMenu()
         }
+    })
+
+    list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
+
+    list.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement
+        const card = target.closest<HTMLElement>('.ideas-card')
+        if (!card) return
+
+        const index = Number(card.getAttribute('data-idea-index'))
+        if (!Number.isFinite(index) || index < 0 || index >= visibleIdeasCache.length) return
+
+        setActiveIdea(index, true)
+        ideaPanel.open(visibleIdeasCache[index])
+    })
+
+    upBtn.addEventListener('click', () => {
+        if (visibleIdeasCache.length === 0) return
+        setActiveIdea(activeIdeaIndex - 1, true)
+    })
+
+    downBtn.addEventListener('click', () => {
+        if (visibleIdeasCache.length === 0) return
+        setActiveIdea(activeIdeaIndex + 1, true)
     })
 
     textarea.addEventListener('input', () => {
@@ -414,54 +471,104 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         }
 
         submitBtn.disabled = true
-        submitBtn.textContent = 'Saving...'
+        submitBtn.textContent = 'Checking...'
 
-        const createdIdea = await submitIdea({
-            projectId: project.id,
-            topicId: activeView.topicId,
-            body: decision.text,
-            authorType: 'self',
-        })
+        console.log('[ideas] submitting idea, waiting for AI moderation...')
 
-        if (decision.offensiveContentDetected) {
-            flaggedIdeaIds.add(createdIdea.id)
+        try {
+            // First submit — backend runs Mistral moderation
+            const result = await submitIdea(params.organizationSlug, params.projectSlug, {
+                projectId: project.id,
+                topicId: activeView.topicId,
+                body,
+                authorType: 'self',
+            })
+
+            if (result.aiSuggestion) {
+                // Backend flagged it — show dialog with real AI suggestion
+                // The idea is already saved as Pending in the DB
+                console.log('[ideas] showing safety review dialog to user')
+                submitBtn.textContent = 'Submit Idea'
+                submitBtn.disabled = false
+
+                const decision = await safetyReviewDialog.reviewWithSuggestion(body, result.aiSuggestion)
+
+                if (!decision.proceed) {
+                    // User cancelled — leave textarea as-is
+                    console.log('[ideas] user dismissed safety dialog — idea stays Pending in DB')
+                    return
+                }
+
+                if (decision.useOriginal) {
+                    // Keep original idea pending; if edited, persist the edited text as pending.
+                    if (decision.edited) {
+                        await updateIdeaAfterSafetyReview(
+                            params.organizationSlug,
+                            params.projectSlug,
+                            activeView.topicId,
+                            result.idea.id,
+                            project.id,
+                            decision.text,
+                            true,
+                        )
+                        result.idea.body = decision.text
+                    }
+
+                    console.log('[ideas] user chose original text — idea stays Pending in DB')
+                    allIdeas.unshift({ ...result.idea, authorType: 'self' })
+                    flaggedIdeaIds.add(result.idea.id)
+                    textarea.value = ''
+                    activeIdeaIndex = 0
+                    render()
+                    return
+                }
+
+                // User accepted AI suggestion. If edited, keep it pending for review.
+                if (decision.edited) {
+                    await updateIdeaAfterSafetyReview(
+                        params.organizationSlug,
+                        params.projectSlug,
+                        activeView.topicId,
+                        result.idea.id,
+                        project.id,
+                        decision.text,
+                        true,
+                    )
+
+                    console.log('[ideas] edited AI suggestion saved as Pending for review')
+                    allIdeas.unshift({ ...result.idea, body: decision.text, authorType: 'self' })
+                    flaggedIdeaIds.add(result.idea.id)
+                } else {
+                    // Unedited AI suggestion can be approved immediately.
+                    await updateIdeaAfterSafetyReview(
+                        params.organizationSlug,
+                        params.projectSlug,
+                        activeView.topicId,
+                        result.idea.id,
+                        project.id,
+                        decision.text,
+                        false,
+                    )
+
+                    console.log('[ideas] unedited AI suggestion accepted and approved')
+                    allIdeas.unshift({ ...result.idea, body: decision.text, authorType: 'self' })
+                }
+            } else {
+                // Approved — add directly
+                console.log('[ideas] idea approved and added to list')
+                allIdeas.unshift({ ...result.idea, authorType: 'self' })
+            }
+
+            textarea.value = ''
+            activeIdeaIndex = 0
+            render()
+        } catch (err) {
+            console.error('[ideas] submit failed', err)
+        } finally {
+            submitBtn.textContent = 'Submit Idea'
+            submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
         }
-
-        allIdeas.unshift(createdIdea)
-        textarea.value = ''
-        submitBtn.textContent = 'Submit Idea'
-        render()
-    })
-
-    list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
-
-    list.addEventListener('click', (event) => {
-        const target = event.target as HTMLElement
-        const card = target.closest<HTMLElement>('.ideas-card')
-        if (!card) return
-
-        const index = Number(card.getAttribute('data-idea-index'))
-        if (!Number.isFinite(index)) return
-
-        if (index === activeIdeaIndex) {
-            const selectedIdea = visibleIdeasCache[index]
-            if (!selectedIdea) return
-            ideaPanel.open(selectedIdea)
-        } else {
-            setActiveIdea(index, true)
-        }
-    })
-
-    upBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0 || activeIdeaIndex <= 0) return
-        setActiveIdea(activeIdeaIndex - 1, true)
-    })
-
-    downBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0 || activeIdeaIndex >= visibleIdeasCache.length - 1) return
-        setActiveIdea(activeIdeaIndex + 1, true)
     })
 
     render()
 }
-

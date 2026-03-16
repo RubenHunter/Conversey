@@ -14,6 +14,7 @@ export const InteractionType = {
 export type InteractionType = (typeof InteractionType)[keyof typeof InteractionType]
 
 export interface ProjectTopic {
+    id: number
     name: string
     context: string
 }
@@ -27,6 +28,7 @@ export interface Project {
     id: number
     slug: string
     organizationSlug: string
+    organizationName?: string
     title: string
     description: string
     imageUrl: string
@@ -35,6 +37,7 @@ export interface Project {
     endDate?: string
     interactionType?: InteractionType
     topic?: ProjectTopic
+    topics?: ProjectTopic[]
     style?: ProjectStyle
 }
 

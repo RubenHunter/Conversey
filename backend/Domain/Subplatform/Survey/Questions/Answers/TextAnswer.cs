@@ -1,12 +1,5 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
 
-public class TextAnswer
+public class TextAnswer : Answer
 {
-    [Required]
-    public int Id { get; set; }
-    public Youth Youth { get; set; }
-    public Question Question { get; set; }
 }
-

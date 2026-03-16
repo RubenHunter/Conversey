@@ -1,4 +1,9 @@
-﻿export type IdeaAuthorType = 'self' | 'other'
+export type IdeaAuthorType = 'self' | 'other'
+
+export interface IdeaReactionSummary {
+    emoji: string
+    count: number
+}
 
 export interface IdeaTopic {
     id: number
@@ -15,6 +20,8 @@ export interface Idea {
     body: string
     authorType: IdeaAuthorType
     createdAt: string
+    reactions: IdeaReactionSummary[]
+    pendingReview: boolean
 }
 
 export interface SubmitIdeaRequest {
@@ -23,4 +30,3 @@ export interface SubmitIdeaRequest {
     body: string
     authorType: IdeaAuthorType
 }
-

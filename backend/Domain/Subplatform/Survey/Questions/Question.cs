@@ -12,16 +12,22 @@ public class Question
     [StringLength(500)]
     public string Text { get; set; }
     public int Order { get; set; }
+    public bool IsRequired { get; set; }
     [NotMapped]
     public Image? Image { get; set; }
 
     public Project Project { get; set; }
-
-    /*
-     public Question()
-    {
-        NotImplementedException();
-    }
-    */
+    public ICollection<QuestionOption> Options { get; set; } = new List<QuestionOption>();
 }
 
+public class QuestionOption
+{
+    [Required]
+    public int Id { get; set; }
+
+    [StringLength(250)]
+    public string Text { get; set; }
+
+    public int Order { get; set; }
+    public Question Question { get; set; }
+}

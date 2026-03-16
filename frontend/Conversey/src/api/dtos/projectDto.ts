@@ -1,4 +1,6 @@
 export interface ApiTopicDto {
+    id?: number
+    Id?: number
     name?: string
     Name?: string
     context?: string
@@ -20,6 +22,8 @@ export interface ApiProjectDto {
     Slug?: string
     organizationSlug?: string
     OrganizationSlug?: string
+    organizationName?: string
+    OrganizationName?: string
     title?: string
     Title?: string
     description?: string
@@ -38,7 +42,8 @@ export interface ApiProjectDto {
     InteractionForm?: ApiInteractionTypeDto
     topic?: ApiTopicDto
     Topic?: ApiTopicDto
+    topics?: ApiTopicDto[]
+    Topics?: ApiTopicDto[]
     style?: ApiProjectStyleDto
     Style?: ApiProjectStyleDto
 }
-

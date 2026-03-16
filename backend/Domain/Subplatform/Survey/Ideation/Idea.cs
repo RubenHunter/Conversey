@@ -8,12 +8,26 @@ public class Idea
     public int Id { get; set; }
 
     [Required]
-    public string Content { get; set; }
-    public string Summary { get; set; }
+    [StringLength(4000)]
+    public string Content { get; set; } = string.Empty;
+
+    [StringLength(1000)]
+    public string Summary { get; set; } = string.Empty;
+
     public DateTime SubmissionDate { get; set; }
     public IdeaStatus Status { get; set; }
+    public ModerationInfo ModerationInfo { get; set; }
 
     [Required]
     public Project Project { get; set; }
-    public IEnumerable<Response> Responses { get; set; }
+
+    [Required]
+    public Topic Topic { get; set; }
+
+    [Required]
+    public Youth Youth { get; set; }
+
+    public ICollection<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
+
+    public ICollection<Response> Responses { get; set; } = new List<Response>();
 }

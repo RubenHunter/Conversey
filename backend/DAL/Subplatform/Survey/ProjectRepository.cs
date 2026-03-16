@@ -1,5 +1,6 @@
 ﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL.Subplatform.Survey;
@@ -31,6 +32,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Id == projectId);
     }
 
@@ -39,6 +41,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Id == projectId);
     }
 
@@ -47,6 +50,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Id == projectId);
     }
 
@@ -57,6 +61,7 @@ public class ProjectRepository : IProjectRepository
             .Include(p => p.Topic)
             .Include(p => p.Youths)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Id == projectId);
     }
 
@@ -77,6 +82,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -85,6 +91,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -93,6 +100,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -103,6 +111,7 @@ public class ProjectRepository : IProjectRepository
             .Include(p => p.Topic)
             .Include(p => p.Youths)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -126,6 +135,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .ToList().AsReadOnly();
     }
 
@@ -134,6 +144,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .ToList().AsReadOnly();
     }
 
@@ -158,6 +169,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .Where(p => p.Workspace.Id == workspaceId)
             .ToList().AsReadOnly();
     }
@@ -167,6 +179,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
+            .ThenInclude(q => q.Options)
             .Where(p => p.Workspace.Id == workspaceId)
             .ToList().AsReadOnly();
     }
@@ -220,6 +233,8 @@ public class ProjectRepository : IProjectRepository
             .Include(t => t.Project)
             .SingleOrDefault(t => t.Id == topicId);
     }
+
+
 
     public void CreateTopic(Topic topic)
     {

@@ -1,8 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Ai;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
+using IdeaResponse = Conversey.BL.Domain.Subplatform.Survey.Ideation.Response;
 
 namespace Conversey.BL.Subplatform.Survey.Ideation;
 
@@ -10,35 +13,37 @@ public class IdeaManager: IIdeaManager
 {
     private readonly IIdeaRepository _repository;
     private readonly IProjectRepository _projectRepository;
+    private readonly IAiManager _aiManager;
 
-    public IdeaManager(IIdeaRepository repository, IProjectRepository projectRepository)
+    public IdeaManager(IIdeaRepository repository, IProjectRepository projectRepository, IAiManager aiManager)
     {
         _repository = repository;
         _projectRepository = projectRepository;
+        _aiManager = aiManager;
     }
 
-    public SubmissionResponse SubmitIdea(string content, int projectId) 
+    public SubmissionResponse SubmitIdea(string content, int projectId, int topicId, string youthToken) 
     {
-        Project forProject = _projectRepository.ReadProjectById(projectId) 
+        Project forProject = _projectRepository.ReadProjectByIdWithTopics(projectId) 
                              ?? throw new ProjectNotFoundException(projectId.ToString());
+        Topic forTopic = (forProject.Topic ?? Array.Empty<Topic>()).SingleOrDefault(t => t.Id == topicId) 
+                         ?? throw new TopicNotFoundException(topicId.ToString());
+        Youth author = GetYouthForProject(youthToken, projectId);
         
-        //check if idea is allowed by AI
-        bool allowed = true;
-        string suggestion = "";
+        bool allowed = EvaluateIdeaModeration(content, out string suggestion);
 
-        IdeaStatus status = IdeaStatus.Approved;
-        if (!allowed)
-        {
-            status = IdeaStatus.Pending;
-            suggestion = "a suggestion";
-        }
+        IdeaStatus status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending;
 
         var idea = new Idea
         {
-            Content = content,
+            Content = content.Trim(),
             Project = forProject,
             Status = status,
+            SubmissionDate = DateTime.UtcNow,
+            Topic = forTopic,
+            Youth = author
         };
+        Validate(idea);
         _repository.CreateIdea(idea);
 
         return allowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, suggestion);
@@ -94,6 +99,16 @@ public class IdeaManager: IIdeaManager
         return _repository.ReadIdeasFromProjectByProjectIdWithResponses(projectId);
     }
 
+    public IReadOnlyCollection<Idea> GetIdeasFromProjectByYouthToken(int projectId, string youthToken)
+    {
+        return _repository.ReadIdeasFromProjectByYouthToken(projectId, youthToken);
+    }
+
+    public IReadOnlyCollection<Idea> GetIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId)
+    {
+        return _repository.ReadIdeasFromTopicByProjectSlugAndTopicId(projectSlug, topicId);
+    }
+
     public Idea ChangeIdea(Idea idea)
     {
         Validate(idea);
@@ -109,43 +124,51 @@ public class IdeaManager: IIdeaManager
         }
     }
 
-    public Response AddResponse(string text, int ideaId)
+    public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
     {
         var idea = _repository.ReadIdeaById(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
-        var response = new Response
+        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
+        bool allowed = EvaluateIdeaModeration(text, out string suggestion);
+
+        var response = new IdeaResponse
         {
-            text = text,
+            Text = text.Trim(),
             Idea = idea,
-            createdAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Youth = author,
+            Status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending
         };
         Validate(response);
         _repository.CreateResponse(response);
-        return response;
+
+        return allowed
+            ? new ResponseSubmissionResponse.Approved(response)
+            : new ResponseSubmissionResponse.Pending(response, suggestion);
     }
 
-    public Response GetResponseById(int responseId)
+    public IdeaResponse GetResponseById(int responseId)
     {
         return _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public Response GetResponseByIdWithIdea(int responseId)
+    public IdeaResponse GetResponseByIdWithIdea(int responseId)
     {
         return _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
     }
 
-    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> GetResponsesFromIdeaByIdeaId(int ideaId)
     {
         return _repository.ReadResponsesFromIdeaByIdeaId(ideaId);
     }
 
-    public IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> GetResponsesFromIdeaByIdeaIdWithIdea(int ideaId)
     {
         return _repository.ReadResponsesFromIdeaByIdeaIdWithIdea(ideaId);
     }
 
-    public Response ChangeResponse(Response response)
+    public IdeaResponse ChangeResponse(IdeaResponse response)
     {
         Validate(response);
         _repository.UpdateResponse(response);
@@ -157,6 +180,144 @@ public class IdeaManager: IIdeaManager
         if (!_repository.DeleteResponse(responseId))
         {
             throw new ResponseNotFoundException(responseId.ToString());
+        }
+    }
+
+    public IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken)
+    {
+        var idea = _repository.ReadIdeaByIdWithProject(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
+        string normalizedEmoji = NormalizeEmoji(emoji);
+
+        var existingReaction = _repository.ReadIdeaReaction(ideaId, author.Token, normalizedEmoji);
+        if (existingReaction != null)
+        {
+            return existingReaction;
+        }
+
+        var reaction = new IdeaReaction
+        {
+            IdeaId = idea.Id,
+            Idea = idea,
+            Emoji = normalizedEmoji,
+            CreatedAt = DateTime.UtcNow,
+            YouthToken = author.Token,
+            Youth = author
+        };
+        Validate(reaction);
+        _repository.CreateIdeaReaction(reaction);
+        return reaction;
+    }
+
+    public IReadOnlyCollection<IdeaReaction> GetIdeaReactionsFromIdeaByIdeaId(int ideaId)
+    {
+        _ = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId.ToString());
+        return _repository.ReadIdeaReactionsFromIdeaByIdeaId(ideaId);
+    }
+
+    public void RemoveIdeaReaction(int ideaId, string youthToken, string emoji)
+    {
+        string normalizedEmoji = NormalizeEmoji(emoji);
+        if (!_repository.DeleteIdeaReaction(ideaId, youthToken, normalizedEmoji))
+        {
+            throw new IdeaReactionNotFoundException(ideaId, youthToken, normalizedEmoji);
+        }
+    }
+
+    public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
+    {
+        var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        Youth author = GetYouthForProject(youthToken, response.Idea.Project.Id);
+        string normalizedEmoji = NormalizeEmoji(emoji);
+
+        var existingReaction = _repository.ReadResponseReaction(responseId, author.Token, normalizedEmoji);
+        if (existingReaction != null)
+        {
+            return existingReaction;
+        }
+
+        var reaction = new ResponseReaction
+        {
+            ResponseId = response.Id,
+            Response = response,
+            Emoji = normalizedEmoji,
+            CreatedAt = DateTime.UtcNow,
+            YouthToken = author.Token,
+            Youth = author
+        };
+        Validate(reaction);
+        _repository.CreateResponseReaction(reaction);
+        return reaction;
+    }
+
+    public IReadOnlyCollection<ResponseReaction> GetResponseReactionsFromResponseByResponseId(int responseId)
+    {
+        _ = _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        return _repository.ReadResponseReactionsFromResponseByResponseId(responseId);
+    }
+
+    public void RemoveResponseReaction(int responseId, string youthToken, string emoji)
+    {
+        string normalizedEmoji = NormalizeEmoji(emoji);
+        if (!_repository.DeleteResponseReaction(responseId, youthToken, normalizedEmoji))
+        {
+            throw new ResponseReactionNotFoundException(responseId, youthToken, normalizedEmoji);
+        }
+    }
+
+    private Youth GetYouthForProject(string youthToken, int projectId)
+    {
+        Youth youth = _projectRepository.ReadYouthByTokenWithProject(youthToken)
+                      ?? throw new YouthNotFoundException(youthToken);
+
+        if (youth.Project?.Id != projectId)
+        {
+            throw new ValidationException("Youth token does not belong to this project.");
+        }
+
+        return youth;
+    }
+
+    private static string NormalizeEmoji(string emoji)
+    {
+        return string.IsNullOrWhiteSpace(emoji) ? string.Empty : emoji.Trim();
+    }
+
+    private bool EvaluateIdeaModeration(string content, out string suggestion)
+    {
+        suggestion = string.Empty;
+
+        Console.WriteLine($"[IdeaManager] 🔍 Sending content to Mistral AI for moderation: \"{content}\"");
+
+        try
+        {
+            var decision = _aiManager.ModerateContent(content);
+
+            if (decision.IsAllowed)
+            {
+                Console.WriteLine("[IdeaManager] ✅ Mistral AI: content is ALLOWED");
+                return true;
+            }
+
+            Console.WriteLine("[IdeaManager] ⚠️ Mistral AI: content is FLAGGED — generating alternative...");
+
+            try
+            {
+                suggestion = _aiManager.GenerateAiAlternative(content);
+                Console.WriteLine($"[IdeaManager] 💬 AI alternative: \"{suggestion}\"");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdeaManager] Failed to generate AI alternative: {ex.Message}");
+                suggestion = "Please rephrase your idea in a respectful way.";
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaManager] ❌ Moderation check failed, allowing by default: {ex.Message}");
+            return true;
         }
     }
 

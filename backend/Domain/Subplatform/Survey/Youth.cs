@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 namespace Conversey.BL.Domain.Subplatform.Survey;
 
@@ -8,7 +9,15 @@ public class Youth
     [Required]
     public string Token { get; set; }
 
-    public Subplatform.Survey.Project Project { get; set; }
+    public Project Project { get; set; }
 
     public string Email { get; set; } = "";
+
+    public ICollection<Idea> Ideas { get; set; } = new List<Idea>();
+
+    public ICollection<IdeaReaction> IdeaReactions { get; set; } = new List<IdeaReaction>();
+
+    public ICollection<Response> Responses { get; set; } = new List<Response>();
+
+    public ICollection<ResponseReaction> ResponseReactions { get; set; } = new List<ResponseReaction>();
 }

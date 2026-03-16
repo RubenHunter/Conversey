@@ -1,5 +1,6 @@
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 namespace Conversey.BL.Subplatform.Survey;
 
