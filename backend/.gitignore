@@ -5,6 +5,12 @@
 
 nuget-cache/
 
+# ClientApp (Vite)
+REST/ClientApp/node_modules/
+REST/ClientApp/.pnpm-store/
+REST/ClientApp/.vite/
+REST/wwwroot/
+
 # dotenv files
 .env
 

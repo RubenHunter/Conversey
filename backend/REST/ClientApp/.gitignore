@@ -27,7 +27,6 @@ dist-ssr
 # Node
 node_modules/
 .pnpm-store/
-frontend/Conversey/.pnpm-store/
 
 # Vite
 dist/

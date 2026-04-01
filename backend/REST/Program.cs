@@ -62,7 +62,9 @@ builder.Services.AddScoped<IAiManager>(provider =>
 });
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default")
+        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
 
@@ -81,11 +83,42 @@ else
     app.UseHttpsRedirection();
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors("FrontendDev");
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var spaIndexFile = Path.Combine(webRootPath, "index.html");
+
+app.MapFallback(async context =>
+{
+    if (context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    if (app.Environment.IsDevelopment() && !File.Exists(spaIndexFile))
+    {
+        var viteTarget = $"http://localhost:5173{context.Request.Path}{context.Request.QueryString}";
+        context.Response.Redirect(viteTarget);
+        return;
+    }
+
+    if (!File.Exists(spaIndexFile))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.SendFileAsync(spaIndexFile);
+});
 
 app.Run();
 
