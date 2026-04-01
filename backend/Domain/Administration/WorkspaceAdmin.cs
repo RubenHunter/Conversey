@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Subplatform;
+namespace Conversey.BL.Domain.Administration;
 
 public class WorkspaceAdmin
 {

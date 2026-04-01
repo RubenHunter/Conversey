@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
 
-namespace Conversey.BL.Domain.Subplatform.Survey.Ideation;
+namespace Conversey.BL.Domain.Ideation;
 
 public class Idea
 {
@@ -15,7 +16,7 @@ public class Idea
     public string Summary { get; set; } = string.Empty;
 
     public DateTime SubmissionDate { get; set; }
-    public IdeaStatus Status { get; set; }
+    public ModerationStatus Status { get; set; }
     public ModerationInfo ModerationInfo { get; set; }
 
     [Required]

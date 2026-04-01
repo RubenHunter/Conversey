@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
-namespace Conversey.BL.Domain.Subplatform.Survey;
+namespace Conversey.BL.Domain.Administration;
 
 public class Topic
 {
-    [Required] public int Id { get; set; }
+    [Required] 
+    public int Id { get; set; }
     public Project Project { get; set; }
     public string Name { get; set; }
     public string Context { get; set; }
