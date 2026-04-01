@@ -13,6 +13,7 @@ public class Youth
     [EmailAddress]
     public string Email { get; set; }
     
+    [Required]
     public Project Project { get; set; }
 
     public IEnumerable<Idea> Ideas { get; set; }
@@ -21,5 +22,5 @@ public class Youth
 
     public IEnumerable<Response> Responses { get; set; }
     
-    public IEnumerable<AnsweredAnswer> Answers { get; set; }
+    public IEnumerable<Answer> Answers { get; set; }
 }

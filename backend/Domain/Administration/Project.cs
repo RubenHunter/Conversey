@@ -12,7 +12,7 @@ public class Project
     public Slug Slug { get; set; }
 
     [StringLength(100)]
-    public string Title { get; set; }
+    public string Name { get; set; }
     
     [StringLength(4000)]
     public string Description { get; set; }
@@ -33,7 +33,7 @@ public class Project
     [Required]
     public Workspace Workspace { get; set; }
 
-    public IEnumerable<Youth> Youths { get; set; }
+    public IEnumerable<Youth> Youth { get; set; }
 }
 
 public enum Status
