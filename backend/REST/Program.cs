@@ -14,8 +14,7 @@ using Google.Cloud.SecretManager.V1;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- GOOGLE SECRET MANAGER INTEGRATIE ---
-// --- DEBUG GOOGLE SECRETS ---
+// --- 1. GOOGLE SECRET MANAGER INTEGRATIE ---
 Console.WriteLine($"🔍 Environment: {builder.Environment.EnvironmentName}");
 
 if (builder.Environment.IsProduction())
@@ -28,10 +27,8 @@ if (builder.Environment.IsProduction())
 
         var secrets = client.ListSecrets(new ListSecretsRequest { Parent = $"projects/{projectId}" });
 
-        bool foundAny = false;
         foreach (var secret in secrets)
         {
-            foundAny = true;
             string secretId = secret.SecretName.SecretId;
             string versionName = $"projects/{projectId}/secrets/{secretId}/versions/latest";
             
@@ -43,51 +40,44 @@ if (builder.Environment.IsProduction())
             
             Console.WriteLine($"✅ Loaded: {configKey}");
         }
-        
-        if (!foundAny) Console.WriteLine("⚠️ No secrets found in this GCP project.");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"❌ Secret Manager Error: {ex.Message}");
     }
 }
-else 
-{
-    Console.WriteLine("ℹ️ Skipping Secret Manager because Environment is NOT Production.");
-}
-// -----------------------------
 
+// --- 2. SERVICES CONFIGURATIE ---
 builder.Services.AddControllers();
 
+// CORS Policy: We zetten deze op "AllowAny" om poort-conflicten (5173 vs 5231) op te lossen
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendDev", policy =>
     {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
-// Add repositories
+// Repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
-// Add managers
+// Managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 
-// Registreer IAiManager met de API-sleutel en modelnaam
+// AI Manager
 builder.Services.AddHttpClient("MistralAPI", client =>
 {
     client.BaseAddress = new Uri("https://api.mistral.ai/v1/");
-    client.DefaultRequestHeaders.Accept.Add(
-        new MediaTypeWithQualityHeaderValue("application/json"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 
 builder.Services.AddScoped<IAiManager>(provider =>
@@ -96,53 +86,61 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var httpClient = factory.CreateClient("MistralAPI");
     var config = provider.GetRequiredService<IConfiguration>();
     
-    // Deze waarden worden in Production automatisch uit Secret Manager gehaald
-    // (In GCP Secret Manager moet de naam "AI__ApiKey" zijn)
     var apiKey = config["AI:ApiKey"];
     var modelName = config["AI:Model"] ?? "mistral-small-latest";
     var moderationModel = config["AI:ModerationModel"] ?? "mistral-moderation-latest";
 
-    // Debug check voor de Deployer
     if (string.IsNullOrEmpty(apiKey) && builder.Environment.IsProduction())
     {
-        throw new Exception("CRITICAL: Mistral API Key not found in Secret Manager (checked for name 'AI__ApiKey')");
+        Console.WriteLine("⚠️ WARNING: Mistral API Key is empty.");
     }
 
     return new MistralAiManager(httpClient, apiKey, modelName, moderationModel);
 });
 
-// DbContext configuratie
+// Database
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 var app = builder.Build();
 
+// --- 3. MIDDLEWARE PIPELINE ---
+
+// BELANGRIJK: CORS moet als een van de eerste komen
+app.UseCors("FrontendDev");
+
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 else
 {
-    app.UseHttpsRedirection();
+    // HTTPS Redirection uitgezet voor Docker/VM omgeving zonder SSL certificaat
+    // app.UseHttpsRedirection(); 
 }
 
-app.UseCors("FrontendDev");
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
 
+// --- 4. DATABASE INITIALISATIE ---
 void InitializeDatabase(bool drop)
 {
     using (var scope = app.Services.CreateScope())
     {
         var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
-        if (!dbCtx.CreateDatabase(drop)) return;
-        DataSeeder.Seed(dbCtx);
+        try {
+            if (!dbCtx.CreateDatabase(drop)) return;
+            DataSeeder.Seed(dbCtx);
+            Console.WriteLine("✅ Database initialized and seeded.");
+        }
+        catch (Exception ex) {
+            Console.WriteLine($"❌ DB Init Error: {ex.Message}");
+        }
     }
 }

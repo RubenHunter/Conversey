@@ -11,6 +11,8 @@ COPY REST/*.csproj REST/
 
 RUN dotnet restore
 
+COPY . .
+
 EXPOSE 5000
 
 ENTRYPOINT ["dotnet", "watch", "run", "--project", "REST/REST.csproj", "--urls", "http://0.0.0.0:5000"]

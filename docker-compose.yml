@@ -5,15 +5,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
-    volumes:
-      - ./frontend/Conversey:/app
-      - /app/node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true
       - CI=true
-      # Verwijst naar de backend via het publieke IP van de VM
       - VITE_API_BASE_URL=http://35.210.221.59:5231/api
-    command: pnpm run dev --host
+    restart: always
 
   backend:
     build:
@@ -21,16 +16,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5231:5000"
-    volumes:
-      - ./backend:/backend
+    # GEEN volumes hier, we vertrouwen op de Docker build
     environment:
-      - DOTNET_USE_POLLING_FILE_WATCHER=1
-      # Connection naar Google Cloud SQL
-      - ASPNETCORE_ENVIRONMENT=Production 
+      - ASPNETCORE_ENVIRONMENT=Production
       - Repository__Type=Postgres
       - ASPNETCORE_URLS=http://+:5000
-         # depends_on is verwijderd omdat we geen lokale postgres meer draaien
-
-volumes:
-  # Dit volume mag blijven staan, maar wordt momenteel niet gebruikt
-  postgres-data:
+    restart: always
