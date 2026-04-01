@@ -1,16 +1,16 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Domain.Subplatform.Survey.Questions;
+namespace Conversey.BL.Domain.Survey;
 
-public class MultipleChoiceQuestion : Question, IValidatableObject
+public class MultipleChoiceQuestion : Question<TextAnswer>, IValidatableObject
 {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (Options.Count < 2)
+        if (PossibleAnswers.Count() < 2)
         {
             yield return new ValidationResult(
                 "A multiple choice question needs at least 2 options.",
-                [nameof(Options)]);
+                [nameof(PossibleAnswers)]);
         }
     }
 }

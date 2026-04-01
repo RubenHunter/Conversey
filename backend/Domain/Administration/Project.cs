@@ -1,15 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Drawing;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
+using Conversey.BL.Domain.Survey;
 
-namespace Conversey.BL.Domain.Subplatform.Survey;
+namespace Conversey.BL.Domain.Administration;
 
 public class Project
 {
-    [Required]
-    public int Id { get; set; }
-    
     [Required]
     public Slug Slug { get; set; }
 
@@ -36,6 +34,24 @@ public class Project
     public Workspace Workspace { get; set; }
 
     public IEnumerable<Youth> Youths { get; set; }
-    
-    
+}
+
+public enum Status
+{
+    Draft,
+    Active,
+    Archived
+}
+
+public struct ProjectStyle
+{
+    public Color[] Theme { get; set; }
+    public Image? Logo { get; set; }
+    // To-Do public Font Font { get; set; }
+}
+
+public enum InteractionType
+{
+    Chat,
+    VerticalScroll
 }

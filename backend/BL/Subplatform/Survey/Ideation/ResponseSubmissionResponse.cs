@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Ai;
+using Conversey.BL.Ai;
 using IdeaResponse = Conversey.BL.Domain.Subplatform.Survey.Ideation.Response;
 
 namespace Conversey.BL.Subplatform.Survey.Ideation;
