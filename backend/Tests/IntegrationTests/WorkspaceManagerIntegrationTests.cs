@@ -107,6 +107,50 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
             workspace.Projects.Any(project => project.Slug.Text == ManagerSeedData.ProjectSlug.Text));
     }
 
+    [Fact]
+    public void GetAllWorkspaces_ShouldContainSeededWorkspace()
+    {
+        //Arrange
+        using var scope = _fixture.CreateScope();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
+
+        // Act
+        var workspaces = workspaceManager.GetAllWorkspaces();
+
+        // Assert
+        Assert.Contains(workspaces, workspace => workspace.Slug.Text == ManagerSeedData.WorkspaceSlug.Text);
+    }
+
+    [Fact]
+    public void GetWorkspaceByIdWithProjects_ShouldReturnWorkspaceWithProjects()
+    {
+        //Arrange
+        using var scope = _fixture.CreateScope();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
+        var workspaceBySlug = workspaceManager.GetWorkspaceBySlug(ManagerSeedData.WorkspaceSlug);
+
+        // Act
+        var workspace = workspaceManager.GetWorkspaceByIdWithProjects(workspaceBySlug.Id);
+
+        // Assert
+        Assert.Equal(workspaceBySlug.Id, workspace.Id);
+        Assert.NotEmpty(workspace.Projects);
+    }
+
+    [Fact]
+    public void GetWorkspaceByIdWithProjects_WhenWorkspaceDoesNotExist_ShouldThrowWorkspaceNotFoundException()
+    {
+        //Arrange
+        using var scope = _fixture.CreateScope();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
+
+        // Act
+        var act = () => workspaceManager.GetWorkspaceByIdWithProjects(-9999);
+
+        // Assert
+        Assert.Throws<WorkspaceNotFoundException>(act);
+    }
+
     #endregion
 
     #region CreateWorkspace

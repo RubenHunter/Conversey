@@ -27,6 +27,7 @@ public static class ManagerSeedData
 
 public sealed class ManagerIntegrationTestFixture : IDisposable
 {
+    private readonly TestAiManagerConfig _aiConfig = new();
     private readonly SqliteConnection _connection;
     private readonly ServiceProvider _serviceProvider;
 
@@ -50,6 +51,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IQuestionManager, QuestionManager>();
 
+        services.AddSingleton(_aiConfig);
         services.AddScoped<IAiManager, TestAiManager>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -67,6 +69,12 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         return _serviceProvider.CreateScope();
     }
 
+    public void SetAiModerationBehavior(bool isAllowed, string alternative = "Please rephrase your idea in a respectful way.")
+    {
+        _aiConfig.IsAllowed = isAllowed;
+        _aiConfig.Alternative = alternative;
+    }
+
     public void Dispose()
     {
         _serviceProvider.Dispose();
@@ -75,18 +83,31 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
     private sealed class TestAiManager : IAiManager
     {
+        private readonly TestAiManagerConfig _config;
+
+        public TestAiManager(TestAiManagerConfig config)
+        {
+            _config = config;
+        }
+
         public string GenerateAiAlternative(string prompt)
         {
-            return "Please rephrase your idea in a respectful way.";
+            return _config.Alternative;
         }
 
         public ModerationDecision ModerateContent(string ideaDescription)
         {
             return new ModerationDecision
             {
-                IsAllowed = true
+                IsAllowed = _config.IsAllowed
             };
         }
+    }
+
+    private sealed class TestAiManagerConfig
+    {
+        public bool IsAllowed { get; set; } = true;
+        public string Alternative { get; set; } = "Please rephrase your idea in a respectful way.";
     }
 }
 
