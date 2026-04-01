@@ -20,4 +20,5 @@ public class ModerationDecision
 {
     public bool IsAllowed { get; set; }
     public ModerationInfo Categories { get; set; } = new();
+    public string Suggestion { get; set; }
 }
