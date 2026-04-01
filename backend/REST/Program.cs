@@ -6,6 +6,7 @@ using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
 using Conversey.DAL;
 using Conversey.DAL.Subplatform;
+using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
 using Conversey.DAL.Subplatform.Survey.Questions;
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -43,12 +45,41 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 // Registreer IAiManager met de API-sleutel en modelnaam
 builder.Services.AddHttpClient("MistralAPI", client =>
 {
-    client.BaseAddress = new Uri("https://api.mistral.ai/v1/"); // URL de base
+    client.BaseAddress = new Uri("https://api.mistral.ai/v1/");
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 });
+builder.Services.Configure<AiManagerConfig>(builder.Configuration.GetSection($"AI:{builder.Configuration["AI:Provider"]}"));
 
 builder.Services.AddScoped<IAiManager>(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var providerName = config["AI:Provider"]; // Bijv. "Mistral", "Azure", "Ollama"
+
+    var aiService = providerName switch
+    {
+        "Mistral" => new MistralAiManager(
+            provider.GetRequiredService<HttpClient>(),
+            provider.GetRequiredService<AiManagerConfig>()
+        ),
+        /*
+        "Azure" => new AzureAIService(
+            provider.GetRequiredService<HttpClient>(),
+            provider.GetRequiredService<IConfiguration>()
+        ),
+        "Ollama" => new OllamaAIService(
+            provider.GetRequiredService<HttpClient>(),
+            provider.GetRequiredService<IConfiguration>()
+        ),
+        */
+        _ => throw new NotSupportedException($"Provider '{providerName}' is niet ondersteund.")
+    };
+
+    return new AiSManagerLogger(aiService, provider.GetRequiredService<IAuditRepository>());
+});
+
+
+/*builder.Services.AddScoped<IAiManager>(provider =>
 {
     var factory = provider.GetRequiredService<IHttpClientFactory>();
     var httpClient = factory.CreateClient("MistralAPI");
@@ -59,10 +90,10 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var moderationModel = config["AI:ModerationModel"] ?? "mistral-moderation-latest";
 
     return new MistralAiManager(httpClient, apiKey, modelName, moderationModel);
-});
+});*/
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+    options.UseNpgsql("Host=localhost;Port=3000;Database=devdb;Username=devuser;Password=devpass")
 );
 
 

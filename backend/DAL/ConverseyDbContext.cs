@@ -1,3 +1,4 @@
+using Conversey.BL.Domain;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform;
 using Conversey.BL.Domain.Subplatform.Survey;
@@ -5,6 +6,7 @@ using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.BL.Domain.Subplatform.Survey.Questions;
 using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 
 namespace Conversey.DAL;
 
@@ -25,6 +27,7 @@ public class ConverseyDbContext : DbContext
     public DbSet<OpenTextAnswer> OpenTextAnswers { get; set; }
     public DbSet<ClosedTextAnswer> ClosedTextAnswers { get; set; }
     public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
+    public DbSet<AiAuditLog>  AiAuditLogs { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {

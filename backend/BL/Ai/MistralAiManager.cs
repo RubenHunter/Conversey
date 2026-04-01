@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Conversey.BL.Ai;
 
@@ -11,16 +14,24 @@ public class MistralAiManager : IAiManager
     private readonly string _modelName;
     private readonly string _moderationModel;
 
-    public MistralAiManager(HttpClient httpClient, string apiKey, string modelName = "mistral-small-latest", string moderationModel = "mistral-moderation-latest")
+    public MistralAiManager([FromKeyedServices("MistralAPI")]HttpClient httpClient, AiManagerConfig config)
+    {
+        _httpClient = httpClient;
+        _apiKey = config.ApiKey ?? string.Empty;
+        _modelName = config.Model ?? "mistral-small-latest";
+        _moderationModel = config.ModerationModel ?? "mistral-moderation-latest";
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);        
+    }
+    /*public MistralAiManager(HttpClient httpClient, string apiKey, string modelName = "mistral-small-latest", string moderationModel = "mistral-moderation-latest")
     {
         _httpClient = httpClient;
         _apiKey = apiKey;
         _modelName = modelName;
         _moderationModel = moderationModel;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-    }
+    }*/
     
-    public string GenerateAiAlternative(string prompt)
+    public async Task<string> GenerateAiAlternative(string prompt, AiModel model, ModerationDecision decision = null)
     {
         if (string.IsNullOrWhiteSpace(prompt))
             throw new ArgumentException("Prompt cannot be empty.", nameof(prompt));
@@ -49,22 +60,18 @@ public class MistralAiManager : IAiManager
         var json = JsonSerializer.Serialize(request);
         Console.WriteLine($"Verzonden alternative request: {json}");
         
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        var content = new StringContent(json, Encoding.UTF8, MediaTypeNames.Application.Json);
 
         try
         {
-            var response = _httpClient.PostAsync("chat/completions", content).Result;
-            var responseJson = response.Content.ReadAsStringAsync().Result;
+            var response = await _httpClient.PostAsync("chat/moderations", content);
             
+            response.EnsureSuccessStatusCode();
+            
+            var responseJson = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"Alternative response body: {responseJson}");
 
-            response.EnsureSuccessStatusCode();
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            };
-            
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var result = JsonSerializer.Deserialize<Response>(responseJson, options);
 
             if (result?.Choices == null || result.Choices.Length == 0)
@@ -73,13 +80,14 @@ public class MistralAiManager : IAiManager
             }
 
             var alternativeText = result.Choices[0].Message.Content?.Trim();
-            
+
             if (string.IsNullOrWhiteSpace(alternativeText))
             {
                 throw new Exception("Mistral API gaf geen alternatieve tekst terug.");
             }
 
             return alternativeText;
+
         }
         catch (HttpRequestException ex)
         {
@@ -98,7 +106,7 @@ public class MistralAiManager : IAiManager
         }
     }
 
-    public ModerationDecision ModerateContent(string content)
+    public async Task<ModerationDecision> ModerateContent(string content, AiModel model)
     {
         if (string.IsNullOrWhiteSpace(content))
             throw new ArgumentException("Inhoud mag niet leeg zijn.", nameof(content));
@@ -114,12 +122,12 @@ public class MistralAiManager : IAiManager
 
         try
         {
-            var response = _httpClient.PostAsync("moderations", httpContent).Result;
-            var responseJson = response.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine($"Response body: {responseJson}");
+            var response = await _httpClient.PostAsync("moderations", httpContent);
 
             response.EnsureSuccessStatusCode();
+            
+            var responseJson = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response body: {responseJson}");
 
             var options = new JsonSerializerOptions
             {
@@ -165,5 +173,27 @@ public class MistralAiManager : IAiManager
             Console.WriteLine($"Exception: {ex.Message}");
             throw;
         }
+    }
+
+    public void Dispose()
+    {
+        _httpClient.Dispose();
+    }
+
+    public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public object GetService(Type serviceType, object serviceKey = null)
+    {
+        throw new NotImplementedException();
     }
 }
