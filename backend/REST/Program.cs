@@ -10,10 +10,52 @@ using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
 using Conversey.DAL.Subplatform.Survey.Questions;
 using Microsoft.EntityFrameworkCore;
+using Google.Cloud.SecretManager.V1;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// --- GOOGLE SECRET MANAGER INTEGRATIE ---
+// --- DEBUG GOOGLE SECRETS ---
+Console.WriteLine($"🔍 Environment: {builder.Environment.EnvironmentName}");
+
+if (builder.Environment.IsProduction())
+{
+    try 
+    {
+        Console.WriteLine("☁️ Attempting to load secrets from Google Cloud...");
+        var client = SecretManagerServiceClient.Create();
+        string projectId = "ip1-mvp-project";
+
+        var secrets = client.ListSecrets(new ListSecretsRequest { Parent = $"projects/{projectId}" });
+
+        bool foundAny = false;
+        foreach (var secret in secrets)
+        {
+            foundAny = true;
+            string secretId = secret.SecretName.SecretId;
+            string versionName = $"projects/{projectId}/secrets/{secretId}/versions/latest";
+            
+            var result = client.AccessSecretVersion(versionName);
+            string value = result.Payload.Data.ToStringUtf8();
+
+            string configKey = secretId.Replace("__", ":");
+            builder.Configuration[configKey] = value;
+            
+            Console.WriteLine($"✅ Loaded: {configKey}");
+        }
+        
+        if (!foundAny) Console.WriteLine("⚠️ No secrets found in this GCP project.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Secret Manager Error: {ex.Message}");
+    }
+}
+else 
+{
+    Console.WriteLine("ℹ️ Skipping Secret Manager because Environment is NOT Production.");
+}
+// -----------------------------
 
 builder.Services.AddControllers();
 
@@ -22,7 +64,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendDev", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -43,7 +85,7 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 // Registreer IAiManager met de API-sleutel en modelnaam
 builder.Services.AddHttpClient("MistralAPI", client =>
 {
-    client.BaseAddress = new Uri("https://api.mistral.ai/v1/"); // URL de base
+    client.BaseAddress = new Uri("https://api.mistral.ai/v1/");
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 });
@@ -54,17 +96,25 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var httpClient = factory.CreateClient("MistralAPI");
     var config = provider.GetRequiredService<IConfiguration>();
     
+    // Deze waarden worden in Production automatisch uit Secret Manager gehaald
+    // (In GCP Secret Manager moet de naam "AI__ApiKey" zijn)
     var apiKey = config["AI:ApiKey"];
     var modelName = config["AI:Model"] ?? "mistral-small-latest";
     var moderationModel = config["AI:ModerationModel"] ?? "mistral-moderation-latest";
 
+    // Debug check voor de Deployer
+    if (string.IsNullOrEmpty(apiKey) && builder.Environment.IsProduction())
+    {
+        throw new Exception("CRITICAL: Mistral API Key not found in Secret Manager (checked for name 'AI__ApiKey')");
+    }
+
     return new MistralAiManager(httpClient, apiKey, modelName, moderationModel);
 });
 
+// DbContext configuratie
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+   options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
-
 
 var app = builder.Build();
 
@@ -82,9 +132,7 @@ else
 }
 
 app.UseCors("FrontendDev");
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

@@ -45,8 +45,9 @@ export function parseRoute(): RouteParams {
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '')
     const segments = path.split('/').filter(Boolean)
 
-    const organizationSlug = segments[0] || 'axa-bank'
-    const projectSlug = segments[1] || 'mental-wellbeing-2026'
+    // Verander dit naar lege strings
+    const organizationSlug = segments[0] || ''
+    const projectSlug = segments[1] || ''
 
     return { organizationSlug, projectSlug }
 }
