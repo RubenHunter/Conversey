@@ -126,7 +126,7 @@ public class IdeaManager: IIdeaManager
 
     public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
     {
-        var idea = _repository.ReadIdeaById(ideaId);
+        var idea = _repository.ReadIdeaByIdWithProject(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
@@ -227,6 +227,7 @@ public class IdeaManager: IIdeaManager
     public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
     {
         var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
         Youth author = GetYouthForProject(youthToken, response.Idea.Project.Id);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
