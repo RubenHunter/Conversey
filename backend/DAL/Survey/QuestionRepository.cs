@@ -1,8 +1,8 @@
-﻿using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+﻿using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Conversey.DAL.Subplatform.Survey.Questions;
+namespace Conversey.DAL.Survey;
 
 public class QuestionRepository : IQuestionRepository
 {
@@ -240,5 +240,29 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.IntegerAnswers.Remove(answer);
         _dbContext.SaveChanges();
         return true;
+    }
+}
+
+public class QuestionConfig<T> : IEntityTypeConfiguration<T> where T : Question
+{
+    public void Configure(EntityTypeBuilder<T> builder)
+    {
+        #region Properties
+
+        builder.HasKey(q => q.Id);
+        builder.Property(q => q.Text)
+            .HasMaxLength(500);
+
+        #endregion
+
+        #region Relations
+
+        switch (typeof(T))
+        {
+            case SingleChoiceQuestion: 
+        }
+
+
+        #endregion
     }
 }

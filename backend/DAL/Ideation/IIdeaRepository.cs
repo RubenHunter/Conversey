@@ -1,7 +1,7 @@
-﻿﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+﻿using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 
-namespace Conversey.DAL.Subplatform.Survey.Ideas;
+namespace Conversey.DAL.Ideation;
 
 public interface IIdeaRepository
 {

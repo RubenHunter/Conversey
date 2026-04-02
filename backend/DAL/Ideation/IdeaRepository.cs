@@ -1,8 +1,10 @@
-﻿﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+﻿using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Conversey.DAL.Subplatform.Survey.Ideas;
+namespace Conversey.DAL.Ideation;
 
 public class IdeaRepository : IIdeaRepository
 {
@@ -282,5 +284,125 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.ResponseReactions.Remove(reaction);
         _dbContext.SaveChanges();
         return true;
+    }
+}
+
+public class IdeaConfig : IEntityTypeConfiguration<Idea> 
+{
+    public void Configure(EntityTypeBuilder<Idea> builder)
+    {
+        #region Properies
+        builder.HasKey(i => i.Id);
+        builder.Property(i => i.Content)
+            .IsRequired()
+            .HasMaxLength(4000);
+
+        builder.Property(i => i.Summary)
+            .HasMaxLength(1000);
+
+        builder.Property(i => i.SubmissionDate);
+
+        builder.Property(i => i.Status);
+
+        builder.Property(i => i.ModerationInfo)
+            .HasConversion(
+                m => ModerationInfoSerializer.Serialize(m),
+                b => ModerationInfoSerializer.Deserialize(b)
+            );
+        #endregion
+
+        #region Relations
+
+        builder.HasOne(i => i.Project)
+            .WithMany(p => p.ProjectIdeas)
+            .HasForeignKey("ProjectId")
+            .IsRequired();
+
+        builder.HasOne(i => i.Topic)
+            .WithMany(t => t.Ideas)
+            .HasForeignKey("TopicId")
+            .IsRequired();
+
+        builder.HasOne(i => i.Youth)
+            .WithMany(y => y.Ideas)
+            .HasForeignKey("YouthToken")
+            .IsRequired();
+
+        builder.HasMany(i => i.Responses)
+            .WithOne(r => r.Idea)
+            .HasForeignKey("IdeaId");
+
+        builder.HasMany(i => i.Reactions)
+            .WithOne(ir => ir.Idea)
+            .HasForeignKey("IdeaId");
+
+        #endregion
+    }
+}
+
+public class ReactionConfig : IEntityTypeConfiguration<Reaction>
+ {
+     public void Configure(EntityTypeBuilder<Reaction> builder)
+     {
+         #region Properties
+
+         builder.HasKey(r => r.Id);
+         builder.Property(r => r.Emoji)
+             .IsRequired()
+             .HasMaxLength(32);
+         builder.Property(r => r.CreatedAt);
+
+         #endregion
+
+         #region Relations
+
+         builder.HasOne(r => r.Youth)
+             .WithMany(y => y.Reactions)
+             .HasForeignKey("YouthToken")
+             .IsRequired();
+        
+         #endregion
+     }
+}
+
+public class ResponseConfig : IEntityTypeConfiguration<Response>
+{
+    public void Configure(EntityTypeBuilder<Response> builder)
+    {
+        
+    }
+}
+
+public class IdeaReactionConfig : IEntityTypeConfiguration<IdeaReaction>
+{
+    public void Configure(EntityTypeBuilder<IdeaReaction> builder)
+    {
+        #region Properties
+        builder.HasIndex(ir => new { ir.Idea, ir.Youth, ir.Emoji })
+            .IsUnique();
+        
+        #endregion
+        #region Relations
+        builder.HasOne(ir => ir.Idea)
+            .WithMany(i => i.Reactions)
+            .HasForeignKey("IdeaId")
+            .IsRequired();
+        #endregion
+    }
+}
+public class ResponseReactionConfig : IEntityTypeConfiguration<ResponseReaction>
+{
+    public void Configure(EntityTypeBuilder<ResponseReaction> builder)
+    {
+        #region Properties
+        builder.HasIndex(rr => new { rr.Response, rr.Youth, rr.Emoji })
+            .IsUnique();
+        #endregion
+        #region Relations
+        builder.HasOne(rr => rr.Response)
+            .WithMany(r => r.Reactions)
+            .HasForeignKey("ResponseId")
+            .IsRequired();
+        #endregion
     }
 }
