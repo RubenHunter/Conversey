@@ -4,7 +4,7 @@ services:
       context: ./frontend/Conversey/
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "80:5173"
     environment:
       - CI=true
       - VITE_API_BASE_URL=http://35.210.221.59:5231/api
