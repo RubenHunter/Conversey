@@ -13,12 +13,20 @@ services:
   backend:
     build:
       context: ./backend/
-      dockerfile: Dockerfile
     ports:
       - "5231:5000"
-    # GEEN volumes hier, we vertrouwen op de Docker build
+    depends_on:
+      - db-proxy
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Repository__Type=Postgres
       - ASPNETCORE_URLS=http://+:5000
+    restart: always
+
+  db-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+    command:
+      - "--address=0.0.0.0"
+      - "--port=5432"
+      - "${SQL_CONN_NAME}" # Wordt ingevuld via het .env bestand door startup.sh
     restart: always
