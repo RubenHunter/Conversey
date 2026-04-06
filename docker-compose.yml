@@ -7,7 +7,7 @@ services:
       - "80:5173"
     environment:
       - CI=true
-      - VITE_API_BASE_URL=http://35.210.221.59:5231/api
+      - VITE_API_BASE_URL=http://34.111.97.70/api
     restart: always
 
   backend:
