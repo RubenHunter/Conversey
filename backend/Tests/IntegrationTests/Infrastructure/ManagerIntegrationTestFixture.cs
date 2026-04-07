@@ -11,6 +11,7 @@ using Conversey.DAL.Subplatform.Survey.Ideas;
 using Conversey.DAL.Subplatform.Survey.Questions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests.IntegrationTests.Infrastructure;
@@ -90,17 +91,39 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             _config = config;
         }
 
-        public string GenerateAiAlternative(string prompt)
+        public Task<string> GenerateAiAlternative(string prompt, AiModel model, ModerationDecision decision = null)
         {
             return _config.Alternative;
         }
 
-        public ModerationDecision ModerateContent(string ideaDescription)
+        public Task<ModerationDecision> ModerateContent(string content, AiModel model)
         {
             return new ModerationDecision
             {
                 IsAllowed = _config.IsAllowed
             };
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new NotImplementedException();
+        }
+
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new NotImplementedException();
+        }
+
+        public object GetService(Type serviceType, object serviceKey = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
