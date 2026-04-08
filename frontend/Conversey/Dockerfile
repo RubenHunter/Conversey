@@ -1,18 +1,20 @@
-FROM node:20-alpine3.23
-
+# Stage 1: Build de applicatie
+FROM node:20-slim AS build
 WORKDIR /app
-
-ENV PNPM_VERSION=10.30.3
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which sh)" sh -
-
-COPY package.json pnpm-lock.yaml ./
-
-RUN pnpm install --frozen-lockfile
-
+COPY package*.json ./
+RUN npm install
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# Stage 2: Serveer met Nginx
+FROM nginx:stable-alpine
 
-CMD ["pnpm", "run", "dev", "--host"]
+# FIX: Zorg dat Nginx alle routes naar index.html stuurt (voorkomt 404's bij refreshen)
+RUN sed -i 's/index  index.html index.htm;/index  index.html index.htm; try_files $uri $uri\/ \/index.html;/g' /etc/nginx/conf.d/default.conf
+
+# Kopieer de build output naar de Nginx map
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
