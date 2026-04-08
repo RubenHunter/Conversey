@@ -1,8 +1,7 @@
 services:
   frontend:
-    build:
-      context: ./frontend/Conversey/
-      dockerfile: Dockerfile
+    # Verwijst naar je gepushte image
+    image: europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/frontend:latest
     ports:
       - "80:5173"
     environment:
@@ -11,12 +10,13 @@ services:
     restart: always
 
   backend:
-    build:
-      context: ./backend/
+    # Verwijst naar je gepushte image
+    image: europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/backend:latest
     ports:
       - "5231:5000"
     depends_on:
       - db-proxy
+    env_file: .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - Repository__Type=Postgres
@@ -28,5 +28,5 @@ services:
     command:
       - "--address=0.0.0.0"
       - "--port=5432"
-      - "${SQL_CONN_NAME}" # Wordt ingevuld via het .env bestand door startup.sh
+      - "${SQL_CONN_NAME}"
     restart: always
