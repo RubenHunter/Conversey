@@ -1,35 +1,32 @@
 version: '3.8'
 
 services:
-  # Frontend Service
   frontend:
     image: europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/frontend:latest
     container_name: app_frontend_1
     ports:
-      - "0.0.0.0:80:80"  # Expliciete IPv4 binding om 'Connection Reset' te voorkomen
+      - "0.0.0.0:80:80"
     restart: always
 
-  # Backend Service
   backend:
     image: europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/backend:latest
     container_name: app_backend_1
     ports:
-      - "0.0.0.0:5231:5000" # Mapt poort 5231 van de VM naar 5000 in de container
+      - "0.0.0.0:5231:5000"
     environment:
-      # Gebruik 127.0.0.1 omdat de db-proxy in hetzelfde Docker netwerk op de VM zit
-      - ConnectionStrings__DefaultConnection=Host=127.0.0.1;Port=5432;Database=uwdashboard;Username=postgres;Password=UW_WACHTWOORD_HIER
       - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_ENVIRONMENT=Production
     depends_on:
       - db-proxy
     restart: always
 
-  # Google Cloud SQL Proxy
   db-proxy:
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
     container_name: app_db-proxy_1
     command:
+      - "--address=0.0.0.0"
       - "--port=5432"
-      - "ip1-mvp-project:europe-west1:conversey-db" # Vervang door je exacte Instance Connection Name
+      - "ip1-mvp-project:europe-west1:conversey-db-prod" # Moet matchen met deploy.sh!
     restart: always
 
 networks:
