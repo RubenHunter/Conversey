@@ -75,7 +75,7 @@ builder.Services.AddScoped<IAiManager>(provider =>
         _ => throw new NotSupportedException($"Provider '{providerName}' is niet ondersteund.")
     };
 
-    return new AiSManagerLogger(aiService, provider.GetRequiredService<IAuditRepository>());
+    return new AiManagerLogger(aiService, provider.GetRequiredService<IAuditRepository>());
 });
 
 

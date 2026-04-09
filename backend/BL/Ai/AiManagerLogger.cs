@@ -3,27 +3,21 @@ using Microsoft.Extensions.AI;
 
 namespace Conversey.BL.Ai;
 
-public class AiSManagerLogger : IAiManager
+public class AiManagerLogger(IAiManager aiManager, IAuditRepository auditRepository) : IAiManager
 {
-    private readonly IAiManager _aiManager;
-    private readonly IAuditRepository _auditRepository; // Zorg dat je deze interface definieert
 
-    public AiSManagerLogger(IAiManager aiManager, IAuditRepository auditRepository)
-    {
-        _aiManager = aiManager;
-        _auditRepository = auditRepository;
-    }
-
-    public Task<string> GenerateAiAlternative(string prompt, AiModel model, ModerationDecision decision = null)
+    public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
     {
         var start = DateTime.UtcNow;
-        var alternativeText = _aiManager.GenerateAiAlternative(prompt, model);
+        var alternativeText = aiManager.GenerateAiAlternative(prompt);
         var duration = DateTime.UtcNow -  start;
-        var cost = CalculateCost(prompt, "alternative-result", model);
 
-        _auditRepository.LogAiCallAsync(
+        var model = GetCurrentModelFromService();
+        var cost = CalculateCost(prompt, "alternative-result");
+
+        auditRepository.LogAiCallAsync(
             model.Name,
-            model.Type,
+            model.Type.ToString(),
             prompt.Length,
             0,
             cost,
@@ -34,16 +28,18 @@ public class AiSManagerLogger : IAiManager
         return alternativeText;
     }
 
-    public Task<ModerationDecision> ModerateContent(string prompt, AiModel model)
+    public Task<ModerationDecision> ModerateContent(string prompt)
     {
         var start = DateTime.UtcNow;
-        var decision = _aiManager.ModerateContent(prompt, model);
+        var decision = aiManager.ModerateContent(prompt);
         var duration = DateTime.UtcNow -  start;
-        var cost = CalculateCost(prompt, "moderation-result", model);
+        
+        var model = GetCurrentModelFromService();
+        var cost = CalculateCost(prompt, "moderation-result");
 
-        _auditRepository.LogAiCallAsync(
+        auditRepository.LogAiCallAsync(
             model.Name,
-            model.Type,
+            model.Type.ToString(),
             prompt.Length,
             0,
             cost,
@@ -54,7 +50,18 @@ public class AiSManagerLogger : IAiManager
         return decision;
     }
     
-    private decimal CalculateCost(string input, string output, AiModel model)
+    private AiModel GetCurrentModelFromService()
+    {
+        if (aiManager is MistralAiManager mistralManager)
+        {
+            return mistralManager.CurrentModel;
+        }
+
+        // Als het een andere provider is, retourneer een default model
+        return new AiModel { Name = "unknown", Type = ModelType.Unknown };
+    }
+    
+    private decimal CalculateCost(string input, string output)
     {
         // Simpele kostencalculatie (pas aan op basis van je prijzen bij Mistral)
         var inputTokens = input.Length / 4; // Ruwe schatting

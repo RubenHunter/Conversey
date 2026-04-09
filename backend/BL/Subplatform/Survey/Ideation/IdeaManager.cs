@@ -292,7 +292,7 @@ public class IdeaManager: IIdeaManager
 
         try
         {
-            var decision = _aiManager.ModerateContent(content, null).Result;
+            var decision = _aiManager.ModerateContent(content).Result;
 
             if (decision.IsAllowed)
             {
@@ -304,7 +304,7 @@ public class IdeaManager: IIdeaManager
 
             try
             {
-                suggestion = _aiManager.GenerateAiAlternative(content, null).Result;
+                suggestion = _aiManager.GenerateAiAlternative(content, decision).Result;
                 Console.WriteLine($"[IdeaManager] 💬 AI alternative: \"{suggestion}\"");
             }
             catch (Exception ex)

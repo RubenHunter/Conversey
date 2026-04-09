@@ -1,4 +1,5 @@
 using Conversey.BL.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL.Subplatform.Ai;
 
@@ -28,5 +29,10 @@ public class AuditRepository : IAuditRepository
 
         _dbContext.AiAuditLogs.Add(auditLog);
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<IReadOnlyCollection<AiAuditLog>> GetAICostsAsync()
+    {
+        return await _dbContext.AiAuditLogs.OrderByDescending(log => log.CreatedAt).ToListAsync();
     }
 }

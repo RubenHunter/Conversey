@@ -82,26 +82,33 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _connection.Dispose();
     }
 
-    private sealed class TestAiManager : IAiManager
+    private sealed class TestAiManager(TestAiManagerConfig config) : IAiManager
     {
-        private readonly TestAiManagerConfig _config;
-
-        public TestAiManager(TestAiManagerConfig config)
+        public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
         {
-            _config = config;
-        }
-
-        public Task<string> GenerateAiAlternative(string prompt, AiModel model, ModerationDecision decision = null)
-        {
-            return _config.Alternative;
-        }
-
-        public Task<ModerationDecision> ModerateContent(string content, AiModel model)
-        {
-            return new ModerationDecision
+            try
             {
-                IsAllowed = _config.IsAllowed
-            };
+                return Task.FromResult(config.Alternative);
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException<string>(exception);
+            }
+        }
+
+        public Task<ModerationDecision> ModerateContent(string content)
+        {
+            try
+            {
+                return Task.FromResult(new ModerationDecision
+                {
+                    IsAllowed = config.IsAllowed
+                });
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException<ModerationDecision>(exception);
+            }
         }
 
         public void Dispose()
