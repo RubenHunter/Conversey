@@ -16,8 +16,7 @@ public class AiController : Controller
         _auditRepository = auditRepository;
     }
     
-    [Authorize]
-    [HttpGet("ai/costs")]
+    [HttpGet("costs")]
     public async Task<IActionResult> GetAiCosts()
     {
         var costs = await _auditRepository.GetAICostsAsync();
