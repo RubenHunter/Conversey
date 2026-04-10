@@ -2,7 +2,7 @@ using Conversey.BL.Subplatform;
 using System.Net.Http.Headers;
 using Conversey.BL.Ai;
 using Conversey.BL.Ai.Clients.Mistral;
-using Conversey.BL.Ai.Services;
+using Conversey.BL.Ai.Managers;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;

@@ -1,4 +1,5 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Ai.Managers;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Subplatform;
 using Conversey.BL.Subplatform.Survey;

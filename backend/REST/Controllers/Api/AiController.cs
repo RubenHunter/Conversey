@@ -32,7 +32,7 @@ public class AiController : Controller
     {
         try
         {
-            var costs = await _auditRepository.GetAICostsAsync();
+            var costs = await _auditRepository.GetAiCostsAsync();
             return Ok(costs);
         }
         catch (Exception ex)
@@ -56,7 +56,7 @@ public class AiController : Controller
     {
         try
         {
-            var allCosts = await _auditRepository.GetAICostsAsync();
+            var allCosts = await _auditRepository.GetAiCostsAsync();
             
             var summary = allCosts.GroupBy(log => log.ModelName)
                 .Select(group => new {
@@ -105,7 +105,7 @@ public class AiController : Controller
                 return BadRequest("Days parameter must be between 1 and 365");
             }
             
-            var allCosts = await _auditRepository.GetAICostsAsync();
+            var allCosts = await _auditRepository.GetAiCostsAsync();
             var cutoffDate = DateTime.UtcNow.AddDays(-days);
             
             var recentCosts = allCosts.Where(log => log.StartTime >= cutoffDate)

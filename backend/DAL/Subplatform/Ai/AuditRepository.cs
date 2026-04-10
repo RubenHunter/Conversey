@@ -31,7 +31,7 @@ public class AuditRepository : IAuditRepository
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task<IReadOnlyCollection<AiAuditLog>> GetAICostsAsync()
+    public async Task<IReadOnlyCollection<AiAuditLog>> GetAiCostsAsync()
     {
         return await _dbContext.AiAuditLogs.OrderByDescending(log => log.CreatedAt).ToListAsync();
     }
