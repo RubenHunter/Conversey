@@ -1,3 +1,5 @@
+using Conversey.BL.Ai.Services;
+using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Microsoft.Extensions.AI;
 
@@ -6,55 +8,73 @@ namespace Conversey.BL.Ai;
 public class AiManagerLogger(IAiManager aiManager, IAuditRepository auditRepository) : IAiManager
 {
 
-    public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
+    public async Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
     {
         var start = DateTime.UtcNow;
-        var alternativeText = aiManager.GenerateAiAlternative(prompt);
-        var duration = DateTime.UtcNow -  start;
+        var alternativeText = await aiManager.GenerateAiAlternative(prompt);
+        var duration = DateTime.UtcNow - start;
 
-        var model = GetCurrentModelFromService();
-        var cost = CalculateCost(prompt, "alternative-result");
+        try
+        {
+            var model = GetCurrentModelFromService();
+            var outputTokens = alternativeText.Length / 4; // Estimate output tokens
+            var cost = CalculateCost(prompt, alternativeText);
 
-        auditRepository.LogAiCallAsync(
-            model.Name,
-            model.Type.ToString(),
-            prompt.Length,
-            0,
-            cost,
-            start,
-            duration
-        );
+            await auditRepository.LogAiCallAsync(
+                model.Name,
+                model.Type.ToString(),
+                prompt.Length,
+                outputTokens,
+                cost,
+                start,
+                duration
+            );
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't break the main functionality
+            Console.WriteLine($"Error logging AI call: {ex.Message}");
+        }
 
         return alternativeText;
     }
 
-    public Task<ModerationDecision> ModerateContent(string prompt)
+    public async Task<ModerationDecision> ModerateContent(string prompt)
     {
         var start = DateTime.UtcNow;
-        var decision = aiManager.ModerateContent(prompt);
-        var duration = DateTime.UtcNow -  start;
+        var decision = await aiManager.ModerateContent(prompt);
+        var duration = DateTime.UtcNow - start;
         
-        var model = GetCurrentModelFromService();
-        var cost = CalculateCost(prompt, "moderation-result");
+        try
+        {
+            var model = GetCurrentModelFromService();
+            var outputTokens = 0; // Moderation typically has minimal output
+            var cost = CalculateCost(prompt, "moderation-result");
 
-        auditRepository.LogAiCallAsync(
-            model.Name,
-            model.Type.ToString(),
-            prompt.Length,
-            0,
-            cost,
-            start,
-            duration
-        );
-
+            await auditRepository.LogAiCallAsync(
+                model.Name,
+                model.Type.ToString(),
+                prompt.Length,
+                outputTokens,
+                cost,
+                start,
+                duration
+            );
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't break the main functionality
+            Console.WriteLine($"Error logging AI moderation call: {ex.Message}");
+        }
+        
         return decision;
     }
     
     private AiModel GetCurrentModelFromService()
     {
-        if (aiManager is MistralAiManager mistralManager)
+        if (aiManager is MistralAiManager mistralService)
         {
-            return mistralManager.CurrentModel;
+            return mistralService.CurrentModel;
         }
 
         // Als het een andere provider is, retourneer een default model

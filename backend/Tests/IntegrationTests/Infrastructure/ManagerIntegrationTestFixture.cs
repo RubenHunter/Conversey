@@ -6,6 +6,7 @@ using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
 using Conversey.DAL;
 using Conversey.DAL.Subplatform;
+using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
 using Conversey.DAL.Subplatform.Survey.Questions;
@@ -13,6 +14,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -53,7 +55,13 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IQuestionManager, QuestionManager>();
 
         services.AddSingleton(_aiConfig);
-        services.AddScoped<IAiManager, TestAiManager>();
+        services.AddScoped<IAiManager>(provider => new AiManagerLogger(
+            new TestAiManager(new TestAiManagerConfig {
+                IsAllowed = true,
+                Alternative = "Please rephrase your idea in a respectful way."
+            }),
+            new Mock<IAuditRepository>().Object
+        ));
 
         _serviceProvider = services.BuildServiceProvider();
 

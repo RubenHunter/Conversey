@@ -1,6 +1,8 @@
 using Conversey.BL.Subplatform;
 using System.Net.Http.Headers;
 using Conversey.BL.Ai;
+using Conversey.BL.Ai.Clients.Mistral;
+using Conversey.BL.Ai.Services;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
@@ -35,12 +37,16 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
+
+// Add services
+builder.Services.AddScoped<PromptManager>();
 
 // Registreer IAiManager met de API-sleutel en modelnaam
 builder.Services.AddHttpClient("MistralAPI", client =>
@@ -49,6 +55,16 @@ builder.Services.AddHttpClient("MistralAPI", client =>
     client.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
 });
+
+// Register Mistral client
+builder.Services.AddScoped<IMistralClient>(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var apiKey = config["AI:Models:ApiKey"];
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    return new MistralHttpClient(httpClient, apiKey);
+});
+
 builder.Services.Configure<AiManagerConfig>(builder.Configuration.GetSection($"AI:{builder.Configuration["AI:Provider"]}"));
 
 builder.Services.AddScoped<IAiManager>(provider =>
@@ -59,7 +75,7 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var aiService = providerName switch
     {
         "Mistral" => new MistralAiManager(
-            provider.GetRequiredService<HttpClient>(),
+            provider.GetRequiredService<IMistralClient>(),
             provider.GetRequiredService<AiManagerConfig>()
         ),
         /*
@@ -89,7 +105,12 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var modelName = config["AI:Model"] ?? "mistral-small-latest";
     var moderationModel = config["AI:ModerationModel"] ?? "mistral-moderation-latest";
 
-    return new MistralAiManager(httpClient, apiKey, modelName, moderationModel);
+    return new MistralAiService(new MistralHttpClient(httpClient, apiKey), new AiManagerConfig
+    {
+        ApiKey = apiKey,
+        CompletionsModel = modelName,
+        ModerationModel = moderationModel
+    });
 });*/
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>

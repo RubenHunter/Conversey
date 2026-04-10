@@ -28,6 +28,7 @@ public class ConverseyDbContext : DbContext
     public DbSet<ClosedTextAnswer> ClosedTextAnswers { get; set; }
     public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
     public DbSet<AiAuditLog>  AiAuditLogs { get; set; }
+    public DbSet<AiPrompt> AiPrompts { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {

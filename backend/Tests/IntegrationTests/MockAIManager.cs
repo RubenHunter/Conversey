@@ -4,7 +4,7 @@ using Microsoft.Extensions.AI;
 
 namespace Tests.IntegrationTests;
 
-public class MockAIManager : IAiManager
+public class MockAiManager : IAiManager
 {
     public void Dispose()
     {
