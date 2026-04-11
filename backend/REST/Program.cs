@@ -114,7 +114,7 @@ builder.Services.AddScoped<IAiManager>(provider =>
 });*/
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=3000;Database=devdb;Username=devuser;Password=devpass")
+    options.UseNpgsql("Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
 
