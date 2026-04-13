@@ -1,4 +1,4 @@
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.BL.Ai;
 
@@ -20,4 +20,5 @@ public class ModerationDecision
 {
     public bool IsAllowed { get; set; }
     public ModerationInfo Categories { get; set; } = new();
+    public string Suggestion { get; set; }
 }

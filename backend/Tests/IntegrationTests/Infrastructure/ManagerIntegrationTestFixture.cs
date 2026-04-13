@@ -1,4 +1,5 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Ai.Managers;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Subplatform;
 using Conversey.BL.Subplatform.Survey;
@@ -6,12 +7,15 @@ using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
 using Conversey.DAL;
 using Conversey.DAL.Subplatform;
+using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Subplatform.Survey;
 using Conversey.DAL.Subplatform.Survey.Ideas;
 using Conversey.DAL.Subplatform.Survey.Questions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -52,7 +56,13 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IQuestionManager, QuestionManager>();
 
         services.AddSingleton(_aiConfig);
-        services.AddScoped<IAiManager, TestAiManager>();
+        services.AddScoped<IAiManager>(provider => new AiManagerLogger(
+            new TestAiManager(new TestAiManagerConfig {
+                IsAllowed = true,
+                Alternative = "Please rephrase your idea in a respectful way."
+            }),
+            new Mock<IAuditRepository>().Object
+        ));
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -81,26 +91,55 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _connection.Dispose();
     }
 
-    private sealed class TestAiManager : IAiManager
+    private sealed class TestAiManager(TestAiManagerConfig config) : IAiManager
     {
-        private readonly TestAiManagerConfig _config;
-
-        public TestAiManager(TestAiManagerConfig config)
+        public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
         {
-            _config = config;
-        }
-
-        public string GenerateAiAlternative(string prompt)
-        {
-            return _config.Alternative;
-        }
-
-        public ModerationDecision ModerateContent(string ideaDescription)
-        {
-            return new ModerationDecision
+            try
             {
-                IsAllowed = _config.IsAllowed
-            };
+                return Task.FromResult(config.Alternative);
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException<string>(exception);
+            }
+        }
+
+        public Task<ModerationDecision> ModerateContent(string content)
+        {
+            try
+            {
+                return Task.FromResult(new ModerationDecision
+                {
+                    IsAllowed = config.IsAllowed
+                });
+            }
+            catch (Exception exception)
+            {
+                return Task.FromException<ModerationDecision>(exception);
+            }
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new NotImplementedException();
+        }
+
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+            CancellationToken cancellationToken = new CancellationToken())
+        {
+            throw new NotImplementedException();
+        }
+
+        public object GetService(Type serviceType, object serviceKey = null)
+        {
+            throw new NotImplementedException();
         }
     }
 
