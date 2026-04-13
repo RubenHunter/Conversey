@@ -1,27 +1,20 @@
-using System.Text.Json.Serialization;
-
-namespace Conversey.BL.Domain.Subplatform.Survey.Ideation;
+namespace Conversey.BL.Domain.Ideation;
 
 public struct ModerationInfo
 {
-    [JsonPropertyName("sexual")]
     public bool Sexual { get; set; }
 
-    [JsonPropertyName("hate_and_discrimination")]
     public bool HateAndDiscrimination { get; set; }
 
-    [JsonPropertyName("violence_and_threats")]
     public bool ViolenceAndThreats { get; set; }
 
-    [JsonPropertyName("dangerous_and_criminal_content")]
     public bool DangerousAndCriminalContent { get; set; }
 
-    [JsonPropertyName("selfharm")]
     public bool SelfHarm { get; set; }
 
-    [JsonPropertyName("pii")]
     public bool Pii { get; set; }
 
+    //TODO split this into a different class
     public byte Serialize()
     {
         return (byte)(ToByte(Sexual) |
@@ -54,4 +47,11 @@ public struct ModerationInfo
     {
         return (byte)(v ? 1 : 0);
     }
+}
+
+public enum ModerationStatus
+{
+    Pending,
+    Approved,
+    Rejected,
 }
