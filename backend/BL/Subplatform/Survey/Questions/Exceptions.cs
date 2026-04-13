@@ -1,5 +1,8 @@
 namespace Conversey.BL.Subplatform.Survey.Questions;
 
+public class AnswerNotFoundException(string answerIdentifier)
+    : Exception($"Answer with id {answerIdentifier} was not found.");
+
 public class IntegerAnswerNotFoundException(string answerIdentifier)
     : Exception($"IntegerAnswer with id {answerIdentifier} was not found.");
 

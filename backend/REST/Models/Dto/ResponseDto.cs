@@ -1,4 +1,4 @@
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.REST.Models.Dto;
 
@@ -9,7 +9,7 @@ public class ResponseDto
     public string Text { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public string YouthToken { get; set; } = string.Empty;
-    public IdeaStatus Status { get; set; }
+    public ModerationStatus Status { get; set; }
     public IReadOnlyCollection<ResponseReactionSummaryDto> Reactions { get; set; } = Array.Empty<ResponseReactionSummaryDto>();
 
     public static ResponseDto From(Response response)
@@ -20,7 +20,7 @@ public class ResponseDto
             IdeaId = response.Idea.Id,
             Text = response.Text,
             CreatedAt = response.CreatedAt,
-            YouthToken = response.Youth.Token,
+            YouthToken = response.Youth.Token.ToString(),
             Status = response.Status,
             Reactions = ResponseReactionSummaryDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
         };

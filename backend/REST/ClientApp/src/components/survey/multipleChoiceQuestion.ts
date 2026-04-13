@@ -1,16 +1,8 @@
 import type { Question } from '../../models/question.ts'
+import type { QuestionComponent } from './singleChoiceQuestion.ts'
 
-export interface QuestionComponent {
-    getAnswer(): number | string | number[] | null
-    validate(): boolean
-    lock(): void
-    unlock(): void
-    onAnswer(callback: () => void): void
-    getElement(): HTMLElement
-}
-
-export function renderSingleChoiceQuestion(question: Question, index: number): QuestionComponent {
-    let selectedOptionId: number | null = null
+export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
+    let selectedOptionIds: number[] = []
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
@@ -33,7 +25,7 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
                 </div>
                 <div class="survey-question-meta">
                     ${requiredBadge}
-                    <span class="survey-answer-hint">Only 1 answer possible</span>
+                    <span class="survey-answer-hint">Choose one or more options</span>
                 </div>
             </div>
         </div>
@@ -67,38 +59,18 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
 
             const optionId = Number(label.getAttribute('data-option-id'))
 
-            // If clicking the same option, deselect it
-            if (selectedOptionId === optionId) {
-                selectedOptionId = null
+            if (selectedOptionIds.includes(optionId)) {
+                selectedOptionIds = selectedOptionIds.filter((id) => id !== optionId)
                 label.classList.remove('selected')
-
-                // Re-enable all options
-                labels.forEach((l) => {
-                    l.classList.remove('disabled')
-                })
-
-                // Hide error
-                const errorEl = wrapper.querySelector(`#error-${question.id}`)
-                errorEl?.classList.remove('show')
-
-                answerCallback?.()
-                return
+            } else {
+                selectedOptionIds = [...selectedOptionIds, optionId]
+                label.classList.add('selected')
             }
 
-            // Otherwise, select the new option
-            selectedOptionId = optionId
-
-            // Reset all
             labels.forEach((l) => {
-                l.classList.remove('selected')
-                l.classList.add('disabled')
+                l.classList.toggle('disabled', false)
             })
 
-            // Highlight selected and enable it
-            label.classList.add('selected')
-            label.classList.remove('disabled')
-
-            // Hide error
             const errorEl = wrapper.querySelector(`#error-${question.id}`)
             errorEl?.classList.remove('show')
 
@@ -107,9 +79,9 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
     })
 
     return {
-        getAnswer: () => selectedOptionId,
+        getAnswer: () => selectedOptionIds,
         validate: () => {
-            if (question.isRequired && selectedOptionId === null) {
+            if (question.isRequired && selectedOptionIds.length === 0) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false
@@ -132,6 +104,5 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
         getElement: () => wrapper,
     }
 }
-
 
 

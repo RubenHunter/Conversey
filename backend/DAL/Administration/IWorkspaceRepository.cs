@@ -9,7 +9,7 @@ public interface IWorkspaceRepository
     IReadOnlyCollection<Workspace> ReadAllWorkspacesWithProjects();
     Workspace ReadWorkspaceBySlug(Slug slug);
     Workspace ReadWorkspaceBySlugWithProjects(Slug slug);
-    Workspace ReadWorkspaceById(int id);
-    Workspace ReadWorkspaceByIdWithProjects(int id);
+    Workspace ReadWorkspaceById(Slug id);
+    Workspace ReadWorkspaceByIdWithProjects(Slug id);
     void CreateWorkspace(Workspace workspace);
 }

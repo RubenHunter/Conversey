@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
+using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Survey;
 using Conversey.BL.Subplatform;
-using Conversey.DAL.Subplatform.Survey;
+using Conversey.DAL.Administration;
 
 namespace Conversey.BL.Subplatform.Survey;
 
@@ -19,34 +19,34 @@ public class ProjectManager: IProjectManager
         _workspaceManager = workspaceManager;
     }
 
-    public Project GetProjectById(int projectId)
+    public Project GetProjectById(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectById(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectById(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
-    public Project GetProjectByIdWithTopics(int projectId)
+    public Project GetProjectByIdWithTopics(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectByIdWithTopics(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectByIdWithTopics(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
-    public Project GetProjectByIdWithQuestions(int projectId)
+    public Project GetProjectByIdWithQuestions(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectByIdWithQuestions(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectByIdWithQuestions(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
-    public Project GetProjectByIdWithTopicsAndQuestions(int projectId)
+    public Project GetProjectByIdWithTopicsAndQuestions(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectByIdWithTopicsAndQuestions(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectByIdWithTopicsAndQuestions(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
-    public Project GetProjectByIdWithWorkspaceAndQuestions(int projectId)
+    public Project GetProjectByIdWithWorkspaceAndQuestions(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectByIdWithWorkspaceAndQuestions(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectByIdWithWorkspaceAndQuestions(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
-    public Project GetProjectByIdWithWorkspaceTopicsYouthsAndQuestions(int projectId)
+    public Project GetProjectByIdWithWorkspaceTopicsYouthsAndQuestions(Slug projectSlug)
     {
-        return _projectRepository.ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(projectId) ?? throw new ProjectNotFoundException(projectId.ToString());
+        return _projectRepository.ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(projectSlug) ?? throw new ProjectNotFoundException(projectSlug.Text);
     }
 
     public Project GetProjectBySlug(Slug slug)
@@ -99,32 +99,32 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadAllProjectsWithTopicsAndQuestions();
     }
 
-    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceId(int workspaceId)
+    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceId(Slug workspaceSlug)
     {
-        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceId(workspaceId);
+        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceId(workspaceSlug);
     }
 
-    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopics(int workspaceId)
+    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopics(Slug workspaceSlug)
     {
-        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(workspaceId);
+        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(workspaceSlug);
     }
 
-    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithQuestions(int workspaceId)
+    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithQuestions(Slug workspaceSlug)
     {
-        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(workspaceId);
+        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(workspaceSlug);
     }
 
-    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(int workspaceId)
+    public IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(Slug workspaceSlug)
     {
-        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(workspaceId);
+        return _projectRepository.ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(workspaceSlug);
     }
 
-    public Project AddProject(string title, string slug, string description, Status status, DateTime startDate, DateTime endDate, InteractionType interactionForm, int workspaceId)
+    public Project AddProject(string title, string slug, string description, Status status, DateTime startDate, DateTime endDate, InteractionType interactionForm, Slug workspaceSlug)
     {
-        var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
+        var workspace = _workspaceManager.GetWorkspaceBySlug(workspaceSlug);
         var project = new Project
         {
-            Title = title,
+            Name = title,
             Slug = Slug.FromName(title),
             Description = description,
             Status = status,
@@ -134,7 +134,7 @@ public class ProjectManager: IProjectManager
             Workspace = workspace,
             Topic = new List<Topic>(),
             Questions = new List<Question>(),
-            Youths = new List<Youth>()
+            Youth = new List<Youth>()
         };
         if (SlugExists(project.Slug)) throw new ValidationException($"Project Slug '{project.Slug.Text}' already exists.");
 
@@ -150,11 +150,11 @@ public class ProjectManager: IProjectManager
         return project;
     }
 
-    public void RemoveProject(int projectId)
+    public void RemoveProject(Slug projectSlug)
     {
-        if (!_projectRepository.DeleteProject(projectId))
+        if (!_projectRepository.DeleteProject(projectSlug))
         {
-            throw new ProjectNotFoundException(projectId.ToString());
+            throw new ProjectNotFoundException(projectSlug.Text);
         }
     }
 
@@ -163,16 +163,16 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadTopicById(topicId) ?? throw new TopicNotFoundException(topicId.ToString());
     }
 
-    public IReadOnlyCollection<Topic> GetTopicsFromProjectByProjectId(int projectId)
+    public IReadOnlyCollection<Topic> GetTopicsFromProjectByProjectId(Slug projectSlug)
     {
-        return _projectRepository.ReadTopicsFromProjectByProjectId(projectId);
+        return _projectRepository.ReadTopicsFromProjectByProjectId(projectSlug);
     }
 
 
-    public Topic AddTopic(string name, string context, int projectId)
+    public Topic AddTopic(string name, string context, Slug projectSlug)
     {
-        var project = _projectRepository.ReadProjectById(projectId);
-        if (project == null) throw new ProjectNotFoundException(projectId.ToString());
+        var project = _projectRepository.ReadProjectById(projectSlug);
+        if (project == null) throw new ProjectNotFoundException(projectSlug.Text);
 
         var topic = new Topic
         {
@@ -201,20 +201,20 @@ public class ProjectManager: IProjectManager
         }
     }
 
-    public Youth GetYouthByToken(string token)
+    public Youth GetYouthByToken(Guid token)
     {
-        return _projectRepository.ReadYouthByToken(token) ?? throw new YouthNotFoundException(token);
+        return _projectRepository.ReadYouthByToken(token) ?? throw new YouthNotFoundException(token.ToString());
     }
 
-    public IReadOnlyCollection<Youth> GetYouthsFromProjectByProjectId(int projectId)
+    public IReadOnlyCollection<Youth> GetYouthsFromProjectByProjectId(Slug projectSlug)
     {
-        return _projectRepository.ReadYouthsFromProjectByProjectId(projectId);
+        return _projectRepository.ReadYouthsFromProjectByProjectId(projectSlug);
     }
 
-    public Youth AddYouth(string token, string email, int projectId)
+    public Youth AddYouth(Guid token, string email, Slug projectSlug)
     {
-        var project = _projectRepository.ReadProjectById(projectId);
-        if (project == null) throw new ProjectNotFoundException(projectId.ToString());
+        var project = _projectRepository.ReadProjectById(projectSlug);
+        if (project == null) throw new ProjectNotFoundException(projectSlug.Text);
 
         var youth = new Youth
         {
@@ -234,11 +234,11 @@ public class ProjectManager: IProjectManager
         return youth;
     }
 
-    public void RemoveYouth(string token)
+    public void RemoveYouth(Guid token)
     {
         if (!_projectRepository.DeleteYouth(token))
         {
-            throw new YouthNotFoundException(token);
+            throw new YouthNotFoundException(token.ToString());
         }
     }
     

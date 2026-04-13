@@ -14,13 +14,25 @@ function mapQuestionType(rawType: ApiQuestionTypeDto | undefined): Question['typ
 
     if (typeof rawType === 'number') {
         // Keep numeric mapping permissive until backend API contract is fixed.
-        return rawType === 0 ? QuestionType.SingleChoice : QuestionType.OpenText
+        if (rawType === 0) return QuestionType.SingleChoice
+        if (rawType === 1) return QuestionType.OpenText
+        if (rawType === 2) return QuestionType.Scale
+        if (rawType === 3) return QuestionType.MultipleChoice
+        return QuestionType.OpenText
     }
 
     const normalized = rawType.replace(/[\s-]/g, '_').toUpperCase()
 
-    if (normalized.includes('CHOICE') || normalized.includes('MULTIPLE') || normalized === QuestionType.SingleChoice) {
+    if (normalized.includes('MULTIPLE')) {
+        return QuestionType.MultipleChoice
+    }
+
+    if (normalized.includes('CHOICE') || normalized === QuestionType.SingleChoice) {
         return QuestionType.SingleChoice
+    }
+
+    if (normalized.includes('SCALE')) {
+        return QuestionType.Scale
     }
 
     return QuestionType.OpenText

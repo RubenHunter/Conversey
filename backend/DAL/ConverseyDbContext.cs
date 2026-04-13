@@ -1,12 +1,9 @@
 using Conversey.BL.Domain;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Query.Expressions.Internal;
 
 namespace Conversey.DAL;
 
@@ -22,13 +19,8 @@ public class ConverseyDbContext : DbContext
     public DbSet<Response> Responses { get; set; }
     public DbSet<ResponseReaction> ResponseReactions { get; set; }
     public DbSet<Question> Questions { get; set; }
-    public DbSet<QuestionOption> QuestionOptions { get; set; }
-    public DbSet<TextAnswer> TextAnswers { get; set; }
-    public DbSet<OpenTextAnswer> OpenTextAnswers { get; set; }
-    public DbSet<ClosedTextAnswer> ClosedTextAnswers { get; set; }
-    public DbSet<IntegerAnswer> IntegerAnswers { get; set; }
+    public DbSet<Answer> Answers { get; set; }
     public DbSet<AiAuditLog>  AiAuditLogs { get; set; }
-    public DbSet<AiPrompt> AiPrompts { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
@@ -48,13 +40,12 @@ public class ConverseyDbContext : DbContext
             .HasMaxLength(50);
 
         modelBuilder.Entity<Workspace>()
-            .Property(w => w.Slug)
+            .Property(w => w.Id)
             .IsRequired()
             .HasMaxLength(50)
             .HasConversion(
                 slug => slug.Text,
                 str => new Slug { Text = str });
-
 
         // Workspace 1-* Project
         modelBuilder.Entity<Workspace>()
@@ -64,10 +55,10 @@ public class ConverseyDbContext : DbContext
 
         // Project
         modelBuilder.Entity<Project>()
-            .HasKey(p => p.Id);
+            .HasKey(p => p.Slug);
 
         modelBuilder.Entity<Project>()
-            .Property(p => p.Title)
+            .Property(p => p.Name)
             .HasMaxLength(100);
         
         modelBuilder.Entity<Project>()
@@ -93,7 +84,7 @@ public class ConverseyDbContext : DbContext
 
         // Project 1-* Youth
         modelBuilder.Entity<Project>()
-            .HasMany(p => p.Youths)
+            .HasMany(p => p.Youth)
             .WithOne(y => y.Project);
 
         // Project 1-* Question
@@ -117,22 +108,26 @@ public class ConverseyDbContext : DbContext
             .Property(q => q.Text)
             .HasMaxLength(500);
 
+        // Question inheritance
         modelBuilder.Entity<OpenQuestion>();
-        modelBuilder.Entity<SingleChoiceQuestion>();
-        modelBuilder.Entity<MultipleChoiceQuestion>();
+        modelBuilder.Entity<ChoiceQuestion<SingleChoice>>();
+        modelBuilder.Entity<ChoiceQuestion<MultipleChoice>>();
         modelBuilder.Entity<ScaleQuestion>();
-
-        modelBuilder.Entity<Question>()
-            .HasMany(q => q.Options)
-            .WithOne(o => o.Question)
-            .IsRequired();
-
-        modelBuilder.Entity<QuestionOption>()
-            .HasKey(o => o.Id);
-
-        modelBuilder.Entity<QuestionOption>()
-            .Property(o => o.Text)
-            .HasMaxLength(250);
+        
+        // Choice
+        modelBuilder.Entity<SingleChoice>()
+            .HasKey(c => c.Id);
+        
+        modelBuilder.Entity<MultipleChoice>()
+            .HasKey(c => c.Id);
+        
+        modelBuilder.Entity<SingleChoice>()
+            .Property(c => c.Text)
+            .HasMaxLength(500);
+        
+        modelBuilder.Entity<MultipleChoice>()
+            .Property(c => c.Text)
+            .HasMaxLength(500);
 
         // Idea
         modelBuilder.Entity<Idea>()
@@ -150,55 +145,48 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Project)
             .WithMany()
-            .HasForeignKey("ProjectId")   
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Topic)
             .WithMany(t => t.Ideas)
-            .HasForeignKey("TopicId")
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasOne(i => i.Youth)
             .WithMany(y => y.Ideas)
-            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasMany(i => i.Responses)
             .WithOne(r => r.Idea)
-            .HasForeignKey("IdeaId")
             .IsRequired();
 
         modelBuilder.Entity<Idea>()
             .HasMany(i => i.Reactions)
             .WithOne(ir => ir.Idea)
-            .HasForeignKey("IdeaId")
             .IsRequired();
         
         modelBuilder.Entity<Idea>()
             .Property(i => i.ModerationInfo)
             .HasConversion(m => m.Serialize(), b => ModerationInfo.Deserialize(b));
 
-        // IdeaReaction
-        modelBuilder.Entity<IdeaReaction>()
-            .HasKey(ir => ir.Id);
+        // Reaction inheritance (base key must be defined on root type)
+        modelBuilder.Entity<Reaction>()
+            .HasKey(r => r.Id);
 
-        modelBuilder.Entity<IdeaReaction>()
-            .Property(ir => ir.Emoji)
+        modelBuilder.Entity<Reaction>()
+            .Property(r => r.Emoji)
             .IsRequired()
             .HasMaxLength(32);
 
-        modelBuilder.Entity<IdeaReaction>()
-            .HasOne(ir => ir.Youth)
-            .WithMany(y => y.IdeaReactions)
-            .HasForeignKey("YouthToken")
+        modelBuilder.Entity<Reaction>()
+            .HasOne(r => r.Youth)
+            .WithMany(y => y.Reactions)
             .IsRequired();
 
-        modelBuilder.Entity<IdeaReaction>()
-            .HasIndex(ir => new { ir.IdeaId, ir.YouthToken, ir.Emoji })
-            .IsUnique();
+        // IdeaReaction
+        modelBuilder.Entity<IdeaReaction>();
 
         // Response
         modelBuilder.Entity<Response>()
@@ -212,13 +200,11 @@ public class ConverseyDbContext : DbContext
         modelBuilder.Entity<Response>()
             .HasOne(r => r.Youth)
             .WithMany(y => y.Responses)
-            .HasForeignKey("YouthToken")
             .IsRequired();
 
         modelBuilder.Entity<Response>()
             .HasMany(r => r.Reactions)
             .WithOne(rr => rr.Response)
-            .HasForeignKey("ResponseId")
             .IsRequired();
         
         modelBuilder.Entity<Response>()
@@ -226,62 +212,17 @@ public class ConverseyDbContext : DbContext
             .HasConversion(m => m.Serialize(), b => ModerationInfo.Deserialize(b));
 
         // ResponseReaction
-        modelBuilder.Entity<ResponseReaction>()
-            .HasKey(rr => rr.Id);
+        modelBuilder.Entity<ResponseReaction>();
 
-        modelBuilder.Entity<ResponseReaction>()
-            .Property(rr => rr.Emoji)
-            .IsRequired()
-            .HasMaxLength(32);
-
-        modelBuilder.Entity<ResponseReaction>()
-            .HasOne(rr => rr.Youth)
-            .WithMany(y => y.ResponseReactions)
-            .HasForeignKey("YouthToken")
-            .IsRequired();
-
-        modelBuilder.Entity<ResponseReaction>()
-            .HasIndex(rr => new { rr.ResponseId, rr.YouthToken, rr.Emoji })
-            .IsUnique();
-
-        // TextAnswer
-        modelBuilder.Entity<TextAnswer>()
-            .ToTable("TextAnswers")
+        // Answer
+        modelBuilder.Entity<Answer>()
             .HasKey(a => a.Id);
 
-        modelBuilder.Entity<TextAnswer>()
+        modelBuilder.Entity<Answer>()
             .HasOne(a => a.Youth)
-            .WithMany()
-            .HasForeignKey("YouthToken")
+            .WithMany(y => y.Answers)
             .IsRequired();
 
-        modelBuilder.Entity<TextAnswer>()
-            .HasOne(a => a.Question)
-            .WithMany()
-            .HasForeignKey("QuestionId")
-            .IsRequired();
-
-        modelBuilder.Entity<OpenTextAnswer>()
-            .ToTable("OpenTextAnswers");
-
-        modelBuilder.Entity<ClosedTextAnswer>()
-            .ToTable("ClosedTextAnswers");
-
-        // IntegerAnswer
-        modelBuilder.Entity<IntegerAnswer>()
-            .HasKey(a => a.Id);
-
-        modelBuilder.Entity<IntegerAnswer>()
-            .HasOne(a => a.Youth)
-            .WithMany()
-            .HasForeignKey("YouthToken")
-            .IsRequired();
-
-        modelBuilder.Entity<IntegerAnswer>()
-            .HasOne(a => a.Question)
-            .WithMany()
-            .HasForeignKey("QuestionId")
-            .IsRequired();
 
         // WorkspaceAdmin
         modelBuilder.Entity<WorkspaceAdmin>()

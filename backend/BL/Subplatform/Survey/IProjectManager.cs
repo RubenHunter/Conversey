@@ -1,17 +1,16 @@
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 namespace Conversey.BL.Subplatform.Survey;
 
 public interface IProjectManager
 {
-    Project GetProjectById(int projectId);
-    Project GetProjectByIdWithTopics(int projectId);
-    Project GetProjectByIdWithQuestions(int projectId);
-    Project GetProjectByIdWithTopicsAndQuestions(int projectId);
-    Project GetProjectByIdWithWorkspaceAndQuestions(int projectId);
-    Project GetProjectByIdWithWorkspaceTopicsYouthsAndQuestions(int projectId);
+    Project GetProjectById(Slug projectSlug);
+    Project GetProjectByIdWithTopics(Slug projectSlug);
+    Project GetProjectByIdWithQuestions(Slug projectSlug);
+    Project GetProjectByIdWithTopicsAndQuestions(Slug projectSlug);
+    Project GetProjectByIdWithWorkspaceAndQuestions(Slug projectSlug);
+    Project GetProjectByIdWithWorkspaceTopicsYouthsAndQuestions(Slug projectSlug);
 
     Project GetProjectBySlug(Slug slug);
     Project GetProjectBySlugWithTopics(Slug slug);
@@ -25,23 +24,23 @@ public interface IProjectManager
     IReadOnlyCollection<Project> GetAllProjectsWithQuestions();
     IReadOnlyCollection<Project> GetAllProjectsWithTopicsAndQuestions();
 
-    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceId(int workspaceId);
-    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopics(int workspaceId);
-    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithQuestions(int workspaceId);
-    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(int workspaceId);
+    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceId(Slug workspaceSlug);
+    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopics(Slug workspaceSlug);
+    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithQuestions(Slug workspaceSlug);
+    IReadOnlyCollection<Project> GetProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(Slug workspaceSlug);
 
     public Project AddProject(string title, string slug, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, int workspaceId);
+        DateTime endDate, InteractionType interactionForm, Slug workspaceSlug);
     Project ChangeProject(Project project);
-    void RemoveProject(int projectId);
+    void RemoveProject(Slug projectSlug);
     Topic GetTopicById(int topicId);
-    IReadOnlyCollection<Topic> GetTopicsFromProjectByProjectId(int projectId);
-    Topic AddTopic(string name, string context, int projectId);
+    IReadOnlyCollection<Topic> GetTopicsFromProjectByProjectId(Slug projectSlug);
+    Topic AddTopic(string name, string context, Slug projectSlug);
     Topic ChangeTopic(Topic topic);
     void RemoveTopic(int topicId);
-    Youth GetYouthByToken(string token);
-    IReadOnlyCollection<Youth> GetYouthsFromProjectByProjectId(int projectId);
-    Youth AddYouth(string token, string email, int projectId);
+    Youth GetYouthByToken(Guid token);
+    IReadOnlyCollection<Youth> GetYouthsFromProjectByProjectId(Slug projectSlug);
+    Youth AddYouth(Guid token, string email, Slug projectSlug);
     Youth ChangeYouth(Youth youth);
-    void RemoveYouth(string token);
+    void RemoveYouth(Guid token);
 }

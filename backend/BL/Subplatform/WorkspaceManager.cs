@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
-using Conversey.DAL.Subplatform;
+using Conversey.DAL.Administration;
 
 namespace Conversey.BL.Subplatform;
 
@@ -28,10 +28,10 @@ public class WorkspaceManager: IWorkspaceManager
     {
         var workspace = new Workspace
         {
-            Name = name,
-            Slug = slug
+            Id = slug,
+            Name = name
         };
-        if (SlugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
+        if (SlugExists(workspace.Id)) throw new ValidationException($"Workspace Slug '{workspace.Id.Text}' already exists.");
         
         Validate(workspace);
         
@@ -51,16 +51,16 @@ public class WorkspaceManager: IWorkspaceManager
         return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
     }
 
-    public Workspace GetWorkspaceById(int id)
+    public Workspace GetWorkspaceById(Slug id)
     {
         var workspace = _workspaceRepository.ReadWorkspaceById(id);
-        return workspace ?? throw new WorkspaceNotFoundException(id.ToString());
+        return workspace ?? throw new WorkspaceNotFoundException(id.Text);
     }
 
-    public Workspace GetWorkspaceByIdWithProjects(int id)
+    public Workspace GetWorkspaceByIdWithProjects(Slug id)
     {
         var workspace = _workspaceRepository.ReadWorkspaceByIdWithProjects(id);
-        return workspace ?? throw new WorkspaceNotFoundException(id.ToString());
+        return workspace ?? throw new WorkspaceNotFoundException(id.Text);
     }
 
     private bool SlugExists(Slug slug)

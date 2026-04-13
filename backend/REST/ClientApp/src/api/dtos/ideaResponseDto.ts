@@ -37,6 +37,18 @@ export interface ApiResponseSubmissionResultDto {
     Response?: ApiIdeaResponseDto
     suggestion?: string
     Suggestion?: string
+    decision?: {
+        isAllowed?: boolean
+        IsAllowed?: boolean
+        suggestion?: string
+        Suggestion?: string
+    }
+    Decision?: {
+        isAllowed?: boolean
+        IsAllowed?: boolean
+        suggestion?: string
+        Suggestion?: string
+    }
 }
 
 export interface ApiUpdateResponseAfterSafetyReviewRequestDto {

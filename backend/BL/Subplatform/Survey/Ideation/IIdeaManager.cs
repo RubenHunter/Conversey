@@ -1,11 +1,11 @@
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.BL.Subplatform.Survey.Ideation;
 
 public interface IIdeaManager
 {
-    SubmissionResponse SubmitIdea(string content, int projectId, int topicId, string youthToken);
+    SubmissionResponse SubmitIdea(string content, Slug projectSlug, int topicId, Guid youthToken);
 
     Idea GetIdeaById(int ideaId);
     Idea GetIdeaByIdWithProject(int ideaId);
@@ -17,9 +17,9 @@ public interface IIdeaManager
     IReadOnlyCollection<Idea> GetAllIdeasWithResponses();
     IReadOnlyCollection<Idea> GetAllIdeasWithProjectAndResponses();
 
-    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectId(int projectId);
-    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectIdWithResponses(int projectId);
-    IReadOnlyCollection<Idea> GetIdeasFromProjectByYouthToken(int projectId, string youthToken);
+    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectId(Slug projectSlug);
+    IReadOnlyCollection<Idea> GetIdeasFromProjectByProjectIdWithResponses(Slug projectSlug);
+    IReadOnlyCollection<Idea> GetIdeasFromProjectByYouthToken(Slug projectSlug, Guid youthToken);
 
     IReadOnlyCollection<Idea> GetIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId);
 
@@ -27,7 +27,7 @@ public interface IIdeaManager
     Idea ChangeIdea(Idea idea);
     void RemoveIdea(int ideaId);
     
-    ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken);
+    ResponseSubmissionResponse AddResponse(string text, int ideaId, Guid youthToken);
     Response GetResponseById(int responseId);
     Response GetResponseByIdWithIdea(int responseId);
     IReadOnlyCollection<Response> GetResponsesFromIdeaByIdeaId(int ideaId);
@@ -35,11 +35,11 @@ public interface IIdeaManager
     Response ChangeResponse(Response response);
     void RemoveResponse(int responseId);
 
-    IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken);
+    IdeaReaction AddIdeaReaction(string emoji, int ideaId, Guid youthToken);
     IReadOnlyCollection<IdeaReaction> GetIdeaReactionsFromIdeaByIdeaId(int ideaId);
-    void RemoveIdeaReaction(int ideaId, string youthToken, string emoji);
+    void RemoveIdeaReaction(int ideaId, Guid youthToken, string emoji);
 
-    ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken);
+    ResponseReaction AddResponseReaction(string emoji, int responseId, Guid youthToken);
     IReadOnlyCollection<ResponseReaction> GetResponseReactionsFromResponseByResponseId(int responseId);
-    void RemoveResponseReaction(int responseId, string youthToken, string emoji);
+    void RemoveResponseReaction(int responseId, Guid youthToken, string emoji);
 }

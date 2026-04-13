@@ -1,5 +1,5 @@
 ﻿﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +35,7 @@ public class ProjectController : ControllerBase
     {
         var project = _manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
 
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(project.Workspace.Id.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
         }

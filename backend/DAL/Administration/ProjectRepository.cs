@@ -16,54 +16,50 @@ public class ProjectRepository : IProjectRepository
         _dbContext = dbContext;
     }
 
-    public Project ReadProjectById(int projectId)
+    public Project ReadProjectById(Slug projectSlug)
     {
         return _dbContext.Projects
-            .SingleOrDefault(p => p.Id == projectId);
+            .SingleOrDefault(p => p.Slug == projectSlug);
     }
 
-    public Project ReadProjectByIdWithTopics(int projectId)
-    {
-        return _dbContext.Projects
-            .Include(p => p.Topic)
-            .SingleOrDefault(p => p.Id == projectId);
-    }
-
-    public Project ReadProjectByIdWithQuestions(int projectId)
-    {
-        return _dbContext.Projects
-            .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .SingleOrDefault(p => p.Id == projectId);
-    }
-
-    public Project ReadProjectByIdWithTopicsAndQuestions(int projectId)
+    public Project ReadProjectByIdWithTopics(Slug projectSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
-            .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .SingleOrDefault(p => p.Id == projectId);
+            .SingleOrDefault(p => p.Slug == projectSlug);
     }
 
-    public Project ReadProjectByIdWithWorkspaceAndQuestions(int projectId)
+    public Project ReadProjectByIdWithQuestions(Slug projectSlug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == projectSlug);
+    }
+
+    public Project ReadProjectByIdWithTopicsAndQuestions(Slug projectSlug)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Topic)
+            .Include(p => p.Questions)
+            .SingleOrDefault(p => p.Slug == projectSlug);
+    }
+
+    public Project ReadProjectByIdWithWorkspaceAndQuestions(Slug projectSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .SingleOrDefault(p => p.Id == projectId);
+            .SingleOrDefault(p => p.Slug == projectSlug);
     }
 
-    public Project ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(int projectId)
+    public Project ReadProjectByIdWithWorkspaceTopicsYouthsAndQuestions(Slug projectSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
-            .Include(p => p.Youths)
+            .Include(p => p.Youth)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .SingleOrDefault(p => p.Id == projectId);
+            .SingleOrDefault(p => p.Slug == projectSlug);
     }
 
     public Project ReadProjectBySlug(Slug slug)
@@ -83,7 +79,6 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -92,7 +87,6 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -101,7 +95,6 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -110,9 +103,8 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
-            .Include(p => p.Youths)
+            .Include(p => p.Youth)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .SingleOrDefault(p => p.Slug == slug);
     }
 
@@ -121,7 +113,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
-            .Include(p => p.Youths)
+            .Include(p => p.Youth)
             .ToList().AsReadOnly();
     }
 
@@ -136,7 +128,6 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .ToList().AsReadOnly();
     }
 
@@ -145,57 +136,54 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceId(int workspaceId)
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceId(Slug workspaceSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
-            .Include(p => p.Youths)
-            .Where(p => p.Workspace.Id == workspaceId)
+            .Include(p => p.Youth)
+            .Where(p => p.Workspace.Id == workspaceSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(int workspaceId)
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopics(Slug workspaceSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
-            .Where(p => p.Workspace.Id == workspaceId)
+            .Where(p => p.Workspace.Id == workspaceSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(int workspaceId)
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithQuestions(Slug workspaceSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .Where(p => p.Workspace.Id == workspaceId)
+            .Where(p => p.Workspace.Id == workspaceSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(int workspaceId)
+    public IReadOnlyCollection<Project> ReadProjectsFromWorkspaceByWorkspaceIdWithTopicsAndQuestions(Slug workspaceSlug)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
             .Include(p => p.Questions)
-            .ThenInclude(q => q.Options)
-            .Where(p => p.Workspace.Id == workspaceId)
+            .Where(p => p.Workspace.Id == workspaceSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Topic> ReadTopicsFromProjectByProjectId(int projectId)
+    public IReadOnlyCollection<Topic> ReadTopicsFromProjectByProjectId(Slug projectSlug)
     {
         return _dbContext.Topics
-            .Where(t => t.Project.Id == projectId)
+            .Where(t => t.Project.Slug == projectSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Youth> ReadYouthsFromProjectByProjectId(int projectId)
+    public IReadOnlyCollection<Youth> ReadYouthsFromProjectByProjectId(Slug projectSlug)
     {
         return _dbContext.Youths
-            .Where(y => y.Project.Id == projectId)
+            .Where(y => y.Project.Slug == projectSlug)
             .ToList().AsReadOnly();
     }
 
@@ -211,10 +199,10 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public bool DeleteProject(int projectId)
+    public bool DeleteProject(Slug projectSlug)
     {
         var project = _dbContext.Projects
-            .SingleOrDefault(p => p.Id == projectId);
+            .SingleOrDefault(p => p.Slug == projectSlug);
         if (project == null) return false;
 
         _dbContext.Projects.Remove(project);
@@ -260,13 +248,13 @@ public class ProjectRepository : IProjectRepository
         return true;
     }
 
-    public Youth ReadYouthByToken(string token)
+    public Youth ReadYouthByToken(Guid token)
     {
         return _dbContext.Youths
             .SingleOrDefault(y => y.Token == token);
     }
 
-    public Youth ReadYouthByTokenWithProject(string token)
+    public Youth ReadYouthByTokenWithProject(Guid token)
     {
         return _dbContext.Youths
             .Include(y => y.Project)
@@ -285,7 +273,7 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public bool DeleteYouth(string token)
+    public bool DeleteYouth(Guid token)
     {
         var youth = _dbContext.Youths
             .SingleOrDefault(y => y.Token == token);
@@ -305,10 +293,10 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
         #region Properties
 
         builder
-            .HasKey(p => p.Id);
+            .HasKey(p => p.Slug);
 
         builder
-            .Property(p => p.Title)
+            .Property(p => p.Name)
             .HasMaxLength(100);
         
         builder
@@ -337,9 +325,9 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .HasMany(p => p.Topic)
             .WithOne(t => t.Project);
 
-        // Project 1-* Youthi
+        // Project 1-* Youth
         builder
-            .HasMany(p => p.Youths)
+            .HasMany(p => p.Youth)
             .WithOne(y => y.Project);
 
         // Project 1-* Question

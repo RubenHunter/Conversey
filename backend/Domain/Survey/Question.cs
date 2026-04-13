@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 
@@ -13,6 +14,8 @@ public abstract class Question
     public string Text { get; set; }
     
     public bool Required { get; set; }
+    
+    [NotMapped]
     public Image? Image { get; set; }
     
     [Required]

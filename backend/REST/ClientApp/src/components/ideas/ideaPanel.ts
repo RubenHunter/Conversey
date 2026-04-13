@@ -6,6 +6,7 @@ import type { PostSafetyDecision } from './safetyReviewDialog.ts'
 interface ResponseSubmitResult {
     response: IdeaResponse
     aiSuggestion: string | null
+    requiresSafetyReview: boolean
 }
 
 interface CreateIdeaPanelControllerParams {
@@ -515,8 +516,9 @@ export function createIdeaPanelController({
             const submitResult = await submitResponse(currentIdea, localDecision.text)
             let finalResponse = submitResult.response
 
-            if (submitResult.aiSuggestion) {
-                const decision = await reviewWithSuggestion(localDecision.text, submitResult.aiSuggestion)
+            if (submitResult.requiresSafetyReview) {
+                const suggestion = submitResult.aiSuggestion ?? 'Please rephrase your message in a respectful and constructive way.'
+                const decision = await reviewWithSuggestion(localDecision.text, suggestion)
 
                 if (!decision.proceed) {
                     panelInput.value = text

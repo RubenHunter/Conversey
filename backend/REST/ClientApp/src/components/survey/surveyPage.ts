@@ -6,7 +6,9 @@ import { QuestionType } from '../../models/question.ts'
 import type { ResponseAnswer } from '../../models/response.ts'
 import { renderSingleChoiceQuestion } from './singleChoiceQuestion.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
+import { renderMultipleChoiceQuestion } from './multipleChoiceQuestion.ts'
 import { renderOpenTextQuestion } from './openTextQuestion.ts'
+import { renderScaleQuestion } from './scaleQuestion.ts'
 import { renderScrollNav } from '../scrollNav.ts'
 import type { ScrollNav } from '../scrollNav.ts'
 
@@ -121,7 +123,11 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         const component =
             question.type === QuestionType.SingleChoice
                 ? renderSingleChoiceQuestion(question, index)
-                : renderOpenTextQuestion(question, index)
+                : question.type === QuestionType.MultipleChoice
+                    ? renderMultipleChoiceQuestion(question, index)
+                : question.type === QuestionType.Scale
+                    ? renderScaleQuestion(question, index)
+                    : renderOpenTextQuestion(question, index)
 
         questionsContainer.appendChild(component.getElement())
 
@@ -150,7 +156,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     components.forEach((component, index) => {
         component.onAnswer(() => {
             const answer = component.getAnswer()
-            const hasAnswer = answer !== null && answer !== ''
+            const hasAnswer = Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
             answeredState[index] = hasAnswer
 
             if (index + 1 < components.length) {
@@ -308,9 +314,21 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                 const selectedOptionId = answer as number
                 return { questionId: question.id, selectedOptionId, value: selectedOptionId }
             }
+            if (question.type === QuestionType.MultipleChoice) {
+                const selectedOptionIds = Array.isArray(answer) ? answer : []
+                return selectedOptionIds.map((selectedOptionId) => ({
+                    questionId: question.id,
+                    selectedOptionId,
+                    value: selectedOptionId,
+                }))
+            }
+            if (question.type === QuestionType.Scale) {
+                const scaleValue = answer as number
+                return { questionId: question.id, selectedOptionId: scaleValue, value: scaleValue }
+            }
             const openTextValue = answer as string
             return { questionId: question.id, openTextValue, value: openTextValue }
-        })
+        }).flat()
 
         submitBtn.disabled = true
         submitBtn.textContent = 'Submitting...'
