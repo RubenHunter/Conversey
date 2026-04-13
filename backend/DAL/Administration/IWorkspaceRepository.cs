@@ -1,7 +1,7 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
 
-namespace Conversey.DAL.Subplatform;
+namespace Conversey.DAL.Administration;
 
 public interface IWorkspaceRepository
 {

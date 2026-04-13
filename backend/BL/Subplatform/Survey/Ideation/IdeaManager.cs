@@ -30,9 +30,9 @@ public class IdeaManager: IIdeaManager
                          ?? throw new TopicNotFoundException(topicId.ToString());
         Youth author = GetYouthForProject(youthToken, projectId);
         
-        bool allowed = EvaluateIdeaModeration(content, out string suggestion);
+        ModerationDecision decision = EvaluateIdeaModeration(content);
 
-        IdeaStatus status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending;
+        IdeaStatus status = decision.IsAllowed ? IdeaStatus.Approved : IdeaStatus.Pending;
 
         var idea = new Idea
         {
@@ -46,7 +46,7 @@ public class IdeaManager: IIdeaManager
         Validate(idea);
         _repository.CreateIdea(idea);
 
-        return allowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, suggestion);
+        return decision.IsAllowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, decision);
     }
 
     public Idea GetIdeaById(int ideaId)
@@ -130,7 +130,7 @@ public class IdeaManager: IIdeaManager
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
-        bool allowed = EvaluateIdeaModeration(text, out string suggestion);
+        ModerationDecision decision = EvaluateIdeaModeration(text);
 
         var response = new IdeaResponse
         {
@@ -138,14 +138,15 @@ public class IdeaManager: IIdeaManager
             Idea = idea,
             CreatedAt = DateTime.UtcNow,
             Youth = author,
-            Status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending
+            //Status = allowed ? IdeaStatus.Approved : IdeaStatus.Pending
+            Status = decision.IsAllowed ? IdeaStatus.Approved : IdeaStatus.Pending
         };
         Validate(response);
         _repository.CreateResponse(response);
 
-        return allowed
+        return decision.IsAllowed
             ? new ResponseSubmissionResponse.Approved(response)
-            : new ResponseSubmissionResponse.Pending(response, suggestion);
+            : new ResponseSubmissionResponse.Pending(response, decision);
     }
 
     public IdeaResponse GetResponseById(int responseId)
@@ -284,12 +285,11 @@ public class IdeaManager: IIdeaManager
         return string.IsNullOrWhiteSpace(emoji) ? string.Empty : emoji.Trim();
     }
 
-    private bool EvaluateIdeaModeration(string content, out string suggestion)
+    private ModerationDecision EvaluateIdeaModeration(string content)
     {
-        suggestion = string.Empty;
-
         Console.WriteLine($"[IdeaManager] 🔍 Sending content to Mistral AI for moderation: \"{content}\"");
-
+        ModerationDecision decision =  new ModerationDecision();
+        
         try
         {
             var decision = _aiManager.ModerateContent(content).Result;
@@ -297,7 +297,7 @@ public class IdeaManager: IIdeaManager
             if (decision.IsAllowed)
             {
                 Console.WriteLine("[IdeaManager] ✅ Mistral AI: content is ALLOWED");
-                return true;
+                return decision;
             }
 
             Console.WriteLine("[IdeaManager] ⚠️ Mistral AI: content is FLAGGED — generating alternative...");
@@ -310,15 +310,15 @@ public class IdeaManager: IIdeaManager
             catch (Exception ex)
             {
                 Console.WriteLine($"[IdeaManager] Failed to generate AI alternative: {ex.Message}");
-                suggestion = "Please rephrase your idea in a respectful way.";
+                decision.Suggestion = "Please rephrase your idea in a respectful way.";
             }
 
-            return false;
+            return decision;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[IdeaManager] ❌ Moderation check failed, allowing by default: {ex.Message}");
-            return true;
+            return decision;
         }
     }
 

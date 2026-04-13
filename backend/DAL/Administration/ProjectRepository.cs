@@ -1,9 +1,10 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
+using Conversey.DAL.Administration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Conversey.DAL.Subplatform.Survey;
+namespace Conversey.DAL.Administration;
 
 public class ProjectRepository : IProjectRepository
 {
@@ -295,4 +296,80 @@ public class ProjectRepository : IProjectRepository
         return true;
     }
 }
+
+#region ProjectConfig
+public class ProjectConfig : IEntityTypeConfiguration<Project>
+{
+    public void Configure(EntityTypeBuilder<Project> builder)
+    {
+        #region Properties
+
+        builder
+            .HasKey(p => p.Id);
+
+        builder
+            .Property(p => p.Title)
+            .HasMaxLength(100);
+        
+        builder
+            .Property(p => p.Slug)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasConversion(
+                slug => slug.Text,
+                str => new Slug { Text = str });
+
+        builder
+            .Property(p => p.Description)
+            .HasMaxLength(4000);
+
+        builder
+            .Property(p => p.ImageUrl)
+            .HasMaxLength(2048);
+
+        #endregion
+
+
+        #region Relations
+        
+        // Project 1-* Topic
+        builder
+            .HasMany(p => p.Topic)
+            .WithOne(t => t.Project);
+
+        // Project 1-* Youthi
+        builder
+            .HasMany(p => p.Youths)
+            .WithOne(y => y.Project);
+
+        // Project 1-* Question
+        builder
+            .HasMany(p => p.Questions)
+            .WithOne(q => q.Project);
+
+
+        #endregion
+    }
+}
+#endregion
+
+#region TopicConfig
+public class TopicConfig: IEntityTypeConfiguration<Topic>
+{
+    public void Configure(EntityTypeBuilder<Topic> builder)
+    {
+        builder.HasKey(t => t.Id);
+    }
+}
+#endregion
+
+#region YouthConfig
+public class YouthConfig : IEntityTypeConfiguration<Youth>
+{
+    public void Configure(EntityTypeBuilder<Youth> builder)
+    {
+        builder.HasKey(y => y.Token);
+    }
+}
+#endregion
 

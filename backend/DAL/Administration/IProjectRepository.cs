@@ -1,8 +1,7 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
 
-namespace Conversey.DAL.Subplatform.Survey;
+namespace Conversey.DAL.Administration;
 
 public interface IProjectRepository
 {
