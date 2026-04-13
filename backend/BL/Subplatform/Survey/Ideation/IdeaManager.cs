@@ -126,7 +126,7 @@ public class IdeaManager: IIdeaManager
 
     public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
     {
-        Idea idea = _repository.ReadIdeaById(ideaId);
+        var idea = _repository.ReadIdeaByIdWithProject(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId.ToString());
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
@@ -228,6 +228,7 @@ public class IdeaManager: IIdeaManager
     public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
     {
         var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
         Youth author = GetYouthForProject(youthToken, response.Idea.Project.Id);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
@@ -291,7 +292,7 @@ public class IdeaManager: IIdeaManager
         
         try
         {
-            decision = _aiManager.ModerateContent(content);
+            var decision = _aiManager.ModerateContent(content).Result;
 
             if (decision.IsAllowed)
             {
@@ -303,8 +304,8 @@ public class IdeaManager: IIdeaManager
 
             try
             {
-                decision.Suggestion = _aiManager.GenerateAiAlternative(content);
-                Console.WriteLine($"[IdeaManager] 💬 AI alternative: \"{decision.Suggestion}\"");
+                suggestion = _aiManager.GenerateAiAlternative(content, decision).Result;
+                Console.WriteLine($"[IdeaManager] 💬 AI alternative: \"{suggestion}\"");
             }
             catch (Exception ex)
             {
