@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Conversey.BL.Ai;
+namespace Conversey.BL.Domain.Ai;
 
 public class AiManagerConfig
 {

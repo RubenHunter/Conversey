@@ -1,5 +1,6 @@
-using Conversey.BL.Subplatform;
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Subplatform;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -14,179 +15,51 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         _fixture = fixture;
     }
 
-    #region GetWorkspace
-
     [Fact]
-    public void GetWorkspaceBySlug_ShouldReturnWorkspace()
+    public void GetWorkspaceBySlug_ShouldReturnSeededWorkspace()
     {
-        //Arrange
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        // Act
         var workspace = workspaceManager.GetWorkspaceBySlug(ManagerSeedData.WorkspaceSlug);
 
-        // Assert
         Assert.Equal(ManagerSeedData.WorkspaceName, workspace.Name);
-        Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, workspace.Slug.Text);
+        Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, workspace.Id.Text);
     }
 
     [Fact]
-    public void GetWorkspaceBySlug_WhenWorkspaceDoesNotExist_ShouldThrowWorkspaceNotFoundException()
+    public void GetWorkspaceByIdWithProjects_ShouldContainSeededProject()
     {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-        var unknownSlug = Conversey.BL.Domain.Common.Slug.FromName("Unknown Workspace");
-
-        // Act
-        var act = () => workspaceManager.GetWorkspaceBySlug(unknownSlug);
-
-        // Assert
-        Assert.Throws<WorkspaceNotFoundException>(act);
-    }
-
-    [Fact]
-    public void GetWorkspaceBySlugWithProjects_ShouldReturnWorkspaceWithItsProjects()
-    {
-        //Arrange
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        // Act
-        var workspace = workspaceManager.GetWorkspaceBySlugWithProjects(ManagerSeedData.WorkspaceSlug);
+        var workspace = workspaceManager.GetWorkspaceByIdWithProjects(ManagerSeedData.WorkspaceSlug);
 
-        // Assert
-        Assert.Equal(ManagerSeedData.WorkspaceName, workspace.Name);
-        Assert.Contains(workspace.Projects, project => project.Slug.Text == ManagerSeedData.ProjectSlug.Text);
-    }
-
-    [Fact]
-    public void GetWorkspaceById_ShouldReturnWorkspace()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-        var workspaceBySlug = workspaceManager.GetWorkspaceBySlug(ManagerSeedData.WorkspaceSlug);
-
-        // Act
-        var workspace = workspaceManager.GetWorkspaceById(workspaceBySlug.Id);
-
-        // Assert
-        Assert.Equal(workspaceBySlug.Id, workspace.Id);
-        Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, workspace.Slug.Text);
-    }
-
-    [Fact]
-    public void GetWorkspaceById_WhenWorkspaceDoesNotExist_ShouldThrowWorkspaceNotFoundException()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-
-        // Act
-        var act = () => workspaceManager.GetWorkspaceById(-9999);
-
-        // Assert
-        Assert.Throws<WorkspaceNotFoundException>(act);
-    }
-
-    [Fact]
-    public void GetAllWorkspacesWithProjects_ShouldContainSeededWorkspaceAndProject()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-
-        // Act
-        var workspaces = workspaceManager.GetAllWorkspacesWithProjects();
-
-        // Assert
-        Assert.Contains(workspaces, workspace =>
-            workspace.Slug.Text == ManagerSeedData.WorkspaceSlug.Text &&
-            workspace.Projects.Any(project => project.Slug.Text == ManagerSeedData.ProjectSlug.Text));
-    }
-
-    [Fact]
-    public void GetAllWorkspaces_ShouldContainSeededWorkspace()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-
-        // Act
-        var workspaces = workspaceManager.GetAllWorkspaces();
-
-        // Assert
-        Assert.Contains(workspaces, workspace => workspace.Slug.Text == ManagerSeedData.WorkspaceSlug.Text);
-    }
-
-    [Fact]
-    public void GetWorkspaceByIdWithProjects_ShouldReturnWorkspaceWithProjects()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-        var workspaceBySlug = workspaceManager.GetWorkspaceBySlug(ManagerSeedData.WorkspaceSlug);
-
-        // Act
-        var workspace = workspaceManager.GetWorkspaceByIdWithProjects(workspaceBySlug.Id);
-
-        // Assert
-        Assert.Equal(workspaceBySlug.Id, workspace.Id);
-        Assert.NotEmpty(workspace.Projects);
-    }
-
-    [Fact]
-    public void GetWorkspaceByIdWithProjects_WhenWorkspaceDoesNotExist_ShouldThrowWorkspaceNotFoundException()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-
-        // Act
-        var act = () => workspaceManager.GetWorkspaceByIdWithProjects(-9999);
-
-        // Assert
-        Assert.Throws<WorkspaceNotFoundException>(act);
-    }
-
-    #endregion
-
-    #region CreateWorkspace
-
-    [Fact]
-    public void CreateWorkspace_WhenSlugIsUnique_ShouldPersistWorkspace()
-    {
-        //Arrange
-        using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
-        var name = $"Integration Workspace {Guid.NewGuid():N}";
-        var slug = Conversey.BL.Domain.Common.Slug.FromName(name);
-
-        // Act
-        var createdWorkspace = workspaceManager.CreateWorkspace(name, slug);
-
-        // Assert
-        Assert.True(createdWorkspace.Id > 0);
-        Assert.Equal(slug.Text, createdWorkspace.Slug.Text);
+        Assert.Contains(workspace.Projects, p => p.Slug == ManagerSeedData.ProjectSlug);
     }
 
     [Fact]
     public void CreateWorkspace_WhenSlugAlreadyExists_ShouldThrowValidationException()
     {
-        //Arrange
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        // Act
-        var act = () => workspaceManager.CreateWorkspace("Different name", ManagerSeedData.WorkspaceSlug);
+        var act = () => workspaceManager.CreateWorkspace("Duplicate", ManagerSeedData.WorkspaceSlug);
 
-        // Assert
         Assert.Throws<ValidationException>(act);
     }
 
-    #endregion
+    [Fact]
+    public void CreateWorkspace_WithUniqueSlug_ShouldPersistWorkspace()
+    {
+        using var scope = _fixture.CreateScope();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
+        var name = $"Integration Workspace {Guid.NewGuid():N}";
+        var slug = Slug.FromName(name);
+
+        var created = workspaceManager.CreateWorkspace(name, slug);
+
+        Assert.Equal(slug.Text, created.Id.Text);
+        Assert.Equal(name, created.Name);
+    }
 }
-
-

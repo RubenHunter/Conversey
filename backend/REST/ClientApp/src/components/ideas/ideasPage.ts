@@ -484,14 +484,15 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 authorType: 'self',
             })
 
-            if (result.aiSuggestion) {
+            if (result.requiresSafetyReview) {
                 // Backend flagged it — show dialog with real AI suggestion
                 // The idea is already saved as Pending in the DB
                 console.log('[ideas] showing safety review dialog to user')
                 submitBtn.textContent = 'Submit Idea'
                 submitBtn.disabled = false
 
-                const decision = await safetyReviewDialog.reviewWithSuggestion(body, result.aiSuggestion)
+                const suggestion = result.aiSuggestion ?? 'Please rephrase your idea in a respectful and constructive way.'
+                const decision = await safetyReviewDialog.reviewWithSuggestion(body, suggestion)
 
                 if (!decision.proceed) {
                     // User cancelled — leave textarea as-is

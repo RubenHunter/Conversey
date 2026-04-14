@@ -7,23 +7,27 @@ import { apiFetch } from './apiService.ts'
 
 const SURVEY_YOUTH_ID_KEY_PREFIX = 'conversey-survey-youth-id'
 
-function createYouthId(projectId: number): string {
-    const randomPart =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+function isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
 
-    return `anon-p${projectId}-${randomPart}`
+function createYouthId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID()
+    }
+
+    const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    return `00000000-0000-4000-8000-${seed.padEnd(12, '0').slice(0, 12)}`
 }
 
 export function getOrCreateSurveyYouthId(projectId: number): string {
     const key = `${SURVEY_YOUTH_ID_KEY_PREFIX}-${projectId}`
     const existing = localStorage.getItem(key)
-    if (existing && existing.length > 0) {
+    if (existing && isGuid(existing)) {
         return existing
     }
 
-    const youthId = createYouthId(projectId)
+    const youthId = createYouthId()
     localStorage.setItem(key, youthId)
     return youthId
 }

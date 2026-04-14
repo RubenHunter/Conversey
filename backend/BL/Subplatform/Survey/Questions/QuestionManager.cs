@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Survey;
 
 namespace Conversey.BL.Subplatform.Survey.Questions;
@@ -34,14 +34,14 @@ public class QuestionManager: IQuestionManager
         return _questionRepository.ReadAllQuestionsWithProject();
     }
 
-    public IReadOnlyCollection<Question> GetQuestionsByProjectId(int projectId)
+    public IReadOnlyCollection<Question> GetQuestionsByProjectId(Slug projectSlug)
     {
-        return _questionRepository.ReadQuestionsByProjectId(projectId);
+        return _questionRepository.ReadQuestionsByProjectId(projectSlug);
     }
 
-    public IReadOnlyCollection<Question> GetQuestionsByProjectIdWithProject(int projectId)
+    public IReadOnlyCollection<Question> GetQuestionsByProjectIdWithProject(Slug projectSlug)
     {
-        return _questionRepository.ReadQuestionsByProjectIdWithProject(projectId);
+        return _questionRepository.ReadQuestionsByProjectIdWithProject(projectSlug);
     }
 
     public Question AddQuestion(Question question)
@@ -66,127 +66,35 @@ public class QuestionManager: IQuestionManager
         }
     }
 
-    public TextAnswer GetTextAnswerById(int answerId)
+    public Answer GetAnswerById(int answerId)
     {
-        return _questionRepository.ReadTextAnswerById(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
+        return _questionRepository.ReadAnswerById(answerId) ?? throw new AnswerNotFoundException(answerId.ToString());
     }
 
-    public TextAnswer GetTextAnswerByIdWithYouth(int answerId)
+    public IReadOnlyCollection<Answer> GetAnswersByQuestionId(int questionId)
     {
-        return _questionRepository.ReadTextAnswerByIdWithYouth(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
+        return _questionRepository.ReadAnswersByQuestionId(questionId);
     }
 
-    public TextAnswer GetTextAnswerByIdWithQuestion(int answerId)
-    {
-        return _questionRepository.ReadTextAnswerByIdWithQuestion(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
-    }
-
-    public TextAnswer GetTextAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _questionRepository.ReadTextAnswerByIdWithYouthAndQuestion(answerId) ?? throw new TextAnswerNotFoundException(answerId.ToString());
-    }
-
-    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionId(int questionId)
-    {
-        return _questionRepository.ReadTextAnswersByQuestionId(questionId);
-    }
-
-    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithYouth(int questionId)
-    {
-        return _questionRepository.ReadTextAnswersByQuestionIdWithYouth(questionId);
-    }
-
-    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _questionRepository.ReadTextAnswersByQuestionIdWithQuestion(questionId);
-    }
-
-    public IReadOnlyCollection<TextAnswer> GetTextAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _questionRepository.ReadTextAnswersByQuestionIdWithYouthAndQuestion(questionId);
-    }
-
-    public TextAnswer AddTextAnswer(TextAnswer answer)
+    public Answer AddAnswer(Answer answer)
     {
         Validate(answer);
-        _questionRepository.CreateTextAnswer(answer);
+        _questionRepository.CreateAnswer(answer);
         return answer;
     }
 
-    public TextAnswer ChangeTextAnswer(TextAnswer answer)
+    public Answer ChangeAnswer(Answer answer)
     {
         Validate(answer);
-        _questionRepository.UpdateTextAnswer(answer);
+        _questionRepository.UpdateAnswer(answer);
         return answer;
     }
 
-    public void RemoveTextAnswer(int answerId)
+    public void RemoveAnswer(int answerId)
     {
-        if (!_questionRepository.DeleteTextAnswer(answerId))
+        if (!_questionRepository.DeleteAnswer(answerId))
         {
-            throw new TextAnswerNotFoundException(answerId.ToString());
-        }
-    }
-
-    public IntegerAnswer GetIntegerAnswerById(int answerId)
-    {
-        return _questionRepository.ReadIntegerAnswerById(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
-    }
-
-    public IntegerAnswer GetIntegerAnswerByIdWithYouth(int answerId)
-    {
-        return _questionRepository.ReadIntegerAnswerByIdWithYouth(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
-    }
-
-    public IntegerAnswer GetIntegerAnswerByIdWithQuestion(int answerId)
-    {
-        return _questionRepository.ReadIntegerAnswerByIdWithQuestion(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
-    }
-
-    public IntegerAnswer GetIntegerAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _questionRepository.ReadIntegerAnswerByIdWithYouthAndQuestion(answerId) ?? throw new IntegerAnswerNotFoundException(answerId.ToString());
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionId(int questionId)
-    {
-        return _questionRepository.ReadIntegerAnswersByQuestionId(questionId);
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithYouth(int questionId)
-    {
-        return _questionRepository.ReadIntegerAnswersByQuestionIdWithYouth(questionId);
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _questionRepository.ReadIntegerAnswersByQuestionIdWithQuestion(questionId);
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> GetIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _questionRepository.ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(questionId);
-    }
-
-    public IntegerAnswer AddIntegerAnswer(IntegerAnswer answer)
-    {
-        Validate(answer);
-        _questionRepository.CreateIntegerAnswer(answer);
-        return answer;
-    }
-
-    public IntegerAnswer ChangeIntegerAnswer(IntegerAnswer answer)
-    {
-        Validate(answer);
-        _questionRepository.UpdateIntegerAnswer(answer);
-        return answer;
-    }
-
-    public void RemoveIntegerAnswer(int answerId)
-    {
-        if (!_questionRepository.DeleteIntegerAnswer(answerId))
-        {
-            throw new IntegerAnswerNotFoundException(answerId.ToString());
+            throw new AnswerNotFoundException(answerId.ToString());
         }
     }
 

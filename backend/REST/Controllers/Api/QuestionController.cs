@@ -1,11 +1,13 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.DAL;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace Conversey.REST.Controllers.Api;
 
@@ -15,11 +17,13 @@ public class QuestionController : ControllerBase
 {
     private readonly IProjectManager _projectManager;
     private readonly IQuestionManager _questionManager;
+    private readonly ConverseyDbContext _dbContext;
 
-    public QuestionController(IProjectManager projectManager, IQuestionManager questionManager)
+    public QuestionController(IProjectManager projectManager, IQuestionManager questionManager, ConverseyDbContext dbContext)
     {
         _projectManager = projectManager;
         _questionManager = questionManager;
+        _dbContext = dbContext;
     }
 
     [HttpGet("questions")]
@@ -28,10 +32,62 @@ public class QuestionController : ControllerBase
         try
         {
             var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            IReadOnlyCollection<QuestionDto> dtos = (project.Questions ?? Array.Empty<Question>())
-                .OrderBy(question => question.Order)
-                .ThenBy(question => question.Id)
-                .Select(question => QuestionDto.From(question, project.Id))
+            var choiceQuestionIds = (project.Questions ?? Array.Empty<Question>())
+                .Where(question => question is ChoiceQuestion<SingleChoice> || question is ChoiceQuestion<MultipleChoice>)
+                .Select(question => question.Id)
+                .ToHashSet();
+
+            var singleOptions = _dbContext.Set<SingleChoice>()
+                .Where(choice => choiceQuestionIds.Contains(EF.Property<int>(choice, "QuestionId")))
+                .Select(choice => new
+                {
+                    QuestionId = EF.Property<int>(choice, "QuestionId"),
+                    Option = new AnswerOptionDto
+                    {
+                        Id = choice.Id,
+                        QuestionId = EF.Property<int>(choice, "QuestionId"),
+                        Text = choice.Text
+                    }
+                })
+                .AsEnumerable()
+                .GroupBy(entry => entry.QuestionId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyCollection<AnswerOptionDto>)group.Select(entry => entry.Option).ToList().AsReadOnly());
+
+            var multipleOptions = _dbContext.Set<MultipleChoice>()
+                .Where(choice => choiceQuestionIds.Contains(EF.Property<int>(choice, "QuestionId")))
+                .Select(choice => new
+                {
+                    QuestionId = EF.Property<int>(choice, "QuestionId"),
+                    Option = new AnswerOptionDto
+                    {
+                        Id = choice.Id,
+                        QuestionId = EF.Property<int>(choice, "QuestionId"),
+                        Text = choice.Text
+                    }
+                })
+                .AsEnumerable()
+                .GroupBy(entry => entry.QuestionId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyCollection<AnswerOptionDto>)group.Select(entry => entry.Option).ToList().AsReadOnly());
+
+            var dtos = (project.Questions ?? Array.Empty<Question>())
+                .Select(question =>
+                {
+                    if (singleOptions.TryGetValue(question.Id, out var singleChoiceOptions))
+                    {
+                        return QuestionDto.From(question, project.Slug.Text, singleChoiceOptions);
+                    }
+
+                    if (multipleOptions.TryGetValue(question.Id, out var multipleChoiceOptions))
+                    {
+                        return QuestionDto.From(question, project.Slug.Text, multipleChoiceOptions);
+                    }
+
+                    return QuestionDto.From(question, project.Slug.Text);
+                })
                 .ToList()
                 .AsReadOnly();
 
@@ -46,115 +102,108 @@ public class QuestionController : ControllerBase
     [HttpPost("answers")]
     public ActionResult SubmitAnswers(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
-        return SubmitAnswersInternal(workspaceSlug, projectSlug, submission);
-    }
-
-    // Backward-compatible alias while frontend switches from /responses to /answers.
-    [HttpPost("responses")]
-    public ActionResult SubmitResponsesAlias(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
-    {
-        return SubmitAnswersInternal(workspaceSlug, projectSlug, submission);
-    }
-
-    private ActionResult SubmitAnswersInternal(string workspaceSlug, string projectSlug, SurveyAnswerSubmissionRequestDto submission)
-    {
         try
         {
             var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
 
-            if (submission.ProjectId != project.Id)
+            if (!Guid.TryParse(submission.YouthId?.Trim(), out var youthToken))
             {
-                return BadRequest("ProjectId in payload does not match route project.");
+                return BadRequest("YouthId must be a valid GUID.");
             }
 
-            if (string.IsNullOrWhiteSpace(submission.YouthId))
-            {
-                return BadRequest("YouthId is required.");
-            }
+            var youth = ResolveYouth(project, youthToken);
 
-            Youth youth;
-            try
+            foreach (var answerDto in submission.Answers)
             {
-                youth = _projectManager.GetYouthByToken(submission.YouthId);
-            }
-            catch (YouthNotFoundException)
-            {
-                youth = _projectManager.AddYouth(submission.YouthId, string.Empty, project.Id);
-            }
-
-            var questionsById = (project.Questions ?? Array.Empty<Question>())
-                .ToDictionary(question => question.Id);
-
-            foreach (var answer in submission.Answers)
-            {
-                if (!questionsById.TryGetValue(answer.QuestionId, out var question))
+                var question = _questionManager.GetQuestionById(answerDto.QuestionId);
+                var belongsToProject = question.Project?.Slug == project.Slug || (project.Questions?.Any(q => q.Id == question.Id) ?? false);
+                if (!belongsToProject)
                 {
-                    return BadRequest($"Question {answer.QuestionId} does not belong to this project.");
+                    return BadRequest($"Question {answerDto.QuestionId} does not belong to project '{project.Slug.Text}'.");
                 }
 
-                bool hasOptions = question.Options.Count > 0;
-                bool hasOpenText = !string.IsNullOrWhiteSpace(answer.OpenTextValue);
-                bool hasSelectedOption = answer.SelectedOptionId.HasValue;
-
-                if (hasOpenText)
+                switch (question)
                 {
-                    if (hasOptions)
+                    case OpenQuestion openQuestion:
                     {
-                        return BadRequest($"Question {question.Id} expects a selected option.");
-                    }
-
-                    _questionManager.AddTextAnswer(new OpenTextAnswer
-                    {
-                        YouthToken = youth.Token,
-                        Youth = youth,
-                        QuestionId = question.Id,
-                        Question = question,
-                        Value = answer.OpenTextValue.Trim()
-                    });
-
-                    continue;
-                }
-
-                if (hasSelectedOption)
-                {
-                    if (question is ScaleQuestion)
-                    {
-                        _questionManager.AddIntegerAnswer(new IntegerAnswer
+                        var openAnswer = new Answer<string>
                         {
-                            YouthToken = youth.Token,
-                            Youth = youth,
-                            QuestionId = question.Id,
-                            Question = question,
-                            Value = answer.SelectedOptionId.Value
-                        });
-
-                        continue;
+                            Value = answerDto.OpenTextValue?.Trim() ?? string.Empty,
+                            Question = openQuestion,
+                            Youth = youth
+                        };
+                        _questionManager.AddAnswer(openAnswer);
+                        break;
                     }
-
-                    if (!hasOptions)
+                    case ScaleQuestion scaleQuestion:
                     {
-                        return BadRequest($"Question {question.Id} expects an open text answer.");
+                        var hasScaleValue = answerDto.SelectedOptionId.HasValue || int.TryParse(answerDto.OpenTextValue, out _);
+                        if (!hasScaleValue)
+                        {
+                            return BadRequest($"Question {answerDto.QuestionId} requires a numeric answer.");
+                        }
+
+                        var parsed = answerDto.SelectedOptionId ?? int.Parse(answerDto.OpenTextValue!);
+                        var scaleAnswer = new Answer<int>
+                        {
+                            Value = parsed,
+                            Question = scaleQuestion,
+                            Youth = youth
+                        };
+                        _questionManager.AddAnswer(scaleAnswer);
+                        break;
                     }
-
-                    var selectedOption = question.Options.FirstOrDefault(option => option.Id == answer.SelectedOptionId);
-                    if (selectedOption is null)
+                    case ChoiceQuestion<SingleChoice> singleChoiceQuestion:
                     {
-                        return BadRequest($"Selected option {answer.SelectedOptionId} is invalid for question {question.Id}.");
+                        if (!answerDto.SelectedOptionId.HasValue)
+                        {
+                            return BadRequest($"Question {answerDto.QuestionId} requires a selected option.");
+                        }
+
+                        var option = _dbContext.Set<SingleChoice>()
+                            .SingleOrDefault(choice => choice.Id == answerDto.SelectedOptionId.Value &&
+                                                     EF.Property<int>(choice, "QuestionId") == answerDto.QuestionId);
+
+                        if (option == null)
+                        {
+                            return BadRequest($"Selected option {answerDto.SelectedOptionId.Value} is invalid for question {answerDto.QuestionId}.");
+                        }
+
+                        var singleChoiceAnswer = new Answer<SingleChoice>
+                        {
+                            Value = option,
+                            Question = singleChoiceQuestion,
+                            Youth = youth
+                        };
+                        _questionManager.AddAnswer(singleChoiceAnswer);
+                        break;
                     }
-
-                    _questionManager.AddTextAnswer(new ClosedTextAnswer
+                    case ChoiceQuestion<MultipleChoice> multipleChoiceQuestion:
                     {
-                        YouthToken = youth.Token,
-                        Youth = youth,
-                        QuestionId = question.Id,
-                        Question = question,
-                        Value = selectedOption.Text
-                    });
+                        if (!answerDto.SelectedOptionId.HasValue)
+                        {
+                            return BadRequest($"Question {answerDto.QuestionId} requires a selected option.");
+                        }
 
-                    continue;
+                        var option = _dbContext.Set<MultipleChoice>()
+                            .SingleOrDefault(choice => choice.Id == answerDto.SelectedOptionId.Value &&
+                                                     EF.Property<int>(choice, "QuestionId") == answerDto.QuestionId);
+
+                        if (option == null)
+                        {
+                            return BadRequest($"Selected option {answerDto.SelectedOptionId.Value} is invalid for question {answerDto.QuestionId}.");
+                        }
+
+                        var multipleChoiceAnswer = new Answer<MultipleChoice>
+                        {
+                            Value = option,
+                            Question = multipleChoiceQuestion,
+                            Youth = youth
+                        };
+                        _questionManager.AddAnswer(multipleChoiceAnswer);
+                        break;
+                    }
                 }
-
-                return BadRequest($"Answer for question {question.Id} is missing content.");
             }
 
             return NoContent();
@@ -163,18 +212,51 @@ public class QuestionController : ControllerBase
         {
             return NotFound();
         }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    // Backward-compatible alias while frontend switches from /responses to /answers.
+    [HttpPost("responses")]
+    public ActionResult SubmitResponsesAlias(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
+    {
+        return SubmitAnswers(workspaceSlug, projectSlug, submission);
     }
 
     private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
     {
         var project = _projectManager.GetProjectBySlugWithWorkspaceAndQuestions(ToSlug(projectSlug));
 
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(project.Workspace.Id.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
         }
 
         return project;
+    }
+
+    private Youth ResolveYouth(Project project, Guid youthToken)
+    {
+        var youth = _dbContext.Youths
+            .Include(y => y.Project)
+            .SingleOrDefault(y => y.Token == youthToken);
+
+        if (youth == null)
+        {
+            _projectManager.AddYouth(youthToken, null, project.Slug);
+            youth = _dbContext.Youths
+                .Include(y => y.Project)
+                .Single(y => y.Token == youthToken);
+        }
+
+        if (youth.Project?.Slug != project.Slug)
+        {
+            throw new ValidationException($"Youth '{youthToken}' does not belong to project '{project.Slug.Text}'.");
+        }
+
+        return youth;
     }
 
     private static Slug ToSlug(string value)

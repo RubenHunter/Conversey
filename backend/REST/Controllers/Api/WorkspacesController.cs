@@ -1,5 +1,5 @@
 ﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +44,7 @@ public class WorkspacesController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetBySlug),
-                new { slug = workspace.Slug },
+                new { slug = workspace.Id.Text },
                 workspace);
         }
         catch (InvalidOperationException ex)
@@ -67,12 +67,12 @@ public class WorkspacesController : ControllerBase
         }
     }
 
-    [HttpGet("id/{id:int}")]
-    public IActionResult GetById(int id)
+    [HttpGet("id/{id}")]
+    public IActionResult GetById(string id)
     {
         try
         {
-            var workspace = _manager.GetWorkspaceById(id);
+            var workspace = _manager.GetWorkspaceById(new Slug { Text = id.Trim().ToLowerInvariant() });
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)

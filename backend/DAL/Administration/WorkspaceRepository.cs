@@ -28,22 +28,22 @@ public class WorkspaceRepository : IWorkspaceRepository
 
     public Workspace ReadWorkspaceBySlug(Slug slug)
     {
-        return _context.Workspaces.SingleOrDefault(w => w.Slug == slug);
+        return _context.Workspaces.SingleOrDefault(w => w.Id == slug);
     }
 
     public Workspace ReadWorkspaceBySlugWithProjects(Slug slug)
     {
         return _context.Workspaces
             .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Slug == slug);
+            .SingleOrDefault(w => w.Id == slug);
     }
 
-    public Workspace ReadWorkspaceById(int id)
+    public Workspace ReadWorkspaceById(Slug id)
     {
         return _context.Workspaces.SingleOrDefault(w => w.Id == id);
     }
 
-    public Workspace ReadWorkspaceByIdWithProjects(int id)
+    public Workspace ReadWorkspaceByIdWithProjects(Slug id)
     {
         return _context.Workspaces
             .Include(w => w.Projects)

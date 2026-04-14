@@ -1,5 +1,5 @@
-﻿using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Survey;
 
 namespace Conversey.REST.Models.Dto;
 
@@ -16,12 +16,26 @@ public class ProjectDto
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string InteractionForm { get; set; }
-    public ProjectTopicDto? Topic { get; set; }
+    public ProjectTopicDto Topic { get; set; }
     public IReadOnlyCollection<ProjectTopicDto> Topics { get; set; } = Array.Empty<ProjectTopicDto>();
 
     public static ProjectDto From(Project project)
     {
-        Topic? firstTopic = project.Topic?.FirstOrDefault();
+        static int ToStableProjectId(string slug)
+        {
+            unchecked
+            {
+                var hash = 17;
+                foreach (var ch in slug)
+                {
+                    hash = (hash * 31) + ch;
+                }
+
+                return Math.Abs(hash == int.MinValue ? int.MaxValue : hash);
+            }
+        }
+
+        var firstTopic = project.Topic?.FirstOrDefault();
         IReadOnlyCollection<ProjectTopicDto> topics = (project.Topic ?? Array.Empty<Topic>())
             .Select(ProjectTopicDto.From)
             .ToList()
@@ -29,11 +43,11 @@ public class ProjectDto
 
         return new ProjectDto
         {
-            Id = project.Id,
+            Id = ToStableProjectId(project.Slug.Text),
             Slug = project.Slug.Text,
-            OrganizationSlug = project.Workspace.Slug.Text,
+            OrganizationSlug = project.Workspace.Id.Text,
             OrganizationName = project.Workspace.Name,
-            Title = project.Title,
+            Title = project.Name,
             Description = project.Description ?? string.Empty,
             ImageUrl = project.ImageUrl ?? string.Empty,
             Status = project.Status.ToString(),
@@ -66,35 +80,60 @@ public class ProjectTopicDto
 public class QuestionDto
 {
     public int Id { get; set; }
-    public int ProjectId { get; set; }
+    public string ProjectSlug { get; set; }
     public string Text { get; set; }
-    public int Order { get; set; }
     public bool IsRequired { get; set; }
     public string Type { get; set; }
     public IReadOnlyCollection<AnswerOptionDto> Options { get; set; } = Array.Empty<AnswerOptionDto>();
 
-    public static QuestionDto From(Question question, int projectId)
+    public static QuestionDto From(Question question, string projectSlug, IReadOnlyCollection<AnswerOptionDto>? options = null)
     {
+        static IReadOnlyCollection<AnswerOptionDto> MapSingleChoiceOptions(ChoiceQuestion<SingleChoice> q)
+        {
+            return (q.PossibleChoices ?? Array.Empty<SingleChoice>())
+                .Select(choice => new AnswerOptionDto
+                {
+                    Id = choice.Id,
+                    QuestionId = q.Id,
+                    Text = choice.Text
+                })
+                .ToList()
+                .AsReadOnly();
+        }
+
+        static IReadOnlyCollection<AnswerOptionDto> MapMultipleChoiceOptions(ChoiceQuestion<MultipleChoice> q)
+        {
+            return (q.PossibleChoices ?? Array.Empty<MultipleChoice>())
+                .Select(choice => new AnswerOptionDto
+                {
+                    Id = choice.Id,
+                    QuestionId = q.Id,
+                    Text = choice.Text
+                })
+                .ToList()
+                .AsReadOnly();
+        }
+
         return new QuestionDto
         {
             Id = question.Id,
-            ProjectId = projectId,
+            ProjectSlug = projectSlug,
             Text = question.Text,
-            Order = question.Order,
-            IsRequired = question.IsRequired,
+            IsRequired = question.Required,
             Type = question switch
             {
-                SingleChoiceQuestion => "SingleChoice",
-                MultipleChoiceQuestion => "MultipleChoice",
+                ChoiceQuestion<SingleChoice> => "SingleChoice",
+                ChoiceQuestion<MultipleChoice> => "MultipleChoice",
                 ScaleQuestion => "Scale",
-                _ => "OpenText"
+                OpenQuestion => "OpenText",
+                _ => "Choice"
             },
-            Options = question.Options
-                .OrderBy(option => option.Order)
-                .ThenBy(option => option.Id)
-                .Select(option => AnswerOptionDto.From(option, question.Id))
-                .ToList()
-                .AsReadOnly()
+            Options = options ?? question switch
+            {
+                ChoiceQuestion<SingleChoice> singleChoiceQuestion => MapSingleChoiceOptions(singleChoiceQuestion),
+                ChoiceQuestion<MultipleChoice> multipleChoiceQuestion => MapMultipleChoiceOptions(multipleChoiceQuestion),
+                _ => Array.Empty<AnswerOptionDto>()
+            }
         };
     }
 }
@@ -104,14 +143,4 @@ public class AnswerOptionDto
     public int Id { get; set; }
     public int QuestionId { get; set; }
     public string Text { get; set; }
-
-    public static AnswerOptionDto From(QuestionOption option, int questionId)
-    {
-        return new AnswerOptionDto
-        {
-            Id = option.Id,
-            QuestionId = questionId,
-            Text = option.Text
-        };
-    }
 }

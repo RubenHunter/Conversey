@@ -1,5 +1,5 @@
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.REST.Models.Dto;
@@ -25,13 +25,13 @@ public class ProjectIdeasController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(youthToken))
+            if (!Guid.TryParse(youthToken?.Trim(), out var parsedToken))
             {
-                return BadRequest("YouthToken is required.");
+                return BadRequest("YouthToken must be a valid GUID.");
             }
 
             var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var ideas = _ideaManager.GetIdeasFromProjectByYouthToken(project.Id, youthToken.Trim())
+            var ideas = _ideaManager.GetIdeasFromProjectByYouthToken(project.Slug, parsedToken)
                 .Select(IdeaDto.From)
                 .ToList()
                 .AsReadOnly();
@@ -48,7 +48,7 @@ public class ProjectIdeasController : ControllerBase
     {
         var project = _projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
 
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(project.Workspace.Id.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
         }
@@ -61,4 +61,3 @@ public class ProjectIdeasController : ControllerBase
         return new Slug { Text = value.Trim().ToLowerInvariant() };
     }
 }
-

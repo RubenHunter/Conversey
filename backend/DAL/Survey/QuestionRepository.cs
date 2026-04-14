@@ -1,6 +1,7 @@
-﻿using Conversey.BL.Domain.Survey;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Survey;
 
@@ -38,18 +39,18 @@ public class QuestionRepository : IQuestionRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectId(int projectId)
+    public IReadOnlyCollection<Question> ReadQuestionsByProjectId(Slug projectSlug)
     {
         return _dbContext.Questions
-            .Where(q => q.Project.Id == projectId)
+            .Where(q => q.Project.Id == projectSlug)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(int projectId)
+    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(Slug projectSlug)
     {
         return _dbContext.Questions
             .Include(q => q.Project)
-            .Where(q => q.Project.Id == projectId)
+            .Where(q => q.Project.Id == projectSlug)
             .ToList().AsReadOnly();
     }
 
@@ -76,168 +77,38 @@ public class QuestionRepository : IQuestionRepository
         return true;
     }
 
-    public TextAnswer ReadTextAnswerById(int answerId)
+    public Answer ReadAnswerById(int answerId)
     {
-        return _dbContext.TextAnswers
+        return _dbContext.Answers
             .SingleOrDefault(a => a.Id == answerId);
     }
 
-    public TextAnswer ReadTextAnswerByIdWithYouth(int answerId)
+    public IReadOnlyCollection<Answer> ReadAnswersByQuestionId(int questionId)
     {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public TextAnswer ReadTextAnswerByIdWithQuestion(int answerId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public TextAnswer ReadTextAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionId(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Where(a => a.QuestionId == questionId)
+        return _dbContext.Answers
+            .Where(a => a.Id == questionId)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouth(int questionId)
+    public void CreateAnswer(Answer answer)
     {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public void CreateTextAnswer(TextAnswer answer)
-    {
-        _dbContext.TextAnswers.Add(answer);
+        _dbContext.Answers.Add(answer);
         _dbContext.SaveChanges();
     }
 
-    public void UpdateTextAnswer(TextAnswer answer)
+    public void UpdateAnswer(Answer answer)
     {
-        _dbContext.TextAnswers.Update(answer);
+        _dbContext.Answers.Update(answer);
         _dbContext.SaveChanges();
     }
 
-    public bool DeleteTextAnswer(int answerId)
+    public bool DeleteAnswer(int answerId)
     {
-        var answer = _dbContext.TextAnswers
+        var answer = _dbContext.Answers
             .SingleOrDefault(a => a.Id == answerId);
         if (answer == null) return false;
 
-        _dbContext.TextAnswers.Remove(answer);
-        _dbContext.SaveChanges();
-        return true;
-    }
-
-    public IntegerAnswer ReadIntegerAnswerById(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IntegerAnswer ReadIntegerAnswerByIdWithYouth(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IntegerAnswer ReadIntegerAnswerByIdWithQuestion(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IntegerAnswer ReadIntegerAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionId(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouth(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public void CreateIntegerAnswer(IntegerAnswer answer)
-    {
-        _dbContext.IntegerAnswers.Add(answer);
-        _dbContext.SaveChanges();
-    }
-
-    public void UpdateIntegerAnswer(IntegerAnswer answer)
-    {
-        _dbContext.IntegerAnswers.Update(answer);
-        _dbContext.SaveChanges();
-    }
-
-    public bool DeleteIntegerAnswer(int answerId)
-    {
-        var answer = _dbContext.IntegerAnswers
-            .SingleOrDefault(a => a.Id == answerId);
-        if (answer == null) return false;
-
-        _dbContext.IntegerAnswers.Remove(answer);
+        _dbContext.Answers.Remove(answer);
         _dbContext.SaveChanges();
         return true;
     }

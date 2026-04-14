@@ -34,6 +34,7 @@ async function getIdeaReactionSummary(workspaceSlug: string, projectSlug: string
 export interface IdeaResponseSubmitResult {
     response: IdeaResponse
     aiSuggestion: string | null
+    requiresSafetyReview: boolean
 }
 
 export async function getIdeaResponses(workspaceSlug: string, projectSlug: string, idea: Idea, youthToken: string): Promise<IdeaResponse[]> {
@@ -59,11 +60,19 @@ export async function addIdeaResponse(workspaceSlug: string, projectSlug: string
         throw new Error('Unexpected response submission payload: missing response')
     }
 
-    const suggestion = result.suggestion ?? result.Suggestion ?? null
+    const mappedResponse = mapApiIdeaResponseToIdeaResponse(responseDto, youthToken)
+    const decision = result.decision ?? result.Decision
+    const suggestion = result.suggestion
+        ?? result.Suggestion
+        ?? decision?.suggestion
+        ?? decision?.Suggestion
+        ?? null
+    const isAllowed = decision?.isAllowed ?? decision?.IsAllowed
 
     return {
-        response: mapApiIdeaResponseToIdeaResponse(responseDto, youthToken),
+        response: mappedResponse,
         aiSuggestion: suggestion && suggestion.trim().length > 0 ? suggestion.trim() : null,
+        requiresSafetyReview: isAllowed === false || mappedResponse.offensiveContentDetected === true,
     }
 }
 

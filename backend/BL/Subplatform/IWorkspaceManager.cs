@@ -1,5 +1,5 @@
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
 
 namespace Conversey.BL.Subplatform;
 
@@ -10,6 +10,6 @@ public interface IWorkspaceManager
     Workspace CreateWorkspace(string name, Slug slug);
     Workspace GetWorkspaceBySlug(Slug slug);
     Workspace GetWorkspaceBySlugWithProjects(Slug slug);
-    Workspace GetWorkspaceById(int id);
-    Workspace GetWorkspaceByIdWithProjects(int id);
+    Workspace GetWorkspaceById(Slug id);
+    Workspace GetWorkspaceByIdWithProjects(Slug id);
 }

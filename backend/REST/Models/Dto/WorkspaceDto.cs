@@ -1,4 +1,4 @@
-using Conversey.BL.Domain.Subplatform;
+using Conversey.BL.Domain.Administration;
 
 namespace Conversey.REST.Models.Dto;
 
@@ -12,7 +12,7 @@ public class WorkspaceDto
         return new WorkspaceDto
         {
             Name = workspace.Name,
-            Slug = workspace.Slug.Text
+            Slug = workspace.Id.Text
         };
     }
 }

@@ -1,7 +1,7 @@
 import type { Question } from '../../models/question.ts'
 
 export interface QuestionComponent {
-    getAnswer(): number | string | null
+    getAnswer(): number | string | number[] | null
     validate(): boolean
     lock(): void
     unlock(): void

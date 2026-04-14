@@ -6,6 +6,20 @@ import { apiFetch } from './apiService.ts'
 
 const IDEAS_USER_KEY = 'conversey-ideas-user-id'
 
+function isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+function createGuidToken(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID()
+    }
+
+    // Fallback for older environments where randomUUID is unavailable.
+    const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    return `00000000-0000-4000-8000-${seed.padEnd(12, '0').slice(0, 12)}`
+}
+
 interface IdeasContext {
     topics: IdeaTopic[]
     ideas: Idea[]
@@ -14,12 +28,9 @@ interface IdeasContext {
 export function getIdeasYouthToken(projectId: number): string {
     const key = `${IDEAS_USER_KEY}-${projectId}`
     const existing = localStorage.getItem(key)
-    if (existing) return existing
+    if (existing && isGuid(existing)) return existing
 
-    const userId =
-        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? `anon-p${projectId}-${crypto.randomUUID()}`
-            : `anon-p${projectId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    const userId = createGuidToken()
 
     localStorage.setItem(key, userId)
     return userId
@@ -85,6 +96,8 @@ export interface IdeaSubmitResult {
     idea: Idea
     /** Present when backend flagged the content and generated an AI alternative */
     aiSuggestion: string | null
+    /** True when moderation marked content as pending review */
+    requiresSafetyReview: boolean
 }
 
 export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<IdeaSubmitResult> {
@@ -99,6 +112,18 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
         Idea?: ApiIdeaDto
         suggestion?: string
         Suggestion?: string
+        decision?: {
+            isAllowed?: boolean
+            IsAllowed?: boolean
+            suggestion?: string
+            Suggestion?: string
+        }
+        Decision?: {
+            isAllowed?: boolean
+            IsAllowed?: boolean
+            suggestion?: string
+            Suggestion?: string
+        }
     }>(endpoint, {
         method: 'POST',
         body: JSON.stringify(requestDto),
@@ -109,20 +134,31 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
         throw new Error('Unexpected idea submission response: missing idea payload')
     }
 
-    const aiSuggestion = result.suggestion ?? result.Suggestion ?? null
+    const decision = result.decision ?? result.Decision
+    const aiSuggestion = result.suggestion
+        ?? result.Suggestion
+        ?? decision?.suggestion
+        ?? decision?.Suggestion
+        ?? null
     const trimmedSuggestion = aiSuggestion && aiSuggestion.trim().length > 0 ? aiSuggestion.trim() : null
+    const isAllowed = decision?.isAllowed ?? decision?.IsAllowed
+    const mappedIdea = mapApiIdeaToIdea(ideaDto, youthToken)
+    const requiresSafetyReview = isAllowed === false || mappedIdea.pendingReview
 
     if (trimmedSuggestion) {
-        console.log('[AI moderation] ⚠️ content flagged by Mistral AI')
+        console.log('[AI moderation] ⚠️ content flagged by AI moderation')
         console.log('[AI moderation] AI suggestion:', trimmedSuggestion)
         console.log('[AI moderation] idea saved as Pending in DB, awaiting user decision')
+    } else if (isAllowed === false) {
+        console.log('[AI moderation] ⚠️ content flagged by moderation and saved as Pending')
     } else {
-        console.log('[AI moderation] ✅ content approved by Mistral AI — idea saved as Approved')
+        console.log('[AI moderation] ✅ content approved by AI moderation — idea saved as Approved')
     }
 
     return {
-        idea: mapApiIdeaToIdea(ideaDto, youthToken),
+        idea: mappedIdea,
         aiSuggestion: trimmedSuggestion,
+        requiresSafetyReview,
     }
 }
 

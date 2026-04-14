@@ -1,4 +1,4 @@
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.REST.Models.Dto;
 
@@ -21,4 +21,3 @@ public class IdeaThreadDto
         };
     }
 }
-
