@@ -25,7 +25,7 @@ public static class DataSeeder
 
         var mentalWellbeing = new Project
         {
-            Slug = Slug.FromName("Mental Wellbeing 2026"),
+            Id = Slug.FromName("Mental Wellbeing 2026"),
             Name = "Mental Wellbeing 2026",
             Description = "A survey about mental wellbeing in the organization.",
             ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
@@ -131,7 +131,7 @@ public static class DataSeeder
 
         var actieplan = new Project
         {
-            Slug = Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"),
+            Id = Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"),
             Name = "Actieplan Mentaal Welzijn 2026-2027",
             Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
             ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
@@ -370,9 +370,9 @@ public static class DataSeeder
             Reactions = new List<ResponseReaction>()
         };
 
-        if (idea.Responses != null)
+        if (idea.Responses is ICollection<Response> ideaResponses)
         {
-            idea.Responses.Add(response);
+            ideaResponses.Add(response);
         }
 
         if (youth.Responses is ICollection<Response> youthResponses)
@@ -393,9 +393,9 @@ public static class DataSeeder
             Idea = idea
         };
 
-        if (idea.Reactions != null)
+        if (idea.Reactions is ICollection<IdeaReaction> ideaReactions)
         {
-            idea.Reactions.Add(reaction);
+            ideaReactions.Add(reaction);
         }
 
         if (youth.Reactions is ICollection<Reaction> youthReactions)

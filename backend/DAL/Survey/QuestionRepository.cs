@@ -2,6 +2,7 @@
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Survey;
 
@@ -244,7 +245,7 @@ public class AnswerIntConfig : IEntityTypeConfiguration<Answer<int>>
             .IsRequired();
     }
 }
-git
+
 public class AnswerSingleChoiceConfig : IEntityTypeConfiguration<Answer<SingleChoice>>
 {
     public void Configure(EntityTypeBuilder<Answer<SingleChoice>> builder)
