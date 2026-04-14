@@ -243,26 +243,156 @@ public class QuestionRepository : IQuestionRepository
     }
 }
 
-public class QuestionConfig<T> : IEntityTypeConfiguration<T> where T : Question
+public class QuestionConfig : IEntityTypeConfiguration<Question>
 {
-    public void Configure(EntityTypeBuilder<T> builder)
+    public void Configure(EntityTypeBuilder<Question> builder)
     {
         #region Properties
 
         builder.HasKey(q => q.Id);
         builder.Property(q => q.Text)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired();
+
+        #endregion
+    }
+}
+
+public class OpenQuestionConfig : IEntityTypeConfiguration<OpenQuestion>
+{
+    public void Configure(EntityTypeBuilder<OpenQuestion> builder)
+    {
+        #region Relations
+
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as OpenQuestion)
+            .IsRequired();
+
+        #endregion
+
+    }
+}
+
+public class ScaleQuestionConfig : IEntityTypeConfiguration<ScaleQuestion>
+{
+    public void Configure(EntityTypeBuilder<ScaleQuestion> builder)
+    {
+        #region Properties
+        
+        builder.Property(q => q.LowerBound)
+            .IsRequired();
+        
+        builder.Property(q => q.UpperBound)
+            .IsRequired();
 
         #endregion
 
         #region Relations
 
-        switch (typeof(T))
-        {
-            case SingleChoiceQuestion: 
-        }
-
+        // ScaleQuestion has Answer<int> submissions
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as ScaleQuestion)
+            .IsRequired();
 
         #endregion
     }
 }
+
+// Base configuration for ChoiceQuestion
+public abstract class ChoiceQuestionConfig<TChoice, TQuestion> : IEntityTypeConfiguration<TQuestion>
+    where TChoice : Choice<TChoice>
+    where TQuestion : ChoiceQuestion<TChoice>
+{
+    public virtual void Configure(EntityTypeBuilder<TQuestion> builder)
+    {
+        #region Relations
+
+        // ChoiceQuestion -> Choices
+        builder.HasMany(q => q.PossibleChoices)
+            .WithOne(c => c.Question as TQuestion)
+            .IsRequired();
+
+        // ChoiceQuestion -> Answer<TChoice> submissions
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as TQuestion)
+            .IsRequired();
+
+        #endregion
+    }
+}
+
+// Concrete configurations for each choice question type
+public class SingleChoiceQuestionConfig : ChoiceQuestionConfig<SingleChoice, ChoiceQuestion<SingleChoice>>
+{
+}
+
+public class MultipleChoiceQuestionConfig : ChoiceQuestionConfig<MultipleChoice, ChoiceQuestion<MultipleChoice>>
+{
+}
+
+// Choice configurations
+public class SingleChoiceConfig : IEntityTypeConfiguration<SingleChoice>
+{
+    public void Configure(EntityTypeBuilder<SingleChoice> builder)
+    {
+        builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        
+        builder.Property(c => c.Text)
+            .HasMaxLength(250)
+            .IsRequired();
+    }
+}
+
+public class MultipleChoiceConfig : IEntityTypeConfiguration<MultipleChoice>
+{
+    public void Configure(EntityTypeBuilder<MultipleChoice> builder)
+    {
+        builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        
+        builder.Property(c => c.Text)
+            .HasMaxLength(250)
+            .IsRequired();
+    }
+}
+
+// Answer configurations
+public class AnswerStringConfig : IEntityTypeConfiguration<Answer<string>>
+{
+    public void Configure(EntityTypeBuilder<Answer<string>> builder)
+    {
+        builder.Property(a => a.Value)
+            .HasMaxLength(4000);
+    }
+}
+
+public class AnswerIntConfig : IEntityTypeConfiguration<Answer<int>>
+{
+    public void Configure(EntityTypeBuilder<Answer<int>> builder)
+    {
+        builder.Property(a => a.Value)
+            .IsRequired();
+    }
+}
+git
+public class AnswerSingleChoiceConfig : IEntityTypeConfiguration<Answer<SingleChoice>>
+{
+    public void Configure(EntityTypeBuilder<Answer<SingleChoice>> builder)
+    {
+        // Answer<SingleChoice> -> SingleChoice reference
+        builder.HasOne(a => a.Value)
+            .WithMany()
+            .IsRequired();
+    }
+}
+
+public class AnswerMultipleChoiceConfig : IEntityTypeConfiguration<Answer<MultipleChoice>>
+{
+    public void Configure(EntityTypeBuilder<Answer<MultipleChoice>> builder)
+    {
+        // Answer<MultipleChoice> -> MultipleChoice reference
+        builder.HasOne(a => a.Value)
+            .WithMany()
+            .IsRequired();
+    }
+}
+

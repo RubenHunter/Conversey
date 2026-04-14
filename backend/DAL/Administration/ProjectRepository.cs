@@ -69,14 +69,14 @@ public class ProjectRepository : IProjectRepository
     public Project ReadProjectBySlug(Slug slug)
     {
         return _dbContext.Projects
-            .SingleOrDefault(p => p.Slug == slug);
+            .SingleOrDefault(p => p.Id == slug);
     }
 
     public Project ReadProjectBySlugWithTopics(Slug slug)
     {
         return _dbContext.Projects
             .Include(p => p.Topic)
-            .SingleOrDefault(p => p.Slug == slug);
+            .SingleOrDefault(p => p.Id == slug);
     }
 
     public Project ReadProjectBySlugWithQuestions(Slug slug)
@@ -308,11 +308,11 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .HasKey(p => p.Id);
 
         builder
-            .Property(p => p.Title)
+            .Property(p => p.Name)
             .HasMaxLength(100);
         
         builder
-            .Property(p => p.Slug)
+            .Property(p => p.Id)
             .IsRequired()
             .HasMaxLength(50)
             .HasConversion(
@@ -335,17 +335,21 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
         // Project 1-* Topic
         builder
             .HasMany(p => p.Topic)
-            .WithOne(t => t.Project);
+            .WithOne(t => t.Project)
+            .HasForeignKey("ProjectId");
 
-        // Project 1-* Youthi
+        // Project 1-* Youth
         builder
-            .HasMany(p => p.Youths)
-            .WithOne(y => y.Project);
+            .HasMany(p => p.Youth)
+            .WithOne(y => y.Project)
+            .HasForeignKey("ProjectId");
 
         // Project 1-* Question
         builder
             .HasMany(p => p.Questions)
-            .WithOne(q => q.Project);
+            .WithOne(q => q.Project)
+            .HasForeignKey("ProjectId")
+            .IsRequired();
 
 
         #endregion

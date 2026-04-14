@@ -28,7 +28,7 @@ public class Idea
     [Required]
     public Youth Youth { get; set; }
 
-    public ICollection<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
+    public IEnumerable<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
 
-    public ICollection<Response> Responses { get; set; } = new List<Response>();
+    public IEnumerable<Response> Responses { get; set; } = new List<Response>();
 }

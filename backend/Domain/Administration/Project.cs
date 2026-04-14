@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Drawing;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 
 namespace Conversey.BL.Domain.Administration;
@@ -9,7 +10,7 @@ namespace Conversey.BL.Domain.Administration;
 public class Project
 {
     [Required]
-    public Slug Slug { get; set; }
+    public Slug Id { get; set; }
 
     [StringLength(100)]
     public string Name { get; set; }
@@ -34,6 +35,8 @@ public class Project
     public Workspace Workspace { get; set; }
 
     public IEnumerable<Youth> Youth { get; set; }
+
+    public IEnumerable<Idea> ProjectIdeas { get; set; }
 }
 
 public enum Status

@@ -3,8 +3,9 @@ using Conversey.BL.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.DAL.Administration;
+using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Survey;
-using Conversey.DAL.Subplatform.Survey.Ideas;
 using IdeaResponse = Conversey.BL.Domain.Subplatform.Survey.Ideation.Response;
 
 namespace Conversey.BL.Subplatform.Survey.Ideation;

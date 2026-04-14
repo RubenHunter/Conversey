@@ -83,6 +83,7 @@ public class WorkspaceConfig: IEntityTypeConfiguration<Workspace>
         // Workspace 0-* Project
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
+            .HasForeignKey("WorkspaceId")
             .IsRequired();
         #endregion
 

@@ -5,10 +5,11 @@ using Conversey.BL.Subplatform.Survey;
 using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
 using Conversey.DAL;
+using Conversey.DAL.Administration;
+using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform;
 using Conversey.DAL.Subplatform.Survey;
-using Conversey.DAL.Subplatform.Survey.Ideas;
-using Conversey.DAL.Subplatform.Survey.Questions;
+using Conversey.DAL.Survey;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

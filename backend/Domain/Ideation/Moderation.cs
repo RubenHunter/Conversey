@@ -13,18 +13,26 @@ public struct ModerationInfo
     public bool SelfHarm { get; set; }
 
     public bool Pii { get; set; }
+    
+}
 
-    //TODO split this into a different class
-    public byte Serialize()
+public static class ModerationInfoSerializer
+{
+    public static byte Serialize(ModerationInfo moderationInfo)
     {
-        return (byte)(ToByte(Sexual) |
-                      ToByte(HateAndDiscrimination) << 1 |
-                      ToByte(ViolenceAndThreats) << 2 |
-                      ToByte(DangerousAndCriminalContent) << 3 |
-                      ToByte(SelfHarm) << 4 |
-                      ToByte(Pii) << 5);
+        return (byte)(ToByte(moderationInfo.Sexual) |
+                      ToByte(moderationInfo.HateAndDiscrimination) << 1 |
+                      ToByte(moderationInfo.ViolenceAndThreats) << 2 |
+                      ToByte(moderationInfo.DangerousAndCriminalContent) << 3 |
+                      ToByte(moderationInfo.SelfHarm) << 4 |
+                      ToByte(moderationInfo.Pii) << 5);
     }
-
+    
+    private static byte ToByte(bool v)
+    {
+        return (byte)(v ? 1 : 0);
+    }
+    
     public static ModerationInfo Deserialize(byte value)
     {
         return new ModerationInfo
@@ -41,11 +49,6 @@ public struct ModerationInfo
     private static bool ToBool(int v)
     {
         return v != 0;
-    }
-
-    private static byte ToByte(bool v)
-    {
-        return (byte)(v ? 1 : 0);
     }
 }
 

@@ -136,7 +136,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId && i.Status == IdeaStatus.Approved)
+            .Where(i => i.Project.Id == projectSlug && i.Topic.Id == topicId && i.Status == IdeaStatus.Approved)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -299,10 +299,7 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
 
         builder.Property(i => i.Summary)
             .HasMaxLength(1000);
-
-        builder.Property(i => i.SubmissionDate);
-
-        builder.Property(i => i.Status);
+        
 
         builder.Property(i => i.ModerationInfo)
             .HasConversion(
@@ -330,7 +327,8 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
 
         builder.HasMany(i => i.Responses)
             .WithOne(r => r.Idea)
-            .HasForeignKey("IdeaId");
+            .HasForeignKey("IdeaId")
+            .IsRequired();
 
         builder.HasMany(i => i.Reactions)
             .WithOne(ir => ir.Idea)
@@ -350,7 +348,6 @@ public class ReactionConfig : IEntityTypeConfiguration<Reaction>
          builder.Property(r => r.Emoji)
              .IsRequired()
              .HasMaxLength(32);
-         builder.Property(r => r.CreatedAt);
 
          #endregion
 
@@ -369,7 +366,35 @@ public class ResponseConfig : IEntityTypeConfiguration<Response>
 {
     public void Configure(EntityTypeBuilder<Response> builder)
     {
+        #region Properties
+
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.Text)
+            .IsRequired()
+            .HasMaxLength(4000);
         
+        builder.Property(r => r.ModerationInfo)
+            .HasConversion(
+                m => ModerationInfoSerializer.Serialize(m),
+                b => ModerationInfoSerializer.Deserialize(b)
+            );
+
+        
+        #endregion
+
+        #region Relations
+
+        builder.HasOne(r => r.Youth)
+            .WithMany(y => y.Responses)
+            .HasForeignKey("YouthToken")
+            .IsRequired();
+
+        builder.HasMany(r => r.Reactions)
+            .WithOne(rr => rr.Response)
+            .HasForeignKey("ResponseId")
+            .IsRequired();
+        #endregion
     }
 }
 
@@ -378,15 +403,10 @@ public class IdeaReactionConfig : IEntityTypeConfiguration<IdeaReaction>
     public void Configure(EntityTypeBuilder<IdeaReaction> builder)
     {
         #region Properties
-        builder.HasIndex(ir => new { ir.Idea, ir.Youth, ir.Emoji })
+        // builder.HasIndex([ir => new { ir.Idea, ir.Youth, ir.Emoji }])
+        //     .IsUnique();
+        builder.HasIndex("IdeaId", "YouthToken", "Emoji")
             .IsUnique();
-        
-        #endregion
-        #region Relations
-        builder.HasOne(ir => ir.Idea)
-            .WithMany(i => i.Reactions)
-            .HasForeignKey("IdeaId")
-            .IsRequired();
         #endregion
     }
 }
@@ -395,14 +415,10 @@ public class ResponseReactionConfig : IEntityTypeConfiguration<ResponseReaction>
     public void Configure(EntityTypeBuilder<ResponseReaction> builder)
     {
         #region Properties
-        builder.HasIndex(rr => new { rr.Response, rr.Youth, rr.Emoji })
+        // builder.HasIndex(rr => new { rr.Response, rr.Youth, rr.Emoji })
+        //     .IsUnique();
+        builder.HasIndex("ResponseId", "YouthToken", "Emoji")
             .IsUnique();
-        #endregion
-        #region Relations
-        builder.HasOne(rr => rr.Response)
-            .WithMany(r => r.Reactions)
-            .HasForeignKey("ResponseId")
-            .IsRequired();
         #endregion
     }
 }
