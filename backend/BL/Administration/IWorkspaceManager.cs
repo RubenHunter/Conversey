@@ -1,7 +1,7 @@
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
 
-namespace Conversey.BL.Subplatform;
+namespace Conversey.BL.Administration;
 
 public interface IWorkspaceManager
 {

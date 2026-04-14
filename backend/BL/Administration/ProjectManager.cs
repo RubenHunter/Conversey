@@ -1,12 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Subplatform;
-using Conversey.DAL.Subplatform.Survey;
+using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Survey;
+using Conversey.DAL.Administration;
 
-namespace Conversey.BL.Subplatform.Survey;
+namespace Conversey.BL.Administration;
 
 public class ProjectManager: IProjectManager
 {
@@ -124,7 +123,7 @@ public class ProjectManager: IProjectManager
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
         var project = new Project
         {
-            Title = title,
+            Name = title,
             Slug = Slug.FromName(title),
             Description = description,
             Status = status,
@@ -134,7 +133,7 @@ public class ProjectManager: IProjectManager
             Workspace = workspace,
             Topic = new List<Topic>(),
             Questions = new List<Question>(),
-            Youths = new List<Youth>()
+            Youth = new List<Youth>()
         };
         if (SlugExists(project.Slug)) throw new ValidationException($"Project Slug '{project.Slug.Text}' already exists.");
 
@@ -218,7 +217,7 @@ public class ProjectManager: IProjectManager
 
         var youth = new Youth
         {
-            Token = token,
+            Id = token,
             Email = email,
             Project = project
         };

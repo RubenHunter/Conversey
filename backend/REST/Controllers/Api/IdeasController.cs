@@ -1,56 +1,30 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects/{projectSlug}/topics/{topicId}/ideas")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}/topics/{topicId:int}/ideas")]
 public class IdeasController : ControllerBase
 {
     private readonly IIdeaManager _manager;
-    private readonly IProjectManager _projectManager;
 
-    public IdeasController(IIdeaManager manager, IProjectManager projectManager)
+    public IdeasController(IIdeaManager manager)
     {
         _manager = manager;
-        _projectManager = projectManager;
     }
 
     [HttpPost]
-    public ActionResult<SubmissionResponseDto> Submit(string workspaceSlug, string projectSlug, int topicId, [FromBody] IdeaDto idea)
+    public ActionResult<SubmissionResponseDto> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            if (idea.ProjectId != project.Id)
-            {
-                return BadRequest("ProjectId in payload does not match route project.");
-            }
-
-            if (idea.TopicId != topicId)
-            {
-                return BadRequest("TopicId in payload does not match route topic.");
-            }
-
-            if (!TopicBelongsToProject(project, topicId))
-            {
-                return NotFound();
-            }
-
-            if (string.IsNullOrWhiteSpace(idea.YouthToken))
-            {
-                return BadRequest("YouthToken is required.");
-            }
-
-            ResolveYouth(project, idea.YouthToken);
-
-            SubmissionResponse response = _manager.SubmitIdea(idea.Content, project.Id, topicId, idea.YouthToken.Trim());
+            SubmissionResponse response = _manager.SubmitIdea(idea.Content, projectId, topicId, idea.YouthId);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(IdeaDto.From(approved.idea)),
@@ -69,21 +43,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<IdeaDto>> GetAllIdeasOfTopic(string workspaceSlug, string projectSlug, int topicId)
+    public ActionResult<IEnumerable<IdeaDto>> GetAllIdeasOfTopic(Slug workspaceId, Slug projectId, int topicId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            if (!TopicBelongsToProject(project, topicId))
-            {
-                return NotFound();
-            }
-
-            IReadOnlyCollection<Idea> ideas = _manager.GetIdeasFromTopicByProjectSlugAndTopicId(project.Slug, topicId);
-            IReadOnlyCollection<IdeaDto> dtos = ideas
+            IEnumerable<Idea> ideas = _manager.GetIdeasByProjectIdAndTopicId(projectId, topicId);
+            IEnumerable<IdeaDto> dtos = ideas
                 .Select(IdeaDto.From)
                 .ToList()
-                .AsReadOnly();
+                .AsReadOnly(); 
 
             return Ok(dtos);
         }
@@ -93,17 +61,12 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpGet("{ideaId}")]
-    public ActionResult<IdeaDto> GetIdeaById(string workspaceSlug, string projectSlug, int topicId, int ideaId)
+    [HttpGet("{ideaId:int}")]
+    public ActionResult<IdeaDto> GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var idea = _manager.GetIdeaById(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
+            var idea = _manager.GetIdeaById(workspaceId, projectId, topicId, ideaId);
 
             return Ok(IdeaDto.From(idea));
         }
@@ -117,17 +80,12 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpGet("{ideaId}/thread")]
-    public ActionResult<IdeaThreadDto> GetIdeaThread(string workspaceSlug, string projectSlug, int topicId, int ideaId)
+    [HttpGet("{ideaId:int}/thread")]
+    public ActionResult<IdeaThreadDto> GetIdeaThread(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
             var idea = _manager.GetIdeaByIdWithProjectAndResponses(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
 
             return Ok(IdeaThreadDto.From(idea));
         }
@@ -141,19 +99,12 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpGet("{ideaId}/reactions")]
-    public ActionResult<IReadOnlyCollection<ResponseReactionSummaryDto>> GetIdeaReactionSummary(string workspaceSlug, string projectSlug, int topicId, int ideaId)
+    [HttpGet("{ideaId:int}/reactions")]
+    public ActionResult<IEnumerable<ReactionDto>> GetIdeaReactionSummary(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var idea = _manager.GetIdeaById(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
-
-            return Ok(ResponseReactionSummaryDto.From(_manager.GetIdeaReactionsFromIdeaByIdeaId(ideaId)));
+            return Ok(_manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId).Select(ReactionDto.From));
         }
         catch (ProjectNotFoundException)
         {
@@ -165,26 +116,13 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpPost("{ideaId}/reactions")]
-    public ActionResult<IReadOnlyCollection<ResponseReactionSummaryDto>> AddIdeaReaction(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
+    [HttpPost("{ideaId:int}/reactions")]
+    public ActionResult<ReactionDto> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var idea = _manager.GetIdeaById(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
-
-            if (string.IsNullOrWhiteSpace(request.YouthToken))
-            {
-                return BadRequest("YouthToken is required.");
-            }
-
-            ResolveYouth(project, request.YouthToken);
-            _manager.AddIdeaReaction(request.Emoji, ideaId, request.YouthToken.Trim());
-            return Ok(ResponseReactionSummaryDto.From(_manager.GetIdeaReactionsFromIdeaByIdeaId(ideaId)));
+            IdeaReaction reaction = _manager.AddIdeaReaction(request.Emoji, ideaId, request.YouthToken.Trim());
+            return Ok(ReactionDto.From(reaction));
         }
         catch (ProjectNotFoundException)
         {
@@ -200,24 +138,12 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpDelete("{ideaId}/reactions")]
-    public ActionResult RemoveIdeaReaction(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromQuery] string youthToken, [FromQuery] string emoji)
+    [HttpDelete("{ideaId:int}/reactions/{reactionId:int}")]
+    public ActionResult RemoveIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] Guid youthId, int reactionId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var idea = _manager.GetIdeaById(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
-
-            if (string.IsNullOrWhiteSpace(youthToken) || string.IsNullOrWhiteSpace(emoji))
-            {
-                return BadRequest("youthToken and emoji are required.");
-            }
-
-            _manager.RemoveIdeaReaction(ideaId, youthToken.Trim(), emoji);
+            _manager.RemoveIdeaReaction(workspaceId, projectId, topicId, ideaId, youthId, reactionId);
             return NoContent();
         }
         catch (ProjectNotFoundException)
@@ -238,47 +164,23 @@ public class IdeasController : ControllerBase
         }
     }
 
-    [HttpPut("{ideaId}")]
+    [HttpPut("{ideaId:int}")]
     public ActionResult<IdeaDto> UpdateAfterSafetyReview(
-        string workspaceSlug,
-        string projectSlug,
+        Slug workspaceId,
+        Slug projectId,
         int topicId,
         int ideaId,
         [FromBody] UpdateIdeaAfterSafetyReviewDto request)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-
-            if (request.ProjectId != project.Id)
+            Idea newIdea = new Idea
             {
-                return BadRequest("ProjectId in payload does not match route project.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.YouthToken))
-            {
-                return BadRequest("YouthToken is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.Content))
-            {
-                return BadRequest("Content is required.");
-            }
-
-            var idea = _manager.GetIdeaByIdWithProject(ideaId);
-            if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
-            {
-                return NotFound();
-            }
-
-            if (!string.Equals(idea.Youth.Token, request.YouthToken.Trim(), StringComparison.Ordinal))
-            {
-                return Forbid();
-            }
-
-            idea.Content = request.Content.Trim();
-            idea.Status = request.MarkForReview ? IdeaStatus.Pending : IdeaStatus.Approved;
-            var updated = _manager.ChangeIdea(idea);
+                Id = ideaId,
+                Status = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved,
+                Content = request.Content,
+            };
+            var updated = _manager.ChangeIdea(workspaceId, projectId, topicId, newIdea);
 
             return Ok(IdeaDto.From(updated));
         }
@@ -294,39 +196,5 @@ public class IdeasController : ControllerBase
         {
             return BadRequest(e.Message);
         }
-    }
-
-    private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
-    {
-        var project = _projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
-
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
-        }
-
-        return project;
-    }
-
-    private void ResolveYouth(Project project, string youthToken)
-    {
-        try
-        {
-            _projectManager.GetYouthByToken(youthToken.Trim());
-        }
-        catch (YouthNotFoundException)
-        {
-            _projectManager.AddYouth(youthToken.Trim(), string.Empty, project.Id);
-        }
-    }
-
-    private static bool TopicBelongsToProject(Project project, int topicId)
-    {
-        return (project.Topic ?? Array.Empty<Topic>()).Any(topic => topic.Id == topicId);
-    }
-
-    private static Slug ToSlug(string value)
-    {
-        return new Slug { Text = value.Trim().ToLowerInvariant() };
     }
 }

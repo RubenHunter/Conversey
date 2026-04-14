@@ -1,7 +1,6 @@
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+using Conversey.BL.Domain.Survey;
 
-namespace Conversey.BL.Subplatform.Survey.Questions;
+namespace Conversey.BL.Survey;
 
 public interface IQuestionManager
 {

@@ -62,6 +62,18 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(i => i.Id == ideaId);
     }
 
+    public Idea ReadIdeaByIdWithTopicAndYouthAndReactionsAndProjectWithWorkspace(int ideaId)
+    {
+        return _dbContext.Ideas
+            .Include(i => i.Topic)
+            .Include(i => i.Youth)
+            .Include(i => i.Youth)
+            .Include(i => i.Reactions)
+            .Include(i => i.Project)
+            .ThenInclude(p => p.Workspace)
+            .SingleOrDefault(i => i.Id == ideaId);
+    }
+
     public IReadOnlyCollection<Idea> ReadAllIdeas()
     {
         return _dbContext.Ideas.ToList().AsReadOnly();
@@ -244,10 +256,11 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public bool DeleteIdeaReaction(int ideaId, string youthToken, string emoji)
+    public bool DeleteIdeaReaction(int reactionId)
     {
         var reaction = _dbContext.IdeaReactions
-            .SingleOrDefault(ir => ir.IdeaId == ideaId && ir.YouthToken == youthToken && ir.Emoji == emoji);
+            .Single(r => r.Id == reactionId);
+
         if (reaction == null) return false;
 
         _dbContext.IdeaReactions.Remove(reaction);

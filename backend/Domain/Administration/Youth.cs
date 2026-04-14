@@ -8,7 +8,7 @@ namespace Conversey.BL.Domain.Administration;
 public class Youth
 {
     [Required]
-    public Guid Token { get; set; }
+    public Guid Id { get; set; }
     
     [EmailAddress]
     public string Email { get; set; }

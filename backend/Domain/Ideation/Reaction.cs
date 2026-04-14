@@ -9,7 +9,6 @@ public abstract class Reaction
     public int Id { get; set; }
     
     [Required]
-    [StringLength(32)]
     public string Emoji { get; set; }
 
     public DateTime CreatedAt { get; set; }

@@ -1,6 +1,6 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
-using Conversey.BL.Subplatform;
+﻿using Conversey.BL.Administration;
+using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,7 +44,7 @@ public class WorkspacesController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetBySlug),
-                new { slug = workspace.Slug },
+                new { slug = workspace.Id },
                 workspace);
         }
         catch (InvalidOperationException ex)

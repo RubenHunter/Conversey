@@ -9,15 +9,12 @@ namespace Conversey.BL.Domain.Administration;
 public class Project
 {
     [Required]
-    public Slug Slug { get; set; }
-
-    [StringLength(100)]
+    public Slug Id { get; set; }
+    
     public string Name { get; set; }
     
-    [StringLength(4000)]
     public string Description { get; set; }
-
-    [StringLength(2048)]
+    
     public string ImageUrl { get; set; }
     public Status Status { get; set; }
     public DateTime StartDate { get; set; }

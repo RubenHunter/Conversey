@@ -1,7 +1,7 @@
-using Conversey.BL.Subplatform.Survey.Questions;
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Subplatform.Survey.Questions;
 using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
+using Conversey.BL.Survey;
 using Conversey.DAL;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;

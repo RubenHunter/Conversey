@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Subplatform.Survey;
 using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Ideation;
 using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -145,12 +146,12 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpGet("{responseId}/reactions")]
-    public ActionResult<IReadOnlyCollection<ResponseReactionSummaryDto>> GetReactionSummary(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId)
+    public ActionResult<IReadOnlyCollection<ReactionDto>> GetReactionSummary(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId)
     {
         try
         {
             _ = GetResponseForRoute(workspaceSlug, projectSlug, topicId, ideaId, responseId);
-            var reactions = ResponseReactionSummaryDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId));
+            var reactions = ReactionDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId));
             return Ok(reactions);
         }
         catch (ProjectNotFoundException)
@@ -168,7 +169,7 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPost("{responseId}/reactions")]
-    public ActionResult<IReadOnlyCollection<ResponseReactionSummaryDto>> AddReaction(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
+    public ActionResult<IReadOnlyCollection<ReactionDto>> AddReaction(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
@@ -183,7 +184,7 @@ public class IdeaResponsesController : ControllerBase
             ResolveYouth(project, request.YouthToken);
             _ideaManager.AddResponseReaction(request.Emoji, responseId, request.YouthToken.Trim());
 
-            return Ok(ResponseReactionSummaryDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId)));
+            return Ok(ReactionDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId)));
         }
         catch (ProjectNotFoundException)
         {

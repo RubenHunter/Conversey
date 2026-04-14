@@ -1,8 +1,7 @@
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
-namespace Conversey.BL.Subplatform.Survey;
+namespace Conversey.BL.Administration;
 
 public interface IProjectManager
 {

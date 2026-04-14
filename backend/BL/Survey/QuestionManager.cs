@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
-using Conversey.DAL.Subplatform.Survey.Questions;
+using Conversey.BL.Domain.Survey;
+using Conversey.DAL.Survey;
 
-namespace Conversey.BL.Subplatform.Survey.Questions;
+namespace Conversey.BL.Survey;
 
 public class QuestionManager: IQuestionManager
 {

@@ -1,11 +1,12 @@
 using Conversey.BL.Subplatform;
 using System.Net.Http.Headers;
+using Conversey.BL.Administration;
 using Conversey.BL.Ai;
 using Conversey.BL.Ai.Clients.Mistral;
 using Conversey.BL.Ai.Managers;
+using Conversey.BL.Ideation;
 using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Subplatform;
 using Conversey.DAL.Subplatform.Ai;

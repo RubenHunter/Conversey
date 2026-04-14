@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform;
-using Conversey.DAL.Subplatform;
+using Conversey.BL.Subplatform;
+using Conversey.DAL.Administration;
 
-namespace Conversey.BL.Subplatform;
+namespace Conversey.BL.Administration;
 
 public class WorkspaceManager: IWorkspaceManager
 {
@@ -29,9 +30,9 @@ public class WorkspaceManager: IWorkspaceManager
         var workspace = new Workspace
         {
             Name = name,
-            Slug = slug
+            Id = slug
         };
-        if (SlugExists(workspace.Slug)) throw new ValidationException($"Workspace Slug '{workspace.Slug.Text}' already exists.");
+        if (SlugExists(workspace.Id)) throw new ValidationException($"Workspace Slug '{workspace.Id.Text}' already exists.");
         
         Validate(workspace);
         

@@ -6,7 +6,7 @@ namespace Conversey.DAL.Administration;
 public interface IProjectRepository
 {
     public Project ReadProjectById(int projectId);
-    Project ReadProjectByIdWithTopics(int projectId);
+    Project ReadProjectByIdWithTopics(Slug projectId);
     Project ReadProjectByIdWithQuestions(int projectId);
     Project ReadProjectByIdWithTopicsAndQuestions(int projectId);
     Project ReadProjectByIdWithWorkspaceAndQuestions(int projectId);
@@ -40,7 +40,7 @@ public interface IProjectRepository
     void UpdateTopic(Topic topic);
     bool DeleteTopic(int topicId);
     Youth ReadYouthByToken(string token);
-    Youth ReadYouthByTokenWithProject(string token);
+    Youth ReadYouthByTokenWithProject(Guid youthId);
     void CreateYouth(Youth youth);
     void UpdateYouth(Youth youth);
     bool DeleteYouth(string token);

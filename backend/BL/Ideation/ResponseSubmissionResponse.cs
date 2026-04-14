@@ -1,7 +1,6 @@
-using Conversey.BL.Ai;
-using IdeaResponse = Conversey.BL.Domain.Subplatform.Survey.Ideation.Response;
+﻿using Conversey.BL.Ai;
 
-namespace Conversey.BL.Subplatform.Survey.Ideation;
+namespace Conversey.BL.Ideation;
 
 public abstract record ResponseSubmissionResponse
 {
