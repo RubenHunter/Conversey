@@ -84,7 +84,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                 <div class="survey-hero-content">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
-                    <p class="mt-3 text-xs uppercase tracking-[0.18em] opacity-80">Loaded from backend API</p>
                 </div>
             </section>
 

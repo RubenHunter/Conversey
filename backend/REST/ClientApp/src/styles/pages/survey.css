@@ -66,6 +66,8 @@
   align-items: flex-start;
   gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
+  max-width: 800px;
 }
 
 .survey-question-number {
@@ -83,7 +85,9 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  text-align: left;
 }
+
 
 .survey-speaker-icon {
   width: 1.25rem;
@@ -123,9 +127,10 @@
 .survey-options {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 800px;
   gap: 0.75rem;
   margin-top: 1rem;
-  margin-left: clamp(0px, 5vw, 2rem);
 }
 
 .survey-option-label {
@@ -185,6 +190,16 @@
 
 .survey-option-label.selected .survey-radio-dot {
   transform: scale(1);
+}
+
+.survey-option-label.multiple-choice .survey-radio-circle {
+  border-radius: var(--radius-sm);
+}
+
+.survey-option-label.multiple-choice .survey-radio-dot {
+  width: 60%;
+  height: 60%;
+  border-radius: var(--radius-xs);
 }
 
 .survey-option-text {
