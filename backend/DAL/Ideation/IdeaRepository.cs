@@ -177,6 +177,7 @@ public class IdeaRepository : IIdeaRepository
     {
         return _dbContext.Responses
             .Include(r => r.Idea)
+            .ThenInclude(i => i.Project)
             .Include(r => r.Youth)
             .Include(r => r.Reactions)
             .SingleOrDefault(r => r.Id == responseId);
