@@ -17,16 +17,6 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         ${generateQuestionHeader(question, questionNumber)}
 
         <div class="survey-textarea-wrapper">
-            <div class="survey-magic-row">
-                <button class="survey-magic-btn" title="Answer in Magic Mode (coming soon)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                    </svg>
-                    Magic Mode
-                </button>
-            </div>
-
             <div class="relative">
                 <textarea
                     id="textarea-${question.id}"
@@ -35,16 +25,25 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                     rows="4"
                 ></textarea>
 
-                <button
-                    class="survey-mic-btn"
-                    title="Voice input (coming soon)"
-                    id="mic-btn-${question.id}"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                    </svg>
-                </button>
+                <div class="survey-textarea-actions">
+                    <button class="survey-magic-btn" title="Answer in Magic Mode (coming soon)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                        </svg>
+                        <span class="survey-magic-btn-text">Magic Mode</span>
+                    </button>
+                    <button
+                        class="survey-mic-btn"
+                        title="Voice input (coming soon)"
+                        id="mic-btn-${question.id}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -55,11 +54,15 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
+    const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
+    
     textarea.addEventListener('focus', () => {
         if (isLocked) return
+        magicBtn?.classList.add('survey-magic-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
+        magicBtn?.classList.remove('survey-magic-btn-focused')
     })
 
     textarea.addEventListener('input', () => {
