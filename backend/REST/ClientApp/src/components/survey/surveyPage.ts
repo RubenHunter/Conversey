@@ -306,10 +306,12 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             const answer = components[index].getAnswer()
             if (question.type === QuestionType.SingleChoice) {
                 const selectedOptionId = answer as number
+                if (selectedOptionId == null) return []
                 return { questionId: question.id, selectedOptionId, value: selectedOptionId }
             }
             if (question.type === QuestionType.MultipleChoice) {
                 const selectedOptionIds = Array.isArray(answer) ? answer : []
+                if (selectedOptionIds.length === 0) return []
                 return selectedOptionIds.map((selectedOptionId) => ({
                     questionId: question.id,
                     selectedOptionId,
@@ -318,9 +320,11 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             }
             if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
+                if (scaleValue == null) return []
                 return { questionId: question.id, selectedOptionId: scaleValue, value: scaleValue }
             }
             const openTextValue = answer as string
+            if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
 
