@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Survey;
 using Conversey.BL.Subplatform.Survey;

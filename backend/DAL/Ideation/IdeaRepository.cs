@@ -62,6 +62,18 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(i => i.Id == ideaId);
     }
 
+    public Idea ReadIdeaByIdWithTopicAndYouthAndReactionsAndProjectWithWorkspace(int ideaId)
+    {
+        return _dbContext.Ideas
+            .Include(i => i.Topic)
+            .Include(i => i.Youth)
+            .Include(i => i.Youth)
+            .Include(i => i.Reactions)
+            .Include(i => i.Project)
+            .ThenInclude(p => p.Workspace)
+            .SingleOrDefault(i => i.Id == ideaId);
+    }
+
     public IReadOnlyCollection<Idea> ReadAllIdeas()
     {
         return _dbContext.Ideas.ToList().AsReadOnly();
@@ -100,14 +112,14 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(Slug projectSlug)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(int projectId)
     {
         return _dbContext.Ideas
-            .Where(i => i.Project.Id == projectSlug)
+            .Where(i => i.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(Slug projectSlug)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(int projectId)
     {
         return _dbContext.Ideas
             .Include(i => i.Youth)
@@ -115,17 +127,17 @@ public class IdeaRepository : IIdeaRepository
             .ThenInclude(r => r.Youth)
             .Include(i => i.Responses)
             .ThenInclude(r => r.Reactions)
-            .Where(i => i.Project.Id == projectSlug)
+            .Where(i => i.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectSlug, Guid youthToken)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(int projectId, string youthToken)
     {
         return _dbContext.Ideas
             .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Id == projectSlug && i.Youth.Token == youthToken)
+            .Where(i => i.Project.Id == projectId && i.Youth.Token == youthToken)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -136,7 +148,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Id == projectSlug && i.Topic.Id == topicId && i.Status == ModerationStatus.Approved)
+            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId && i.Status == IdeaStatus.Approved)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -244,10 +256,11 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public bool DeleteIdeaReaction(int ideaId, Guid youthToken, string emoji)
+    public bool DeleteIdeaReaction(int reactionId)
     {
         var reaction = _dbContext.IdeaReactions
-            .SingleOrDefault(ir => ir.Idea.Id == ideaId && ir.Youth.Token == youthToken && ir.Emoji == emoji);
+            .Single(r => r.Id == reactionId);
+
         if (reaction == null) return false;
 
         _dbContext.IdeaReactions.Remove(reaction);
@@ -261,25 +274,25 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.SaveChanges();
     }
 
-    public ResponseReaction ReadResponseReaction(int responseId, Guid youthToken, string emoji)
+    public ResponseReaction ReadResponseReaction(int responseId, string youthToken, string emoji)
     {
         return _dbContext.ResponseReactions
-            .SingleOrDefault(rr => rr.Response.Id == responseId && rr.Youth.Token == youthToken && rr.Emoji == emoji);
+            .SingleOrDefault(rr => rr.ResponseId == responseId && rr.YouthToken == youthToken && rr.Emoji == emoji);
     }
 
     public IReadOnlyCollection<ResponseReaction> ReadResponseReactionsFromResponseByResponseId(int responseId)
     {
         return _dbContext.ResponseReactions
-            .Where(rr => rr.Response.Id == responseId)
+            .Where(rr => rr.ResponseId == responseId)
             .OrderBy(rr => rr.Emoji)
             .ThenBy(rr => rr.Id)
             .ToList().AsReadOnly();
     }
 
-    public bool DeleteResponseReaction(int responseId, Guid youthToken, string emoji)
+    public bool DeleteResponseReaction(int responseId, string youthToken, string emoji)
     {
         var reaction = _dbContext.ResponseReactions
-            .SingleOrDefault(rr => rr.Response.Id == responseId && rr.Youth.Token == youthToken && rr.Emoji == emoji);
+            .SingleOrDefault(rr => rr.ResponseId == responseId && rr.YouthToken == youthToken && rr.Emoji == emoji);
         if (reaction == null) return false;
 
         _dbContext.ResponseReactions.Remove(reaction);
@@ -300,7 +313,10 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
 
         builder.Property(i => i.Summary)
             .HasMaxLength(1000);
-        
+
+        builder.Property(i => i.SubmissionDate);
+
+        builder.Property(i => i.Status);
 
         builder.Property(i => i.ModerationInfo)
             .HasConversion(
@@ -328,8 +344,7 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
 
         builder.HasMany(i => i.Responses)
             .WithOne(r => r.Idea)
-            .HasForeignKey("IdeaId")
-            .IsRequired();
+            .HasForeignKey("IdeaId");
 
         builder.HasMany(i => i.Reactions)
             .WithOne(ir => ir.Idea)
@@ -349,6 +364,7 @@ public class ReactionConfig : IEntityTypeConfiguration<Reaction>
          builder.Property(r => r.Emoji)
              .IsRequired()
              .HasMaxLength(32);
+         builder.Property(r => r.CreatedAt);
 
          #endregion
 
@@ -367,35 +383,7 @@ public class ResponseConfig : IEntityTypeConfiguration<Response>
 {
     public void Configure(EntityTypeBuilder<Response> builder)
     {
-        #region Properties
-
-        builder.HasKey(r => r.Id);
-
-        builder.Property(r => r.Text)
-            .IsRequired()
-            .HasMaxLength(4000);
         
-        builder.Property(r => r.ModerationInfo)
-            .HasConversion(
-                m => ModerationInfoSerializer.Serialize(m),
-                b => ModerationInfoSerializer.Deserialize(b)
-            );
-
-        
-        #endregion
-
-        #region Relations
-
-        builder.HasOne(r => r.Youth)
-            .WithMany(y => y.Responses)
-            .HasForeignKey("YouthToken")
-            .IsRequired();
-
-        builder.HasMany(r => r.Reactions)
-            .WithOne(rr => rr.Response)
-            .HasForeignKey("ResponseId")
-            .IsRequired();
-        #endregion
     }
 }
 
@@ -404,10 +392,15 @@ public class IdeaReactionConfig : IEntityTypeConfiguration<IdeaReaction>
     public void Configure(EntityTypeBuilder<IdeaReaction> builder)
     {
         #region Properties
-        // builder.HasIndex([ir => new { ir.Idea, ir.Youth, ir.Emoji }])
-        //     .IsUnique();
-        builder.HasIndex("IdeaId", "YouthToken", "Emoji")
+        builder.HasIndex(ir => new { ir.Idea, ir.Youth, ir.Emoji })
             .IsUnique();
+        
+        #endregion
+        #region Relations
+        builder.HasOne(ir => ir.Idea)
+            .WithMany(i => i.Reactions)
+            .HasForeignKey("IdeaId")
+            .IsRequired();
         #endregion
     }
 }
@@ -416,10 +409,14 @@ public class ResponseReactionConfig : IEntityTypeConfiguration<ResponseReaction>
     public void Configure(EntityTypeBuilder<ResponseReaction> builder)
     {
         #region Properties
-        // builder.HasIndex(rr => new { rr.Response, rr.Youth, rr.Emoji })
-        //     .IsUnique();
-        builder.HasIndex("ResponseId", "YouthToken", "Emoji")
+        builder.HasIndex(rr => new { rr.Response, rr.Youth, rr.Emoji })
             .IsUnique();
+        #endregion
+        #region Relations
+        builder.HasOne(rr => rr.Response)
+            .WithMany(r => r.Reactions)
+            .HasForeignKey("ResponseId")
+            .IsRequired();
         #endregion
     }
 }

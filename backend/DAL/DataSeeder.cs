@@ -252,7 +252,7 @@ public static class DataSeeder
     {
         return new Youth
         {
-            Token = token,
+            Id = token,
             Email = email,
             Project = project,
             Ideas = new List<Idea>(),

@@ -10,6 +10,7 @@ public interface IIdeaRepository
     Idea ReadIdeaByIdWithProject(int ideaId);
     Idea ReadIdeaByIdWithResponses(int ideaId);
     Idea ReadIdeaByIdWithProjectAndResponses(int ideaId);
+    Idea ReadIdeaByIdWithTopicAndYouthAndReactionsAndProjectWithWorkspace(int ideaId);
 
     IReadOnlyCollection<Idea> ReadAllIdeas();
     IReadOnlyCollection<Idea> ReadAllIdeasWithProject();
@@ -20,7 +21,7 @@ public interface IIdeaRepository
     IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(Slug projectSlug);
     IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectSlug, Guid youthToken);
 
-    IReadOnlyCollection<Idea> ReadIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId);
+    IReadOnlyCollection<Idea> ReadIdeasByProjectIdAndTopicId(Slug projectId, int topicId);
 
     
     void UpdateIdea(Idea idea);
@@ -38,6 +39,8 @@ public interface IIdeaRepository
     IdeaReaction ReadIdeaReaction(int ideaId, Guid youthToken, string emoji);
     IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId);
     bool DeleteIdeaReaction(int ideaId, Guid youthToken, string emoji);
+    IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsByIdeaId(int ideaId);
+    bool DeleteIdeaReaction(int reactionId);
 
     void CreateResponseReaction(ResponseReaction reaction);
     ResponseReaction ReadResponseReaction(int responseId, Guid youthToken, string emoji);

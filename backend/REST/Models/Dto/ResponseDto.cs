@@ -6,11 +6,11 @@ public class ResponseDto
 {
     public int Id { get; set; }
     public int IdeaId { get; set; }
-    public string Text { get; set; } = string.Empty;
+    public string Text { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string YouthToken { get; set; } = string.Empty;
+    public Guid YouthId { get; set; }
     public ModerationStatus Status { get; set; }
-    public IReadOnlyCollection<ResponseReactionSummaryDto> Reactions { get; set; } = Array.Empty<ResponseReactionSummaryDto>();
+    public IEnumerable<ReactionDto> Reactions { get; set; }
 
     public static ResponseDto From(Response response)
     {
@@ -20,9 +20,9 @@ public class ResponseDto
             IdeaId = response.Idea.Id,
             Text = response.Text,
             CreatedAt = response.CreatedAt,
-            YouthToken = response.Youth.Token.ToString(),
+            YouthId = response.Youth.Id,
             Status = response.Status,
-            Reactions = ResponseReactionSummaryDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
+            Reactions = ReactionDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
         };
     }
 }

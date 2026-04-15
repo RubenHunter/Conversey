@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
