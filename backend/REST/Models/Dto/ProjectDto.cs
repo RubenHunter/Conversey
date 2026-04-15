@@ -43,8 +43,8 @@ public class ProjectDto
 
         return new ProjectDto
         {
-            Id = ToStableProjectId(project.Slug.Text),
-            Slug = project.Slug.Text,
+            Id = ToStableProjectId(project.Id.Text),
+            Slug = project.Id.Text,
             OrganizationSlug = project.Workspace.Id.Text,
             OrganizationName = project.Workspace.Name,
             Title = project.Name,

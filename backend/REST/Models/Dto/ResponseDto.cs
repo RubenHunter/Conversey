@@ -22,7 +22,9 @@ public class ResponseDto
             CreatedAt = response.CreatedAt,
             YouthId = response.Youth.Id,
             Status = response.Status,
-            Reactions = ReactionDto.From(response.Reactions ?? Array.Empty<ResponseReaction>())
+            Reactions = (response.Reactions ?? Array.Empty<ResponseReaction>())
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
         };
     }
 }

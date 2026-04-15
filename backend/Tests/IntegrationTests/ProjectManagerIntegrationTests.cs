@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Subplatform.Survey;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -24,7 +24,7 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
 
         var project = manager.GetProjectBySlug(ManagerSeedData.ProjectSlug);
 
-        Assert.Equal(ManagerSeedData.ProjectSlug.Text, project.Slug.Text);
+        Assert.Equal(ManagerSeedData.ProjectSlug.Text, project.Id.Text);
         Assert.Equal(ManagerSeedData.ProjectName, project.Name);
     }
 
@@ -45,7 +45,7 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
             interactionForm: InteractionType.Chat,
             workspaceSlug: ManagerSeedData.WorkspaceSlug);
 
-        Assert.Equal(Slug.FromName(title).Text, created.Slug.Text);
+        Assert.Equal(Slug.FromName("ignored").Text, created.Id.Text);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
         var youth = manager.AddYouth(token, "youth@example.com", ManagerSeedData.ProjectSlug);
         manager.RemoveYouth(token);
 
-        Assert.Equal(token, youth.Token);
+        Assert.Equal(token, youth.Id);
         Assert.Throws<YouthNotFoundException>(() => manager.GetYouthByToken(token));
     }
 }

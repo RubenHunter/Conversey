@@ -1,7 +1,6 @@
 ﻿using Conversey.BL.Administration;
- using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey;
+using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +22,7 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+            var project = ResolveProjectForWorkspace(_manager, workspaceSlug, projectSlug);
             return Ok(ProjectDto.From(project));
         }
         catch (ProjectNotFoundException)
@@ -32,11 +31,11 @@ public class ProjectController : ControllerBase
         }
     }
 
-    private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
+    internal static Project ResolveProjectForWorkspace(IProjectManager manager, string workspaceSlug, string projectSlug)
     {
-        var project = _manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
+        var project = manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
 
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(project.Workspace.Id.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
         {
             throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
         }
@@ -44,7 +43,7 @@ public class ProjectController : ControllerBase
         return project;
     }
 
-    private static Slug ToSlug(string value)
+    internal static Slug ToSlug(string value)
     {
         return new Slug { Text = value.Trim().ToLowerInvariant() };
     }

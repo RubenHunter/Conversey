@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Subplatform;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -35,7 +35,7 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
 
         var workspace = workspaceManager.GetWorkspaceByIdWithProjects(ManagerSeedData.WorkspaceSlug);
 
-        Assert.Contains(workspace.Projects, p => p.Slug == ManagerSeedData.ProjectSlug);
+        Assert.Contains(workspace.Projects, p => p.Id == ManagerSeedData.ProjectSlug);
     }
 
     [Fact]

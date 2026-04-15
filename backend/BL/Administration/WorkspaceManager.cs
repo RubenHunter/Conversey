@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.DAL.Administration;
 
-namespace Conversey.BL.Subplatform;
+namespace Conversey.BL.Administration;
 
 public class WorkspaceManager: IWorkspaceManager
 {
@@ -14,14 +15,9 @@ public class WorkspaceManager: IWorkspaceManager
         _workspaceRepository = workspaceRepository;
     }
 
-    public IReadOnlyCollection<Workspace> GetAllWorkspaces()
+    public IEnumerable<Workspace> GetAllWorkspaces()
     {
         return _workspaceRepository.ReadAllWorkspaces();
-    }
-
-    public IReadOnlyCollection<Workspace> GetAllWorkspacesWithProjects()
-    {
-        return _workspaceRepository.ReadAllWorkspacesWithProjects();
     }
 
     public Workspace CreateWorkspace(string name, Slug slug)
@@ -45,21 +41,9 @@ public class WorkspaceManager: IWorkspaceManager
         return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
     }
 
-    public Workspace GetWorkspaceBySlugWithProjects(Slug slug)
-    {
-        var workspace = _workspaceRepository.ReadWorkspaceBySlugWithProjects(slug);
-        return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
-    }
-
     public Workspace GetWorkspaceById(Slug id)
     {
         var workspace = _workspaceRepository.ReadWorkspaceById(id);
-        return workspace ?? throw new WorkspaceNotFoundException(id.Text);
-    }
-
-    public Workspace GetWorkspaceByIdWithProjects(Slug id)
-    {
-        var workspace = _workspaceRepository.ReadWorkspaceByIdWithProjects(id);
         return workspace ?? throw new WorkspaceNotFoundException(id.Text);
     }
 

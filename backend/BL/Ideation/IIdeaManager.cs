@@ -15,7 +15,7 @@ public interface IIdeaManager
     Idea GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     Idea GetIdeaByIdWithProjectAndResponses(int ideaId);
     
-    IEnumerable<Idea> GetIdeasFromProjectByYouthToken(int projectId, string youthToken);
+    IEnumerable<Idea> GetIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken);
 
     IEnumerable<Idea> GetIdeasByProjectIdAndTopicId(Slug projectId, int topicId);
 
@@ -23,7 +23,6 @@ public interface IIdeaManager
     Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, Idea idea);
     
     ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken);
-    Response GetResponseById(int responseId);
     Response GetResponseByIdWithIdea(int responseId);
     IEnumerable<Response> GetResponsesFromIdeaByIdeaId(int ideaId);
     Response ChangeResponse(Response response);

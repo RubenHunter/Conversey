@@ -24,6 +24,11 @@ public class IdeasController : ControllerBase
     {
         try
         {
+            if (idea.YouthId == Guid.Empty)
+            {
+                return BadRequest("YouthId must be a valid GUID.");
+            }
+
             SubmissionResponse response = _manager.SubmitIdea(idea.Content, projectId, topicId, idea.YouthId);
             return Ok(response switch
             {
@@ -104,7 +109,12 @@ public class IdeasController : ControllerBase
     {
         try
         {
-            return Ok(_manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId).Select(ReactionDto.From));
+            var reactions = _manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
+                .ToList()
+                .AsReadOnly();
+            return Ok(reactions);
         }
         catch (ProjectNotFoundException)
         {
@@ -117,18 +127,66 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost("{ideaId:int}/reactions")]
-    public ActionResult<ReactionDto> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
+    public ActionResult<IReadOnlyCollection<ReactionDto>> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
-            IdeaReaction reaction = _manager.AddIdeaReaction(request.Emoji, ideaId, request.YouthToken.Trim());
-            return Ok(ReactionDto.From(reaction));
+            _manager.AddIdeaReaction(request.Emoji, ideaId, request.YouthToken.Trim());
+            var reactions = _manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
+                .ToList()
+                .AsReadOnly();
+            return Ok(reactions);
         }
         catch (ProjectNotFoundException)
         {
             return NotFound();
         }
         catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
+        }
+    }
+
+    [HttpDelete("{ideaId:int}/reactions")]
+    public ActionResult RemoveIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] string youthToken, [FromQuery] string emoji)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(youthToken) || string.IsNullOrWhiteSpace(emoji))
+            {
+                return BadRequest("youthToken and emoji are required.");
+            }
+
+            if (!Guid.TryParse(youthToken.Trim(), out var youthId))
+            {
+                return BadRequest("youthToken must be a valid GUID.");
+            }
+
+            var reaction = _manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId)
+                .SingleOrDefault(r => r.Youth?.Id == youthId && string.Equals(r.Emoji, emoji, StringComparison.Ordinal));
+            if (reaction == null)
+            {
+                return NotFound();
+            }
+
+            _manager.RemoveIdeaReaction(workspaceId, projectId, topicId, ideaId, youthId, reaction.Id);
+            return NoContent();
+        }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (IdeaReactionNotFoundException e)
         {
             return NotFound(e.Message);
         }

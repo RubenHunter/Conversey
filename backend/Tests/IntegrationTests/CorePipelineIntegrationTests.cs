@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
-using Conversey.BL.Subplatform;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
+using Conversey.BL.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
@@ -42,8 +41,8 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             interactionForm: InteractionType.Chat,
             workspaceSlug: workspace.Id);
 
-        var youth = projectManager.AddYouth(Guid.NewGuid(), $"pipeline-{Guid.NewGuid():N}@example.com", project.Slug);
-        _ = projectManager.AddTopic("Pipeline Topic", "Topic for pipeline coverage", project.Slug);
+        var youth = projectManager.AddYouth(Guid.NewGuid(), $"pipeline-{Guid.NewGuid():N}@example.com", project.Id);
+        _ = projectManager.AddTopic("Pipeline Topic", "Topic for pipeline coverage", project.Id);
         var question = questionManager.AddQuestion(new OpenQuestion
         {
             Text = "What should we improve?",
@@ -62,10 +61,10 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
         });
 
         var workspaceWithProjects = workspaceManager.GetWorkspaceByIdWithProjects(workspace.Id);
-        var projectWithQuestions = projectManager.GetProjectBySlugWithQuestions(project.Slug);
+        var projectWithQuestions = projectManager.GetProjectBySlugWithQuestions(project.Id);
         var loadedAnswer = questionManager.GetAnswerById(answer.Id);
 
-        Assert.Contains(workspaceWithProjects.Projects, p => p.Slug == project.Slug);
+        Assert.Contains(workspaceWithProjects.Projects, p => p.Id == project.Id);
         Assert.Contains(projectWithQuestions.Questions, q => q.Id == question.Id);
         Assert.Equal(answer.Id, loadedAnswer.Id);
     }
@@ -83,10 +82,10 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             ideaManager.SubmitIdea("Pipeline idea content", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken));
 
         var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(
-            ideaManager.AddResponse("Pipeline response content", ideaSubmission.idea.Id, ManagerSeedData.YouthToken));
+            ideaManager.AddResponse("Pipeline response content", ideaSubmission.idea.Id, ManagerSeedData.YouthToken.ToString()));
 
-        var ideaReaction = ideaManager.AddIdeaReaction("like", ideaSubmission.idea.Id, ManagerSeedData.YouthToken);
-        var responseReaction = ideaManager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken);
+        var ideaReaction = ideaManager.AddIdeaReaction("like", ideaSubmission.idea.Id, ManagerSeedData.YouthToken.ToString());
+        var responseReaction = ideaManager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken.ToString());
 
         var ideaWithResponses = ideaManager.GetIdeaByIdWithProjectAndResponses(ideaSubmission.idea.Id);
         var ideaReactions = ideaManager.GetIdeaReactionsFromIdeaByIdeaId(ideaSubmission.idea.Id);
@@ -145,9 +144,9 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             endDate: DateTime.UtcNow.Date.AddDays(7),
             interactionForm: InteractionType.Chat,
             workspaceSlug: secondWorkspace.Id);
-        var foreignYouth = projectManager.AddYouth(Guid.NewGuid(), $"foreign-{Guid.NewGuid():N}@example.com", secondProject.Slug);
+        var foreignYouth = projectManager.AddYouth(Guid.NewGuid(), $"foreign-{Guid.NewGuid():N}@example.com", secondProject.Id);
 
-        var act = () => ideaManager.AddResponse("Response by foreign youth", seededIdea.idea.Id, foreignYouth.Token);
+        var act = () => ideaManager.AddResponse("Response by foreign youth", seededIdea.idea.Id, foreignYouth.Id.ToString());
 
         Assert.Throws<ValidationException>(act);
     }

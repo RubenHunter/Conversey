@@ -25,7 +25,9 @@ public class IdeaDto
             YouthId = idea.Youth.Id,
             SubmissionDate = idea.SubmissionDate,
             Status = idea.Status,
-            Reactions = (idea.Reactions ?? Array.Empty<IdeaReaction>()).Select(ReactionDto.From)
+            Reactions = (idea.Reactions ?? Array.Empty<IdeaReaction>())
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
         };
     }
 }

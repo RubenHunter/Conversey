@@ -1,6 +1,6 @@
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Administration;
-using Conversey.BL.Subplatform;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +18,9 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<WorkspaceDto>> Get()
+    public ActionResult<IEnumerable<WorkspaceDto>> Get()
     {
-        IReadOnlyCollection<Workspace> workspaces = _manager.GetAllWorkspaces();
+        var workspaces = _manager.GetAllWorkspaces().ToList();
 
         if (workspaces.Count == 0)
         {

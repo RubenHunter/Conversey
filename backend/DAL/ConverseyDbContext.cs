@@ -1,6 +1,6 @@
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain;
-using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;

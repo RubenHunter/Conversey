@@ -1,5 +1,6 @@
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Ideation;
-using Conversey.BL.Subplatform.Survey.Ideation;
+using Conversey.BL.Ideation;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -31,7 +32,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
-        var projectManager = scope.ServiceProvider.GetRequiredService<Conversey.BL.Subplatform.Survey.IProjectManager>();
+        var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
         var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
 
         var response = manager.SubmitIdea("Integration idea", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
@@ -48,7 +49,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         {
             using var scope = _fixture.CreateScope();
             var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
-            var projectManager = scope.ServiceProvider.GetRequiredService<Conversey.BL.Subplatform.Survey.IProjectManager>();
+                var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
             var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
 
             var response = manager.SubmitIdea("flagged", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
@@ -71,10 +72,10 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
 
         var idea = manager.GetAllIdeas().First();
-        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse("response", idea.Id, ManagerSeedData.YouthToken));
+        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse("response", idea.Id, ManagerSeedData.YouthToken.ToString()));
 
-        _ = manager.AddIdeaReaction("like", idea.Id, ManagerSeedData.YouthToken);
-        _ = manager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken);
+        _ = manager.AddIdeaReaction("like", idea.Id, ManagerSeedData.YouthToken.ToString());
+        _ = manager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken.ToString());
 
         var ideaReactions = manager.GetIdeaReactionsFromIdeaByIdeaId(idea.Id);
         var responseReactions = manager.GetResponseReactionsFromResponseByResponseId(responseSubmission.Response.Id);

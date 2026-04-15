@@ -1,12 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
-using Conversey.BL.Subplatform.Survey;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using IdeaResponse = Conversey.BL.Domain.Ideation.Response;
 
 namespace Conversey.REST.Controllers.Api;
 
@@ -24,16 +24,26 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<ResponseDto>> GetResponses(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromQuery] string? youthToken = null)
+    public ActionResult<IReadOnlyCollection<ResponseDto>> GetResponses(string workspaceSlug, string projectSlug, int topicId, int ideaId, [FromQuery] string youthToken = null)
     {
         try
         {
+            // _ = is for exceptions checking.
             _ = GetIdeaForRoute(workspaceSlug, projectSlug, topicId, ideaId);
-            var normalizedToken = string.IsNullOrWhiteSpace(youthToken) ? null : youthToken.Trim();
+            Guid? normalizedToken = null;
+            if (!string.IsNullOrWhiteSpace(youthToken))
+            {
+                if (!Guid.TryParse(youthToken.Trim(), out var parsedYouthToken))
+                {
+                    return BadRequest("YouthToken must be a valid GUID.");
+                }
+
+                normalizedToken = parsedYouthToken;
+            }
 
             var responses = _ideaManager.GetResponsesFromIdeaByIdeaId(ideaId)
-                .Where(response => response.Status == IdeaStatus.Approved ||
-                                   (normalizedToken != null && string.Equals(response.Youth.Token, normalizedToken, StringComparison.Ordinal)))
+                .Where(response => response.Status == ModerationStatus.Approved ||
+                                   (normalizedToken.HasValue && response.Youth.Id == normalizedToken.Value))
                 .Select(ResponseDto.From)
                 .ToList()
                 .AsReadOnly();
@@ -55,7 +65,7 @@ public class IdeaResponsesController : ControllerBase
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+            var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
             _ = GetIdeaForRoute(project, topicId, ideaId);
 
             if (string.IsNullOrWhiteSpace(request.YouthToken))
@@ -63,7 +73,12 @@ public class IdeaResponsesController : ControllerBase
                 return BadRequest("YouthToken is required.");
             }
 
-            ResolveYouth(project, request.YouthToken);
+            if (!Guid.TryParse(request.YouthToken.Trim(), out var youthToken))
+            {
+                return BadRequest("YouthToken must be a valid GUID.");
+            }
+
+            ResolveYouth(project, youthToken);
 
             var submission = _ideaManager.AddResponse(request.Text, ideaId, request.YouthToken.Trim());
             return Ok(submission switch
@@ -98,7 +113,7 @@ public class IdeaResponsesController : ControllerBase
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+            var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
             _ = GetIdeaForRoute(project, topicId, ideaId);
 
             if (string.IsNullOrWhiteSpace(request.YouthToken))
@@ -111,19 +126,24 @@ public class IdeaResponsesController : ControllerBase
                 return BadRequest("Text is required.");
             }
 
+            if (!Guid.TryParse(request.YouthToken.Trim(), out var youthToken))
+            {
+                return BadRequest("YouthToken must be a valid GUID.");
+            }
+
             var response = _ideaManager.GetResponseByIdWithIdea(responseId);
             if (response.Idea.Id != ideaId)
             {
                 return NotFound();
             }
 
-            if (!string.Equals(response.Youth.Token, request.YouthToken.Trim(), StringComparison.Ordinal))
+            if (response.Youth.Id != youthToken)
             {
                 return Forbid();
             }
 
             response.Text = request.Text.Trim();
-            response.Status = request.MarkForReview ? IdeaStatus.Pending : IdeaStatus.Approved;
+            response.Status = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved;
             var updated = _ideaManager.ChangeResponse(response);
             return Ok(ResponseDto.From(updated));
         }
@@ -151,7 +171,11 @@ public class IdeaResponsesController : ControllerBase
         try
         {
             _ = GetResponseForRoute(workspaceSlug, projectSlug, topicId, ideaId, responseId);
-            var reactions = ReactionDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId));
+            var reactions = _ideaManager.GetResponseReactionsFromResponseByResponseId(responseId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
+                .ToList()
+                .AsReadOnly();
             return Ok(reactions);
         }
         catch (ProjectNotFoundException)
@@ -173,7 +197,7 @@ public class IdeaResponsesController : ControllerBase
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+            var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
             _ = GetResponseForRoute(project, topicId, ideaId, responseId);
 
             if (string.IsNullOrWhiteSpace(request.YouthToken))
@@ -181,10 +205,19 @@ public class IdeaResponsesController : ControllerBase
                 return BadRequest("YouthToken is required.");
             }
 
-            ResolveYouth(project, request.YouthToken);
+            if (!Guid.TryParse(request.YouthToken.Trim(), out var youthToken))
+            {
+                return BadRequest("YouthToken must be a valid GUID.");
+            }
+
+            ResolveYouth(project, youthToken);
             _ideaManager.AddResponseReaction(request.Emoji, responseId, request.YouthToken.Trim());
 
-            return Ok(ReactionDto.From(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId)));
+            return Ok(_ideaManager.GetResponseReactionsFromResponseByResponseId(responseId)
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
+                .ToList()
+                .AsReadOnly());
         }
         catch (ProjectNotFoundException)
         {
@@ -214,6 +247,11 @@ public class IdeaResponsesController : ControllerBase
                 return BadRequest("youthToken and emoji are required.");
             }
 
+            if (!Guid.TryParse(youthToken.Trim(), out _))
+            {
+                return BadRequest("youthToken must be a valid GUID.");
+            }
+
             _ = GetResponseForRoute(workspaceSlug, projectSlug, topicId, ideaId, responseId);
             _ideaManager.RemoveResponseReaction(responseId, youthToken.Trim(), emoji);
             return NoContent();
@@ -240,45 +278,33 @@ public class IdeaResponsesController : ControllerBase
         }
     }
 
-    private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
-    {
-        var project = _projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
-
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
-        }
-
-        return project;
-    }
-
     private Idea GetIdeaForRoute(string workspaceSlug, string projectSlug, int topicId, int ideaId)
     {
-        var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+        var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
         return GetIdeaForRoute(project, topicId, ideaId);
     }
 
     private Idea GetIdeaForRoute(Project project, int topicId, int ideaId)
     {
-        var idea = _ideaManager.GetIdeaById(ideaId);
+        var idea = _ideaManager.GetIdeaByIdWithProjectAndResponses(ideaId);
         if (idea.Project.Id != project.Id || idea.Topic.Id != topicId)
         {
-            throw new IdeaNotFoundException(ideaId.ToString());
+            throw new IdeaNotFoundException(ideaId);
         }
 
         return idea;
     }
 
-    private Response GetResponseForRoute(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId)
+    private IdeaResponse GetResponseForRoute(string workspaceSlug, string projectSlug, int topicId, int ideaId, int responseId)
     {
-        var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+        var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
         return GetResponseForRoute(project, topicId, ideaId, responseId);
     }
 
-    private Response GetResponseForRoute(Project project, int topicId, int ideaId, int responseId)
+    private IdeaResponse GetResponseForRoute(Project project, int topicId, int ideaId, int responseId)
     {
         _ = GetIdeaForRoute(project, topicId, ideaId);
-        var response = _ideaManager.GetResponseById(responseId);
+        var response = _ideaManager.GetResponseByIdWithIdea(responseId);
         if (response.Idea.Id != ideaId)
         {
             throw new ResponseNotFoundException(responseId.ToString());
@@ -287,21 +313,21 @@ public class IdeaResponsesController : ControllerBase
         return response;
     }
 
-    private void ResolveYouth(Project project, string youthToken)
+    private void ResolveYouth(Project project, Guid youthToken)
     {
         try
         {
-            _projectManager.GetYouthByToken(youthToken.Trim());
+            var youth = _projectManager.GetYouthByToken(youthToken);
+            if (youth.Project.Id != project.Id)
+            {
+                throw new ValidationException($"Youth '{youthToken}' does not belong to project '{project.Id.Text}'.");
+            }
         }
         catch (YouthNotFoundException)
         {
-            _projectManager.AddYouth(youthToken.Trim(), string.Empty, project.Id);
+            _projectManager.AddYouth(youthToken, string.Empty, project.Id);
         }
     }
 
-    private static Slug ToSlug(string value)
-    {
-        return new Slug { Text = value.Trim().ToLowerInvariant() };
-    }
 }
 

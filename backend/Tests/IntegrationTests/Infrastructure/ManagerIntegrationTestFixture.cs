@@ -1,12 +1,13 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 using Conversey.BL.Subplatform;
 using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
 using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Ideation;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
@@ -94,7 +95,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         var project = new Project
         {
-            Slug = ManagerSeedData.ProjectSlug,
+            Id = ManagerSeedData.ProjectSlug,
             Name = ManagerSeedData.ProjectName,
             Description = "Seed project",
             Status = Status.Active,
@@ -117,7 +118,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         var youth = new Youth
         {
-            Token = ManagerSeedData.YouthToken,
+            Id = ManagerSeedData.YouthToken,
             Email = "seed@student.nova.be",
             Project = project,
             Ideas = new List<Idea>(),

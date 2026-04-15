@@ -19,23 +19,9 @@ public class WorkspaceRepository : IWorkspaceRepository
         return _context.Workspaces.ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Workspace> ReadAllWorkspacesWithProjects()
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .ToList().AsReadOnly();
-    }
-
     public Workspace ReadWorkspaceBySlug(Slug slug)
     {
         return _context.Workspaces.SingleOrDefault(w => w.Id == slug);
-    }
-
-    public Workspace ReadWorkspaceBySlugWithProjects(Slug slug)
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Id == slug);
     }
 
     public Workspace ReadWorkspaceById(Slug id)
@@ -43,12 +29,6 @@ public class WorkspaceRepository : IWorkspaceRepository
         return _context.Workspaces.SingleOrDefault(w => w.Id == id);
     }
 
-    public Workspace ReadWorkspaceByIdWithProjects(Slug id)
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Id == id);
-    }
 
     public void CreateWorkspace(Workspace workspace)
     {
