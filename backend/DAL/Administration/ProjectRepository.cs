@@ -251,14 +251,14 @@ public class ProjectRepository : IProjectRepository
     public Youth ReadYouthByToken(Guid token)
     {
         return _dbContext.Youths
-            .SingleOrDefault(y => y.Token == token);
+            .SingleOrDefault(y => y.Id == token);
     }
 
     public Youth ReadYouthByTokenWithProject(Guid token)
     {
         return _dbContext.Youths
             .Include(y => y.Project)
-            .SingleOrDefault(y => y.Token == token);
+            .SingleOrDefault(y => y.Id == token);
     }
 
     public void CreateYouth(Youth youth)
@@ -276,7 +276,7 @@ public class ProjectRepository : IProjectRepository
     public bool DeleteYouth(Guid token)
     {
         var youth = _dbContext.Youths
-            .SingleOrDefault(y => y.Token == token);
+            .SingleOrDefault(y => y.Id == token);
         if (youth == null) return false;
 
         _dbContext.Youths.Remove(youth);
@@ -360,7 +360,7 @@ public class YouthConfig : IEntityTypeConfiguration<Youth>
 {
     public void Configure(EntityTypeBuilder<Youth> builder)
     {
-        builder.HasKey(y => y.Token);
+        builder.HasKey(y => y.Id);
     }
 }
 #endregion

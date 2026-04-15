@@ -112,14 +112,14 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(int projectId)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(Slug projectId)
     {
         return _dbContext.Ideas
             .Where(i => i.Project.Id == projectId)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(int projectId)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(Slug projectId)
     {
         return _dbContext.Ideas
             .Include(i => i.Youth)
@@ -131,13 +131,13 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(int projectId, string youthToken)
+    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken)
     {
         return _dbContext.Ideas
             .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Id == projectId && i.Youth.Token == youthToken)
+            .Where(i => i.Project.Id == projectId && i.Youth.Id == youthToken)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -148,7 +148,7 @@ public class IdeaRepository : IIdeaRepository
         return _dbContext.Ideas
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Slug == projectSlug && i.Topic.Id == topicId && i.Status == IdeaStatus.Approved)
+            .Where(i => i.Project.Id == projectSlug && i.Topic.Id == topicId && i.Status == ModerationStatus.Approved)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
@@ -244,7 +244,7 @@ public class IdeaRepository : IIdeaRepository
     public IdeaReaction ReadIdeaReaction(int ideaId, Guid youthToken, string emoji)
     {
         return _dbContext.IdeaReactions
-            .SingleOrDefault(ir => ir.Idea.Id == ideaId && ir.Youth.Token == youthToken && ir.Emoji == emoji);
+            .SingleOrDefault(ir => ir.Idea.Id == ideaId && ir.Youth.Id == youthToken && ir.Emoji == emoji);
     }
 
     public IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId)

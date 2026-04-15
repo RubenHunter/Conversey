@@ -10,18 +10,17 @@ public interface IIdeaRepository
     Idea ReadIdeaByIdWithProject(int ideaId);
     Idea ReadIdeaByIdWithResponses(int ideaId);
     Idea ReadIdeaByIdWithProjectAndResponses(int ideaId);
-    Idea ReadIdeaByIdWithTopicAndYouthAndReactionsAndProjectWithWorkspace(int ideaId);
 
     IReadOnlyCollection<Idea> ReadAllIdeas();
     IReadOnlyCollection<Idea> ReadAllIdeasWithProject();
     IReadOnlyCollection<Idea> ReadAllIdeasWithResponses();
     IReadOnlyCollection<Idea> ReadAllIdeasWithProjectAndResponses();
 
-    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(Slug projectSlug);
-    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(Slug projectSlug);
-    IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectSlug, Guid youthToken);
+    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectId(Slug projectId);
+    IReadOnlyCollection<Idea> ReadIdeasFromProjectByProjectIdWithResponses(Slug projectId);
+    IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken);
 
-    IReadOnlyCollection<Idea> ReadIdeasByProjectIdAndTopicId(Slug projectId, int topicId);
+    IReadOnlyCollection<Idea> ReadIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId);
 
     
     void UpdateIdea(Idea idea);
@@ -38,12 +37,10 @@ public interface IIdeaRepository
     void CreateIdeaReaction(IdeaReaction reaction);
     IdeaReaction ReadIdeaReaction(int ideaId, Guid youthToken, string emoji);
     IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId);
-    bool DeleteIdeaReaction(int ideaId, Guid youthToken, string emoji);
-    IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsByIdeaId(int ideaId);
-    bool DeleteIdeaReaction(int reactionId);
+    // bool DeleteIdeaReaction(int ideaId, string youthToken, string emoji);
 
     void CreateResponseReaction(ResponseReaction reaction);
-    ResponseReaction ReadResponseReaction(int responseId, Guid youthToken, string emoji);
+    ResponseReaction ReadResponseReaction(int responseId, string youthToken, string emoji);
     IReadOnlyCollection<ResponseReaction> ReadResponseReactionsFromResponseByResponseId(int responseId);
-    bool DeleteResponseReaction(int responseId, Guid youthToken, string emoji);
+    bool DeleteResponseReaction(int responseId, string youthToken, string emoji);
 }
