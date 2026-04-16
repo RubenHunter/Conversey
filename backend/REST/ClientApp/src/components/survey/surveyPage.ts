@@ -138,6 +138,15 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
 
+    // Auto-scroll textarea into view on mobile when focused
+    document.querySelectorAll('.survey-textarea').forEach(textarea => {
+        textarea.addEventListener('focus', () => {
+            setTimeout(() => {
+                (textarea as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 300)
+        })
+    })
+
     function updateProgress(): void {
         const answeredCount = answeredState.filter(Boolean).length
         const percentage = (answeredCount / questions.length) * 100
