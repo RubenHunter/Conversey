@@ -293,7 +293,10 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
-    // Don't call updateCurrentQuestionFromScroll() on initial load - keep currentQuestionIndex at -1
+    // Initialize current question based on scroll position
+    isUserScroll = true
+    updateCurrentQuestionFromScroll()
+    isUserScroll = true
 
     submitBtn.addEventListener('click', async () => {
         let allValid = true
