@@ -6,24 +6,67 @@ interface RenderCommunityListParams {
     ideas: Idea[]
     activeView: ActiveView
     topics: IdeaTopic[]
-    upBtn: HTMLButtonElement
-    downBtn: HTMLButtonElement
     flaggedIdeaIds: ReadonlySet<number>
+    activeIndex: number
 }
 
-export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBtn, downBtn, flaggedIdeaIds }: RenderCommunityListParams): void {
+function formatDate(isoString: string): string {
+    const date = new Date(isoString)
+    const now = new Date()
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 7) return `${diffInDays}d ago`
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function createUserInfoElement(_authorType: Idea['authorType'], createdAt: string): HTMLElement {
+    const userInfo = document.createElement('div')
+    userInfo.className = 'ideas-card-user'
+    
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    icon.setAttribute('class', 'ideas-card-user-icon')
+    icon.setAttribute('viewBox', '0 0 24 24')
+    icon.setAttribute('fill', 'currentColor')
+    icon.setAttribute('aria-hidden', 'true')
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('d', 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z')
+    icon.appendChild(path)
+    
+    const date = document.createElement('span')
+    date.className = 'ideas-card-user-date'
+    date.textContent = formatDate(createdAt)
+    
+    userInfo.append(icon, date)
+    return userInfo
+}
+
+export function renderCommunityIdeasList({ list, ideas, activeView, topics, flaggedIdeaIds, activeIndex }: RenderCommunityListParams): void {
     list.innerHTML = ''
 
     if (ideas.length === 0) {
         list.innerHTML = `<p class="ideas-empty">${activeView.type === 'my-ideas' ? 'You have not submitted any ideas yet.' : 'No ideas yet for this view.'}</p>`
-        upBtn.disabled = true
-        downBtn.disabled = true
         return
     }
 
-    ideas.forEach((idea, index) => {
+    // Rotate ideas: active idea first, then the rest in original order
+    const rotatedIdeas = [...ideas.slice(activeIndex), ...ideas.slice(0, activeIndex)]
+
+    rotatedIdeas.forEach((idea, index) => {
         const card = document.createElement('article')
         card.className = 'ideas-card'
+
+        // Add user info (icon + date) for all cards
+        const userInfo = createUserInfoElement(idea.authorType, idea.createdAt)
+        card.appendChild(userInfo)
 
         if (activeView.type === 'my-ideas') {
             card.classList.add('ideas-card--my-idea')
@@ -65,7 +108,11 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, upBt
             card.appendChild(body)
         }
 
+        // Store both original and rotated index
+        const originalIndex = ideas.indexOf(idea)
+        card.setAttribute('data-original-index', String(originalIndex))
         card.setAttribute('data-idea-index', String(index))
+        card.style.setProperty('--card-index', String(index))
         list.appendChild(card)
     })
 }

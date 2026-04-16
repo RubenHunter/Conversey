@@ -45,13 +45,14 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const allIdeas = [...context.ideas]
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
-    let activeIdeaIndex = 0
+    let activeIdeaOriginalIndex = 0
     let isTopicMenuOpen = false
     let visibleIdeasCache: Idea[] = []
     let listSyncFrame: number | null = null
     let focusTurnTimeout: number | null = null
     let listScrollUnlockTimeout: number | null = null
     let isProgrammaticListScroll = false
+    let rotationTimer: number | null = null
     const flaggedIdeaIds = new Set<number>()
 
     container.innerHTML = `
@@ -81,13 +82,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
                 <div class="ideas-grid">
                     <section class="ideas-community" aria-label="Ideas list">
-                        <div class="ideas-community-head">
-                            <h2 id="ideas-list-title" class="ideas-community-title"></h2>
-                            <div class="ideas-list-controls">
-                                <button id="ideas-up" class="ideas-control-btn" aria-label="Previous idea">↑</button>
-                                <button id="ideas-down" class="ideas-control-btn" aria-label="Next idea">↓</button>
-                            </div>
-                        </div>
                         <div id="ideas-list" class="ideas-list"></div>
                     </section>
 
@@ -192,7 +186,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
     const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
     const topicMenu = container.querySelector<HTMLDivElement>('#ideas-topic-menu')!
-    const listTitle = container.querySelector<HTMLHeadingElement>('#ideas-list-title')!
     const list = container.querySelector<HTMLDivElement>('#ideas-list')!
     const prompt = container.querySelector<HTMLParagraphElement>('#ideas-prompt')!
     const composeTopic = container.querySelector<HTMLParagraphElement>('#ideas-compose-topic')!
@@ -202,8 +195,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
     const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
-    const upBtn = container.querySelector<HTMLButtonElement>('#ideas-up')!
-    const downBtn = container.querySelector<HTMLButtonElement>('#ideas-down')!
 
     const safetyReviewDialog = createSafetyReviewDialogController({ root: container })
     const ideaPanel = createIdeaPanelController({
@@ -265,53 +256,73 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             activeView,
             onSelectMyIdeas: () => {
                 activeView = { type: 'my-ideas' }
-                activeIdeaIndex = 0
+                activeIdeaOriginalIndex = 0
                 closeTopicMenu()
                 render()
             },
             onSelectTopic: (topicId) => {
                 activeView = { type: 'topic', topicId }
-                activeIdeaIndex = 0
+                activeIdeaOriginalIndex = 0
                 closeTopicMenu()
                 render()
             },
         })
     }
 
-    function updateArrowState(totalIdeas: number): void {
-        if (totalIdeas === 0) {
-            upBtn.disabled = true
-            downBtn.disabled = true
-            return
-        }
-
-        upBtn.disabled = activeIdeaIndex <= 0
-        downBtn.disabled = activeIdeaIndex >= totalIdeas - 1
-    }
-
     function applyWheelStyles(): void {
+        // After rotation, DOM index 0 is always the active idea
         const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
         cards.forEach((card, index) => {
-            const distance = Math.abs(index - activeIdeaIndex)
-            card.classList.toggle('active', distance === 0)
-            card.classList.toggle('near', distance === 1)
-            card.classList.toggle('far', distance >= 2)
+            card.classList.toggle('active', index === 0)
+            card.classList.toggle('near', index === 1)
+            card.classList.toggle('far', index >= 2)
         })
+    }
+
+    function startRotationTimer(): void {
+        if (rotationTimer !== null) {
+            stopRotationTimer()
+        }
+        if (visibleIdeasCache.length <= 1) return
+        
+        rotationTimer = window.setInterval(() => {
+            const nextIndex = (activeIdeaOriginalIndex + 1) % visibleIdeasCache.length
+            setActiveIdea(nextIndex, true)
+        }, 5000) // 5 seconden
+    }
+
+    function stopRotationTimer(): void {
+        if (rotationTimer !== null) {
+            window.clearInterval(rotationTimer)
+            rotationTimer = null
+        }
     }
 
     function setActiveIdea(nextIndex: number, shouldScroll: boolean): void {
         const totalIdeas = visibleIdeasCache.length
         if (totalIdeas === 0) {
-            activeIdeaIndex = 0
-            updateArrowState(0)
+            activeIdeaOriginalIndex = 0
             return
         }
 
-        activeIdeaIndex = Math.max(0, Math.min(nextIndex, totalIdeas - 1))
+        stopRotationTimer()
+        const newActiveIndex = Math.max(0, Math.min(nextIndex, totalIdeas - 1))
+        
+        // Re-render the list with rotated order (active idea first)
+        renderCommunityIdeasList({
+            list,
+            ideas: visibleIdeasCache,
+            activeView,
+            topics,
+            flaggedIdeaIds,
+            activeIndex: newActiveIndex,
+        })
+        
+        // After rotation, active idea is at DOM index 0
+        activeIdeaOriginalIndex = newActiveIndex
         applyWheelStyles()
-        updateArrowState(totalIdeas)
 
-        const activeCard = list.querySelector<HTMLElement>(`[data-idea-index="${activeIdeaIndex}"]`)
+        const activeCard = list.querySelector<HTMLElement>('.ideas-card:first-child')
         if (activeCard) {
             activeCard.classList.remove('turn-focus')
             if (focusTurnTimeout !== null) {
@@ -337,6 +348,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         listScrollUnlockTimeout = window.setTimeout(() => {
             isProgrammaticListScroll = false
             listScrollUnlockTimeout = null
+            startRotationTimer() // Start timer opnieuw na scroll
         }, 360)
     }
 
@@ -354,23 +366,23 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             const listRect = list.getBoundingClientRect()
             const centerY = listRect.top + listRect.height / 2
 
-            let closestIndex = activeIdeaIndex
+            let closestOriginalIndex = activeIdeaOriginalIndex
             let closestDistance = Number.POSITIVE_INFINITY
 
             cards.forEach((card) => {
                 const rect = card.getBoundingClientRect()
                 const cardCenterY = rect.top + rect.height / 2
                 const distance = Math.abs(cardCenterY - centerY)
-                const index = Number(card.getAttribute('data-idea-index'))
+                const originalIndex = Number(card.getAttribute('data-original-index'))
 
                 if (distance < closestDistance) {
                     closestDistance = distance
-                    closestIndex = index
+                    closestOriginalIndex = originalIndex
                 }
             })
 
-            if (closestIndex !== activeIdeaIndex) {
-                setActiveIdea(closestIndex, false)
+            if (closestOriginalIndex !== activeIdeaOriginalIndex) {
+                setActiveIdea(closestOriginalIndex, false)
             }
 
             listSyncFrame = null
@@ -379,23 +391,28 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     function render(): void {
         topicTriggerValue.textContent = getActiveIdeasLabel(activeView, topics)
-        listTitle.textContent = activeView.type === 'my-ideas' ? 'Your ideas by topic' : 'Community ideas on this topic'
 
         renderTopicMenuBlock()
-        visibleIdeasCache = getVisibleIdeas()
+        const newIdeas = getVisibleIdeas()
+        visibleIdeasCache = newIdeas
 
         renderCommunityIdeasList({
             list,
             ideas: visibleIdeasCache,
             activeView,
             topics,
-            upBtn,
-            downBtn,
             flaggedIdeaIds,
+            activeIndex: activeIdeaOriginalIndex,
         })
 
         if (visibleIdeasCache.length > 0) {
-            setActiveIdea(activeIdeaIndex, false)
+            // Reset index if it's out of bounds
+            if (activeIdeaOriginalIndex >= visibleIdeasCache.length) {
+                activeIdeaOriginalIndex = 0
+            }
+            setActiveIdea(activeIdeaOriginalIndex, false)
+        } else {
+            stopRotationTimer()
         }
 
         renderIdeasComposer({
@@ -435,22 +452,17 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         const card = target.closest<HTMLElement>('.ideas-card')
         if (!card) return
 
-        const index = Number(card.getAttribute('data-idea-index'))
+        const index = Number(card.getAttribute('data-original-index'))
         if (!Number.isFinite(index) || index < 0 || index >= visibleIdeasCache.length) return
 
         setActiveIdea(index, true)
         ideaPanel.open(visibleIdeasCache[index])
     })
 
-    upBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0) return
-        setActiveIdea(activeIdeaIndex - 1, true)
-    })
-
-    downBtn.addEventListener('click', () => {
-        if (visibleIdeasCache.length === 0) return
-        setActiveIdea(activeIdeaIndex + 1, true)
-    })
+    // Cleanup timer on navigation
+    window.addEventListener('app:before-navigate', () => {
+        stopRotationTimer()
+    }, { once: false })
 
     textarea.addEventListener('input', () => {
         submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
@@ -519,7 +531,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     allIdeas.unshift({ ...result.idea, authorType: 'self' })
                     flaggedIdeaIds.add(result.idea.id)
                     textarea.value = ''
-                    activeIdeaIndex = 0
+                    activeIdeaOriginalIndex = 0
                     render()
                     return
                 }
@@ -561,7 +573,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             }
 
             textarea.value = ''
-            activeIdeaIndex = 0
+            activeIdeaOriginalIndex = 0
             render()
         } catch (err) {
             console.error('[ideas] submit failed', err)
@@ -572,4 +584,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     })
 
     render()
+    
+    // Start auto-rotation timer na initial render
+    startRotationTimer()
 }
