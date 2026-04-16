@@ -15,6 +15,14 @@ public class QuestionRepository : IQuestionRepository
         _dbContext = dbContext;
     }
 
+    public Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug projectSlug)
+    {
+        return _dbContext.Projects
+            .Include(project => project.Workspace)
+            .Include(project => project.Questions)
+            .SingleOrDefault(project => project.Id == projectSlug);
+    }
+
     public Question ReadQuestionById(int questionId)
     {
         return _dbContext.Questions
@@ -33,26 +41,71 @@ public class QuestionRepository : IQuestionRepository
         return _dbContext.Questions.ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Question> ReadAllQuestionsWithProject()
+    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithChoices(Slug projectSlug)
     {
-        return _dbContext.Questions
-            .Include(q => q.Project)
-            .ToList().AsReadOnly();
-    }
+        var questions = _dbContext.Questions
+            .Where(question => question.Project.Id == projectSlug)
+            .ToList();
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectId(Slug projectSlug)
-    {
-        return _dbContext.Questions
-            .Where(q => q.Project.Id == projectSlug)
-            .ToList().AsReadOnly();
-    }
+        if (questions.Count == 0)
+        {
+            return questions.AsReadOnly();
+        }
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(Slug projectSlug)
-    {
-        return _dbContext.Questions
-            .Include(q => q.Project)
-            .Where(q => q.Project.Id == projectSlug)
-            .ToList().AsReadOnly();
+        var choiceQuestionIds = questions
+            .Where(question => question is ChoiceQuestion<SingleChoice> || question is ChoiceQuestion<MultipleChoice>)
+            .Select(question => question.Id)
+            .ToHashSet();
+
+        if (choiceQuestionIds.Count == 0)
+        {
+            return questions.AsReadOnly();
+        }
+
+        var singleChoices = _dbContext.Set<SingleChoice>()
+            .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
+            .Select(choice => new
+            {
+                QuestionId = choice.Question.Id,
+                Choice = choice
+            })
+            .ToList()
+            .GroupBy(entry => entry.QuestionId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IList<SingleChoice>)group.Select(entry => entry.Choice).ToList());
+
+        var multipleChoices = _dbContext.Set<MultipleChoice>()
+            .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
+            .Select(choice => new
+            {
+                QuestionId = choice.Question.Id,
+                Choice = choice
+            })
+            .ToList()
+            .GroupBy(entry => entry.QuestionId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IList<MultipleChoice>)group.Select(entry => entry.Choice).ToList());
+
+        foreach (var question in questions)
+        {
+            if (question is ChoiceQuestion<SingleChoice> singleChoiceQuestion)
+            {
+                singleChoiceQuestion.PossibleChoices = singleChoices.TryGetValue(question.Id, out var values)
+                    ? values
+                    : new List<SingleChoice>();
+            }
+
+            if (question is ChoiceQuestion<MultipleChoice> multipleChoiceQuestion)
+            {
+                multipleChoiceQuestion.PossibleChoices = multipleChoices.TryGetValue(question.Id, out var values)
+                    ? values
+                    : new List<MultipleChoice>();
+            }
+        }
+
+        return questions.AsReadOnly();
     }
 
     public void CreateQuestion(Question question)
@@ -61,34 +114,10 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.SaveChanges();
     }
 
-    public void UpdateQuestion(Question question)
-    {
-        _dbContext.Questions.Update(question);
-        _dbContext.SaveChanges();
-    }
-
-    public bool DeleteQuestion(int questionId)
-    {
-        var question = _dbContext.Questions
-            .SingleOrDefault(q => q.Id == questionId);
-        if (question == null) return false;
-
-        _dbContext.Questions.Remove(question);
-        _dbContext.SaveChanges();
-        return true;
-    }
-
     public Answer ReadAnswerById(int answerId)
     {
         return _dbContext.Answers
             .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IReadOnlyCollection<Answer> ReadAnswersByQuestionId(int questionId)
-    {
-        return _dbContext.Answers
-            .Where(a => a.Id == questionId)
-            .ToList().AsReadOnly();
     }
 
     public void CreateAnswer(Answer answer)
@@ -112,6 +141,49 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.Answers.Remove(answer);
         _dbContext.SaveChanges();
         return true;
+    }
+
+    public Youth ReadYouthByTokenWithProject(Guid youthToken)
+    {
+        return _dbContext.Youths
+            .Include(youth => youth.Project)
+            .SingleOrDefault(youth => youth.Id == youthToken);
+    }
+
+    public Youth CreateYouth(Guid youthToken, Slug projectSlug)
+    {
+        var project = _dbContext.Projects
+            .Single(project => project.Id == projectSlug);
+
+        var youth = new Youth
+        {
+            Id = youthToken,
+            Email = string.Empty,
+            Project = project
+        };
+
+        _dbContext.Youths.Add(youth);
+        _dbContext.SaveChanges();
+
+        return _dbContext.Youths
+            .Include(createdYouth => createdYouth.Project)
+            .Single(createdYouth => createdYouth.Id == youthToken);
+    }
+
+    public SingleChoice ReadSingleChoiceByIdForQuestion(int questionId, int optionId)
+    {
+        return _dbContext.Set<SingleChoice>()
+            .SingleOrDefault(choice =>
+                choice.Id == optionId &&
+                choice.Question.Id == questionId);
+    }
+
+    public MultipleChoice ReadMultipleChoiceByIdForQuestion(int questionId, int optionId)
+    {
+        return _dbContext.Set<MultipleChoice>()
+            .SingleOrDefault(choice =>
+                choice.Id == optionId &&
+                choice.Question.Id == questionId);
     }
 }
 

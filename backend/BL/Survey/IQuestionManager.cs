@@ -1,25 +1,23 @@
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Survey;
 
-namespace Conversey.BL.Subplatform.Survey.Questions;
+namespace Conversey.BL.Survey;
 
 public interface IQuestionManager
 {
+    IEnumerable<Question> GetQuestions(Slug workspaceSlug, Slug projectSlug);
+    void SubmitAnswers(
+        Slug workspaceSlug,
+        Slug projectSlug,
+        string youthId,
+        IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers);
+
     Question GetQuestionById(int questionId);
-    Question GetQuestionByIdWithProject(int questionId);
-
-    IReadOnlyCollection<Question> GetAllQuestions();
-    IReadOnlyCollection<Question> GetAllQuestionsWithProject();
-
-    IReadOnlyCollection<Question> GetQuestionsByProjectId(Slug projectSlug);
-    IReadOnlyCollection<Question> GetQuestionsByProjectIdWithProject(Slug projectSlug);
+    IEnumerable<Question> GetAllQuestions();
 
     Question AddQuestion(Question question);
-    Question ChangeQuestion(Question question);
-    void RemoveQuestion(int questionId);
 
     Answer GetAnswerById(int answerId);
-    IReadOnlyCollection<Answer> GetAnswersByQuestionId(int questionId);
 
     Answer AddAnswer(Answer answer);
     Answer ChangeAnswer(Answer answer);

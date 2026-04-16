@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Survey;
 
-namespace Conversey.BL.Subplatform.Survey.Questions;
+namespace Conversey.BL.Survey;
 
 public class QuestionManager: IQuestionManager
 {
@@ -14,34 +16,72 @@ public class QuestionManager: IQuestionManager
         _questionRepository = questionRepository;
     }
 
+    public IEnumerable<Question> GetQuestions(Slug workspaceSlug, Slug projectSlug)
+    {
+        _ = GetProjectForWorkspace(workspaceSlug, projectSlug);
+        return _questionRepository.ReadQuestionsByProjectIdWithChoices(projectSlug);
+    }
+
+    public void SubmitAnswers(
+        Slug workspaceSlug,
+        Slug projectSlug,
+        string youthId,
+        IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers)
+    {
+        var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+
+        if (!Guid.TryParse(youthId?.Trim(), out var youthToken))
+        {
+            throw new ValidationException("YouthId must be a valid GUID.");
+        }
+
+        var youth = ResolveYouth(project, youthToken);
+
+        foreach (var answerInput in answers ?? Array.Empty<(int QuestionId, int? SelectedOptionId, string OpenTextValue)>())
+        {
+            var question = _questionRepository.ReadQuestionByIdWithProject(answerInput.QuestionId);
+            if (question == null || question.Project?.Id != project.Id)
+            {
+                throw new ValidationException($"Question {answerInput.QuestionId} does not belong to project '{project.Id.Text}'.");
+            }
+
+            switch (question)
+            {
+                case OpenQuestion openQuestion:
+                    AddAnswer(new Answer<string>
+                    {
+                        Value = answerInput.OpenTextValue?.Trim() ?? string.Empty,
+                        Question = openQuestion,
+                        Youth = youth
+                    });
+                    break;
+
+                case ScaleQuestion scaleQuestion:
+                    SubmitScaleAnswer(scaleQuestion, answerInput, youth);
+                    break;
+
+                case ChoiceQuestion<SingleChoice> singleChoiceQuestion:
+                    SubmitSingleChoiceAnswer(singleChoiceQuestion, answerInput, youth);
+                    break;
+
+                case ChoiceQuestion<MultipleChoice> multipleChoiceQuestion:
+                    SubmitMultipleChoiceAnswer(multipleChoiceQuestion, answerInput, youth);
+                    break;
+
+                default:
+                    throw new ValidationException($"Question {answerInput.QuestionId} has an unsupported type.");
+            }
+        }
+    }
+
     public Question GetQuestionById(int questionId)
     {
         return _questionRepository.ReadQuestionById(questionId) ?? throw new QuestionNotFoundException(questionId.ToString());
     }
 
-    public Question GetQuestionByIdWithProject(int questionId)
-    {
-        return _questionRepository.ReadQuestionByIdWithProject(questionId) ?? throw new QuestionNotFoundException(questionId.ToString());
-    }
-
-    public IReadOnlyCollection<Question> GetAllQuestions()
+    public IEnumerable<Question> GetAllQuestions()
     {
         return _questionRepository.ReadAllQuestions();
-    }
-
-    public IReadOnlyCollection<Question> GetAllQuestionsWithProject()
-    {
-        return _questionRepository.ReadAllQuestionsWithProject();
-    }
-
-    public IReadOnlyCollection<Question> GetQuestionsByProjectId(Slug projectSlug)
-    {
-        return _questionRepository.ReadQuestionsByProjectId(projectSlug);
-    }
-
-    public IReadOnlyCollection<Question> GetQuestionsByProjectIdWithProject(Slug projectSlug)
-    {
-        return _questionRepository.ReadQuestionsByProjectIdWithProject(projectSlug);
     }
 
     public Question AddQuestion(Question question)
@@ -51,29 +91,9 @@ public class QuestionManager: IQuestionManager
         return question;
     }
 
-    public Question ChangeQuestion(Question question)
-    {
-        Validate(question);
-        _questionRepository.UpdateQuestion(question);
-        return question;
-    }
-
-    public void RemoveQuestion(int questionId)
-    {
-        if (!_questionRepository.DeleteQuestion(questionId))
-        {
-            throw new QuestionNotFoundException(questionId.ToString());
-        }
-    }
-
     public Answer GetAnswerById(int answerId)
     {
         return _questionRepository.ReadAnswerById(answerId) ?? throw new AnswerNotFoundException(answerId.ToString());
-    }
-
-    public IReadOnlyCollection<Answer> GetAnswersByQuestionId(int questionId)
-    {
-        return _questionRepository.ReadAnswersByQuestionId(questionId);
     }
 
     public Answer AddAnswer(Answer answer)
@@ -96,6 +116,103 @@ public class QuestionManager: IQuestionManager
         {
             throw new AnswerNotFoundException(answerId.ToString());
         }
+    }
+
+    private Project GetProjectForWorkspace(Slug workspaceSlug, Slug projectSlug)
+    {
+        var project = _questionRepository.ReadProjectBySlugWithWorkspaceAndQuestions(projectSlug)
+                      ?? throw new ProjectNotFoundException(projectSlug.Text);
+
+        if (project.Workspace?.Id != workspaceSlug)
+        {
+            throw new ProjectNotFoundException($"{workspaceSlug.Text}/{projectSlug.Text}");
+        }
+
+        return project;
+    }
+
+    private Youth ResolveYouth(Project project, Guid youthToken)
+    {
+        var youth = _questionRepository.ReadYouthByTokenWithProject(youthToken);
+        if (youth == null)
+        {
+            return _questionRepository.CreateYouth(youthToken, project.Id);
+        }
+
+        if (youth.Project?.Id != project.Id)
+        {
+            throw new ValidationException($"Youth '{youthToken}' does not belong to project '{project.Id.Text}'.");
+        }
+
+        return youth;
+    }
+
+    private void SubmitScaleAnswer(
+        ScaleQuestion question,
+        (int QuestionId, int? SelectedOptionId, string OpenTextValue) answerInput,
+        Youth youth)
+    {
+        var hasScaleValue = answerInput.SelectedOptionId.HasValue || int.TryParse(answerInput.OpenTextValue, out _);
+        if (!hasScaleValue)
+        {
+            throw new ValidationException($"Question {answerInput.QuestionId} requires a numeric answer.");
+        }
+
+        var parsed = answerInput.SelectedOptionId ?? int.Parse(answerInput.OpenTextValue!);
+        AddAnswer(new Answer<int>
+        {
+            Value = parsed,
+            Question = question,
+            Youth = youth
+        });
+    }
+
+    private void SubmitSingleChoiceAnswer(
+        ChoiceQuestion<SingleChoice> question,
+        (int QuestionId, int? SelectedOptionId, string OpenTextValue) answerInput,
+        Youth youth)
+    {
+        if (!answerInput.SelectedOptionId.HasValue)
+        {
+            throw new ValidationException($"Question {answerInput.QuestionId} requires a selected option.");
+        }
+
+        var option = _questionRepository.ReadSingleChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
+        if (option == null)
+        {
+            throw new ValidationException($"Selected option {answerInput.SelectedOptionId.Value} is invalid for question {answerInput.QuestionId}.");
+        }
+
+        AddAnswer(new Answer<SingleChoice>
+        {
+            Value = option,
+            Question = question,
+            Youth = youth
+        });
+    }
+
+    private void SubmitMultipleChoiceAnswer(
+        ChoiceQuestion<MultipleChoice> question,
+        (int QuestionId, int? SelectedOptionId, string OpenTextValue) answerInput,
+        Youth youth)
+    {
+        if (!answerInput.SelectedOptionId.HasValue)
+        {
+            throw new ValidationException($"Question {answerInput.QuestionId} requires a selected option.");
+        }
+
+        var option = _questionRepository.ReadMultipleChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
+        if (option == null)
+        {
+            throw new ValidationException($"Selected option {answerInput.SelectedOptionId.Value} is invalid for question {answerInput.QuestionId}.");
+        }
+
+        AddAnswer(new Answer<MultipleChoice>
+        {
+            Value = option,
+            Question = question,
+            Youth = youth
+        });
     }
 
     private void Validate(object obj)

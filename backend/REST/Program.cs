@@ -2,7 +2,7 @@ using Conversey.BL.Administration;
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Ideation;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
@@ -11,6 +11,7 @@ using Conversey.DAL.Survey;
 using Conversey.REST.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
+using Conversey.BL.Survey;
 
 var builder = WebApplication.CreateBuilder(args);
 
