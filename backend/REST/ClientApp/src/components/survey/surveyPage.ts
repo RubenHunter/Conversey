@@ -222,9 +222,14 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     }
 
     scrollNav = renderScrollNav((direction) => {
+        // If at hero (index = -1), first down click goes to question 0
+        if (currentQuestionIndex === -1 && direction === 'down' && questions.length > 0) {
+            scrollToQuestion(0)
+            return
+        }
         if (direction === 'up' && currentQuestionIndex > 0) {
             scrollToQuestion(currentQuestionIndex - 1)
-        } else if (direction === 'down' && currentQuestionIndex < questions.length - 1) {
+        } else if (direction === 'down' && currentQuestionIndex >= 0 && currentQuestionIndex < questions.length - 1) {
             scrollToQuestion(currentQuestionIndex + 1)
         }
     })
@@ -293,9 +298,8 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
-    // Initialize current question based on scroll position
-    isUserScroll = true
-    updateCurrentQuestionFromScroll()
+    // Keep currentQuestionIndex at -1 initially (hero section)
+    // updateCurrentQuestionFromScroll() is called by scroll events
     isUserScroll = true
 
     submitBtn.addEventListener('click', async () => {
