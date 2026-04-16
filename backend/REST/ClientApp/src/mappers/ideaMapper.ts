@@ -36,7 +36,7 @@ function isPendingStatus(status: unknown): boolean {
 }
 
 export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): Idea {
-    const youthToken = pickString(dto.youthToken, dto.YouthToken)
+    const youthToken = pickString(dto.youthId, dto.YouthId, dto.youthToken, dto.YouthToken)
     const rawReactions = dto.reactions ?? dto.Reactions ?? []
     const reactions: IdeaReactionSummary[] = rawReactions
         .map((reaction) => ({
@@ -59,9 +59,7 @@ export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): I
 
 export function mapSubmitIdeaRequestToApiSubmitIdeaRequest(request: SubmitIdeaRequest, youthToken: string): ApiSubmitIdeaRequestDto {
     return {
-        projectId: request.projectId,
-        topicId: request.topicId,
         content: request.body,
-        youthToken,
+        youthId: youthToken,
     }
 }

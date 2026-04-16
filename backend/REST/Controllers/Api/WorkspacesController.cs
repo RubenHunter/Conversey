@@ -1,6 +1,5 @@
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Administration;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,7 +39,7 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name, new Slug { Text = dto.Slug });
+            var workspace = _manager.CreateWorkspace(dto.Name, ProjectController.ToSlug(dto.Slug));
 
             return CreatedAtAction(
                 nameof(GetBySlug),
@@ -54,11 +53,11 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpGet("{slug}")]
-    public IActionResult GetBySlug(Slug slug)
+    public IActionResult GetBySlug(string slug)
     {
         try
         {
-            var workspace = _manager.GetWorkspaceBySlug(slug);
+            var workspace = _manager.GetWorkspaceBySlug(ProjectController.ToSlug(slug));
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)
@@ -72,7 +71,7 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.GetWorkspaceById(new Slug { Text = id.Trim().ToLowerInvariant() });
+            var workspace = _manager.GetWorkspaceById(ProjectController.ToSlug(id));
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)

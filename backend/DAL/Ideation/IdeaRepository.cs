@@ -23,14 +23,8 @@ public class IdeaRepository : IIdeaRepository
     public Idea ReadIdeaById(int ideaId)
     {
         return _dbContext.Ideas
-            .Include(i => i.Reactions)
-            .SingleOrDefault(i => i.Id == ideaId);
-    }
-
-    public Idea ReadIdeaByIdWithProject(int ideaId)
-    {
-        return _dbContext.Ideas
             .Include(i => i.Project)
+            .ThenInclude(p => p.Workspace)
             .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
@@ -53,6 +47,7 @@ public class IdeaRepository : IIdeaRepository
     public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken)
     {
         return _dbContext.Ideas
+            .Include(i => i.Project)
             .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
@@ -65,6 +60,8 @@ public class IdeaRepository : IIdeaRepository
     public IReadOnlyCollection<Idea> ReadIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId)
     {
         return _dbContext.Ideas
+            .Include(i => i.Project)
+            .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
             .Where(i => i.Project.Id == projectSlug && i.Topic.Id == topicId && i.Status == ModerationStatus.Approved)

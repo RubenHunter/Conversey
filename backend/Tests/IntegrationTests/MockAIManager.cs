@@ -1,6 +1,7 @@
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ideation;
 using Microsoft.Extensions.AI;
+using System.Runtime.CompilerServices;
 
 namespace Tests.IntegrationTests;
 
@@ -17,7 +18,7 @@ public class MockAiManager : IAiManager
     }
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
         yield break;

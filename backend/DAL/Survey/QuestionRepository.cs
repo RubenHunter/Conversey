@@ -158,7 +158,7 @@ public class QuestionRepository : IQuestionRepository
         var youth = new Youth
         {
             Id = youthToken,
-            Email = string.Empty,
+            Email = $"{youthToken:N}@local.invalid",
             Project = project
         };
 
@@ -279,8 +279,8 @@ public class SingleChoiceConfig : IEntityTypeConfiguration<SingleChoice>
 {
     public void Configure(EntityTypeBuilder<SingleChoice> builder)
     {
-        builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
-        
+        //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        builder.HasKey(c => c.Id);
         builder.Property(c => c.Text)
             .HasMaxLength(250)
             .IsRequired();
@@ -291,8 +291,8 @@ public class MultipleChoiceConfig : IEntityTypeConfiguration<MultipleChoice>
 {
     public void Configure(EntityTypeBuilder<MultipleChoice> builder)
     {
-        builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
-        
+        //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        builder.HasKey(c => c.Id);
         builder.Property(c => c.Text)
             .HasMaxLength(250)
             .IsRequired();

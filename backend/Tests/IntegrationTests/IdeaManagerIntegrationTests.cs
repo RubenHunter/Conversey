@@ -16,14 +16,19 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void GetAllIdeas_ShouldReturnSeededIdeas()
+    public void GetIdeasByProjectIdAndTopicId_ShouldReturnSeededIdeas()
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
+        var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
 
-        var ideas = manager.GetAllIdeas();
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var topicId = project.Topic.ToList()[0].Id;
 
-        Assert.NotEmpty(ideas);
+        var ideas = manager.GetIdeasByProjectIdAndTopicId(project.Id, topicId).ToList();
+
+        Assert.True(ideas.Count > 0);
+        Assert.Contains(ideas, idea => idea.Project.Id == project.Id && idea.Topic.Id == topicId);
     }
 
     [Fact]
@@ -33,7 +38,8 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var topicId = project.Topic.ToList()[0].Id;
 
         var response = manager.SubmitIdea("Integration idea", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
 
@@ -49,8 +55,9 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         {
             using var scope = _fixture.CreateScope();
             var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
-                var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-            var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
+            var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+            var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+            var topicId = project.Topic.ToList()[0].Id;
 
             var response = manager.SubmitIdea("flagged", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
 
@@ -70,14 +77,19 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
+        var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
 
-        var idea = manager.GetAllIdeas().First();
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var topicId = project.Topic.ToList()[0].Id;
+
+        var idea = Assert.IsType<SubmissionResponse.Approved>(
+            manager.SubmitIdea("response test idea", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken)).idea;
         var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse("response", idea.Id, ManagerSeedData.YouthToken.ToString()));
 
         _ = manager.AddIdeaReaction("like", idea.Id, ManagerSeedData.YouthToken.ToString());
         _ = manager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken.ToString());
 
-        var ideaReactions = manager.GetIdeaReactionsFromIdeaByIdeaId(idea.Id);
+        var ideaReactions = manager.GetIdeaReactionsByIdeaId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id);
         var responseReactions = manager.GetResponseReactionsFromResponseByResponseId(responseSubmission.Response.Id);
 
         Assert.Contains(ideaReactions, r => r.Emoji == "like");

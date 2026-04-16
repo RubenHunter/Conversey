@@ -7,7 +7,6 @@ public interface IIdeaRepository
 {
     void CreateIdea(Idea idea);
     Idea ReadIdeaById(int ideaId);
-    Idea ReadIdeaByIdWithProject(int ideaId);
     Idea ReadIdeaByIdWithProjectAndResponses(int ideaId);
 
     IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken);

@@ -30,7 +30,7 @@ function isPendingStatus(status: unknown): boolean {
 }
 
 export function mapApiIdeaResponseToIdeaResponse(dto: ApiIdeaResponseDto, youthToken: string): IdeaResponse {
-    const authorToken = pickString(dto.youthToken, dto.YouthToken) ?? ''
+    const authorToken = pickString(dto.youthId, dto.YouthId, dto.youthToken, dto.YouthToken) ?? ''
     const rawReactions = dto.reactions ?? dto.Reactions ?? []
 
     return {

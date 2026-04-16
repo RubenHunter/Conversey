@@ -26,6 +26,8 @@ export interface ApiIdeaDto {
     Status?: string | number
     authorType?: 'self' | 'other'
     AuthorType?: 'self' | 'other'
+    youthId?: string
+    YouthId?: string
     youthToken?: string
     YouthToken?: string
     createdAt?: string
@@ -37,8 +39,6 @@ export interface ApiIdeaDto {
 }
 
 export interface ApiSubmitIdeaRequestDto {
-    projectId: number
-    topicId: number
     content: string
-    youthToken: string
+    youthId: string
 }

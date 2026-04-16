@@ -45,6 +45,6 @@ public class ProjectController : ControllerBase
 
     internal static Slug ToSlug(string value)
     {
-        return new Slug { Text = value.Trim().ToLowerInvariant() };
+        return Slug.FromName(value);
     }
 }

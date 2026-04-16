@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Survey;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Survey;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -28,12 +28,26 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
     }
 
     [Fact]
+    public void GetQuestions_ForSeededProject_ShouldReturnProjectQuestions()
+    {
+        using var scope = _fixture.CreateScope();
+        var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
+        var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var topicQuestions = questionManager.GetQuestions(ManagerSeedData.WorkspaceSlug, project.Id).ToList();
+
+        Assert.NotEmpty(topicQuestions);
+        Assert.Contains(topicQuestions, question => question.Project.Id == project.Id);
+    }
+
+    [Fact]
     public void AddQuestion_And_GetById_ShouldPersistQuestion()
     {
         using var scope = _fixture.CreateScope();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var project = projectManager.GetProjectBySlug(ManagerSeedData.ProjectSlug);
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
 
         var created = questionManager.AddQuestion(new OpenQuestion
         {
@@ -53,7 +67,7 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
 
-        var project = projectManager.GetProjectBySlug(ManagerSeedData.ProjectSlug);
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
         var youth = projectManager.GetYouthByToken(ManagerSeedData.YouthToken);
 
         var question = questionManager.AddQuestion(new OpenQuestion
@@ -92,7 +106,7 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
         using var scope = _fixture.CreateScope();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var project = projectManager.GetProjectBySlug(ManagerSeedData.ProjectSlug);
+        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
 
         var act = () => questionManager.AddQuestion(new OpenQuestion
         {

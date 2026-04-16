@@ -163,9 +163,7 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
 }
 
 interface UpdateIdeaAfterSafetyReviewRequest {
-    projectId: number
     content: string
-    youthToken: string
     markForReview: boolean
 }
 
@@ -178,13 +176,10 @@ export async function updateIdeaAfterSafetyReview(
     content: string,
     markForReview: boolean,
 ): Promise<Idea> {
-    const youthToken = getIdeasYouthToken(projectId)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/${ideaId}`
 
     const payload: UpdateIdeaAfterSafetyReviewRequest = {
-        projectId,
         content,
-        youthToken,
         markForReview,
     }
 
@@ -197,5 +192,5 @@ export async function updateIdeaAfterSafetyReview(
         `[AI moderation] updated idea ${ideaId} after safety dialog; status=${markForReview ? 'Pending' : 'Approved'}`,
     )
 
-    return mapApiIdeaToIdea(dto, youthToken)
+    return mapApiIdeaToIdea(dto, getIdeasYouthToken(projectId))
 }

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
-using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
@@ -325,7 +324,7 @@ public class IdeaResponsesController : ControllerBase
         }
         catch (YouthNotFoundException)
         {
-            _projectManager.AddYouth(youthToken, string.Empty, project.Id);
+            _projectManager.AddYouth(youthToken, $"{youthToken:N}@local.invalid", project.Id);
         }
     }
 

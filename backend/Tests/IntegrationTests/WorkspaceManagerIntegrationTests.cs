@@ -28,14 +28,15 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
     }
 
     [Fact]
-    public void GetWorkspaceByIdWithProjects_ShouldContainSeededProject()
+    public void GetWorkspaceById_ShouldReturnSeededWorkspace()
     {
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var workspace = workspaceManager.GetWorkspaceByIdWithProjects(ManagerSeedData.WorkspaceSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
 
-        Assert.Contains(workspace.Projects, p => p.Id == ManagerSeedData.ProjectSlug);
+        Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, workspace.Id.Text);
+        Assert.Equal(ManagerSeedData.WorkspaceName, workspace.Name);
     }
 
     [Fact]

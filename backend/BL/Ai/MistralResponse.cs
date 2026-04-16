@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Conversey.BL.Ai;
 
-public class Response
+public class MistralAiResponse
 {
     [JsonPropertyName("choices")]
     public Choice[] Choices { get; set; }

@@ -92,7 +92,7 @@ public class IdeaManager: IIdeaManager
 
     public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
     {
-        var idea = _repository.ReadIdeaByIdWithProject(ideaId);
+        var idea = _repository.ReadIdeaById(ideaId);
         if (idea == null) throw new IdeaNotFoundException(ideaId);
 
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
@@ -133,7 +133,7 @@ public class IdeaManager: IIdeaManager
 
     public IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken)
     {
-        var idea = _repository.ReadIdeaByIdWithProject(ideaId) ?? throw new IdeaNotFoundException(ideaId);
+        var idea = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId);
         Youth author = GetYouthForProject(youthToken, idea.Project.Id);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
@@ -232,8 +232,21 @@ public class IdeaManager: IIdeaManager
 
     private Youth GetYouthInProject(Guid youthId, Slug projectId)
     {
-        Youth youth = _projectRepository.ReadYouthByTokenWithProject(youthId)
-                      ?? throw new YouthNotFoundException(youthId);
+        Youth youth = _projectRepository.ReadYouthByTokenWithProject(youthId);
+        if (youth == null)
+        {
+            var project = _projectRepository.ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(projectId)
+                          ?? throw new ProjectNotFoundException(projectId.ToString());
+
+            youth = new Youth
+            {
+                Id = youthId,
+                Email = $"{youthId:N}@local.invalid",
+                Project = project
+            };
+            _projectRepository.CreateYouth(youth);
+            youth = _projectRepository.ReadYouthByTokenWithProject(youthId);
+        }
 
         if (youth.Project?.Id != projectId)
         {
