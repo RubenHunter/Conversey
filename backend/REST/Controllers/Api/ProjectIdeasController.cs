@@ -1,4 +1,5 @@
-using Conversey.BL.Administration;
+using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -6,39 +7,35 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects/{projectSlug}/ideas")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}/ideas")]
 public class ProjectIdeasController : ControllerBase
 {
     private readonly IIdeaManager _ideaManager;
-    private readonly IProjectManager _projectManager;
 
-    public ProjectIdeasController(IIdeaManager ideaManager, IProjectManager projectManager)
+    public ProjectIdeasController(IIdeaManager ideaManager)
     {
         _ideaManager = ideaManager;
-        _projectManager = projectManager;
     }
 
-    [HttpGet("by-youth/{youthToken}")]
-    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(string workspaceSlug, string projectSlug, string youthToken)
+    [HttpGet]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(Slug workspaceId, Slug projectId, [FromQuery] Guid youthId)
     {
         try
         {
-            if (!Guid.TryParse(youthToken?.Trim(), out var parsedToken))
-            {
-                return BadRequest("YouthToken must be a valid GUID.");
-            }
-
-            var project = ProjectController.ResolveProjectForWorkspace(_projectManager, workspaceSlug, projectSlug);
-            var ideas = _ideaManager.GetIdeasFromProjectByYouthToken(project.Id, parsedToken)
+            var ideas = _ideaManager.GetIdeasFromProjectByYouthId(workspaceId, projectId, youthId)
                 .Select(IdeaDto.From)
                 .ToList()
                 .AsReadOnly();
 
             return Ok(ideas);
         }
-        catch (ProjectNotFoundException)
+        catch (NotFoundException)
         {
             return NotFound();
+        }
+        catch (ValidationException)
+        {
+            return BadRequest();
         }
     }
 }

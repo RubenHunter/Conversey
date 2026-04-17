@@ -167,13 +167,24 @@ public class IdeaRepository : IIdeaRepository
                 rr.Emoji == emoji);
     }
 
-    public IReadOnlyCollection<ResponseReaction> ReadResponseReactionsFromResponseByResponseId(int responseId)
+    public IReadOnlyCollection<ResponseReaction> ReadResponseReactionsByResponseId(int responseId)
     {
         return _dbContext.ResponseReactions
             .Where(rr => EF.Property<int>(rr, "ResponseId") == responseId)
             .OrderBy(rr => rr.Emoji)
             .ThenBy(rr => rr.Id)
             .ToList().AsReadOnly();
+    }
+
+    public bool DeleteResponseReaction(int responseId, Guid youthId, int reactionId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IEnumerable<IdeaResponse> ReadApprovedResponsesByYouthIdAndIdeaId(int ideaId, Guid youthId)
+    {
+        return _dbContext.Responses
+            .Where(r => r.Idea.Id == ideaId && r.Youth.Id == youthId && r.Status == ModerationStatus.Approved);
     }
 
     public bool DeleteResponseReaction(int responseId, Guid youthId, string emoji)

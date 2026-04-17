@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects")]
+[Route("api/workspaces/{workspaceId}/projects")]
 public class ProjectController : ControllerBase
 {
     private readonly IProjectManager _manager;
@@ -17,34 +17,17 @@ public class ProjectController : ControllerBase
         _manager = manager;
     }
 
-    [HttpGet("{projectSlug}")]
-    public ActionResult<ProjectDto> GetBySlug(string workspaceSlug, string projectSlug)
+    [HttpGet("{projectId}")]
+    public ActionResult<ProjectDto> GetById(Slug workspaceId, Slug projectId)
     {
         try
         {
-            var project = ResolveProjectForWorkspace(_manager, workspaceSlug, projectSlug);
+            Project project = _manager.GetProjectById(workspaceId, projectId);
             return Ok(ProjectDto.From(project));
         }
-        catch (ProjectNotFoundException)
+        catch (NotFoundException)
         {
             return NotFound();
         }
-    }
-
-    internal static Project ResolveProjectForWorkspace(IProjectManager manager, string workspaceSlug, string projectSlug)
-    {
-        var project = manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
-
-        if (!string.Equals(project.Workspace.Id.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
-        }
-
-        return project;
-    }
-
-    internal static Slug ToSlug(string value)
-    {
-        return Slug.FromName(value);
     }
 }
