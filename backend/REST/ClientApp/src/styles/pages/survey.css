@@ -1,4 +1,6 @@
-﻿/* Survey Page Styles */
+/* Survey Page Styles */
+/* Shared styles imported via TypeScript */
+
 .survey-header {
   position: sticky;
   top: 0;
@@ -205,119 +207,6 @@
 .survey-option-text {
   font-size: clamp(0.875rem, 1.5vw, 1rem);
   color: var(--color-text);
-}
-
-.survey-textarea {
-  width: 100%;
-  padding: clamp(1rem, 2vw, 1.25rem);
-  border-radius: var(--radius-lg);
-  border: 2px solid var(--color-border);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  font-family: var(--font-primary), sans-serif;
-  font-size: clamp(0.875rem, 1.5vw, 1rem);
-  min-height: 220px;
-  resize: vertical;
-  transition: border-color 200ms ease;
-}
-
-input.survey-textarea {
-  min-height: auto;
-  height: clamp(2.5rem, 4vw, 3rem);
-  resize: none;
-  padding: 0 clamp(1rem, 2vw, 1.25rem);
-}
-
-.survey-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.survey-textarea:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: var(--color-disabled-bg);
-}
-
-.survey-textarea-wrapper {
-  position: relative;
-  margin-top: 1rem;
-  margin-left: clamp(0px, 5vw, 2rem);
-}
-
-.survey-textarea-actions {
-  display: flex;
-  gap: 0.75rem;
-  position: absolute;
-  bottom: clamp(0.75rem, 2vw, 1rem);
-  right: clamp(0.75rem, 2vw, 1rem);
-  margin-bottom: 0.75rem;
-}
-
-.survey-magic-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: clamp(0.5rem,4.5vw,.75rem);
-  height: clamp(2.5rem,4vw,3rem);
-  border-radius: var(--radius-full);
-  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
-  color: var(--color-primary);
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.survey-magic-btn svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
-
-.survey-magic-btn-text {
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.survey-magic-btn:focus .survey-magic-btn-text,
-.survey-magic-btn-focused .survey-magic-btn-text {
-  width: 0;
-}
-
-.survey-magic-btn:focus,
-.survey-magic-btn-focused {
-  padding: 0;
-  width: clamp(2.5rem, 4vw, 3rem);
-  height: clamp(2.5rem, 4vw, 3rem);
-  justify-content: center;
-  gap: 0;
-}
-
-.survey-magic-btn:hover {
-  background-color: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
-}
-
-.survey-mic-btn {
-  width: clamp(2.5rem, 4vw, 3rem);
-  height: clamp(2.5rem, 4vw, 3rem);
-  border-radius: 50%;
-  background-color: var(--color-disabled-bg);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  transition: all 200ms ease;
-  flex-shrink: 0;
-}
-
-.survey-mic-btn:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
-  color: var(--color-primary);
 }
 
 .survey-error {

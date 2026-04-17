@@ -1,4 +1,6 @@
 import '../../styles/pages/ideas.css'
+// Import shared CSS via Vite (instead of @import in CSS files)
+import '../../styles/shared/_shared.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
 import { getIdeasContext, getIdeasYouthToken, submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
@@ -19,6 +21,42 @@ import { renderTopicMenu, getActiveIdeasLabel } from './topicSwitcher.ts'
 import { renderCommunityIdeasList } from './communityList.ts'
 import { renderIdeasComposer } from './composer.ts'
 import type { ActiveView } from './types.ts'
+
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+}
+
+// Calculate how many cards fit in the available height (1-5)
+function calculateVisibleCardCount(container: HTMLElement): number {
+    const card = container.querySelector<HTMLElement>('.ideas-card')
+    if (!card) return 3
+    
+    const containerHeight = container.getBoundingClientRect().height
+    const cardHeight = card.getBoundingClientRect().height
+    const gapHeight = 7 // pixels - from gap: 0.45rem
+    
+    // Calculate max cards that fit (min 1, max 5)
+    const maxCardsByHeight = Math.max(1, Math.floor(containerHeight / (cardHeight + gapHeight)))
+    return Math.min(5, maxCardsByHeight)
+}
+
+// Update visibility of cards based on available space
+function updateVisibleCards(list: HTMLElement): void {
+    if (!list) return
+    
+    const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
+    const visibleCount = calculateVisibleCardCount(list)
+    
+    cards.forEach((card, index) => {
+        card.style.display = index < visibleCount ? '' : 'none'
+    })
+}
 
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
@@ -42,7 +80,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
 
     const topics = context.topics
-    const allIdeas = [...context.ideas]
+    const allIdeas = shuffleArray([...context.ideas])
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     let activeIdeaOriginalIndex = 0
@@ -82,7 +120,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
                 <div class="ideas-grid">
                     <section class="ideas-community" aria-label="Ideas list">
-                        <div id="ideas-list" class="ideas-list"></div>
+                        <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
                     </section>
 
                     <section class="ideas-compose" aria-label="Create idea">
@@ -90,22 +128,24 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                             <p id="ideas-compose-topic" class="ideas-compose-topic"></p>
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
-                                <button id="ideas-speak" class="ideas-speaker-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
-                                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.26 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                                    </svg>
-                                </button>
                             </div>
-                            <div class="survey-magic-row ideas-magic-row">
+                        </div>
+                        <div class="survey-textarea-wrapper">
+                            <textarea id="ideas-textarea" class="survey-textarea" placeholder="Share your idea for this topic..."></textarea>
+                            <div class="survey-textarea-actions">
                                 <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    Magic Mode
+                                    <span class="survey-magic-btn-text">Magic Mode</span>
+                                </button>
+                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
+                                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                                    </svg>
                                 </button>
                             </div>
                         </div>
-                        <textarea id="ideas-textarea" class="ideas-textarea" placeholder="Share your idea for this topic..."></textarea>
                         <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
                     </section>
                 </div>
@@ -195,6 +235,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
     const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
+    const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
+    const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
 
     const safetyReviewDialog = createSafetyReviewDialogController({ root: container })
     const ideaPanel = createIdeaPanelController({
@@ -273,11 +315,18 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         // After rotation, DOM index 0 is always the active idea
         const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
         cards.forEach((card, index) => {
-            card.classList.toggle('active', index === 0)
-            card.classList.toggle('near', index === 1)
-            card.classList.toggle('far', index >= 2)
+            card.classList.remove('active', 'near', 'far')
+            if (index === 0) {
+                card.classList.add('active')
+            } else if (index === 1) {
+                card.classList.add('near')
+            } else if (index >= 2) {
+                card.classList.add('far')
+            }
         })
     }
+
+
 
     function startRotationTimer(): void {
         if (rotationTimer !== null) {
@@ -363,8 +412,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
             if (cards.length === 0) return
 
-            const listRect = list.getBoundingClientRect()
-            const centerY = listRect.top + listRect.height / 2
+            // Find the card closest to the center of the viewport
+            const centerY = window.innerHeight / 2
 
             let closestOriginalIndex = activeIdeaOriginalIndex
             let closestDistance = Number.POSITIVE_INFINITY
@@ -445,7 +494,15 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         }
     })
 
-    list.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
+    window.addEventListener('scroll', updateActiveIdeaFromScroll, { passive: true })
+
+    // Pause animation on hover, resume on mouseleave
+    list.addEventListener('mouseenter', () => stopRotationTimer(), { passive: true })
+    list.addEventListener('mouseleave', () => {
+        if (!ideaPanel.isOpen()) {
+            startRotationTimer()
+        }
+    }, { passive: true })
 
     list.addEventListener('click', (event) => {
         const target = event.target as HTMLElement
@@ -459,10 +516,33 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         ideaPanel.open(visibleIdeasCache[index])
     })
 
-    // Cleanup timer on navigation
+    // Resume animation when panel closes
+    panelClose.addEventListener('click', () => startRotationTimer())
+    panelBackdrop.addEventListener('click', () => startRotationTimer())
+
+    // Dynamically show/hide cards based on available space
+    const resizeObserver = new ResizeObserver(() => {
+        updateVisibleCards(list)
+    })
+    resizeObserver.observe(list)
+    
+    // Initial update after cards are rendered
+    queueMicrotask(() => updateVisibleCards(list))
+
+    // Cleanup timer and observer on navigation
     window.addEventListener('app:before-navigate', () => {
         stopRotationTimer()
+        resizeObserver.disconnect()
     }, { once: false })
+
+    // Magic button focus behavior (same as survey)
+    textarea.addEventListener('focus', () => {
+        magicBtn?.classList.add('survey-magic-btn-focused')
+    })
+
+    textarea.addEventListener('blur', () => {
+        magicBtn?.classList.remove('survey-magic-btn-focused')
+    })
 
     textarea.addEventListener('input', () => {
         submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
