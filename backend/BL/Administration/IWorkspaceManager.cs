@@ -8,5 +8,5 @@ public interface IWorkspaceManager
     IEnumerable<Workspace> GetAllWorkspaces();
     Workspace CreateWorkspace(string name, Slug slug);
     Workspace GetWorkspaceBySlug(Slug slug);
-    Workspace GetWorkspaceById(Slug id);
+    Workspace GetWorkspace(Slug workspaceId);
 }

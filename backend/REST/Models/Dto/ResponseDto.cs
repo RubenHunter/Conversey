@@ -12,17 +12,17 @@ public class ResponseDto
     public ModerationStatus Status { get; set; }
     public IEnumerable<ReactionDto> Reactions { get; set; }
 
-    public static ResponseDto From(Response response)
+    public static ResponseDto From(IdeaResponse ideaResponse)
     {
         return new ResponseDto
         {
-            Id = response.Id,
-            IdeaId = response.Idea.Id,
-            Text = response.Text,
-            CreatedAt = response.CreatedAt,
-            YouthId = response.Youth.Id,
-            Status = response.Status,
-            Reactions = (response.Reactions ?? Array.Empty<ResponseReaction>())
+            Id = ideaResponse.Id,
+            IdeaId = ideaResponse.Idea.Id,
+            Text = ideaResponse.Text,
+            CreatedAt = ideaResponse.CreatedAt,
+            YouthId = ideaResponse.Youth.Id,
+            Status = ideaResponse.Status,
+            Reactions = (ideaResponse.Reactions ?? Array.Empty<ResponseReaction>())
                 .GroupBy(r => r.Emoji)
                 .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
         };

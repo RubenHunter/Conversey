@@ -3,34 +3,33 @@ using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
-using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
 using IAiManager = Conversey.BL.Ai.IAiManager;
 using ModerationDecision = Conversey.BL.Ai.ModerationDecision;
-using IdeationResponse = Conversey.BL.Domain.Ideation.Response;
 
 namespace Conversey.BL.Ideation;
 
 public class IdeaManager: IIdeaManager
 {
     private readonly IIdeaRepository _repository;
-    private readonly IProjectRepository _projectRepository;
+    private readonly IWorkspaceManager _workspaceManager;
+    private readonly IProjectManager _projectManager;
     private readonly IAiManager _aiManager;
 
-    public IdeaManager(IIdeaRepository repository, IProjectRepository projectRepository, IAiManager aiManager)
+    public IdeaManager(IIdeaRepository repository, IAiManager aiManager, IWorkspaceManager workspaceManager, IProjectManager projectManager)
     {
         _repository = repository;
-        _projectRepository = projectRepository;
         _aiManager = aiManager;
+        _workspaceManager = workspaceManager;
+        _projectManager = projectManager;
     }
 
-    public SubmissionResponse SubmitIdea(string ideaContent, Slug projectId, int topicId, Guid youthToken) 
+    public SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent)
     {
-        Project forProject = _projectRepository.ReadProjectByIdWithTopics(projectId) 
-                             ?? throw new ProjectNotFoundException(projectId.ToString());
-        Topic forTopic = (forProject.Topic ?? Array.Empty<Topic>()).SingleOrDefault(t => t.Id == topicId) 
-                         ?? throw new TopicNotFoundException(topicId.ToString());
-        Youth author = GetYouthInProject(youthToken, projectId);
+        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
+        Project project = _projectManager.GetProject(workspace, projectId);
+        Topic topic = _projectManager.GetTopic(project, topicId);
+        Youth author = _projectManager.GetYouth(project, youthId);
         
         ModerationDecision decision = EvaluateIdeaModeration(ideaContent);
 
@@ -39,10 +38,10 @@ public class IdeaManager: IIdeaManager
         var idea = new Idea
         {
             Content = ideaContent.Trim(),
-            Project = forProject,
+            Project = project,
             Status = status,
             SubmissionDate = DateTime.UtcNow,
-            Topic = forTopic,
+            Topic = topic,
             Youth = author
         };
         Validate(idea);
@@ -51,15 +50,23 @@ public class IdeaManager: IIdeaManager
         return decision.IsAllowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, decision);
     }
 
+    public Idea GetIdea(Topic topic, int ideaId)
+    {
+        Idea foundIdea = _repository.ReadIdeaById(ideaId);
+        if (!topic.Ideas.Contains(foundIdea))
+        {
+           throw new IdeaNotFoundException(ideaId);
+        }
+
+        return foundIdea;
+    }
+
     public Idea GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
-        Idea foundIdea = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId);
-        if (foundIdea.Project.Id != projectId || foundIdea.Project.Workspace.Id != workspaceId || foundIdea.Topic.Id != topicId)
-        {
-            throw new IdeaNotFoundException(ideaId);
-        }
-        
-        return foundIdea;
+        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
+        Project project = _projectManager.GetProject(workspace, projectId);
+        Topic topic = _projectManager.GetTopic(project, topicId);
+        return GetIdea(topic, ideaId);
     }
 
     public Idea GetIdeaByIdWithProjectAndResponses(int ideaId)
@@ -77,30 +84,47 @@ public class IdeaManager: IIdeaManager
         return _repository.ReadIdeasFromTopicByProjectSlugAndTopicId(projectId, topicId);
     }
 
-    public Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, Idea newIdea)
+    public Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, int ideaId, ModerationStatus newStatus, string newContent)
     {
-        Idea foundIdea = _repository.ReadIdeaById(newIdea.Id) ?? throw new IdeaNotFoundException(newIdea.Id);
+        Idea foundIdea = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId);
         if (foundIdea.Project.Id != projectId || foundIdea.Project.Workspace.Id != workspaceId || foundIdea.Topic.Id != topicId)
         {
-            throw new IdeaNotFoundException(newIdea.Id);
+            throw new IdeaNotFoundException(ideaId);
         }
+
+        foundIdea.Status = newStatus;
+        foundIdea.Content = newContent;
         
-        Validate(newIdea);
-        _repository.UpdateIdea(newIdea);
-        return _repository.ReadIdeaById(newIdea.Id);
+        Validate(foundIdea);
+        _repository.UpdateIdea(foundIdea);
+        return foundIdea;
     }
 
-    public ResponseSubmissionResponse AddResponse(string text, int ideaId, string youthToken)
+    public IdeaResponse GetResponse(Idea idea, int responseId)
     {
-        var idea = _repository.ReadIdeaById(ideaId);
-        if (idea == null) throw new IdeaNotFoundException(ideaId);
-
-        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
-        ModerationDecision decision = EvaluateIdeaModeration(text);
-
-        var response = new IdeationResponse
+        IdeaResponse ideaResponse = _repository.ReadResponseById(responseId);
+        if (ideaResponse == null || ideaResponse.Idea.Id != idea.Id)
         {
-            Text = text.Trim(),
+            throw new ResponseNotFoundException(idea.Id);
+        }
+
+        return ideaResponse;
+    }
+
+    public ResponseSubmissionResponse AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
+    {
+        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
+        Project project = _projectManager.GetProject(workspace, projectId);
+        Youth author = _projectManager.GetYouth(project, youthId);
+        Topic topic = _projectManager.GetTopic(project, topicId);
+        Idea idea = GetIdea(topic, ideaId);
+
+        responseText = responseText.Trim();
+        ModerationDecision decision = EvaluateIdeaModeration(responseText);
+
+        var response = new IdeaResponse
+        {
+            Text = responseText,
             Idea = idea,
             CreatedAt = DateTime.UtcNow,
             Youth = author,
@@ -114,27 +138,30 @@ public class IdeaManager: IIdeaManager
             : new ResponseSubmissionResponse.Pending(response, decision);
     }
 
-    public IdeationResponse ChangeResponse(IdeationResponse response)
+    public IdeaResponse ChangeResponse(IdeaResponse response)
     {
         Validate(response);
         _repository.UpdateResponse(response);
         return response;
     }
 
-    public IdeationResponse GetResponseByIdWithIdea(int responseId)
+    public IdeaResponse GetResponseByIdWithIdea(int responseId)
     {
-        return _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        return _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
     }
 
-    public IEnumerable<IdeationResponse> GetResponsesFromIdeaByIdeaId(int ideaId)
+    public IEnumerable<IdeaResponse> GetResponsesFromIdeaByIdeaId(int ideaId)
     {
         return _repository.ReadResponsesFromIdeaByIdeaId(ideaId);
     }
 
-    public IdeaReaction AddIdeaReaction(string emoji, int ideaId, string youthToken)
+    public IdeaReaction AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string emoji)
     {
-        var idea = _repository.ReadIdeaById(ideaId) ?? throw new IdeaNotFoundException(ideaId);
-        Youth author = GetYouthForProject(youthToken, idea.Project.Id);
+        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
+        Project project = _projectManager.GetProject(workspace, projectId);
+        Topic topic = _projectManager.GetTopic(project, topicId);
+        Idea idea = GetIdea(topic, ideaId);
+        Youth author = _projectManager.GetYouth(project, youthId);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
         var existingReaction = _repository.ReadIdeaReaction(ideaId, author.Id, normalizedEmoji);
@@ -183,11 +210,13 @@ public class IdeaManager: IIdeaManager
         }
     }
 
-    public ResponseReaction AddResponseReaction(string emoji, int responseId, string youthToken)
+    public ResponseReaction AddResponseReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, Guid youthId, string emoji)
     {
-        var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
         if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
-        Youth author = GetYouthForProject(youthToken, response.Idea.Project.Id);
+        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
+        Project project = _projectManager.GetProject(workspace, projectId);
+        Youth author = _projectManager.GetYouth(project, youthId);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
         var existingReaction = _repository.ReadResponseReaction(responseId, author.Id, normalizedEmoji);
@@ -198,7 +227,7 @@ public class IdeaManager: IIdeaManager
 
         var reaction = new ResponseReaction
         {
-            Response = response,
+            IdeaResponse = response,
             Emoji = normalizedEmoji,
             CreatedAt = DateTime.UtcNow,
             Youth = author
@@ -210,60 +239,16 @@ public class IdeaManager: IIdeaManager
 
     public IEnumerable<ResponseReaction> GetResponseReactionsFromResponseByResponseId(int responseId)
     {
-        _ = _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId.ToString());
+        _ = _repository.ReadResponseById(responseId) ?? throw new ResponseNotFoundException(responseId);
         return _repository.ReadResponseReactionsFromResponseByResponseId(responseId);
     }
 
-    public void RemoveResponseReaction(int responseId, string youthToken, string emoji)
+    public void RemoveResponseReaction(int responseId, Guid youthId, int reactionId)
     {
-        var youthId = ParseYouthToken(youthToken);
-        string normalizedEmoji = NormalizeEmoji(emoji);
-        if (!_repository.DeleteResponseReaction(responseId, youthId, normalizedEmoji))
+        if (!_repository.DeleteResponseReaction(responseId, youthId, reactionId))
         {
-            throw new ResponseReactionNotFoundException(responseId, youthToken, normalizedEmoji);
+            throw new ResponseReactionNotFoundException(reactionId);
         }
-    }
-
-    private Youth GetYouthForProject(string youthToken, Slug projectId)
-    {
-        var youthId = ParseYouthToken(youthToken);
-        return GetYouthInProject(youthId, projectId);
-    }
-
-    private Youth GetYouthInProject(Guid youthId, Slug projectId)
-    {
-        Youth youth = _projectRepository.ReadYouthByTokenWithProject(youthId);
-        if (youth == null)
-        {
-            var project = _projectRepository.ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(projectId)
-                          ?? throw new ProjectNotFoundException(projectId.ToString());
-
-            youth = new Youth
-            {
-                Id = youthId,
-                Email = $"{youthId:N}@local.invalid",
-                Project = project
-            };
-            _projectRepository.CreateYouth(youth);
-            youth = _projectRepository.ReadYouthByTokenWithProject(youthId);
-        }
-
-        if (youth.Project?.Id != projectId)
-        {
-            throw new ValidationException("Youth does not exist for this project.");
-        }
-
-        return youth;
-    }
-
-    private static Guid ParseYouthToken(string youthToken)
-    {
-        if (!Guid.TryParse(youthToken?.Trim(), out var youthId))
-        {
-            throw new ValidationException("YouthToken must be a valid GUID.");
-        }
-
-        return youthId;
     }
 
     private static string NormalizeEmoji(string emoji)

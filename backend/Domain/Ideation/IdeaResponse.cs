@@ -3,7 +3,7 @@ using Conversey.BL.Domain.Administration;
 
 namespace Conversey.BL.Domain.Ideation;
 
-public class Response
+public class IdeaResponse
 {
     [Required]
     public int Id { get; set; }

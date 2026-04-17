@@ -81,14 +81,14 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
         };
 
         var ideaReaction = ideaManager.AddIdeaReaction("like", ideaSubmission.idea.Id, ManagerSeedData.YouthToken.ToString());
-        var responseReaction = ideaManager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken.ToString());
+        var responseReaction = ideaManager.AddResponseReaction("upvote", responseSubmission.IdeaResponse.Id, ManagerSeedData.YouthToken.ToString());
 
         var ideaWithResponses = ideaManager.GetIdeaByIdWithProjectAndResponses(ideaSubmission.idea.Id);
         var ideaReactions = ideaManager.GetIdeaReactionsByIdeaId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.idea.Id);
-        var responseReactions = ideaManager.GetResponseReactionsFromResponseByResponseId(responseSubmission.Response.Id);
+        var responseReactions = ideaManager.GetResponseReactionsFromResponseByResponseId(responseSubmission.IdeaResponse.Id);
 
         Assert.Equal(ModerationStatus.Approved, ideaWithResponses.Status);
-        Assert.Contains(ideaWithResponses.Responses, response => response.Id == responseSubmission.Response.Id);
+        Assert.Contains(ideaWithResponses.Responses, response => response.Id == responseSubmission.IdeaResponse.Id);
         Assert.Contains(ideaReactions, reaction => reaction.Id == ideaReaction.Id && reaction.Emoji == "like");
         Assert.Contains(responseReactions, reaction => reaction.Id == responseReaction.Id && reaction.Emoji == "upvote");
     }

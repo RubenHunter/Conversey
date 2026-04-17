@@ -25,5 +25,5 @@ public sealed class IdeaReaction : Reaction
 public sealed class ResponseReaction : Reaction
 {
     [Required]
-    public Response Response { get; set; }
+    public IdeaResponse IdeaResponse { get; set; }
 }

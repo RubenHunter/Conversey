@@ -122,7 +122,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             Project = project,
             Ideas = new List<Idea>(),
             Reactions = new List<Reaction>(),
-            Responses = new List<Response>(),
+            Responses = new List<IdeaResponse>(),
             Answers = new List<Answer>()
         };
 
@@ -144,10 +144,10 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             Topic = topic,
             Youth = youth,
             Reactions = new List<IdeaReaction>(),
-            Responses = new List<Response>()
+            Responses = new List<IdeaResponse>()
         };
 
-        var response = new Response
+        var response = new IdeaResponse
         {
             Text = "Goed idee!",
             CreatedAt = DateTime.UtcNow,

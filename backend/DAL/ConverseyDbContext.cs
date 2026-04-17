@@ -20,7 +20,7 @@ public class ConverseyDbContext : DbContext
     public DbSet<Youth> Youths { get; set; }
     public DbSet<Idea> Ideas { get; set; }
     public DbSet<IdeaReaction> IdeaReactions { get; set; }
-    public DbSet<Response> Responses { get; set; }
+    public DbSet<IdeaResponse> Responses { get; set; }
     public DbSet<ResponseReaction> ResponseReactions { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<Answer> Answers { get; set; }

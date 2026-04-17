@@ -1,13 +1,15 @@
+using Conversey.BL.Domain.Common;
+
 namespace Conversey.BL.Administration;
 
-public class ProjectNotFoundException(string projectIdentifier)
-    : Exception($"Project {projectIdentifier} was not found.");
+public class ProjectNotFoundException(Slug projectId)
+    : NotFoundException($"Project {projectId}");
     
-public class TopicNotFoundException(string topicIdentifier)
-    : Exception($"Topic {topicIdentifier} was not found.");
+public class TopicNotFoundException(int topicId)
+    : NotFoundException($"Topic {topicId}");
     
 public class YouthNotFoundException(Guid youthId)
-    : Exception($"Youth with id {youthId} was not found.");
+    : NotFoundException($"Youth {youthId}");
     
-public class WorkspaceNotFoundException(string workspaceIdentifier)
-    : Exception($"Workspace {workspaceIdentifier} was not found.");
+public class WorkspaceNotFoundException(Slug workspaceId)
+    : NotFoundException($"Workspace {workspaceId}");

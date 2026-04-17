@@ -28,5 +28,5 @@ public class Idea
 
     public IEnumerable<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
 
-    public IEnumerable<Response> Responses { get; set; } = new List<Response>();
+    public IEnumerable<IdeaResponse> Responses { get; set; } = new List<IdeaResponse>();
 }

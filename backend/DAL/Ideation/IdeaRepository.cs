@@ -76,13 +76,13 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.SaveChanges();
     }
 
-    public void CreateResponse(Response response)
+    public void CreateResponse(IdeaResponse ideaResponse)
     {
-        _dbContext.Responses.Add(response);
+        _dbContext.Responses.Add(ideaResponse);
         _dbContext.SaveChanges();
     }
 
-    public Response ReadResponseById(int responseId)
+    public IdeaResponse ReadResponseById(int responseId)
     {
         return _dbContext.Responses
             .Include(r => r.Youth)
@@ -90,7 +90,7 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(r => r.Id == responseId);
     }
 
-    public Response ReadResponseByIdWithIdea(int responseId)
+    public IdeaResponse ReadResponseByIdWithIdea(int responseId)
     {
         return _dbContext.Responses
             .Include(r => r.Idea)
@@ -100,7 +100,7 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(r => r.Id == responseId);
     }
 
-    public IReadOnlyCollection<Response> ReadResponsesFromIdeaByIdeaId(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> ReadResponsesFromIdeaByIdeaId(int ideaId)
     {
         return _dbContext.Responses
             .Include(r => r.Youth)
@@ -111,9 +111,9 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public void UpdateResponse(Response response)
+    public void UpdateResponse(IdeaResponse ideaResponse)
     {
-        _dbContext.Responses.Update(response);
+        _dbContext.Responses.Update(ideaResponse);
         _dbContext.SaveChanges();
     }
 
@@ -269,9 +269,9 @@ public class ReactionConfig : IEntityTypeConfiguration<Reaction>
      }
 }
 
-public class ResponseConfig : IEntityTypeConfiguration<Response>
+public class ResponseConfig : IEntityTypeConfiguration<IdeaResponse>
 {
-    public void Configure(EntityTypeBuilder<Response> builder)
+    public void Configure(EntityTypeBuilder<IdeaResponse> builder)
     {
         builder.Property(r => r.ModerationInfo)
             .HasConversion(
@@ -307,7 +307,7 @@ public class ResponseReactionConfig : IEntityTypeConfiguration<ResponseReaction>
             .IsUnique();
         #endregion
         #region Relations
-        builder.HasOne(rr => rr.Response)
+        builder.HasOne(rr => rr.IdeaResponse)
             .WithMany(r => r.Reactions)
             .HasForeignKey("ResponseId")
             .IsRequired();

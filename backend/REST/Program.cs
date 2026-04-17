@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ai;
@@ -11,6 +12,7 @@ using Conversey.DAL.Survey;
 using Conversey.REST.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Survey;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -94,6 +96,10 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
+TypeDescriptor.AddAttributes(
+    typeof(Slug),
+    new TypeConverterAttribute(typeof(SlugTypeConverter))
+);
 
 var app = builder.Build();
 

@@ -16,11 +16,11 @@ public interface IIdeaRepository
     
     void UpdateIdea(Idea idea);
 
-    void CreateResponse(Response response);
-    Response ReadResponseById(int responseId);
-    Response ReadResponseByIdWithIdea(int responseId);
-    IReadOnlyCollection<Response> ReadResponsesFromIdeaByIdeaId(int ideaId);
-    void UpdateResponse(Response response);
+    void CreateResponse(IdeaResponse ideaResponse);
+    IdeaResponse ReadResponseById(int responseId);
+    IdeaResponse ReadResponseByIdWithIdea(int responseId);
+    IReadOnlyCollection<IdeaResponse> ReadResponsesFromIdeaByIdeaId(int ideaId);
+    void UpdateResponse(IdeaResponse ideaResponse);
 
     void CreateIdeaReaction(IdeaReaction reaction);
     IdeaReaction ReadIdeaReaction(int ideaId, Guid youthToken, string emoji);
@@ -30,5 +30,5 @@ public interface IIdeaRepository
     void CreateResponseReaction(ResponseReaction reaction);
     ResponseReaction ReadResponseReaction(int responseId, Guid youthId, string emoji);
     IReadOnlyCollection<ResponseReaction> ReadResponseReactionsFromResponseByResponseId(int responseId);
-    bool DeleteResponseReaction(int responseId, Guid youthId, string emoji);
+    bool DeleteResponseReaction(int responseId, Guid youthId, int reactionId);
 }

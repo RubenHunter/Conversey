@@ -4,8 +4,8 @@ namespace Conversey.BL.Ideation;
 
 public abstract record ResponseSubmissionResponse
 {
-    public sealed record Approved(Conversey.BL.Domain.Ideation.Response Response) : ResponseSubmissionResponse;
+    public sealed record Approved(Conversey.BL.Domain.Ideation.IdeaResponse IdeaResponse) : ResponseSubmissionResponse;
 
-    public sealed record Pending(Conversey.BL.Domain.Ideation.Response Response, ModerationDecision decision) : ResponseSubmissionResponse;
+    public sealed record Pending(Conversey.BL.Domain.Ideation.IdeaResponse IdeaResponse, ModerationDecision decision) : ResponseSubmissionResponse;
 }
 
