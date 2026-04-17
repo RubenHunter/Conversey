@@ -153,6 +153,179 @@
   border-bottom: none;
 }
 
+/* ============================================
+   New Topic Switcher Modal Styles
+   ============================================ */
+
+/* Topic selector button in compose area */
+.ideas-compose-topic-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  font-family: var(--font-primary), sans-serif;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  margin-bottom: .45rem;
+}
+
+.ideas-compose-topic-button:hover,
+.ideas-compose-topic-button:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
+}
+
+.ideas-compose-topic-text {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.ideas-compose-topic-kicker {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.ideas-compose-topic-value {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ideas-compose-topic-chevron {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  transition: transform 220ms ease;
+}
+
+.ideas-compose-topic-button[aria-expanded="true"] .ideas-compose-topic-chevron {
+  transform: rotate(180deg);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.modal-backdrop:not([hidden]) {
+  opacity: 1;
+}
+
+/* Modal container */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 2rem));
+  max-height: 80vh;
+  z-index: 101;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  scale: 0.95;
+  transition: opacity 200ms ease, transform 200ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal:not([hidden]) {
+  opacity: 1;
+  scale: 1;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.modal-close:hover {
+  color: var(--color-text);
+  background-color: var(--color-border);
+}
+
+.modal-body {
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.modal-option {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-primary), sans-serif;
+  font-size: var(--font-size-base);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.modal-option:hover {
+  background-color: color-mix(in srgb, var(--color-primary-light) 15%, var(--color-surface));
+}
+
+.modal-option.selected {
+  background-color: color-mix(in srgb, var(--color-primary-light) 20%, var(--color-surface));
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.modal-option:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
+}
+
 .ideas-topic-option.active {
   background-color: color-mix(in srgb, var(--color-primary-light) 25%, white);
 }
@@ -395,7 +568,7 @@
   min-width: 0;
   line-height: 1.35;
   font-size: 0.92rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--color-text);
 }
 

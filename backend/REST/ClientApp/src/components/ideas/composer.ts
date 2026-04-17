@@ -6,7 +6,7 @@ interface RenderComposerParams {
     topics: IdeaTopic[]
     ideasGrid: HTMLDivElement
     ideasCompose: HTMLElement
-    composeTopic: HTMLParagraphElement
+    composeTopic: HTMLElement
     prompt: HTMLParagraphElement
     textarea: HTMLTextAreaElement
     submitBtn: HTMLButtonElement
@@ -43,7 +43,7 @@ export function renderIdeasComposer({
         return
     }
 
-    composeTopic.textContent = `Topic question: ${topic.title}`
+    composeTopic.textContent = `Topic: ${topic.title}`
     prompt.textContent = topic.prompt
     textarea.disabled = false
     submitBtn.disabled = textarea.value.trim().length === 0

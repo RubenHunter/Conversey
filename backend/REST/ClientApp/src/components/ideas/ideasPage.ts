@@ -17,7 +17,7 @@ import type { Idea } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
 import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
-import { renderTopicMenu, getActiveIdeasLabel } from './topicSwitcher.ts'
+import { getActiveIdeasLabel } from './topicSwitcher.ts'
 import { renderCommunityIdeasList } from './communityList.ts'
 import { renderIdeasComposer } from './composer.ts'
 import type { ActiveView } from './types.ts'
@@ -84,7 +84,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     let activeIdeaOriginalIndex = 0
-    let isTopicMenuOpen = false
+
     let visibleIdeasCache: Idea[] = []
     let listSyncFrame: number | null = null
     let focusTurnTimeout: number | null = null
@@ -107,17 +107,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             </div>
 
             <div class="ideas-body">
-                <section class="ideas-topic-switcher" aria-label="Idea topic switcher">
-                    <button id="ideas-topic-trigger" class="ideas-topic-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Select topic or view">
-                        <span class="ideas-topic-trigger-copy">
-                            <span class="ideas-topic-trigger-kicker">Selected topic</span>
-                            <span id="ideas-topic-trigger-value" class="ideas-topic-trigger-value"></span>
-                        </span>
-                        <span class="ideas-topic-chevron" aria-hidden="true">▾</span>
-                    </button>
-                    <div id="ideas-topic-menu" class="ideas-topic-menu" role="listbox"></div>
-                </section>
-
                 <div class="ideas-grid">
                     <section class="ideas-community" aria-label="Ideas list">
                         <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
@@ -125,7 +114,13 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
                     <section class="ideas-compose" aria-label="Create idea">
                         <div class="ideas-compose-head">
-                            <p id="ideas-compose-topic" class="ideas-compose-topic"></p>
+                            <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
+                                <span class="ideas-compose-topic-text">
+                                    <span class="ideas-compose-topic-kicker">Topic:</span>
+                                    <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
+                                </span>
+                                <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
+                            </button>
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
                             </div>
@@ -149,6 +144,18 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
                     </section>
                 </div>
+            </div>
+        </div>
+
+        <!-- Topic Selection Modal -->
+        <div id="topic-modal-backdrop" class="modal-backdrop" hidden aria-hidden="true"></div>
+        <div id="topic-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="topic-modal-title" hidden>
+            <div class="modal-header">
+                <h3 id="topic-modal-title">Select a Topic</h3>
+                <button id="topic-modal-close" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="topic-modal-list" class="modal-list" role="listbox"></div>
             </div>
         </div>
 
@@ -225,10 +232,12 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
     const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
-    const topicMenu = container.querySelector<HTMLDivElement>('#ideas-topic-menu')!
+    const topicModal = container.querySelector<HTMLDivElement>('#topic-modal')!
+    const topicModalList = container.querySelector<HTMLDivElement>('#topic-modal-list')!
+    const topicModalBackdrop = container.querySelector<HTMLDivElement>('#topic-modal-backdrop')!
+    const topicModalClose = container.querySelector<HTMLButtonElement>('#topic-modal-close')!
     const list = container.querySelector<HTMLDivElement>('#ideas-list')!
     const prompt = container.querySelector<HTMLParagraphElement>('#ideas-prompt')!
-    const composeTopic = container.querySelector<HTMLParagraphElement>('#ideas-compose-topic')!
     const ideasGrid = container.querySelector<HTMLDivElement>('.ideas-grid')!
     const ideasCompose = container.querySelector<HTMLElement>('.ideas-compose')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
@@ -277,38 +286,77 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         return allIdeas.filter((idea) => idea.topicId === topicId)
     }
 
-    function openTopicMenu(): void {
-        isTopicMenuOpen = true
-        topicMenu.classList.add('open')
-        topicTrigger.classList.add('open')
+    let isModalOpen = false
+
+    function openTopicModal(): void {
+        isModalOpen = true
+        topicModal.hidden = false
+        topicModalBackdrop.hidden = false
         topicTrigger.setAttribute('aria-expanded', 'true')
+        
+        // Render topics in modal
+        renderTopicsInModal()
+        
+        // Focus trap
+        focusTrapModal()
     }
 
-    function closeTopicMenu(): void {
-        isTopicMenuOpen = false
-        topicMenu.classList.remove('open')
-        topicTrigger.classList.remove('open')
+    function closeTopicModal(): void {
+        isModalOpen = false
+        topicModal.hidden = true
+        topicModalBackdrop.hidden = true
         topicTrigger.setAttribute('aria-expanded', 'false')
+        
+        // Restore focus to trigger
+        topicTrigger.focus()
     }
 
-    function renderTopicMenuBlock(): void {
-        renderTopicMenu({
-            menu: topicMenu,
-            topics,
-            activeView,
-            onSelectMyIdeas: () => {
-                activeView = { type: 'my-ideas' }
-                activeIdeaOriginalIndex = 0
-                closeTopicMenu()
-                render()
-            },
-            onSelectTopic: (topicId) => {
-                activeView = { type: 'topic', topicId }
-                activeIdeaOriginalIndex = 0
-                closeTopicMenu()
-                render()
-            },
+    function renderTopicsInModal(): void {
+        topicModalList.innerHTML = ''
+        
+        // Add "My Ideas" option
+        const myIdeasOption = document.createElement('button')
+        myIdeasOption.className = 'modal-option'
+        myIdeasOption.textContent = 'My Ideas'
+        myIdeasOption.setAttribute('role', 'option')
+        myIdeasOption.setAttribute('data-view-type', 'my-ideas')
+        if (activeView.type === 'my-ideas') {
+            myIdeasOption.classList.add('selected')
+        }
+        myIdeasOption.addEventListener('click', () => {
+            activeView = { type: 'my-ideas' }
+            activeIdeaOriginalIndex = 0
+            closeTopicModal()
+            render()
         })
+        topicModalList.appendChild(myIdeasOption)
+        
+        // Add topics
+        topics.forEach(topic => {
+            const option = document.createElement('button')
+            option.className = 'modal-option'
+            option.textContent = topic.title
+            option.setAttribute('role', 'option')
+            option.setAttribute('data-topic-id', String(topic.id))
+            if (activeView.type === 'topic' && activeView.topicId === topic.id) {
+                option.classList.add('selected')
+            }
+            option.addEventListener('click', () => {
+                activeView = { type: 'topic', topicId: topic.id }
+                activeIdeaOriginalIndex = 0
+                closeTopicModal()
+                render()
+            })
+            topicModalList.appendChild(option)
+        })
+    }
+
+    function focusTrapModal(): void {
+        // Simple focus trap - focus first element in modal
+        const focusableElements = topicModal.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"]')
+        if (focusableElements.length > 0) {
+            focusableElements[0].focus()
+        }
     }
 
     function applyWheelStyles(): void {
@@ -370,6 +418,9 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         // After rotation, active idea is at DOM index 0
         activeIdeaOriginalIndex = newActiveIndex
         applyWheelStyles()
+        
+        // Update visible cards count after rotation
+        updateVisibleCards(list)
 
         const activeCard = list.querySelector<HTMLElement>('.ideas-card:first-child')
         if (activeCard) {
@@ -441,7 +492,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     function render(): void {
         topicTriggerValue.textContent = getActiveIdeasLabel(activeView, topics)
 
-        renderTopicMenuBlock()
         const newIdeas = getVisibleIdeas()
         visibleIdeasCache = newIdeas
 
@@ -469,7 +519,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             topics,
             ideasGrid,
             ideasCompose,
-            composeTopic,
+            composeTopic: topicTrigger,
             prompt,
             textarea,
             submitBtn,
@@ -478,19 +528,25 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         })
     }
 
+    // Open modal on trigger click
     topicTrigger.addEventListener('click', () => {
-        if (isTopicMenuOpen) {
-            closeTopicMenu()
+        if (isModalOpen) {
+            closeTopicModal()
         } else {
-            openTopicMenu()
+            openTopicModal()
         }
     })
 
-    document.addEventListener('click', (event) => {
-        if (!container.contains(event.target as Node)) return
-        const target = event.target as Node
-        if (!topicMenu.contains(target) && !topicTrigger.contains(target)) {
-            closeTopicMenu()
+    // Close modal on backdrop click
+    topicModalBackdrop.addEventListener('click', closeTopicModal)
+    
+    // Close modal on close button click
+    topicModalClose.addEventListener('click', closeTopicModal)
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isModalOpen) {
+            closeTopicModal()
         }
     })
 
