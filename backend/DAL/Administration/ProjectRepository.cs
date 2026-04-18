@@ -15,35 +15,33 @@ public class ProjectRepository : IProjectRepository
         _dbContext = dbContext;
     }
 
-    public Project ReadProjectByIdWithTopics(Slug projectSlug)
+    public Project ReadProjectByIdAndWorkspaceId(Slug projectId, Slug workspaceId)
     {
         return _dbContext.Projects
-            .Include(p => p.Topic)
-            .SingleOrDefault(p => p.Id == projectSlug);
+            .SingleOrDefault(p => p.Id == projectId && EF.Property<string>(p, "WorkspaceId") == workspaceId.Text);
     }
 
 
-    public Project ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(Slug slug)
+    public Project ReadProjectByIdWithWorkspaceAndTopicsAndYouthAndQuestions(Slug projectId)
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
             .Include(p => p.Youth)
             .Include(p => p.Questions)
-            .SingleOrDefault(p => p.Id == slug);
+            .SingleOrDefault(p => p.Id == projectId);
     }
 
-    public Youth ReadYouthByToken(Guid token)
+    public Youth ReadYouthByIdAndProjectId(Guid youthId, Slug projectId)
     {
         return _dbContext.Youths
-            .SingleOrDefault(y => y.Id == token);
+            .SingleOrDefault(y => y.Id == youthId && EF.Property<string>(y, "ProjectId") == projectId.Text);
     }
 
-    public Youth ReadYouthByTokenWithProject(Guid token)
+    public Topic ReadTopicByIdAndProjectId(int topicId, Slug projectId)
     {
-        return _dbContext.Youths
-            .Include(y => y.Project)
-            .SingleOrDefault(y => y.Id == token);
+        return _dbContext.Topics
+            .SingleOrDefault(y => y.Id == topicId && EF.Property<string>(y, "ProjectId") == projectId.Text);
     }
 
     public void CreateYouth(Youth youth)

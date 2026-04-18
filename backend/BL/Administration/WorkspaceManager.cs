@@ -20,14 +20,13 @@ public class WorkspaceManager: IWorkspaceManager
         return _workspaceRepository.ReadAllWorkspaces();
     }
 
-    public Workspace CreateWorkspace(string name, Slug slug)
+    public Workspace CreateWorkspace(string name)
     {
         var workspace = new Workspace
         {
-            Id = slug,
+            Id = Slug.FromName(name),
             Name = name
         };
-        if (SlugExists(workspace.Id)) throw new ValidationException($"Workspace Slug '{workspace.Id.Text}' already exists.");
         
         Validate(workspace);
         
@@ -35,21 +34,10 @@ public class WorkspaceManager: IWorkspaceManager
         return workspace;
     }
 
-    public Workspace GetWorkspaceBySlug(Slug slug)
+    public Workspace GetWorkspaceById(Slug workspaceId)
     {
-        var workspace = _workspaceRepository.ReadWorkspaceBySlug(slug);
-        return workspace ?? throw new WorkspaceNotFoundException(slug.Text);
-    }
-
-    public Workspace GetWorkspaceById(Slug id)
-    {
-        var workspace = _workspaceRepository.ReadWorkspaceById(id);
-        return workspace ?? throw new WorkspaceNotFoundException(id.Text);
-    }
-
-    private bool SlugExists(Slug slug)
-    {
-        return _workspaceRepository.ReadWorkspaceBySlug(slug) != null;
+        var workspace = _workspaceRepository.ReadWorkspaceById(workspaceId);
+        return workspace ?? throw new WorkspaceNotFoundException(workspaceId);
     }
 
     private void Validate(object obj)

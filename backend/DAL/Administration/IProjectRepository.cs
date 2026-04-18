@@ -5,9 +5,9 @@ namespace Conversey.DAL.Administration;
 
 public interface IProjectRepository
 {
-    Project ReadProjectByIdWithTopics(Slug projectSlug);
-    Project ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(Slug slug);
-    Youth ReadYouthByToken(Guid token);
-    Youth ReadYouthByTokenWithProject(Guid token);
+    Project ReadProjectByIdAndWorkspaceId(Slug projectId, Slug workspaceId);
+    Project ReadProjectByIdWithWorkspaceAndTopicsAndYouthAndQuestions(Slug projectId);
+    Youth ReadYouthByIdAndProjectId(Guid youthId, Slug projectId);
+    Topic ReadTopicByIdAndProjectId(int topicId, Slug projectId);
     void CreateYouth(Youth youth);
 }

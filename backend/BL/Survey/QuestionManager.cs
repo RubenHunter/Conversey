@@ -118,14 +118,14 @@ public class QuestionManager: IQuestionManager
         }
     }
 
-    private Project GetProjectForWorkspace(Slug workspaceSlug, Slug projectSlug)
+    private Project GetProjectForWorkspace(Slug workspaceSlug, Slug projectId)
     {
-        var project = _questionRepository.ReadProjectBySlugWithWorkspaceAndQuestions(projectSlug)
-                      ?? throw new ProjectNotFoundException(projectSlug.Text);
+        var project = _questionRepository.ReadProjectBySlugWithWorkspaceAndQuestions(projectId)
+                      ?? throw new ProjectNotFoundException(projectId);
 
         if (project.Workspace?.Id != workspaceSlug)
         {
-            throw new ProjectNotFoundException($"{workspaceSlug.Text}/{projectSlug.Text}");
+            throw new ProjectNotFoundException(projectId);
         }
 
         return project;

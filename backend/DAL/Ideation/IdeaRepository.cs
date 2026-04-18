@@ -44,29 +44,23 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(i => i.Id == ideaId);
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromProjectByYouthToken(Slug projectId, Guid youthToken)
+    public IReadOnlyCollection<Idea> ReadIdeasByYouthId(Guid youthId)
     {
         return _dbContext.Ideas
             .Include(i => i.Project)
             .Include(i => i.Topic)
             .Include(i => i.Youth)
             .Include(i => i.Reactions)
-            .Where(i => i.Project.Id == projectId && i.Youth.Id == youthToken)
+            .Where(i => i.Youth.Id == youthId)
             .OrderByDescending(i => i.SubmissionDate)
             .ThenByDescending(i => i.Id)
             .ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Idea> ReadIdeasFromTopicByProjectSlugAndTopicId(Slug projectSlug, int topicId)
+    public IReadOnlyCollection<Idea> ReadIdeasByTopicId(int topicId)
     {
         return _dbContext.Ideas
-            .Include(i => i.Project)
-            .Include(i => i.Topic)
-            .Include(i => i.Youth)
-            .Include(i => i.Reactions)
-            .Where(i => i.Project.Id == projectSlug && i.Topic.Id == topicId && i.Status == ModerationStatus.Approved)
-            .OrderByDescending(i => i.SubmissionDate)
-            .ThenByDescending(i => i.Id)
+            .Where(i => i.Topic.Id == topicId)
             .ToList().AsReadOnly();
     }
 
@@ -100,7 +94,7 @@ public class IdeaRepository : IIdeaRepository
             .SingleOrDefault(r => r.Id == responseId);
     }
 
-    public IReadOnlyCollection<IdeaResponse> ReadResponsesFromIdeaByIdeaId(int ideaId)
+    public IReadOnlyCollection<IdeaResponse> ReadResponsesByIdeaId(int ideaId)
     {
         return _dbContext.Responses
             .Include(r => r.Youth)
@@ -124,13 +118,13 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.SaveChanges();
     }
 
-    public IdeaReaction ReadIdeaReaction(int ideaId, Guid youthToken, string emoji)
+    public IdeaReaction ReadIdeaReactionByEmoji(string emoji)
     {
         return _dbContext.IdeaReactions
-            .SingleOrDefault(ir => ir.Idea.Id == ideaId && ir.Youth.Id == youthToken && ir.Emoji == emoji);
+            .SingleOrDefault(ir => ir.Emoji == emoji);
     }
 
-    public IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsFromIdeaByIdeaId(int ideaId)
+    public IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsByIdeaId(int ideaId)
     {
         return _dbContext.IdeaReactions
             .Include(ir => ir.Youth)
@@ -157,13 +151,18 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.ResponseReactions.Add(reaction);
         _dbContext.SaveChanges();
     }
-
-    public ResponseReaction ReadResponseReaction(int responseId, Guid youthId, string emoji)
+    
+    public ResponseReaction ReadResponseReactionByReactionId(int reactionId)
     {
         return _dbContext.ResponseReactions
             .SingleOrDefault(rr =>
-                EF.Property<int>(rr, "ResponseId") == responseId &&
-                EF.Property<Guid>(rr, "YouthToken") == youthId &&
+                rr.Id == reactionId);
+    }
+
+    public ResponseReaction ReadResponseReactionByEmoji(string emoji)
+    {
+        return _dbContext.ResponseReactions
+            .SingleOrDefault(rr =>
                 rr.Emoji == emoji);
     }
 
@@ -176,24 +175,17 @@ public class IdeaRepository : IIdeaRepository
             .ToList().AsReadOnly();
     }
 
-    public bool DeleteResponseReaction(int responseId, Guid youthId, int reactionId)
-    {
-        throw new NotImplementedException();
-    }
-
     public IEnumerable<IdeaResponse> ReadApprovedResponsesByYouthIdAndIdeaId(int ideaId, Guid youthId)
     {
         return _dbContext.Responses
             .Where(r => r.Idea.Id == ideaId && r.Youth.Id == youthId && r.Status == ModerationStatus.Approved);
     }
 
-    public bool DeleteResponseReaction(int responseId, Guid youthId, string emoji)
+    public bool DeleteResponseReaction(int reactionId)
     {
         var reaction = _dbContext.ResponseReactions
             .SingleOrDefault(rr =>
-                EF.Property<int>(rr, "ResponseId") == responseId &&
-                EF.Property<Guid>(rr, "YouthToken") == youthId &&
-                rr.Emoji == emoji);
+                rr.Id == reactionId);
         if (reaction == null) return false;
 
         _dbContext.ResponseReactions.Remove(reaction);

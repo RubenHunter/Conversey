@@ -3,11 +3,12 @@ using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects/{projectSlug}")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}")]
 public class QuestionController : ControllerBase
 {
     private readonly IQuestionManager _questionManager;
@@ -18,14 +19,12 @@ public class QuestionController : ControllerBase
     }
 
     [HttpGet("questions")]
-    public ActionResult<IReadOnlyCollection<QuestionDto>> GetQuestions(string workspaceSlug, string projectSlug)
+    public ActionResult<IReadOnlyCollection<QuestionDto>> GetQuestions(Slug workspaceId, Slug projectId)
     {
         try
         {
-            var normalizedWorkspaceSlug = ProjectController.ToSlug(workspaceSlug);
-            var normalizedProjectSlug = ProjectController.ToSlug(projectSlug);
-            var dtos = _questionManager.GetQuestions(normalizedWorkspaceSlug, normalizedProjectSlug)
-                .Select(question => QuestionDto.From(question, normalizedProjectSlug.Text))
+            var dtos = _questionManager.GetQuestions(workspaceId, projectId)
+                .Select(question => QuestionDto.From(question, projectId))
                 .ToList()
                 .AsReadOnly();
 
@@ -38,15 +37,13 @@ public class QuestionController : ControllerBase
     }
 
     [HttpPost("answers")]
-    public ActionResult SubmitAnswers(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
+    public ActionResult SubmitAnswers(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
         try
         {
-            var normalizedWorkspaceSlug = ProjectController.ToSlug(workspaceSlug);
-            var normalizedProjectSlug = ProjectController.ToSlug(projectSlug);
             _questionManager.SubmitAnswers(
-                normalizedWorkspaceSlug,
-                normalizedProjectSlug,
+                workspaceId,
+                projectId,
                 submission.YouthId ?? string.Empty,
                 submission.Answers.Select(answer => (
                     answer.QuestionId,
@@ -67,8 +64,8 @@ public class QuestionController : ControllerBase
 
     // Backward-compatible alias while frontend switches from /responses to /answers.
     [HttpPost("responses")]
-    public ActionResult SubmitResponsesAlias(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
+    public ActionResult SubmitResponsesAlias(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
-        return SubmitAnswers(workspaceSlug, projectSlug, submission);
+        return SubmitAnswers(workspaceId, projectId, submission);
     }
 }

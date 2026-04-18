@@ -15,21 +15,33 @@ public class ProjectManager: IProjectManager
         _projectRepository = projectRepository;
     }
 
-
-    public Project GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(Slug slug)
+    public Project GetProject(Workspace workspace, Slug projectId)
     {
-        return _projectRepository.ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(slug) ?? throw new ProjectNotFoundException(slug.Text);
+        return GetProjectById(workspace.Id, projectId);
     }
 
-    public Youth GetYouthByToken(Guid token)
+    public Project GetProjectById(Slug workspaceId, Slug projectId)
     {
-        return _projectRepository.ReadYouthByToken(token) ?? throw new YouthNotFoundException(token);
+        Project project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, workspaceId);
+        return project ?? throw new ProjectNotFoundException(projectId);
     }
 
-    public Youth AddYouth(Guid token, string email, Slug projectSlug)
+    public Topic GetTopic(Project project, int topicId)
     {
-        var project = _projectRepository.ReadProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(projectSlug);
-        if (project == null) throw new ProjectNotFoundException(projectSlug.Text);
+        Topic topic = _projectRepository.ReadTopicByIdAndProjectId(topicId, project.Id);
+        return topic ?? throw new TopicNotFoundException(topicId);
+    }
+
+    public Youth GetYouth(Project project, Guid youthId)
+    {
+        Youth youth = _projectRepository.ReadYouthByIdAndProjectId(youthId, project.Id);
+        return youth ?? throw new YouthNotFoundException(youthId);
+    }
+
+    public Youth AddYouth(Guid token, string email, Slug projectId)
+    {
+        var project = _projectRepository.ReadProjectByIdWithWorkspaceAndTopicsAndYouthAndQuestions(projectId);
+        if (project == null) throw new ProjectNotFoundException(projectId);
 
         var youth = new Youth
         {

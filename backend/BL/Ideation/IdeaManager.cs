@@ -12,22 +12,19 @@ namespace Conversey.BL.Ideation;
 public class IdeaManager: IIdeaManager
 {
     private readonly IIdeaRepository _repository;
-    private readonly IWorkspaceManager _workspaceManager;
     private readonly IProjectManager _projectManager;
     private readonly IAiManager _aiManager;
 
-    public IdeaManager(IIdeaRepository repository, IAiManager aiManager, IWorkspaceManager workspaceManager, IProjectManager projectManager)
+    public IdeaManager(IIdeaRepository repository, IAiManager aiManager, IProjectManager projectManager)
     {
         _repository = repository;
         _aiManager = aiManager;
-        _workspaceManager = workspaceManager;
         _projectManager = projectManager;
     }
 
     public SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent)
     {
-        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
-        Project project = _projectManager.GetProject(workspace, projectId);
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Youth author = _projectManager.GetYouth(project, youthId);
         
@@ -124,8 +121,7 @@ public class IdeaManager: IIdeaManager
 
     public ResponseSubmissionResponse AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
     {
-        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
-        Project project = _projectManager.GetProject(workspace, projectId);
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Youth author = _projectManager.GetYouth(project, youthId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
@@ -176,14 +172,14 @@ public class IdeaManager: IIdeaManager
 
     public IdeaReaction AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string emoji)
     {
-        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
-        Project project = _projectManager.GetProject(workspace, projectId);
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
         Youth author = _projectManager.GetYouth(project, youthId);
-        string normalizedEmoji = NormalizeEmoji(emoji);
 
-        var existingReaction = _repository.ReadIdeaReaction(ideaId, author.Id, normalizedEmoji);
+        string normalizedEmoji = NormalizeEmoji(emoji);
+        
+        IdeaReaction existingReaction = _repository.ReadIdeaReactionByEmoji(normalizedEmoji);
         if (existingReaction != null)
         {
             return existingReaction;
@@ -231,14 +227,13 @@ public class IdeaManager: IIdeaManager
 
     public ResponseReaction AddResponseReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, Guid youthId, string emoji)
     {
-        var response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
+        IdeaResponse response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
         if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
-        Workspace workspace = _workspaceManager.GetWorkspace(workspaceId);
-        Project project = _projectManager.GetProject(workspace, projectId);
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Youth author = _projectManager.GetYouth(project, youthId);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
-        var existingReaction = _repository.ReadResponseReaction(responseId, author.Id, normalizedEmoji);
+        ResponseReaction existingReaction = _repository.ReadResponseReactionByEmoji(normalizedEmoji);
         if (existingReaction != null)
         {
             return existingReaction;

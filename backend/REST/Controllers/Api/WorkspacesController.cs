@@ -39,10 +39,10 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name, ProjectController.ToSlug(dto.Slug));
+            var workspace = _manager.CreateWorkspace(dto.Name);
 
             return CreatedAtAction(
-                nameof(GetBySlug),
+                nameof(Create),
                 new { slug = workspace.Id.Text },
                 workspace);
         }
@@ -52,26 +52,12 @@ public class WorkspacesController : ControllerBase
         }
     }
 
-    [HttpGet("{slug}")]
-    public IActionResult GetBySlug(string slug)
+    [HttpGet("{id}")]
+    public IActionResult GetById(Slug id)
     {
         try
         {
-            var workspace = _manager.GetWorkspaceBySlug(ProjectController.ToSlug(slug));
-            return Ok(WorkspaceDto.From(workspace));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-    }
-
-    [HttpGet("id/{id}")]
-    public IActionResult GetById(string id)
-    {
-        try
-        {
-            var workspace = _manager.GetWorkspaceById(ProjectController.ToSlug(id));
+            var workspace = _manager.GetWorkspaceById(id);
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)
