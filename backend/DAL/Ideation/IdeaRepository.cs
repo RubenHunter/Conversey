@@ -60,6 +60,10 @@ public class IdeaRepository : IIdeaRepository
     public IReadOnlyCollection<Idea> ReadIdeasByTopicId(int topicId)
     {
         return _dbContext.Ideas
+            .Include(i => i.Project)
+            .Include(i => i.Topic)
+            .Include(i => i.Youth)
+            .Include(i => i.Reactions)
             .Where(i => i.Topic.Id == topicId)
             .ToList().AsReadOnly();
     }
@@ -118,10 +122,10 @@ public class IdeaRepository : IIdeaRepository
         _dbContext.SaveChanges();
     }
 
-    public IdeaReaction ReadIdeaReactionByEmoji(string emoji)
+    public IdeaReaction ReadIdeaReactionByIdeaIdAndYouthIdAndEmoji(int ideaId, Guid youthId, string emoji)
     {
         return _dbContext.IdeaReactions
-            .SingleOrDefault(ir => ir.Emoji == emoji);
+            .SingleOrDefault(ir => ir.Idea.Id == ideaId && ir.Youth.Id == youthId && ir.Emoji == emoji);
     }
 
     public IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsByIdeaId(int ideaId)
@@ -159,10 +163,12 @@ public class IdeaRepository : IIdeaRepository
                 rr.Id == reactionId);
     }
 
-    public ResponseReaction ReadResponseReactionByEmoji(string emoji)
+    public ResponseReaction ReadResponseReactionByResponseIdAndYouthIdAndEmoji(int responseId, Guid youthId, string emoji)
     {
         return _dbContext.ResponseReactions
             .SingleOrDefault(rr =>
+                EF.Property<int>(rr, "ResponseId") == responseId &&
+                rr.Youth.Id == youthId &&
                 rr.Emoji == emoji);
     }
 
@@ -178,6 +184,9 @@ public class IdeaRepository : IIdeaRepository
     public IEnumerable<IdeaResponse> ReadApprovedResponsesByYouthIdAndIdeaId(int ideaId, Guid youthId)
     {
         return _dbContext.Responses
+            .Include(r => r.Idea)
+            .Include(r => r.Youth)
+            .Include(r => r.Reactions)
             .Where(r => r.Idea.Id == ideaId && r.Youth.Id == youthId && r.Status == ModerationStatus.Approved);
     }
 
@@ -306,9 +315,12 @@ public class ResponseReactionConfig : IEntityTypeConfiguration<ResponseReaction>
     public void Configure(EntityTypeBuilder<ResponseReaction> builder)
     {
         #region Properties
+        builder.Property<int>("ResponseId");
+
         builder.HasIndex("ResponseId", "YouthToken", nameof(ResponseReaction.Emoji))
             .IsUnique();
         #endregion
+
         #region Relations
         builder.HasOne(rr => rr.IdeaResponse)
             .WithMany(r => r.Reactions)

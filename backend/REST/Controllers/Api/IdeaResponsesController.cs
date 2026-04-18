@@ -36,7 +36,15 @@ public class IdeaResponsesController : ControllerBase
         {
             return NotFound();
         }
+        catch (TopicNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
         catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
         }
@@ -59,7 +67,15 @@ public class IdeaResponsesController : ControllerBase
         {
             return NotFound();
         }
+        catch (TopicNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
         catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
         }
@@ -78,9 +94,25 @@ public class IdeaResponsesController : ControllerBase
             var updated = _ideaManager.ChangeResponse(workspaceId, projectId, topicId, ideaId, request.YouthId, responseId, newStatus, request.Text);
             return Ok(ResponseDto.From(updated));
         }
-        catch (NotFoundException)
+        catch (ProjectNotFoundException)
         {
             return NotFound();
+        }
+        catch (TopicNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ResponseNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
         }
         catch (ValidationException e)
         {
@@ -100,6 +132,22 @@ public class IdeaResponsesController : ControllerBase
                 .AsReadOnly();
             return Ok(reactions);
         }
+        catch (ProjectNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (TopicNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ResponseNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
         catch (NotFoundException)
         {
             return NotFound();
@@ -107,17 +155,33 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPost("{responseId:int}/reactions")]
-    public ActionResult<ReactionDto> AddReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
+    public ActionResult<CreatedReactionDto> AddReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
             ResponseReaction addedReaction = _ideaManager.AddResponseReaction(workspaceId, projectId, topicId, ideaId, responseId, request.YouthId, request.Emoji);
 
-            return Ok(addedReaction);
+            return Ok(new CreatedReactionDto
+            {
+                Id = addedReaction.Id,
+                Emoji = addedReaction.Emoji
+            });
         }
-        catch (NotFoundException)
+        catch (ProjectNotFoundException)
         {
             return NotFound();
+        }
+        catch (ResponseNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
         }
         catch (ValidationException e)
         {
@@ -133,9 +197,29 @@ public class IdeaResponsesController : ControllerBase
             _ideaManager.RemoveResponseReaction(workspaceId, projectId, topicId, ideaId, responseId, youthId, reactionId);
             return NoContent();
         }
-        catch (NotFoundException)
+        catch (ProjectNotFoundException)
         {
             return NotFound();
+        }
+        catch (TopicNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (IdeaNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ResponseNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (ResponseReactionNotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
         }
         catch (ValidationException e)
         {

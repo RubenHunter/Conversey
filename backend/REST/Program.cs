@@ -13,7 +13,6 @@ using Conversey.REST.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Survey;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -127,6 +126,36 @@ app.MapControllers();
 
 var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 var spaIndexFile = Path.Combine(webRootPath, "index.html");
+var useViteDevServer = app.Environment.IsDevelopment() &&
+                       builder.Configuration.GetValue("Frontend:UseViteDevServer", true);
+var viteHealthCheckedAtUtc = DateTime.MinValue;
+var viteIsAvailable = false;
+
+async Task<bool> IsViteDevServerAvailableAsync()
+{
+    // Cache probe result briefly to avoid a socket check on every page request.
+    if (DateTime.UtcNow - viteHealthCheckedAtUtc < TimeSpan.FromSeconds(2))
+    {
+        return viteIsAvailable;
+    }
+
+    try
+    {
+        using var tcpClient = new System.Net.Sockets.TcpClient();
+        var connectTask = tcpClient.ConnectAsync("127.0.0.1", 5173);
+        var timeoutTask = Task.Delay(250);
+        var completedTask = await Task.WhenAny(connectTask, timeoutTask);
+
+        viteIsAvailable = completedTask == connectTask && tcpClient.Connected;
+    }
+    catch
+    {
+        viteIsAvailable = false;
+    }
+
+    viteHealthCheckedAtUtc = DateTime.UtcNow;
+    return viteIsAvailable;
+}
 
 app.MapFallback(async context =>
 {
@@ -136,7 +165,7 @@ app.MapFallback(async context =>
         return;
     }
 
-    if (app.Environment.IsDevelopment() && !File.Exists(spaIndexFile))
+    if (useViteDevServer && await IsViteDevServerAvailableAsync())
     {
         var viteTarget = $"http://localhost:5173{context.Request.Path}{context.Request.QueryString}";
         context.Response.Redirect(viteTarget);

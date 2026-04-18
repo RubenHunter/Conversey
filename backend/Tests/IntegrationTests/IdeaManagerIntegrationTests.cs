@@ -1,6 +1,9 @@
 using Conversey.BL.Administration;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
+using Conversey.DAL;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -21,14 +24,20 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
 
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-        var topicId = project.Topic.ToList()[0].Id;
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var topicId = dbContext.Topics
+            .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+            .Select(topic => topic.Id)
+            .First();
 
-        var ideas = manager.GetIdeasByProjectIdAndTopicId(project.Id, topicId).ToList();
+        var ideas = manager.GetIdeasByProjectIdAndTopicId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId).ToList();
 
         Assert.True(ideas.Count > 0);
-        Assert.Contains(ideas, idea => idea.Project.Id == project.Id && idea.Topic.Id == topicId);
+        var loadedIdea = manager.GetIdeaByIdWithProjectAndResponses(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideas[0].Id);
+        Assert.Equal(project.Id.Text, loadedIdea.Project.Id.Text);
+        Assert.Equal(topicId, loadedIdea.Topic.Id);
     }
 
     [Fact]
@@ -38,13 +47,17 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-        var topicId = project.Topic.ToList()[0].Id;
+        var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var topicId = dbContext.Topics
+            .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+            .Select(topic => topic.Id)
+            .First();
 
-        var response = manager.SubmitIdea("Integration idea", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
+        var response = manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Integration idea");
 
         var approved = Assert.IsType<SubmissionResponse.Approved>(response);
-        Assert.Equal(ModerationStatus.Approved, approved.idea.Status);
+        Assert.Equal(ModerationStatus.Approved, approved.Idea.Status);
     }
 
     [Fact]
@@ -56,14 +69,17 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
             using var scope = _fixture.CreateScope();
             var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
             var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-            var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-            var topicId = project.Topic.ToList()[0].Id;
+                var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+                var topicId = dbContext.Topics
+                .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+                    .Select(topic => topic.Id)
+                    .First();
 
-            var response = manager.SubmitIdea("flagged", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
+                var response = manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "flagged");
 
             var pending = Assert.IsType<SubmissionResponse.Pending>(response);
-            Assert.Equal(ModerationStatus.Pending, pending.idea.Status);
-            Assert.Equal("rewrite please", pending.decision.Suggestion);
+                Assert.Equal(ModerationStatus.Pending, pending.Idea.Status);
+                Assert.Equal("rewrite please", pending.Decision.Suggestion);
         }
         finally
         {
@@ -78,19 +94,23 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
 
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-        var topicId = project.Topic.ToList()[0].Id;
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var topicId = dbContext.Topics
+            .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+            .Select(topic => topic.Id)
+            .First();
 
         var idea = Assert.IsType<SubmissionResponse.Approved>(
-            manager.SubmitIdea("response test idea", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken)).idea;
-        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse("response", idea.Id, ManagerSeedData.YouthToken.ToString()));
+            manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "response test idea")).Idea;
+        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, ManagerSeedData.YouthToken, "response"));
 
-        _ = manager.AddIdeaReaction("like", idea.Id, ManagerSeedData.YouthToken.ToString());
-        _ = manager.AddResponseReaction("upvote", responseSubmission.IdeaResponse.Id, ManagerSeedData.YouthToken.ToString());
+        _ = manager.AddIdeaReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, ManagerSeedData.YouthToken, "like");
+        _ = manager.AddResponseReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, responseSubmission.IdeaResponse.Id, ManagerSeedData.YouthToken, "upvote");
 
         var ideaReactions = manager.GetIdeaReactionsByIdeaId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id);
-        var responseReactions = manager.GetResponseReactionsFromResponseByResponseId(responseSubmission.IdeaResponse.Id);
+        var responseReactions = manager.GetResponseReactionsByResponseId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, responseSubmission.IdeaResponse.Id);
 
         Assert.Contains(ideaReactions, r => r.Emoji == "like");
         Assert.Contains(responseReactions, r => r.Emoji == "upvote");

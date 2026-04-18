@@ -38,4 +38,10 @@ public class ProjectIdeasController : ControllerBase
             return BadRequest();
         }
     }
+
+    [HttpGet("by-youth/{youthId:guid}")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthPath(Slug workspaceId, Slug projectId, Guid youthId)
+    {
+        return GetIdeasByYouth(workspaceId, projectId, youthId);
+    }
 }

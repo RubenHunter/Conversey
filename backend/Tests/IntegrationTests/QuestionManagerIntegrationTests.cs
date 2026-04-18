@@ -32,13 +32,11 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
     {
         using var scope = _fixture.CreateScope();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
-        var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
 
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-        var topicQuestions = questionManager.GetQuestions(ManagerSeedData.WorkspaceSlug, project.Id).ToList();
+        var topicQuestions = questionManager.GetQuestions(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug).ToList();
 
         Assert.NotEmpty(topicQuestions);
-        Assert.Contains(topicQuestions, question => question.Project.Id == project.Id);
+        Assert.Contains(topicQuestions, question => question.Text == "Hoe verbeteren we welzijn?");
     }
 
     [Fact]
@@ -47,7 +45,7 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
         using var scope = _fixture.CreateScope();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
 
         var created = questionManager.AddQuestion(new OpenQuestion
         {
@@ -67,8 +65,8 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
 
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
-        var youth = projectManager.GetYouthByToken(ManagerSeedData.YouthToken);
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var youth = projectManager.GetYouth(project, ManagerSeedData.YouthToken);
 
         var question = questionManager.AddQuestion(new OpenQuestion
         {
@@ -106,7 +104,7 @@ public class QuestionManagerIntegrationTests : IClassFixture<ManagerIntegrationT
         using var scope = _fixture.CreateScope();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var project = projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
 
         var act = () => questionManager.AddQuestion(new OpenQuestion
         {

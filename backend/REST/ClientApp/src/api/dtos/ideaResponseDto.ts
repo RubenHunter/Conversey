@@ -24,14 +24,28 @@ export interface ApiIdeaResponseDto {
     Reactions?: ApiResponseReactionSummaryDto[]
 }
 
+export interface ApiIdeaThreadDto {
+    responses?: ApiIdeaResponseDto[]
+    Responses?: ApiIdeaResponseDto[]
+}
+
 export interface ApiCreateIdeaResponseRequestDto {
     text: string
-    youthToken: string
+    youthId: string
 }
 
 export interface ApiCreateResponseReactionRequestDto {
     emoji: string
-    youthToken: string
+    youthId: string
+}
+
+export interface ApiCreatedReactionDto {
+    id?: number
+    Id?: number
+    reactionId?: number
+    ReactionId?: number
+    emoji?: string
+    Emoji?: string
 }
 
 export interface ApiResponseSubmissionResultDto {
@@ -55,6 +69,6 @@ export interface ApiResponseSubmissionResultDto {
 
 export interface ApiUpdateResponseAfterSafetyReviewRequestDto {
     text: string
-    youthToken: string
+    youthId: string
     markForReview: boolean
 }

@@ -1,8 +1,12 @@
-﻿namespace Conversey.REST.Models.Dto;
+﻿#nullable enable
+
+using Conversey.BL.Domain.Common;
+
+namespace Conversey.REST.Models.Dto;
 
 public class SurveyAnswerSubmissionRequestDto
 {
-    public int ProjectId { get; set; }
+    public Slug ProjectId { get; set; }
     public string? YouthId { get; set; }
     public IReadOnlyCollection<SurveyAnswerDto> Answers { get; set; } = Array.Empty<SurveyAnswerDto>();
 }

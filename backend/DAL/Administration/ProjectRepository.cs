@@ -18,7 +18,9 @@ public class ProjectRepository : IProjectRepository
     public Project ReadProjectByIdAndWorkspaceId(Slug projectId, Slug workspaceId)
     {
         return _dbContext.Projects
-            .SingleOrDefault(p => p.Id == projectId && EF.Property<string>(p, "WorkspaceId") == workspaceId.Text);
+            .Include(p => p.Workspace)
+            .Include(p => p.Topic)
+            .SingleOrDefault(p => p.Id == projectId && EF.Property<Slug>(p, "WorkspaceId") == workspaceId);
     }
 
 
@@ -35,13 +37,13 @@ public class ProjectRepository : IProjectRepository
     public Youth ReadYouthByIdAndProjectId(Guid youthId, Slug projectId)
     {
         return _dbContext.Youths
-            .SingleOrDefault(y => y.Id == youthId && EF.Property<string>(y, "ProjectId") == projectId.Text);
+            .SingleOrDefault(y => y.Id == youthId && EF.Property<Slug>(y, "ProjectId") == projectId);
     }
 
     public Topic ReadTopicByIdAndProjectId(int topicId, Slug projectId)
     {
         return _dbContext.Topics
-            .SingleOrDefault(y => y.Id == topicId && EF.Property<string>(y, "ProjectId") == projectId.Text);
+            .SingleOrDefault(y => y.Id == topicId && EF.Property<Slug>(y, "ProjectId") == projectId);
     }
 
     public void CreateYouth(Youth youth)

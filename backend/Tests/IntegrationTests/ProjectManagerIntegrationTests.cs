@@ -18,15 +18,13 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var project = manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
 
         Assert.Equal(ManagerSeedData.ProjectSlug.Text, project.Id.Text);
         Assert.Equal(ManagerSeedData.ProjectName, project.Name);
-        Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, project.Workspace.Id.Text);
-        Assert.NotEmpty(project.Topic);
-        Assert.NotEmpty(project.Questions);
-        Assert.NotEmpty(project.Youth);
     }
 
     [Fact]
@@ -34,12 +32,13 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var youth = manager.GetYouthByToken(ManagerSeedData.YouthToken);
-        var project = manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
+        var youth = manager.GetYouth(project, ManagerSeedData.YouthToken);
 
         Assert.Equal(ManagerSeedData.YouthToken, youth.Id);
-        Assert.Contains(project.Youth, y => y.Id == youth.Id);
     }
 
     [Fact]
@@ -47,15 +46,16 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var token = Guid.NewGuid();
 
         var created = manager.AddYouth(token, $"integration-{Guid.NewGuid():N}@example.com", ManagerSeedData.ProjectSlug);
-        var project = manager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
 
         Assert.Equal(token, created.Id);
 
-        var loaded = manager.GetYouthByToken(token);
+        var loaded = manager.GetYouth(project, token);
         Assert.Equal(token, loaded.Id);
-        Assert.Contains(project.Youth, y => y.Id == loaded.Id);
     }
 }

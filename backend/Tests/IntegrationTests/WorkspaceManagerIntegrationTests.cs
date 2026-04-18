@@ -21,7 +21,7 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var workspace = workspaceManager.GetWorkspaceBySlug(ManagerSeedData.WorkspaceSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
 
         Assert.Equal(ManagerSeedData.WorkspaceName, workspace.Name);
         Assert.Equal(ManagerSeedData.WorkspaceSlug.Text, workspace.Id.Text);
@@ -45,7 +45,7 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var act = () => workspaceManager.CreateWorkspace("Duplicate", ManagerSeedData.WorkspaceSlug);
+        var act = () => workspaceManager.CreateWorkspace(ManagerSeedData.WorkspaceName);
 
         Assert.Throws<ValidationException>(act);
     }
@@ -56,11 +56,10 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var name = $"Integration Workspace {Guid.NewGuid():N}";
-        var slug = Slug.FromName(name);
 
-        var created = workspaceManager.CreateWorkspace(name, slug);
+        var created = workspaceManager.CreateWorkspace(name);
 
-        Assert.Equal(slug.Text, created.Id.Text);
+        Assert.Equal(Slug.FromName(name).Text, created.Id.Text);
         Assert.Equal(name, created.Name);
     }
 }

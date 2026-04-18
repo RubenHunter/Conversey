@@ -122,17 +122,16 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost("{ideaId:int}/reactions")]
-    public ActionResult<IReadOnlyCollection<ReactionDto>> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
+    public ActionResult<CreatedReactionDto> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
-            _manager.AddIdeaReaction(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Emoji);
-            var reactions = _manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId)
-                .GroupBy(r => r.Emoji)
-                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
-                .ToList()
-                .AsReadOnly();
-            return Ok(reactions);
+            var addedReaction = _manager.AddIdeaReaction(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Emoji);
+            return Ok(new CreatedReactionDto
+            {
+                Id = addedReaction.Id,
+                Emoji = addedReaction.Emoji
+            });
         }
         catch (ProjectNotFoundException)
         {

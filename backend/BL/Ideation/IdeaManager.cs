@@ -26,7 +26,7 @@ public class IdeaManager: IIdeaManager
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
-        Youth author = _projectManager.GetYouth(project, youthId);
+        Youth author = ResolveOrCreateYouth(project, youthId);
         
         ModerationDecision decision = EvaluateIdeaModeration(ideaContent);
 
@@ -80,9 +80,11 @@ public class IdeaManager: IIdeaManager
 
     public IEnumerable<Idea> GetIdeasFromProjectByYouthId(Slug workspaceId, Slug projectId, Guid youthId)
     {
-        Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        _projectManager.GetYouth(project, youthId);
-        return _repository.ReadIdeasByYouthId(youthId);
+        // Validate workspace/project context, but do not fail when a youth has no records yet.
+        _projectManager.GetProjectById(workspaceId, projectId);
+
+        return _repository.ReadIdeasByYouthId(youthId)
+            .Where(idea => idea.Project?.Id == projectId);
     }
 
     public IEnumerable<Idea> GetIdeasByProjectIdAndTopicId(Slug workspaceId, Slug projectId, int topicId)
@@ -122,7 +124,7 @@ public class IdeaManager: IIdeaManager
     public ResponseSubmissionResponse AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        Youth author = _projectManager.GetYouth(project, youthId);
+        Youth author = ResolveOrCreateYouth(project, youthId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
 
@@ -164,7 +166,6 @@ public class IdeaManager: IIdeaManager
     public IEnumerable<IdeaResponse> GetApprovedResponsesByYouth(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        _projectManager.GetYouth(project, youthId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         GetIdea(topic, ideaId);
         return _repository.ReadApprovedResponsesByYouthIdAndIdeaId(ideaId, youthId);
@@ -175,11 +176,11 @@ public class IdeaManager: IIdeaManager
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
-        Youth author = _projectManager.GetYouth(project, youthId);
+        Youth author = ResolveOrCreateYouth(project, youthId);
 
         string normalizedEmoji = NormalizeEmoji(emoji);
         
-        IdeaReaction existingReaction = _repository.ReadIdeaReactionByEmoji(normalizedEmoji);
+        IdeaReaction existingReaction = _repository.ReadIdeaReactionByIdeaIdAndYouthIdAndEmoji(ideaId, youthId, normalizedEmoji);
         if (existingReaction != null)
         {
             return existingReaction;
@@ -230,10 +231,10 @@ public class IdeaManager: IIdeaManager
         IdeaResponse response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
         if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        Youth author = _projectManager.GetYouth(project, youthId);
+        Youth author = ResolveOrCreateYouth(project, youthId);
         string normalizedEmoji = NormalizeEmoji(emoji);
 
-        ResponseReaction existingReaction = _repository.ReadResponseReactionByEmoji(normalizedEmoji);
+        ResponseReaction existingReaction = _repository.ReadResponseReactionByResponseIdAndYouthIdAndEmoji(responseId, youthId, normalizedEmoji);
         if (existingReaction != null)
         {
             return existingReaction;
@@ -319,6 +320,18 @@ public class IdeaManager: IIdeaManager
         {
             Console.WriteLine($"[IdeaManager] Moderation check failed, allowing by default: {ex.Message}");
             return fallbackDecision;
+        }
+    }
+
+    private Youth ResolveOrCreateYouth(Project project, Guid youthId)
+    {
+        try
+        {
+            return _projectManager.GetYouth(project, youthId);
+        }
+        catch (YouthNotFoundException)
+        {
+            return _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
         }
     }
 

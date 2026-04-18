@@ -19,12 +19,12 @@ public interface IIdeaRepository
     void UpdateResponse(IdeaResponse ideaResponse);
 
     void CreateIdeaReaction(IdeaReaction reaction);
-    IdeaReaction ReadIdeaReactionByEmoji(string emoji);
+    IdeaReaction ReadIdeaReactionByIdeaIdAndYouthIdAndEmoji(int ideaId, Guid youthId, string emoji);
     IReadOnlyCollection<IdeaReaction> ReadIdeaReactionsByIdeaId(int ideaId);
     bool DeleteIdeaReaction(int reactionId);
 
     void CreateResponseReaction(ResponseReaction reaction);
-    ResponseReaction ReadResponseReactionByEmoji(string emoji);
+    ResponseReaction ReadResponseReactionByResponseIdAndYouthIdAndEmoji(int responseId, Guid youthId, string emoji);
     ResponseReaction ReadResponseReactionByReactionId(int reactionId);
     IReadOnlyCollection<ResponseReaction> ReadResponseReactionsByResponseId(int responseId);
     bool DeleteResponseReaction(int reactionId);
