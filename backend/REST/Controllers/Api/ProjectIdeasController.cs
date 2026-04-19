@@ -1,64 +1,53 @@
+using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
+using Conversey.BL.Ideation;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects/{projectSlug}/ideas")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}")]
 public class ProjectIdeasController : ControllerBase
 {
     private readonly IIdeaManager _ideaManager;
-    private readonly IProjectManager _projectManager;
 
-    public ProjectIdeasController(IIdeaManager ideaManager, IProjectManager projectManager)
+    public ProjectIdeasController(IIdeaManager ideaManager)
     {
         _ideaManager = ideaManager;
-        _projectManager = projectManager;
     }
 
-    [HttpGet("by-youth/{youthToken}")]
-    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(string workspaceSlug, string projectSlug, string youthToken)
+    [HttpGet("youth/{youthId:guid}/ideas")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(Slug workspaceId, Slug projectId, Guid youthId)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(youthToken))
-            {
-                return BadRequest("YouthToken is required.");
-            }
-
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            var ideas = _ideaManager.GetIdeasFromProjectByYouthToken(project.Id, youthToken.Trim())
+            var ideas = _ideaManager.GetIdeasFromProjectByYouthId(workspaceId, projectId, youthId)
                 .Select(IdeaDto.From)
                 .ToList()
                 .AsReadOnly();
 
             return Ok(ideas);
         }
-        catch (ProjectNotFoundException)
+        catch (NotFoundException)
         {
             return NotFound();
         }
-    }
-
-    private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
-    {
-        var project = _projectManager.GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions(ToSlug(projectSlug));
-
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        catch (ValidationException)
         {
-            throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
+            return BadRequest();
         }
-
-        return project;
     }
 
-    private static Slug ToSlug(string value)
+    [HttpGet("ideas/by-youth/{youthId:guid}")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthPath(Slug workspaceId, Slug projectId, Guid youthId)
     {
-        return new Slug { Text = value.Trim().ToLowerInvariant() };
+        return GetIdeasByYouth(workspaceId, projectId, youthId);
+    }
+
+    [HttpGet("ideas")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthQuery(Slug workspaceId, Slug projectId, [FromQuery] Guid youthId)
+    {
+        return GetIdeasByYouth(workspaceId, projectId, youthId);
     }
 }
-

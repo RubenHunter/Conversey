@@ -1,4 +1,4 @@
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.REST.Models.Dto;
 
@@ -12,7 +12,7 @@ public class IdeaThreadDto
         return new IdeaThreadDto
         {
             Idea = IdeaDto.From(idea),
-            Responses = (idea.Responses ?? Array.Empty<Response>())
+            Responses = (idea.Responses ?? Array.Empty<IdeaResponse>())
                 .OrderBy(response => response.CreatedAt)
                 .ThenBy(response => response.Id)
                 .Select(ResponseDto.From)
@@ -21,4 +21,3 @@ public class IdeaThreadDto
         };
     }
 }
-

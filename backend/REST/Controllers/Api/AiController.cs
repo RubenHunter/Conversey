@@ -1,8 +1,8 @@
-using Conversey.BL.Domain;
+using Conversey.BL.Ai;
+using Conversey.BL.Domain.Ai;
 using Conversey.DAL.Subplatform.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 
 namespace Conversey.REST.Controllers.Api;
 
@@ -12,14 +12,57 @@ namespace Conversey.REST.Controllers.Api;
 public class AiController : Controller
 {
     private readonly IAuditRepository _auditRepository;
-    private readonly IPromptRepository _promptRepository;
-    
-    public AiController(IAuditRepository auditRepository, IPromptRepository promptRepository)
+    private readonly IAiManager _aiManager;
+    private readonly IConfiguration _configuration;
+
+    public AiController(IAuditRepository auditRepository, IAiManager aiManager, IConfiguration configuration)
     {
         _auditRepository = auditRepository;
-        _promptRepository = promptRepository;
+        _aiManager = aiManager;
+        _configuration = configuration;
     }
-    
+
+    [HttpGet("health")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(object), 200)]
+    [ProducesResponseType(503)]
+    public async Task<ActionResult> GetHealth()
+    {
+        var provider = (_configuration["AI:Provider"] ?? "Unknown").Trim();
+        var managerType = _aiManager.GetType().Name;
+        var apiKeyConfigured = !string.IsNullOrWhiteSpace(_configuration["AI:Mistral:ApiKey"]);
+
+        try
+        {
+            var moderationDecision = await _aiManager.ModerateContent("health-check: keep this sentence respectful");
+
+            return Ok(new
+            {
+                status = "ok",
+                provider,
+                managerType,
+                apiKeyConfigured,
+                moderationProbe = new
+                {
+                    isAllowed = moderationDecision.IsAllowed
+                },
+                checkedAtUtc = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(503, new
+            {
+                status = "error",
+                provider,
+                managerType,
+                apiKeyConfigured,
+                error = ex.Message,
+                checkedAtUtc = DateTime.UtcNow
+            });
+        }
+    }
+
     /// <summary>
     /// Get all AI usage costs and audit logs
     /// </summary>
@@ -118,195 +161,6 @@ public class AiController : Controller
         {
             return StatusCode(500, new {
                 error = "Failed to retrieve recent AI cost data",
-                details = ex.Message
-            });
-        }
-    }
-
-    // ===== PROMPT MANAGEMENT ENDPOINTS =====
-
-    /// <summary>
-    /// Get all AI prompts
-    /// </summary>
-    /// <returns>List of all AI prompts</returns>
-    [HttpGet("prompts")]
-    [ProducesResponseType(typeof(IEnumerable<AiPrompt>), 200)]
-    [ProducesResponseType(403)] // Forbidden if not admin
-    [ProducesResponseType(500)]
-    public async Task<ActionResult<IEnumerable<AiPrompt>>> GetAllPrompts()
-    {
-        try
-        {
-            var prompts = await _promptRepository.ReadAllPromptsAsync();
-            return Ok(prompts);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new {
-                error = "Failed to retrieve prompts",
-                details = ex.Message
-            });
-        }
-    }
-
-    /// <summary>
-    /// Get a specific prompt by key
-    /// </summary>
-    /// <param name="key">The prompt key</param>
-    /// <returns>The requested prompt</returns>
-    [HttpGet("prompts/{key}")]
-    [ProducesResponseType(typeof(AiPrompt), 200)]
-    [ProducesResponseType(404)] // Not found
-    [ProducesResponseType(403)] // Forbidden if not admin
-    [ProducesResponseType(500)]
-    public async Task<ActionResult<AiPrompt>> GetPrompt(string key)
-    {
-        try
-        {
-            var prompt = await _promptRepository.ReadPromptByKeyAsync(key);
-            
-            if (prompt == null)
-            {
-                return NotFound(new { error = "Prompt not found" });
-            }
-            
-            return Ok(prompt);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new {
-                error = "Failed to retrieve prompt",
-                details = ex.Message
-            });
-        }
-    }
-
-    /// <summary>
-    /// Create a new AI prompt
-    /// </summary>
-    /// <param name="prompt">The prompt to create</param>
-    /// <returns>The created prompt</returns>
-    [HttpPost("prompts")]
-    [ProducesResponseType(typeof(AiPrompt), 201)] // Created
-    [ProducesResponseType(400)] // Bad request
-    [ProducesResponseType(403)] // Forbidden if not admin
-    [ProducesResponseType(500)]
-    public async Task<ActionResult<AiPrompt>> CreatePrompt([FromBody] AiPrompt prompt)
-    {
-        try
-        {
-            if (prompt == null)
-            {
-                return BadRequest(new { error = "Prompt data is required" });
-            }
-
-            if (string.IsNullOrWhiteSpace(prompt.Key))
-            {
-                return BadRequest(new { error = "Prompt key is required" });
-            }
-
-            if (string.IsNullOrWhiteSpace(prompt.Template))
-            {
-                return BadRequest(new { error = "Prompt template is required" });
-            }
-
-            var createdPrompt = await _promptRepository.CreatePromptAsync(prompt);
-            
-            return CreatedAtAction(nameof(GetPrompt), new { key = createdPrompt.Key }, createdPrompt);
-        }
-        catch (ArgumentException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new {
-                error = "Failed to create prompt",
-                details = ex.Message
-            });
-        }
-    }
-
-    /// <summary>
-    /// Update an existing AI prompt
-    /// </summary>
-    /// <param name="id">The prompt ID</param>
-    /// <param name="prompt">The updated prompt data</param>
-    /// <returns>The updated prompt</returns>
-    [HttpPut("prompts/{id}")]
-    [ProducesResponseType(typeof(AiPrompt), 200)]
-    [ProducesResponseType(400)] // Bad request
-    [ProducesResponseType(404)] // Not found
-    [ProducesResponseType(403)] // Forbidden if not admin
-    [ProducesResponseType(500)]
-    public async Task<ActionResult<AiPrompt>> UpdatePrompt(int id, [FromBody] AiPrompt prompt)
-    {
-        try
-        {
-            if (prompt == null)
-            {
-                return BadRequest(new { error = "Prompt data is required" });
-            }
-
-            if (string.IsNullOrWhiteSpace(prompt.Key))
-            {
-                return BadRequest(new { error = "Prompt key is required" });
-            }
-
-            if (string.IsNullOrWhiteSpace(prompt.Template))
-            {
-                return BadRequest(new { error = "Prompt template is required" });
-            }
-
-            var updatedPrompt = await _promptRepository.UpdatePromptAsync(id, prompt);
-            
-            if (updatedPrompt == null)
-            {
-                return NotFound(new { error = "Prompt not found" });
-            }
-            
-            return Ok(updatedPrompt);
-        }
-        catch (ArgumentException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new {
-                error = "Failed to update prompt",
-                details = ex.Message
-            });
-        }
-    }
-
-    /// <summary>
-    /// Delete an AI prompt
-    /// </summary>
-    /// <param name="id">The prompt ID</param>
-    /// <returns>Success status</returns>
-    [HttpDelete("prompts/{id}")]
-    [ProducesResponseType(204)] // No content
-    [ProducesResponseType(404)] // Not found
-    [ProducesResponseType(403)] // Forbidden if not admin
-    [ProducesResponseType(500)]
-    public async Task<IActionResult> DeletePrompt(int id)
-    {
-        try
-        {
-            var success = await _promptRepository.DeletePromptAsync(id);
-            
-            if (!success)
-            {
-                return NotFound(new { error = "Prompt not found" });
-            }
-            
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new {
-                error = "Failed to delete prompt",
                 details = ex.Message
             });
         }

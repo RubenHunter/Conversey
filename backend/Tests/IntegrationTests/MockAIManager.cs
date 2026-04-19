@@ -1,6 +1,7 @@
 using Conversey.BL.Ai;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Ideation;
 using Microsoft.Extensions.AI;
+using System.Runtime.CompilerServices;
 
 namespace Tests.IntegrationTests;
 
@@ -8,24 +9,24 @@ public class MockAiManager : IAiManager
 {
     public void Dispose()
     {
-        throw new NotImplementedException();
     }
 
     public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "mock")));
     }
 
-    public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-        CancellationToken cancellationToken = new CancellationToken())
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await Task.CompletedTask;
+        yield break;
     }
 
     public object GetService(Type serviceType, object serviceKey = null)
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
@@ -38,15 +39,7 @@ public class MockAiManager : IAiManager
         return Task.FromResult(new ModerationDecision
         {
             IsAllowed = true,
-            Categories = new ModerationInfo
-            {
-                HateAndDiscrimination = false,
-                ViolenceAndThreats = false,
-                Sexual = false,
-                DangerousAndCriminalContent = false,
-                SelfHarm = false,
-                Pii = false
-            }
+            Categories = new ModerationInfo()
         });
     }
 }

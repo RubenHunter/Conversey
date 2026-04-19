@@ -1,17 +1,18 @@
-﻿using Conversey.BL.Domain.Subplatform.Survey.Ideation;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.REST.Models.Dto;
 
 public class IdeaDto
 {
     public int Id { get; set; }
-    public string Content { get; set; } = string.Empty;
-    public int ProjectId { get; set; }
+    public string Content { get; set; }
+    public Slug ProjectId { get; set; }
     public int TopicId { get; set; }
-    public string YouthToken { get; set; } = string.Empty;
+    public Guid YouthId { get; set; }
     public DateTime SubmissionDate { get; set; }
-    public IdeaStatus Status { get; set; }
-    public IReadOnlyCollection<ResponseReactionSummaryDto> Reactions { get; set; } = Array.Empty<ResponseReactionSummaryDto>();
+    public ModerationStatus Status { get; set; }
+    public IEnumerable<ReactionDto> Reactions { get; set; }
 
     public static IdeaDto From(Idea idea)
     {
@@ -21,10 +22,12 @@ public class IdeaDto
             Content = idea.Content,
             ProjectId = idea.Project.Id,
             TopicId = idea.Topic.Id,
-            YouthToken = idea.Youth.Token,
+            YouthId = idea.Youth.Id,
             SubmissionDate = idea.SubmissionDate,
             Status = idea.Status,
-            Reactions = ResponseReactionSummaryDto.From(idea.Reactions ?? Array.Empty<IdeaReaction>())
+            Reactions = (idea.Reactions ?? Array.Empty<IdeaReaction>())
+                .GroupBy(r => r.Emoji)
+                .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
         };
     }
 }

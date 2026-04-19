@@ -1,47 +1,30 @@
-﻿using Conversey.BL.Domain.Survey;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
 
 namespace Conversey.DAL.Survey;
 
 public interface IQuestionRepository
 {
+    Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug projectSlug);
+
     Question ReadQuestionById(int questionId);
     Question ReadQuestionByIdWithProject(int questionId);
 
     IReadOnlyCollection<Question> ReadAllQuestions();
-    IReadOnlyCollection<Question> ReadAllQuestionsWithProject();
-
-    IReadOnlyCollection<Question> ReadQuestionsByProjectId(int projectId);
-    IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(int projectId);
+    IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithChoices(Slug projectSlug);
 
     void CreateQuestion(Question question);
-    void UpdateQuestion(Question question);
-    bool DeleteQuestion(int questionId);
 
-    TextAnswer ReadTextAnswerById(int answerId);
-    TextAnswer ReadTextAnswerByIdWithYouth(int answerId);
-    TextAnswer ReadTextAnswerByIdWithQuestion(int answerId);
-    TextAnswer ReadTextAnswerByIdWithYouthAndQuestion(int answerId);
+    Answer ReadAnswerById(int answerId);
 
-    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionId(int questionId);
-    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouth(int questionId);
-    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithQuestion(int questionId);
-    IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouthAndQuestion(int questionId);
+    void CreateAnswer(Answer answer);
+    void UpdateAnswer(Answer answer);
+    bool DeleteAnswer(int answerId);
 
-    void CreateTextAnswer(TextAnswer answer);
-    void UpdateTextAnswer(TextAnswer answer);
-    bool DeleteTextAnswer(int answerId);
+    Youth ReadYouthByTokenWithProject(Guid youthToken);
+    Youth CreateYouth(Guid youthToken, Slug projectSlug);
 
-    IntegerAnswer ReadIntegerAnswerById(int answerId);
-    IntegerAnswer ReadIntegerAnswerByIdWithYouth(int answerId);
-    IntegerAnswer ReadIntegerAnswerByIdWithQuestion(int answerId);
-    IntegerAnswer ReadIntegerAnswerByIdWithYouthAndQuestion(int answerId);
-
-    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionId(int questionId);
-    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouth(int questionId);
-    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithQuestion(int questionId);
-    IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId);
-
-    void CreateIntegerAnswer(IntegerAnswer answer);
-    void UpdateIntegerAnswer(IntegerAnswer answer);
-    bool DeleteIntegerAnswer(int answerId);
+    SingleChoice ReadSingleChoiceByIdForQuestion(int questionId, int optionId);
+    MultipleChoice ReadMultipleChoiceByIdForQuestion(int questionId, int optionId);
 }
