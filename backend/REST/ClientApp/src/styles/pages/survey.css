@@ -141,8 +141,6 @@
   gap: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
   padding: clamp(var(--spacing-sm), 2vw, var(--font-size-lg));
   border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  border: 2px solid var(--color-border);
   cursor: pointer;
   transition: all var(--transition-base);
 }
@@ -172,7 +170,7 @@
   width: clamp(var(--spacing-lg), 2vw, calc(var(--spacing-lg) * 1.5));
   height: clamp(var(--spacing-lg), 2vw, calc(var(--spacing-lg) * 1.5));
   border-radius: var(--radius-full);
-  border: var(--spacing-xs) solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   transition: all var(--transition-base);
 }
 
@@ -232,10 +230,10 @@
 }
 
 .survey-scroll-btn {
-  width: var(--spacing-xl);
-  height: var(--spacing-xl);
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-full);
-  border: var(--spacing-xs) solid var(--color-primary);
+  border: var(--border-thin) solid var(--color-primary);
   background-color: var(--color-surface);
   color: var(--color-primary);
   cursor: pointer;
