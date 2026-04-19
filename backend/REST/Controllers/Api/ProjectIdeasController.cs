@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceId}/projects/{projectId}/ideas")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}")]
 public class ProjectIdeasController : ControllerBase
 {
     private readonly IIdeaManager _ideaManager;
@@ -17,8 +17,8 @@ public class ProjectIdeasController : ControllerBase
         _ideaManager = ideaManager;
     }
 
-    [HttpGet]
-    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(Slug workspaceId, Slug projectId, [FromQuery] Guid youthId)
+    [HttpGet("youth/{youthId:guid}/ideas")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouth(Slug workspaceId, Slug projectId, Guid youthId)
     {
         try
         {
@@ -39,8 +39,14 @@ public class ProjectIdeasController : ControllerBase
         }
     }
 
-    [HttpGet("by-youth/{youthId:guid}")]
+    [HttpGet("ideas/by-youth/{youthId:guid}")]
     public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthPath(Slug workspaceId, Slug projectId, Guid youthId)
+    {
+        return GetIdeasByYouth(workspaceId, projectId, youthId);
+    }
+
+    [HttpGet("ideas")]
+    public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthQuery(Slug workspaceId, Slug projectId, [FromQuery] Guid youthId)
     {
         return GetIdeasByYouth(workspaceId, projectId, youthId);
     }

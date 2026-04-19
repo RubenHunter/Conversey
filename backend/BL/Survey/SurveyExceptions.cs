@@ -1,13 +1,15 @@
+using Conversey.BL.Domain.Common;
+
 namespace Conversey.BL.Survey;
 
 public class AnswerNotFoundException(string answerIdentifier)
-    : Exception($"Answer with id {answerIdentifier} was not found.");
+    : NotFoundException($"Answer with id {answerIdentifier}");
 
 public class IntegerAnswerNotFoundException(string answerIdentifier)
-    : Exception($"IntegerAnswer with id {answerIdentifier} was not found.");
+    : NotFoundException($"IntegerAnswer with id {answerIdentifier}");
 
 public class QuestionNotFoundException(string questionIdentifier)
-    : Exception($"Question with id {questionIdentifier} was not found.");
+    : NotFoundException($"Question with id {questionIdentifier}");
     
 public class TextAnswerNotFoundException(string answerIdentifier)
-    : Exception($"TextAnswer with id {answerIdentifier} was not found.");
+    : NotFoundException($"TextAnswer with id {answerIdentifier}");

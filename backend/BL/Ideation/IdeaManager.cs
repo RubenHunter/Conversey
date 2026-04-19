@@ -26,7 +26,15 @@ public class IdeaManager: IIdeaManager
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
-        Youth author = ResolveOrCreateYouth(project, youthId);
+        Youth author;
+        try
+        {
+            author = _projectManager.GetYouth(project, youthId);
+        }
+        catch (YouthNotFoundException)
+        {
+            author = _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
+        }
         
         ModerationDecision decision = EvaluateIdeaModeration(ideaContent);
 
@@ -124,7 +132,15 @@ public class IdeaManager: IIdeaManager
     public ResponseSubmissionResponse AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        Youth author = ResolveOrCreateYouth(project, youthId);
+        Youth author;
+        try
+        {
+            author = _projectManager.GetYouth(project, youthId);
+        }
+        catch (YouthNotFoundException)
+        {
+            author = _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
+        }
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
 
@@ -176,7 +192,15 @@ public class IdeaManager: IIdeaManager
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         Idea idea = GetIdea(topic, ideaId);
-        Youth author = ResolveOrCreateYouth(project, youthId);
+        Youth author;
+        try
+        {
+            author = _projectManager.GetYouth(project, youthId);
+        }
+        catch (YouthNotFoundException)
+        {
+            author = _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
+        }
 
         string normalizedEmoji = NormalizeEmoji(emoji);
         
@@ -231,7 +255,15 @@ public class IdeaManager: IIdeaManager
         IdeaResponse response = _repository.ReadResponseByIdWithIdea(responseId) ?? throw new ResponseNotFoundException(responseId);
         if (response.Idea?.Project == null) throw new ValidationException("Response idea project was not loaded.");
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
-        Youth author = ResolveOrCreateYouth(project, youthId);
+        Youth author;
+        try
+        {
+            author = _projectManager.GetYouth(project, youthId);
+        }
+        catch (YouthNotFoundException)
+        {
+            author = _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
+        }
         string normalizedEmoji = NormalizeEmoji(emoji);
 
         ResponseReaction existingReaction = _repository.ReadResponseReactionByResponseIdAndYouthIdAndEmoji(responseId, youthId, normalizedEmoji);
@@ -323,17 +355,6 @@ public class IdeaManager: IIdeaManager
         }
     }
 
-    private Youth ResolveOrCreateYouth(Project project, Guid youthId)
-    {
-        try
-        {
-            return _projectManager.GetYouth(project, youthId);
-        }
-        catch (YouthNotFoundException)
-        {
-            return _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
-        }
-    }
 
     private void Validate(object obj)
     {

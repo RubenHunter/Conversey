@@ -61,7 +61,7 @@ async function getCommunityIdeasForTopic(workspaceSlug: string, projectSlug: str
 }
 
 async function getMyIdeas(workspaceSlug: string, projectSlug: string, youthToken: string): Promise<Idea[]> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/ideas/by-youth/${encodeURIComponent(youthToken)}`
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/youth/${encodeURIComponent(youthToken)}/ideas`
     const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }

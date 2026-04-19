@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Administration;
-using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
@@ -32,18 +30,6 @@ public class IdeaResponsesController : ControllerBase
 
             return Ok(responses);
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (TopicNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
         catch (NotFoundException e)
         {
             return NotFound(e.Message);
@@ -63,18 +49,6 @@ public class IdeaResponsesController : ControllerBase
                 _ => throw new InvalidOperationException("Unknown response submission type")
             });
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (TopicNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
         catch (NotFoundException e)
         {
             return NotFound(e.Message);
@@ -93,22 +67,6 @@ public class IdeaResponsesController : ControllerBase
             ModerationStatus newStatus = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved;
             var updated = _ideaManager.ChangeResponse(workspaceId, projectId, topicId, ideaId, request.YouthId, responseId, newStatus, request.Text);
             return Ok(ResponseDto.From(updated));
-        }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (TopicNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (ResponseNotFoundException e)
-        {
-            return NotFound(e.Message);
         }
         catch (NotFoundException e)
         {
@@ -132,25 +90,9 @@ public class IdeaResponsesController : ControllerBase
                 .AsReadOnly();
             return Ok(reactions);
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (TopicNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (ResponseNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (NotFoundException)
-        {
-            return NotFound();
         }
     }
 
@@ -166,18 +108,6 @@ public class IdeaResponsesController : ControllerBase
                 Id = addedReaction.Id,
                 Emoji = addedReaction.Emoji
             });
-        }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (ResponseNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
         }
         catch (NotFoundException e)
         {
@@ -196,26 +126,6 @@ public class IdeaResponsesController : ControllerBase
         {
             _ideaManager.RemoveResponseReaction(workspaceId, projectId, topicId, ideaId, responseId, youthId, reactionId);
             return NoContent();
-        }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (TopicNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (IdeaNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (ResponseNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (ResponseReactionNotFoundException e)
-        {
-            return NotFound(e.Message);
         }
         catch (NotFoundException e)
         {
