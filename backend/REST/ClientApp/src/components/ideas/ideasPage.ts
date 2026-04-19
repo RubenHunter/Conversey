@@ -13,11 +13,10 @@ import {
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
 } from '../../services/ideaResponseService.ts'
-import type { Idea } from '../../models/idea.ts'
+import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
 import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
-import { getActiveIdeasLabel } from './topicSwitcher.ts'
 import { renderCommunityIdeasList } from './communityList.ts'
 import { renderIdeasComposer } from './composer.ts'
 import type { ActiveView } from './types.ts'
@@ -30,6 +29,13 @@ function shuffleArray<T>(array: T[]): T[] {
         [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
     return newArray;
+}
+
+// Get label for active ideas view
+function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
+    if (activeView.type === 'my-ideas') return 'My ideas'
+    const topic = topics.find((item) => item.id === activeView.topicId)
+    return topic ? topic.title : 'Select a topic'
 }
 
 // Calculate how many cards fit in the available height (1-5)
@@ -118,8 +124,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                                 <span class="ideas-compose-topic-text">
                                     <span class="ideas-compose-topic-kicker">Topic:</span>
                                     <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
+                                    <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
-                                <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                             </button>
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
@@ -519,7 +525,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             topics,
             ideasGrid,
             ideasCompose,
-            composeTopic: topicTrigger,
+            composeTopic: topicTriggerValue,
             prompt,
             textarea,
             submitBtn,

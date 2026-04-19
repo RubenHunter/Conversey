@@ -76,11 +76,21 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
             topicLabel.className = 'ideas-card-topic'
             topicLabel.textContent = topics.find((topic) => topic.id === idea.topicId)?.title ?? 'Unknown topic'
 
+            const badgesWrapper = document.createElement('div')
+            badgesWrapper.className = 'ideas-card-badges'
+            badgesWrapper.style.display = 'flex'
+            badgesWrapper.style.gap = '0.25rem'
+            badgesWrapper.style.alignItems = 'center'
+            
             if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
-                card.appendChild(flagged)
+                badgesWrapper.appendChild(flagged)
+            }
+            
+            if (badgesWrapper.children.length > 0) {
+                card.appendChild(badgesWrapper)
             }
 
             const body = document.createElement('p')
@@ -89,18 +99,28 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
 
             card.append(topicLabel, body)
         } else {
+            const badgesWrapper = document.createElement('div')
+            badgesWrapper.className = 'ideas-card-badges'
+            badgesWrapper.style.display = 'flex'
+            badgesWrapper.style.gap = '0.25rem'
+            badgesWrapper.style.alignItems = 'center'
+            
             if (idea.authorType === 'self') {
                 const yoursBadge = document.createElement('span')
                 yoursBadge.className = 'ideas-card-yours-badge'
                 yoursBadge.textContent = 'Your idea'
-                card.appendChild(yoursBadge)
+                badgesWrapper.appendChild(yoursBadge)
             }
 
             if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
-                card.appendChild(flagged)
+                badgesWrapper.appendChild(flagged)
+            }
+            
+            if (badgesWrapper.children.length > 0) {
+                card.appendChild(badgesWrapper)
             }
 
             const body = document.createElement('p')
