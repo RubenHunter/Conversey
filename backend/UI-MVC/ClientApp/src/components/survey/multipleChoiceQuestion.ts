@@ -39,6 +39,23 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')
 
+    const validOptionIds = new Set<number>(
+        [...labels].map((label) => Number(label.getAttribute('data-option-id'))),
+    )
+
+    function applySelectedState(nextSelectedOptionIds: number[]): void {
+        selectedOptionIds = nextSelectedOptionIds
+
+        labels.forEach((label) => {
+            const optionId = Number(label.getAttribute('data-option-id'))
+            label.classList.toggle('selected', selectedOptionIds.includes(optionId))
+            label.classList.remove('disabled')
+        })
+
+        const errorEl = wrapper.querySelector(`#error-${question.id}`)
+        errorEl?.classList.remove('show')
+    }
+
     labels.forEach((label) => {
         label.addEventListener('click', () => {
             if (isLocked) return
@@ -46,19 +63,10 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             const optionId = Number(label.getAttribute('data-option-id'))
 
             if (selectedOptionIds.includes(optionId)) {
-                selectedOptionIds = selectedOptionIds.filter((id) => id !== optionId)
-                label.classList.remove('selected')
+                applySelectedState(selectedOptionIds.filter((id) => id !== optionId))
             } else {
-                selectedOptionIds = [...selectedOptionIds, optionId]
-                label.classList.add('selected')
+                applySelectedState([...selectedOptionIds, optionId])
             }
-
-            labels.forEach((l) => {
-                l.classList.toggle('disabled', false)
-            })
-
-            const errorEl = wrapper.querySelector(`#error-${question.id}`)
-            errorEl?.classList.remove('show')
 
             answerCallback?.()
         })
@@ -86,6 +94,12 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
         },
         onAnswer: (cb) => {
             answerCallback = cb
+        },
+        setAnswer: (answer) => {
+            const restoredIds = Array.isArray(answer)
+                ? [...new Set(answer.filter((value): value is number => Number.isFinite(value) && validOptionIds.has(value)))]
+                : []
+            applySelectedState(restoredIds)
         },
         getElement: () => wrapper,
     }
