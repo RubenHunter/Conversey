@@ -1,16 +1,16 @@
-import type { RouteParams } from '../../utils/router.ts'
-import { navigate } from '../../utils/router.ts'
-import { getProject } from '../../services/projectService.ts'
-import { getQuestions, submitAnswers } from '../../services/surveyService.ts'
-import { QuestionType } from '../../models/question.ts'
-import type { ResponseAnswer } from '../../models/response.ts'
-import { renderSingleChoiceQuestion } from './singleChoiceQuestion.ts'
-import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { renderMultipleChoiceQuestion } from './multipleChoiceQuestion.ts'
-import { renderOpenTextQuestion } from './openTextQuestion.ts'
-import { renderScaleQuestion } from './scaleQuestion.ts'
-import { renderScrollNav } from '../scrollNav.ts'
-import type { ScrollNav } from '../scrollNav.ts'
+import type {RouteParams} from '../../utils/router.ts'
+import {navigate} from '../../utils/router.ts'
+import {getProject} from '../../services/projectService.ts'
+import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
+import {QuestionType} from '../../models/question.ts'
+import type {ResponseAnswer} from '../../models/response.ts'
+import type {QuestionComponent} from './singleChoiceQuestion.ts'
+import {renderSingleChoiceQuestion} from './singleChoiceQuestion.ts'
+import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion.ts'
+import {renderOpenTextQuestion} from './openTextQuestion.ts'
+import {renderScaleQuestion} from './scaleQuestion.ts'
+import type {ScrollNav} from '../scrollNav.ts'
+import {renderScrollNav} from '../scrollNav.ts'
 
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
@@ -84,7 +84,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                 <div class="survey-hero-content">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
-                    <p class="mt-3 text-xs uppercase tracking-[0.18em] opacity-80">Loaded from backend API</p>
                 </div>
             </section>
 
@@ -103,7 +102,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-stop-early" class="survey-stop-early-btn" aria-label="Stop survey early">Stop Survey Early</button>
                     <button id="btn-submit" class="survey-submit-btn" disabled>Submit Survey</button>
                 </div>
             </div>
@@ -114,7 +112,6 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const headerEl = container.querySelector<HTMLDivElement>('#survey-header')!
     const questionsContainer = container.querySelector<HTMLDivElement>('#questions-container')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#btn-submit')!
-    const stopEarlyBtn = container.querySelector<HTMLButtonElement>('#btn-stop-early')!
     const actionBar = container.querySelector<HTMLDivElement>('#survey-action-bar')!
     const progressBar = container.querySelector<HTMLDivElement>('#progress-bar')!
     const progressBadge = container.querySelector<HTMLSpanElement>('#progress-badge')!
@@ -131,7 +128,8 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         questionsContainer.appendChild(component.getElement())
 
-        if (index > 0) {
+        // Lock next questions only if current question is required
+        if (index > 0 && questions[index - 1].isRequired) {
             component.lock()
         }
 
@@ -140,14 +138,22 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
 
+    // Auto-scroll textarea into view on mobile when focused
+    document.querySelectorAll('.survey-textarea').forEach(textarea => {
+        textarea.addEventListener('focus', () => {
+            setTimeout(() => {
+                (textarea as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 300)
+        })
+    })
+
     function updateProgress(): void {
         const answeredCount = answeredState.filter(Boolean).length
         const percentage = (answeredCount / questions.length) * 100
         progressBar.style.width = `${percentage}%`
         progressBadge.textContent = `${answeredCount} / ${questions.length}`
 
-        const allRequiredAnswered = questions.every((q, i) => !q.isRequired || answeredState[i])
-        const isReady = allRequiredAnswered && answeredCount === questions.length
+        const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
 
         submitBtn.disabled = !isReady
         actionBar.classList.toggle('survey-ready', isReady)
@@ -159,7 +165,8 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             const hasAnswer = Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
             answeredState[index] = hasAnswer
 
-            if (index + 1 < components.length) {
+            // Only lock/unlock next question if current question is required
+            if (index + 1 < components.length && questions[index].isRequired) {
                 const nextQuestion = components[index + 1]
                 const nextIndex = index + 1
 
@@ -215,9 +222,14 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     }
 
     scrollNav = renderScrollNav((direction) => {
+        // If at hero (index = -1), first down click goes to question 0
+        if (currentQuestionIndex === -1 && direction === 'down' && questions.length > 0) {
+            scrollToQuestion(0)
+            return
+        }
         if (direction === 'up' && currentQuestionIndex > 0) {
             scrollToQuestion(currentQuestionIndex - 1)
-        } else if (direction === 'down' && currentQuestionIndex < questions.length - 1) {
+        } else if (direction === 'down' && currentQuestionIndex >= 0 && currentQuestionIndex < questions.length - 1) {
             scrollToQuestion(currentQuestionIndex + 1)
         }
     })
@@ -286,11 +298,9 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     window.addEventListener('scroll', updateCurrentQuestionFromScroll, { passive: true })
     window.addEventListener('app:before-navigate', cleanupSurveyPage as EventListener)
-    // Don't call updateCurrentQuestionFromScroll() on initial load - keep currentQuestionIndex at -1
-
-    stopEarlyBtn.addEventListener('click', () => {
-        void navigate('ideas')
-    })
+    // Keep currentQuestionIndex at -1 initially (hero section)
+    // updateCurrentQuestionFromScroll() is called by scroll events
+    isUserScroll = true
 
     submitBtn.addEventListener('click', async () => {
         let allValid = true
@@ -312,10 +322,12 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             const answer = components[index].getAnswer()
             if (question.type === QuestionType.SingleChoice) {
                 const selectedOptionId = answer as number
+                if (selectedOptionId == null) return []
                 return { questionId: question.id, selectedOptionId, value: selectedOptionId }
             }
             if (question.type === QuestionType.MultipleChoice) {
                 const selectedOptionIds = Array.isArray(answer) ? answer : []
+                if (selectedOptionIds.length === 0) return []
                 return selectedOptionIds.map((selectedOptionId) => ({
                     questionId: question.id,
                     selectedOptionId,
@@ -324,9 +336,11 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             }
             if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
+                if (scaleValue == null) return []
                 return { questionId: question.id, selectedOptionId: scaleValue, value: scaleValue }
             }
             const openTextValue = answer as string
+            if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
 

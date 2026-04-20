@@ -97,9 +97,6 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                     <p class="leading-relaxed landing-description">
                         ${project.description}
                     </p>
-                    <p class="mt-3 text-xs uppercase tracking-[0.18em] opacity-80">
-                        Loaded from backend API
-                    </p>
                 </div>
 
                 <div class="flex justify-center relative landing-start-wrap">
