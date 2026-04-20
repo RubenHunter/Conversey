@@ -60,9 +60,9 @@ public class WorkspacesController : ControllerBase
             var workspace = _manager.GetWorkspaceById(id);
             return Ok(WorkspaceDto.From(workspace));
         }
-        catch (KeyNotFoundException)
+        catch (NotFoundException e)
         {
-            return NotFound();
+            return NotFound(e.Message);
         }
     }
 }

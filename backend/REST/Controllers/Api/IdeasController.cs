@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Administration;
-using Conversey.BL.Domain.Common;
+﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
 using Conversey.REST.Models.Dto;
@@ -32,13 +30,9 @@ public class IdeasController : ControllerBase
                 _ => throw new InvalidOperationException("Unknown submission response type")
             });
         }
-        catch (NotFoundException)
+        catch (NotFoundException e)
         {
-            return NotFound();
-        }
-        catch (ValidationException e)
-        {
-            return BadRequest(e.Message);
+            return NotFound(e.Message);
         }
     }
 
@@ -55,9 +49,9 @@ public class IdeasController : ControllerBase
 
             return Ok(dtos);
         }
-        catch (NotFoundException)
+        catch (NotFoundException e)
         {
-            return NotFound();
+            return NotFound(e.Message);
         }
     }
 
@@ -70,11 +64,7 @@ public class IdeasController : ControllerBase
 
             return Ok(IdeaDto.From(idea));
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
         }
@@ -89,11 +79,7 @@ public class IdeasController : ControllerBase
 
             return Ok(IdeaThreadDto.From(idea));
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
         }
@@ -111,11 +97,7 @@ public class IdeasController : ControllerBase
                 .AsReadOnly();
             return Ok(reactions);
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
         }
@@ -133,17 +115,9 @@ public class IdeasController : ControllerBase
                 Emoji = addedReaction.Emoji
             });
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
-        }
-        catch (ValidationException e)
-        {
-            return BadRequest(e.Message);
         }
     }
 
@@ -155,21 +129,9 @@ public class IdeasController : ControllerBase
             _manager.RemoveIdeaReaction(workspaceId, projectId, topicId, ideaId, youthId, reactionId);
             return NoContent();
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
-        }
-        catch (IdeaReactionNotFoundException e)
-        {
-            return NotFound(e.Message);
-        }
-        catch (ValidationException e)
-        {
-            return BadRequest(e.Message);
         }
     }
 
@@ -178,23 +140,14 @@ public class IdeasController : ControllerBase
     {
         try
         {
-
             ModerationStatus newStatus = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved;
             var updated = _manager.ChangeIdea(workspaceId, projectId, topicId, ideaId, newStatus, request.Content);
             
             return StatusCode(201, IdeaDto.From(updated));
         }
-        catch (ProjectNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (IdeaNotFoundException e)
+        catch (NotFoundException e)
         {
             return NotFound(e.Message);
-        }
-        catch (ValidationException e)
-        {
-            return BadRequest(e.Message);
         }
     }
 }
