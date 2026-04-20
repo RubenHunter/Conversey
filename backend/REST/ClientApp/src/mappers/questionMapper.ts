@@ -9,6 +9,14 @@ function pickString(...values: Array<string | undefined>): string | undefined {
     return values.find((value) => typeof value === 'string' && value.length > 0)
 }
 
+function toStableNumericId(value: string): number {
+    let hash = 17
+    for (const ch of value) {
+        hash = (hash * 31 + ch.charCodeAt(0)) | 0
+    }
+    return Math.abs(hash === -2147483648 ? 2147483647 : hash)
+}
+
 function mapQuestionType(rawType: ApiQuestionTypeDto | undefined): Question['type'] {
     if (rawType === undefined) return QuestionType.OpenText
 
@@ -48,7 +56,8 @@ function mapAnswerOption(dto: ApiAnswerOptionDto, questionId: number): AnswerOpt
 
 export function mapApiQuestionToQuestion(dto: ApiQuestionDto): Question {
     const id = pickNumber(dto.id, dto.Id) ?? 0
-    const projectId = pickNumber(dto.projectId, dto.ProjectId) ?? 0
+    const projectSlug = pickString(dto.projectSlug, dto.ProjectSlug)
+    const projectId = pickNumber(dto.projectId, dto.ProjectId) ?? (projectSlug ? toStableNumericId(projectSlug) : 0)
     const rawType = pickString(
         dto.type as string | undefined,
         dto.Type as string | undefined,

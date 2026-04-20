@@ -1,8 +1,10 @@
-﻿export interface ApiIdeaTopicDto {
+﻿type ApiSlugValue = string | { text?: string; Text?: string }
+
+export interface ApiIdeaTopicDto {
     id?: number
     Id?: number
-    projectId?: number
-    ProjectId?: number
+    projectId?: number | ApiSlugValue
+    ProjectId?: number | ApiSlugValue
     title?: string
     Title?: string
     prompt?: string
@@ -14,8 +16,8 @@
 export interface ApiIdeaDto {
     id?: number
     Id?: number
-    projectId?: number
-    ProjectId?: number
+    projectId?: number | ApiSlugValue
+    ProjectId?: number | ApiSlugValue
     topicId?: number
     TopicId?: number
     body?: string
@@ -26,6 +28,8 @@ export interface ApiIdeaDto {
     Status?: string | number
     authorType?: 'self' | 'other'
     AuthorType?: 'self' | 'other'
+    youthId?: string
+    YouthId?: string
     youthToken?: string
     YouthToken?: string
     createdAt?: string
@@ -37,8 +41,6 @@ export interface ApiIdeaDto {
 }
 
 export interface ApiSubmitIdeaRequestDto {
-    projectId: number
-    topicId: number
     content: string
-    youthToken: string
+    youthId: string
 }

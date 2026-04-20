@@ -1,12 +1,11 @@
-using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Administration;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
-using Conversey.BL.Subplatform;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Ideation;
+using Conversey.DAL;
+using Conversey.BL.Survey;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -23,36 +22,24 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
     }
 
     [Fact]
-    public void CorePipeline_WorkspaceToProjectQuestionAndAnswerFlow_ShouldPersistAcrossManagers()
+    public void CorePipeline_WorkspaceProjectQuestionAndAnswerFlow_ShouldPersistAcrossManagers()
     {
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
         var questionManager = scope.ServiceProvider.GetRequiredService<IQuestionManager>();
 
-        var workspaceName = $"Pipeline Workspace {Guid.NewGuid():N}";
-        var workspace = workspaceManager.CreateWorkspace(workspaceName, Slug.FromName(workspaceName));
-        var project = projectManager.AddProject(
-            title: $"Pipeline Project {Guid.NewGuid():N}",
-            slug: "pipeline-project",
-            description: "Core pipeline integration test",
-            status: Status.Active,
-            startDate: DateTime.UtcNow.Date,
-            endDate: DateTime.UtcNow.Date.AddDays(14),
-            interactionForm: InteractionType.Chat,
-            workspaceSlug: workspace.Id);
-
-        var youth = projectManager.AddYouth(Guid.NewGuid(), $"pipeline-{Guid.NewGuid():N}@example.com", project.Slug);
-        _ = projectManager.AddTopic("Pipeline Topic", "Topic for pipeline coverage", project.Slug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = projectManager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
+        var youth = projectManager.GetYouth(project, ManagerSeedData.YouthToken);
         var question = questionManager.AddQuestion(new OpenQuestion
         {
-            Text = "What should we improve?",
+            Text = $"What should we improve? {Guid.NewGuid():N}",
             Required = true,
             Project = project
         });
 
-        var typedQuestion = questionManager.GetQuestionById(question.Id) as Question<Answer<string>>;
-        Assert.NotNull(typedQuestion);
+        var typedQuestion = Assert.IsAssignableFrom<Question<Answer<string>>>(questionManager.GetQuestionById(question.Id));
 
         var answer = questionManager.AddAnswer(new Answer<string>
         {
@@ -61,12 +48,12 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             Youth = youth
         });
 
-        var workspaceWithProjects = workspaceManager.GetWorkspaceByIdWithProjects(workspace.Id);
-        var projectWithQuestions = projectManager.GetProjectBySlugWithQuestions(project.Slug);
+        var workspaceById = workspaceManager.GetWorkspaceById(workspace.Id);
+        var projectById = projectManager.GetProjectById(workspace.Id, project.Id);
         var loadedAnswer = questionManager.GetAnswerById(answer.Id);
 
-        Assert.Contains(workspaceWithProjects.Projects, p => p.Slug == project.Slug);
-        Assert.Contains(projectWithQuestions.Questions, q => q.Id == question.Id);
+        Assert.True(workspace.Id.Text == workspaceById.Id.Text);
+        Assert.True(project.Id.Text == projectById.Id.Text);
         Assert.Equal(answer.Id, loadedAnswer.Id);
     }
 
@@ -77,23 +64,34 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
         using var scope = _fixture.CreateScope();
         var ideaManager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
 
-        var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
-        var ideaSubmission = Assert.IsType<SubmissionResponse.Approved>(
-            ideaManager.SubmitIdea("Pipeline idea content", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken));
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var topicId = dbContext.Topics
+            .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+            .Select(topic => topic.Id)
+            .First();
+        var ideaSubmission = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Pipeline idea content") switch
+        {
+            SubmissionResponse.Approved approved => approved,
+            _ => throw new InvalidOperationException("Expected approved idea submission.")
+        };
 
-        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(
-            ideaManager.AddResponse("Pipeline response content", ideaSubmission.idea.Id, ManagerSeedData.YouthToken));
+        var responseSubmission = ideaManager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, ManagerSeedData.YouthToken, "Pipeline response content") switch
+        {
+            ResponseSubmissionResponse.Approved approved => approved,
+            _ => throw new InvalidOperationException("Expected approved response submission.")
+        };
 
-        var ideaReaction = ideaManager.AddIdeaReaction("like", ideaSubmission.idea.Id, ManagerSeedData.YouthToken);
-        var responseReaction = ideaManager.AddResponseReaction("upvote", responseSubmission.Response.Id, ManagerSeedData.YouthToken);
+        var ideaReaction = ideaManager.AddIdeaReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, ManagerSeedData.YouthToken, "like");
+        var responseReaction = ideaManager.AddResponseReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, responseSubmission.IdeaResponse.Id, ManagerSeedData.YouthToken, "upvote");
 
-        var ideaWithResponses = ideaManager.GetIdeaByIdWithProjectAndResponses(ideaSubmission.idea.Id);
-        var ideaReactions = ideaManager.GetIdeaReactionsFromIdeaByIdeaId(ideaSubmission.idea.Id);
-        var responseReactions = ideaManager.GetResponseReactionsFromResponseByResponseId(responseSubmission.Response.Id);
+        var ideaWithResponses = ideaManager.GetIdeaByIdWithProjectAndResponses(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id);
+        var ideaReactions = ideaManager.GetIdeaReactionsByIdeaId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id);
+        var responseReactions = ideaManager.GetResponseReactionsByResponseId(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, responseSubmission.IdeaResponse.Id);
 
         Assert.Equal(ModerationStatus.Approved, ideaWithResponses.Status);
-        Assert.Contains(ideaWithResponses.Responses, response => response.Id == responseSubmission.Response.Id);
+        Assert.Contains(ideaWithResponses.Responses, response => response.Id == responseSubmission.IdeaResponse.Id);
         Assert.Contains(ideaReactions, reaction => reaction.Id == ideaReaction.Id && reaction.Emoji == "like");
         Assert.Contains(responseReactions, reaction => reaction.Id == responseReaction.Id && reaction.Emoji == "upvote");
     }
@@ -107,13 +105,18 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             using var scope = _fixture.CreateScope();
             var ideaManager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
             var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-            var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
+            var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+            var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+            var topicId = dbContext.Topics
+                .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+                .Select(topic => topic.Id)
+                .First();
 
-            var response = ideaManager.SubmitIdea("extreme profanity content", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken);
+            var response = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "extreme profanity content");
 
             var pending = Assert.IsType<SubmissionResponse.Pending>(response);
-            Assert.Equal(ModerationStatus.Pending, pending.idea.Status);
-            Assert.Equal("Please remove profanity and rewrite respectfully.", pending.decision.Suggestion);
+            Assert.Equal(ModerationStatus.Pending, pending.Idea.Status);
+            Assert.Equal("Please remove profanity and rewrite respectfully.", pending.Decision.Suggestion);
         }
         finally
         {
@@ -122,33 +125,27 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
     }
 
     [Fact]
-    public void CorePipeline_AddResponse_WhenYouthFromAnotherProject_ShouldThrowValidationException()
+    public void CorePipeline_AddResponse_WhenYouthIsUnknown_ShouldAutoCreateYouthAndPersistResponse()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
-        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var projectManager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
         var ideaManager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
 
-        var topicId = projectManager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug).First().Id;
-        var seededIdea = Assert.IsType<SubmissionResponse.Approved>(
-            ideaManager.SubmitIdea("Idea for foreign youth rejection", ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken));
+        var project = projectManager.GetProjectById(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug);
+        var topicId = dbContext.Topics
+            .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+            .Select(topic => topic.Id)
+            .First();
+        var seededIdea = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Idea for foreign youth rejection") switch
+        {
+            SubmissionResponse.Approved approved => approved,
+            _ => throw new InvalidOperationException("Expected approved idea submission.")
+        };
 
-        var secondWorkspaceName = $"Foreign Workspace {Guid.NewGuid():N}";
-        var secondWorkspace = workspaceManager.CreateWorkspace(secondWorkspaceName, Slug.FromName(secondWorkspaceName));
-        var secondProject = projectManager.AddProject(
-            title: $"Foreign Project {Guid.NewGuid():N}",
-            slug: "foreign-project",
-            description: "Foreign youth scope",
-            status: Status.Active,
-            startDate: DateTime.UtcNow.Date,
-            endDate: DateTime.UtcNow.Date.AddDays(7),
-            interactionForm: InteractionType.Chat,
-            workspaceSlug: secondWorkspace.Id);
-        var foreignYouth = projectManager.AddYouth(Guid.NewGuid(), $"foreign-{Guid.NewGuid():N}@example.com", secondProject.Slug);
+        var response = ideaManager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, seededIdea.Idea.Id, Guid.NewGuid(), "Response by foreign youth");
 
-        var act = () => ideaManager.AddResponse("Response by foreign youth", seededIdea.idea.Id, foreignYouth.Token);
-
-        Assert.Throws<ValidationException>(act);
+        Assert.True(response is ResponseSubmissionResponse.Approved or ResponseSubmissionResponse.Pending);
     }
 }

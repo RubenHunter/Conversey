@@ -1,12 +1,11 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
-using Conversey.BL.Subplatform;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Ideation;
+using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
@@ -15,6 +14,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -94,7 +94,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         var project = new Project
         {
-            Slug = ManagerSeedData.ProjectSlug,
+            Id = ManagerSeedData.ProjectSlug,
             Name = ManagerSeedData.ProjectName,
             Description = "Seed project",
             Status = Status.Active,
@@ -117,12 +117,12 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         var youth = new Youth
         {
-            Token = ManagerSeedData.YouthToken,
+            Id = ManagerSeedData.YouthToken,
             Email = "seed@student.nova.be",
             Project = project,
             Ideas = new List<Idea>(),
             Reactions = new List<Reaction>(),
-            Responses = new List<Conversey.BL.Domain.Ideation.Response>(),
+            Responses = new List<IdeaResponse>(),
             Answers = new List<Answer>()
         };
 
@@ -144,10 +144,10 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             Topic = topic,
             Youth = youth,
             Reactions = new List<IdeaReaction>(),
-            Responses = new List<Conversey.BL.Domain.Ideation.Response>()
+            Responses = new List<IdeaResponse>()
         };
 
-        var response = new Conversey.BL.Domain.Ideation.Response
+        var response = new IdeaResponse
         {
             Text = "Goed idee!",
             CreatedAt = DateTime.UtcNow,
@@ -191,7 +191,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         }
 
         public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            CancellationToken cancellationToken = default)
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;
             yield break;

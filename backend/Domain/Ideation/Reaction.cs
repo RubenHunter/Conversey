@@ -9,7 +9,6 @@ public abstract class Reaction
     public int Id { get; set; }
     
     [Required]
-    [StringLength(32)]
     public string Emoji { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -26,5 +25,5 @@ public sealed class IdeaReaction : Reaction
 public sealed class ResponseReaction : Reaction
 {
     [Required]
-    public Response Response { get; set; }
+    public IdeaResponse IdeaResponse { get; set; }
 }

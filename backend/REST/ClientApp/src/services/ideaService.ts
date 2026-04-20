@@ -25,8 +25,8 @@ interface IdeasContext {
     ideas: Idea[]
 }
 
-export function getIdeasYouthToken(projectId: number): string {
-    const key = `${IDEAS_USER_KEY}-${projectId}`
+export function getIdeasYouthToken(projectKey: string | number): string {
+    const key = `${IDEAS_USER_KEY}-${String(projectKey)}`
     const existing = localStorage.getItem(key)
     if (existing && isGuid(existing)) return existing
 
@@ -61,7 +61,7 @@ async function getCommunityIdeasForTopic(workspaceSlug: string, projectSlug: str
 }
 
 async function getMyIdeas(workspaceSlug: string, projectSlug: string, youthToken: string): Promise<Idea[]> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/ideas/by-youth/${encodeURIComponent(youthToken)}`
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/youth/${encodeURIComponent(youthToken)}/ideas`
     const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }
@@ -77,7 +77,7 @@ function mergeIdeas(communityIdeas: Idea[], myIdeas: Idea[]): Idea[] {
 
 export async function getIdeasContext(workspaceSlug: string, projectSlug: string, project: Project): Promise<IdeasContext> {
     const topics = mapProjectTopicsToIdeaTopics(project)
-    const youthToken = getIdeasYouthToken(project.id)
+    const youthToken = getIdeasYouthToken(project.slug)
 
     const communityPerTopic = await Promise.all(
         topics.map((topic) => getCommunityIdeasForTopic(workspaceSlug, projectSlug, topic.id, youthToken)),
@@ -101,7 +101,7 @@ export interface IdeaSubmitResult {
 }
 
 export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<IdeaSubmitResult> {
-    const youthToken = getIdeasYouthToken(request.projectId)
+    const youthToken = getIdeasYouthToken(projectSlug)
     const requestDto = mapSubmitIdeaRequestToApiSubmitIdeaRequest(request, youthToken)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${request.topicId}/ideas`
 
@@ -163,9 +163,7 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
 }
 
 interface UpdateIdeaAfterSafetyReviewRequest {
-    projectId: number
     content: string
-    youthToken: string
     markForReview: boolean
 }
 
@@ -174,17 +172,13 @@ export async function updateIdeaAfterSafetyReview(
     projectSlug: string,
     topicId: number,
     ideaId: number,
-    projectId: number,
     content: string,
     markForReview: boolean,
 ): Promise<Idea> {
-    const youthToken = getIdeasYouthToken(projectId)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/${ideaId}`
 
     const payload: UpdateIdeaAfterSafetyReviewRequest = {
-        projectId,
         content,
-        youthToken,
         markForReview,
     }
 
@@ -197,5 +191,5 @@ export async function updateIdeaAfterSafetyReview(
         `[AI moderation] updated idea ${ideaId} after safety dialog; status=${markForReview ? 'Pending' : 'Approved'}`,
     )
 
-    return mapApiIdeaToIdea(dto, youthToken)
+    return mapApiIdeaToIdea(dto, getIdeasYouthToken(projectSlug))
 }

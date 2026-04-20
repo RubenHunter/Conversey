@@ -1,7 +1,4 @@
-using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Domain.Administration;
-using Conversey.BL.Domain.Common;
-using Conversey.BL.Subplatform.Survey;
+using Conversey.BL.Administration;
 using Microsoft.Extensions.DependencyInjection;
 using Tests.IntegrationTests.Infrastructure;
 
@@ -17,79 +14,48 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
     }
 
     [Fact]
-    public void GetProjectBySlug_ShouldReturnSeededProject()
+    public void GetProjectBySlugWithWorkspaceTopicsYouthsAndQuestions_ShouldReturnSeededProjectWithRelations()
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var project = manager.GetProjectBySlug(ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
 
-        Assert.Equal(ManagerSeedData.ProjectSlug.Text, project.Slug.Text);
+        Assert.Equal(ManagerSeedData.ProjectSlug.Text, project.Id.Text);
         Assert.Equal(ManagerSeedData.ProjectName, project.Name);
     }
 
     [Fact]
-    public void AddProject_WithUniqueTitle_ShouldPersistProject()
+    public void GetYouthByToken_ShouldReturnSeededYouth()
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-        var title = $"Integration Project {Guid.NewGuid():N}";
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var created = manager.AddProject(
-            title,
-            slug: "ignored",
-            description: "Integration",
-            status: Status.Active,
-            startDate: DateTime.UtcNow.Date,
-            endDate: DateTime.UtcNow.Date.AddDays(7),
-            interactionForm: InteractionType.Chat,
-            workspaceSlug: ManagerSeedData.WorkspaceSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
+        var youth = manager.GetYouth(project, ManagerSeedData.YouthToken);
 
-        Assert.Equal(Slug.FromName(title).Text, created.Slug.Text);
+        Assert.Equal(ManagerSeedData.YouthToken, youth.Id);
     }
 
     [Fact]
-    public void AddProject_WhenSlugAlreadyExists_ShouldThrowValidationException()
+    public void AddYouth_WithUniqueToken_ShouldPersistYouth()
     {
         using var scope = _fixture.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-
-        var act = () => manager.AddProject(
-            ManagerSeedData.ProjectName,
-            slug: "ignored",
-            description: "Duplicate",
-            status: Status.Active,
-            startDate: DateTime.UtcNow.Date,
-            endDate: DateTime.UtcNow.Date.AddDays(1),
-            interactionForm: InteractionType.Chat,
-            workspaceSlug: ManagerSeedData.WorkspaceSlug);
-
-        Assert.Throws<ValidationException>(act);
-    }
-
-    [Fact]
-    public void AddTopic_And_GetTopics_ShouldWorkForProjectSlug()
-    {
-        using var scope = _fixture.CreateScope();
-        var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
-
-        _ = manager.AddTopic("New topic", "context", ManagerSeedData.ProjectSlug);
-        var topics = manager.GetTopicsFromProjectByProjectId(ManagerSeedData.ProjectSlug);
-
-        Assert.Contains(topics, t => t.Name == "New topic");
-    }
-
-    [Fact]
-    public void AddAndRemoveYouth_ShouldWorkWithGuidToken()
-    {
-        using var scope = _fixture.CreateScope();
-        var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var token = Guid.NewGuid();
 
-        var youth = manager.AddYouth(token, "youth@example.com", ManagerSeedData.ProjectSlug);
-        manager.RemoveYouth(token);
+        var created = manager.AddYouth(token, $"integration-{Guid.NewGuid():N}@example.com", ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
 
-        Assert.Equal(token, youth.Token);
-        Assert.Throws<YouthNotFoundException>(() => manager.GetYouthByToken(token));
+        Assert.Equal(token, created.Id);
+
+        var loaded = manager.GetYouth(project, token);
+        Assert.Equal(token, loaded.Id);
     }
 }

@@ -1,5 +1,5 @@
-using Conversey.BL.Domain;
 using Conversey.BL.Ai;
+using Conversey.BL.Domain.Ai;
 using Conversey.DAL.Subplatform.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

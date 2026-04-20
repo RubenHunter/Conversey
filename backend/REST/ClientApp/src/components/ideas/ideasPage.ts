@@ -80,7 +80,7 @@ function getOrganizationBadge(organizationName: string, organizationSlug: string
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
-    const youthToken = getIdeasYouthToken(project.id)
+    const youthToken = getIdeasYouthToken(project.slug)
 
     const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
     const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
@@ -662,7 +662,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                             params.projectSlug,
                             activeView.topicId,
                             result.idea.id,
-                            project.id,
                             decision.text,
                             true,
                         )
@@ -685,7 +684,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         params.projectSlug,
                         activeView.topicId,
                         result.idea.id,
-                        project.id,
                         decision.text,
                         true,
                     )
@@ -700,7 +698,6 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         params.projectSlug,
                         activeView.topicId,
                         result.idea.id,
-                        project.id,
                         decision.text,
                         false,
                     )

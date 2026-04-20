@@ -14,6 +14,8 @@ export interface ApiQuestionDto {
     Id?: number
     projectId?: number
     ProjectId?: number
+    projectSlug?: string
+    ProjectSlug?: string
     text?: string
     Text?: string
     order?: number

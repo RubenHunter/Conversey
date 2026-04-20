@@ -25,7 +25,7 @@ public static class DataSeeder
 
         var mentalWellbeing = new Project
         {
-            Slug = Slug.FromName("Mental Wellbeing 2026"),
+            Id = Slug.FromName("Mental Wellbeing 2026"),
             Name = "Mental Wellbeing 2026",
             Description = "A survey about mental wellbeing in the organization.",
             ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
@@ -96,7 +96,7 @@ public static class DataSeeder
             CreateIdea(mentalWellbeing, axaTopics[4], axaYouths[7], "Offer a quiet online study room with fixed moments and a moderator for students who get distracted at home.", "Online study room", now.AddDays(-1))
         };
 
-        var axaResponses = new List<Response>
+        var axaResponses = new List<IdeaResponse>
         {
             CreateResponse(axaIdeas[0], axaYouths[3], "Great idea. A no-deadline evening would really help to decompress.", now.AddDays(-11).AddHours(2)),
             CreateResponse(axaIdeas[1], axaYouths[0], "Yes please, right now you have to search across too many different pages.", now.AddDays(-10).AddHours(4)),
@@ -137,7 +137,7 @@ public static class DataSeeder
 
         var actieplan = new Project
         {
-            Slug = Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"),
+            Id = Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"),
             Name = "Actieplan Mentaal Welzijn 2026-2027",
             Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
             ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
@@ -202,7 +202,7 @@ public static class DataSeeder
             CreateIdea(actieplan, schoolTopics[1], schoolYouths[5], "Organiseer maandelijks een lunchsessie over stressmanagement met studentenbegeleiding.", "Maandelijkse stress-lunch", now.AddDays(-2))
         };
 
-        var schoolResponses = new List<Response>
+        var schoolResponses = new List<IdeaResponse>
         {
             CreateResponse(schoolIdeas[0], schoolYouths[3], "Topidee. Als we op dinsdagavond geen deadlines hebben, helpt dat echt om even op adem te komen.", now.AddDays(-11).AddHours(2)),
             CreateResponse(schoolIdeas[1], schoolYouths[0], "Ja graag, nu moet je info op drie verschillende pagina's zoeken.", now.AddDays(-10).AddHours(4)),
@@ -265,12 +265,12 @@ public static class DataSeeder
     {
         return new Youth
         {
-            Token = token,
+            Id = token,
             Email = email,
             Project = project,
             Ideas = new List<Idea>(),
             Reactions = new List<Reaction>(),
-            Responses = new List<Response>(),
+            Responses = new List<IdeaResponse>(),
             Answers = new List<Answer>()
         };
     }
@@ -354,7 +354,7 @@ public static class DataSeeder
             Topic = topic,
             Youth = youth,
             Reactions = new List<IdeaReaction>(),
-            Responses = new List<Response>()
+            Responses = new List<IdeaResponse>()
         };
 
         if (topic.Ideas is ICollection<Idea> topicIdeas)
@@ -370,9 +370,9 @@ public static class DataSeeder
         return idea;
     }
 
-    private static Response CreateResponse(Idea idea, Youth youth, string text, DateTime createdAt)
+    private static IdeaResponse CreateResponse(Idea idea, Youth youth, string text, DateTime createdAt)
     {
-        var response = new Response
+        var response = new IdeaResponse
         {
             Text = text,
             CreatedAt = createdAt,
@@ -383,12 +383,12 @@ public static class DataSeeder
             Reactions = new List<ResponseReaction>()
         };
 
-        if (idea.Responses != null)
+        if (idea.Responses is ICollection<IdeaResponse> ideaResponses)
         {
-            idea.Responses.Add(response);
+            ideaResponses.Add(response);
         }
 
-        if (youth.Responses is ICollection<Response> youthResponses)
+        if (youth.Responses is ICollection<IdeaResponse> youthResponses)
         {
             youthResponses.Add(response);
         }
@@ -406,9 +406,9 @@ public static class DataSeeder
             Idea = idea
         };
 
-        if (idea.Reactions != null)
+        if (idea.Reactions is ICollection<IdeaReaction> ideaReactions)
         {
-            idea.Reactions.Add(reaction);
+            ideaReactions.Add(reaction);
         }
 
         if (youth.Reactions is ICollection<Reaction> youthReactions)
@@ -419,17 +419,17 @@ public static class DataSeeder
         return reaction;
     }
 
-    private static ResponseReaction CreateResponseReaction(Response response, Youth youth, string emoji, DateTime createdAt)
+    private static ResponseReaction CreateResponseReaction(IdeaResponse ideaResponse, Youth youth, string emoji, DateTime createdAt)
     {
         var reaction = new ResponseReaction
         {
             Emoji = emoji,
             CreatedAt = createdAt,
             Youth = youth,
-            Response = response
+            IdeaResponse = ideaResponse
         };
 
-        if (response.Reactions is ICollection<ResponseReaction> responseReactions)
+        if (ideaResponse.Reactions is ICollection<ResponseReaction> responseReactions)
         {
             responseReactions.Add(reaction);
         }

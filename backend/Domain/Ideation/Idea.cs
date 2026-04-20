@@ -9,11 +9,9 @@ public class Idea
     public int Id { get; set; }
 
     [Required]
-    [StringLength(4000)]
-    public string Content { get; set; } = string.Empty;
+    public string Content { get; set; }
 
-    [StringLength(1000)]
-    public string Summary { get; set; } = string.Empty;
+    public string Summary { get; set; }
 
     public DateTime SubmissionDate { get; set; }
     public ModerationStatus Status { get; set; }
@@ -28,7 +26,7 @@ public class Idea
     [Required]
     public Youth Youth { get; set; }
 
-    public ICollection<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
+    public IEnumerable<IdeaReaction> Reactions { get; set; } = new List<IdeaReaction>();
 
-    public ICollection<Response> Responses { get; set; } = new List<Response>();
+    public IEnumerable<IdeaResponse> Responses { get; set; } = new List<IdeaResponse>();
 }

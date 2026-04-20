@@ -1,6 +1,5 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Administration;
-using Conversey.BL.Subplatform;
+using Conversey.BL.Administration;
+using Conversey.BL.Domain.Common;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +17,9 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<WorkspaceDto>> Get()
+    public ActionResult<IEnumerable<WorkspaceDto>> Get()
     {
-        IReadOnlyCollection<Workspace> workspaces = _manager.GetAllWorkspaces();
+        var workspaces = _manager.GetAllWorkspaces().ToList();
 
         if (workspaces.Count == 0)
         {
@@ -40,10 +39,10 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name, new Slug { Text = dto.Slug });
+            var workspace = _manager.CreateWorkspace(dto.Name);
 
             return CreatedAtAction(
-                nameof(GetBySlug),
+                nameof(Create),
                 new { slug = workspace.Id.Text },
                 workspace);
         }
@@ -53,26 +52,12 @@ public class WorkspacesController : ControllerBase
         }
     }
 
-    [HttpGet("{slug}")]
-    public IActionResult GetBySlug(Slug slug)
+    [HttpGet("{id}")]
+    public IActionResult GetById(Slug id)
     {
         try
         {
-            var workspace = _manager.GetWorkspaceBySlug(slug);
-            return Ok(WorkspaceDto.From(workspace));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-    }
-
-    [HttpGet("id/{id}")]
-    public IActionResult GetById(string id)
-    {
-        try
-        {
-            var workspace = _manager.GetWorkspaceById(new Slug { Text = id.Trim().ToLowerInvariant() });
+            var workspace = _manager.GetWorkspaceById(id);
             return Ok(WorkspaceDto.From(workspace));
         }
         catch (KeyNotFoundException)
