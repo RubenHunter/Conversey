@@ -1,12 +1,15 @@
 import type { Question } from '../../models/question.ts'
 import { generateQuestionHeader } from './shared.ts'
 
+export type QuestionAnswer = number | string | number[] | null
+
 export interface QuestionComponent {
-    getAnswer(): number | string | number[] | null
+    getAnswer(): QuestionAnswer
     validate(): boolean
     lock(): void
     unlock(): void
     onAnswer(callback: () => void): void
+    setAnswer(answer: QuestionAnswer): void
     getElement(): HTMLElement
 }
 
@@ -47,46 +50,33 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')
 
+    function applySelectedState(nextSelectedOptionId: number | null): void {
+        selectedOptionId = nextSelectedOptionId
+
+        if (selectedOptionId === null) {
+            labels.forEach((label) => {
+                label.classList.remove('selected')
+                label.classList.remove('disabled')
+            })
+        } else {
+            labels.forEach((label) => {
+                const optionId = Number(label.getAttribute('data-option-id'))
+                const isSelected = optionId === selectedOptionId
+                label.classList.toggle('selected', isSelected)
+                label.classList.toggle('disabled', !isSelected)
+            })
+        }
+
+        const errorEl = wrapper.querySelector(`#error-${question.id}`)
+        errorEl?.classList.remove('show')
+    }
+
     labels.forEach((label) => {
         label.addEventListener('click', () => {
             if (isLocked) return
 
             const optionId = Number(label.getAttribute('data-option-id'))
-
-            // If clicking the same option, deselect it
-            if (selectedOptionId === optionId) {
-                selectedOptionId = null
-                label.classList.remove('selected')
-
-                // Re-enable all options
-                labels.forEach((l) => {
-                    l.classList.remove('disabled')
-                })
-
-                // Hide error
-                const errorEl = wrapper.querySelector(`#error-${question.id}`)
-                errorEl?.classList.remove('show')
-
-                answerCallback?.()
-                return
-            }
-
-            // Otherwise, select the new option
-            selectedOptionId = optionId
-
-            // Reset all
-            labels.forEach((l) => {
-                l.classList.remove('selected')
-                l.classList.add('disabled')
-            })
-
-            // Highlight selected and enable it
-            label.classList.add('selected')
-            label.classList.remove('disabled')
-
-            // Hide error
-            const errorEl = wrapper.querySelector(`#error-${question.id}`)
-            errorEl?.classList.remove('show')
+            applySelectedState(selectedOptionId === optionId ? null : optionId)
 
             answerCallback?.()
         })
@@ -114,6 +104,13 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
         },
         onAnswer: (cb) => {
             answerCallback = cb
+        },
+        setAnswer: (answer) => {
+            const nextSelected = typeof answer === 'number' && Number.isFinite(answer) ? answer : null
+            const hasMatchingOption = [...labels].some(
+                (label) => Number(label.getAttribute('data-option-id')) === nextSelected,
+            )
+            applySelectedState(hasMatchingOption ? nextSelected : null)
         },
         getElement: () => wrapper,
     }

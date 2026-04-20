@@ -35,14 +35,19 @@ export function renderScaleQuestion(question: Question, index: number): Question
 
     const input = wrapper.querySelector<HTMLInputElement>(`#scale-${question.id}`)!
 
-    input.addEventListener('input', () => {
-        if (isLocked) return
-        const parsed = Number(input.value)
-        scaleValue = Number.isFinite(parsed) && input.value.trim().length > 0 ? parsed : null
+    function applyScaleValue(nextValue: number | null): void {
+        scaleValue = nextValue
+        input.value = scaleValue === null ? '' : String(scaleValue)
         const errorEl = wrapper.querySelector(`#error-${question.id}`)
         if (scaleValue !== null) {
             errorEl?.classList.remove('show')
         }
+    }
+
+    input.addEventListener('input', () => {
+        if (isLocked) return
+        const parsed = Number(input.value)
+        applyScaleValue(Number.isFinite(parsed) && input.value.trim().length > 0 ? parsed : null)
         answerCallback?.()
     })
 
@@ -68,6 +73,9 @@ export function renderScaleQuestion(question: Question, index: number): Question
         },
         onAnswer: (cb) => {
             answerCallback = cb
+        },
+        setAnswer: (answer) => {
+            applyScaleValue(typeof answer === 'number' && Number.isFinite(answer) ? answer : null)
         },
         getElement: () => wrapper,
     }
