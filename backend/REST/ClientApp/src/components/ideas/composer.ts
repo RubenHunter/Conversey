@@ -6,7 +6,7 @@ interface RenderComposerParams {
     topics: IdeaTopic[]
     ideasGrid: HTMLDivElement
     ideasCompose: HTMLElement
-    composeTopic: HTMLParagraphElement
+    composeTopic: HTMLSpanElement
     prompt: HTMLParagraphElement
     textarea: HTMLTextAreaElement
     submitBtn: HTMLButtonElement
@@ -33,7 +33,7 @@ export function renderIdeasComposer({
     ideasCompose.hidden = isMyIdeasView
 
     if (!topic) {
-        composeTopic.textContent = 'Current view: My ideas'
+        composeTopic.textContent = 'My ideas'
         prompt.textContent = 'Viewing all your ideas. Pick a topic to submit a new one.'
         textarea.value = ''
         textarea.disabled = true
@@ -43,7 +43,7 @@ export function renderIdeasComposer({
         return
     }
 
-    composeTopic.textContent = `Topic question: ${topic.title}`
+    composeTopic.textContent = topic.title
     prompt.textContent = topic.prompt
     textarea.disabled = false
     submitBtn.disabled = textarea.value.trim().length === 0
