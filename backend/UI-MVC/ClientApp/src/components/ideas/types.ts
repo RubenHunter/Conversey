@@ -14,4 +14,5 @@ export type ReviewBeforePost = (input: string) => Promise<PostSafetyDecision>
 export interface IdeaPanelController {
     open: (idea: Idea) => void
     close: () => void
+    isOpen: () => boolean
 }

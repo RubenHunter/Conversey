@@ -80,14 +80,20 @@ public static class DataSeeder
 
         var axaIdeas = new List<Idea>
         {
+            // Study pressure and evaluation (axaTopics[0]) - 7 ideas
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[0], "Plan one fixed deadline-free block every week so students always get at least one evening without school work.", "Weekly deadline-free block", now.AddDays(-12)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[4], "Allow a flexible catch-up moment when students feel overloaded, without extra administrative barriers.", "Flexible catch-up moment", now.AddDays(-8)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[6], "Spread large group assignments better across the semester so peak weeks are less heavy.", "Better spread of group work", now.AddDays(-6)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[1], "Implement a maximum of 3 exams per week to reduce student stress during peak periods.", "Max 3 exams per week", now.AddDays(-5)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[2], "Provide clear study guides with estimated hours per course so students can plan better.", "Study guides with hours", now.AddDays(-4)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[3], "Offer optional review sessions before exams to help students prepare without mandatory attendance.", "Optional review sessions", now.AddDays(-3)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[5], "Create a buffer period between major assignment deadlines to prevent overlap and reduce pressure.", "Buffer between deadlines", now.AddDays(-2)),
+            // Other topics
             CreateIdea(mentalWellbeing, axaTopics[1], axaYouths[1], "Create a central wellbeing page with all support channels, opening hours and contact options.", "Central wellbeing page", now.AddDays(-11)),
             CreateIdea(mentalWellbeing, axaTopics[2], axaYouths[2], "Start small peer-support groups of eight students that meet every two weeks.", "Peer-support groups", now.AddDays(-10)),
             CreateIdea(mentalWellbeing, axaTopics[2], axaYouths[3], "Provide quiet relaxation spaces during exam weeks with water, fruit and short breathing exercises.", "Quiet relaxation spaces", now.AddDays(-9)),
-            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[4], "Allow a flexible catch-up moment when students feel overloaded, without extra administrative barriers.", "Flexible catch-up moment", now.AddDays(-8)),
             CreateIdea(mentalWellbeing, axaTopics[1], axaYouths[5], "Organize a monthly lunch session on stress management with student support and experience experts.", "Monthly stress lunch", now.AddDays(-7)),
-            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[6], "Spread large group assignments better across the semester so peak weeks are less heavy.", "Better spread of group work", now.AddDays(-6)),
-            CreateIdea(mentalWellbeing, axaTopics[4], axaYouths[7], "Offer a quiet online study room with fixed moments and a moderator for students who get distracted at home.", "Online study room", now.AddDays(-5))
+            CreateIdea(mentalWellbeing, axaTopics[4], axaYouths[7], "Offer a quiet online study room with fixed moments and a moderator for students who get distracted at home.", "Online study room", now.AddDays(-1))
         };
 
         var axaResponses = new List<IdeaResponse>
@@ -181,12 +187,19 @@ public static class DataSeeder
 
         var schoolIdeas = new List<Idea>
         {
+            // Studiedruk en evaluatie (schoolTopics[0]) - 7 ideas
             CreateIdea(actieplan, schoolTopics[0], schoolYouths[0], "Plan elke opleidingsweek een vast deadlinevrij blok zodat we minstens één avond zonder schoolwerk hebben.", "Wekelijks deadlinevrij blok", now.AddDays(-12)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[4], "Laat studenten een flexibel inhaalmoment kiezen wanneer ze overbelast zijn.", "Flexibel inhaalmoment", now.AddDays(-8)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[1], "Beperk het aantal examens per week tot maximum 3 om studiedruk te verminderen.", "Maximaal 3 examens per week", now.AddDays(-7)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[2], "Bied duidelijke studiegidsen aan met geschatte uren per vak voor betere planning.", "Studiegidsen met uren", now.AddDays(-6)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[3], "Organiseer optionele herhalingssessies voor examens zonder verplichte aanwezigheid.", "Optionele herhalingssessies", now.AddDays(-5)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[5], "Creëer een bufferperiode tussen grote opdrachtdeadlines om overlappende druk te voorkomen.", "Buffer tussen deadlines", now.AddDays(-4)),
+            CreateIdea(actieplan, schoolTopics[0], schoolYouths[0], "Voer een silencing periode in waarin studenten kunnen werken zonder afleiding van andere taken.", "Silencing periode", now.AddDays(-3)),
+            // Other topics
             CreateIdea(actieplan, schoolTopics[1], schoolYouths[1], "Maak een centrale welzijnspagina in Toledo met alle hulpkanalen, openingsuren en contactpersonen.", "Centrale welzijnspagina", now.AddDays(-11)),
             CreateIdea(actieplan, schoolTopics[2], schoolYouths[2], "Start per opleiding kleine peer-support groepen die tweewekelijks samenkomen.", "Peer-support groepen", now.AddDays(-10)),
             CreateIdea(actieplan, schoolTopics[2], schoolYouths[3], "Voorzie tijdens examenweken stille ontspanningsruimtes met water, fruit en ademhalingsoefeningen.", "Stille ontspanningsruimtes", now.AddDays(-9)),
-            CreateIdea(actieplan, schoolTopics[0], schoolYouths[4], "Laat studenten een flexibel inhaalmoment kiezen wanneer ze overbelast zijn.", "Flexibel inhaalmoment", now.AddDays(-8)),
-            CreateIdea(actieplan, schoolTopics[1], schoolYouths[5], "Organiseer maandelijks een lunchsessie over stressmanagement met studentenbegeleiding.", "Maandelijkse stress-lunch", now.AddDays(-7))
+            CreateIdea(actieplan, schoolTopics[1], schoolYouths[5], "Organiseer maandelijks een lunchsessie over stressmanagement met studentenbegeleiding.", "Maandelijkse stress-lunch", now.AddDays(-2))
         };
 
         var schoolResponses = new List<IdeaResponse>

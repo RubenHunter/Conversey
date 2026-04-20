@@ -453,6 +453,10 @@ export function createIdeaPanelController({
         )
     }
 
+    function isOpen(): boolean {
+        return !panel.hidden && panel.classList.contains('open')
+    }
+
     function open(idea: Idea): void {
         currentIdea = idea
         pickerTarget = null
@@ -559,5 +563,6 @@ export function createIdeaPanelController({
     return {
         open,
         close,
+        isOpen,
     }
 }
