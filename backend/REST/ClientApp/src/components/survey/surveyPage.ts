@@ -3,8 +3,6 @@ import {navigate} from '../../utils/router.ts'
 import {getProject} from '../../services/projectService.ts'
 import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
 import {QuestionType} from '../../models/question.ts'
-// Import shared CSS via Vite
-import '../../styles/shared/_shared.css'
 import type {ResponseAnswer} from '../../models/response.ts'
 import type {QuestionComponent} from './singleChoiceQuestion.ts'
 import {renderSingleChoiceQuestion} from './singleChoiceQuestion.ts'

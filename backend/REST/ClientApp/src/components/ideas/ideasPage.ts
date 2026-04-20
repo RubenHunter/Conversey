@@ -1,6 +1,4 @@
 import '../../styles/pages/ideas.css'
-// Import shared CSS via Vite (instead of @import in CSS files)
-import '../../styles/shared/_shared.css'
 import type { RouteParams } from '../../utils/router.ts'
 import { getProject } from '../../services/projectService.ts'
 import { getIdeasContext, getIdeasYouthToken, submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
