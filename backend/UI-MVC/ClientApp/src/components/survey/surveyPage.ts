@@ -4,13 +4,14 @@ import {getProject} from '../../services/projectService.ts'
 import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
 import {QuestionType} from '../../models/question.ts'
 import type {ResponseAnswer} from '../../models/response.ts'
-import type {QuestionComponent} from './singleChoiceQuestion.ts'
+import type {QuestionAnswer, QuestionComponent} from './singleChoiceQuestion.ts'
 import {renderSingleChoiceQuestion} from './singleChoiceQuestion.ts'
 import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion.ts'
 import {renderOpenTextQuestion} from './openTextQuestion.ts'
 import {renderScaleQuestion} from './scaleQuestion.ts'
 import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
+import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
 
 function formatOrganizationName(organizationSlug: string): string {
     return organizationSlug
@@ -30,6 +31,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const completedKey = `survey-completed-${project.id}`
 
     if (localStorage.getItem(completedKey) === 'true') {
+        clearSurveyProgress(project.id)
         container.innerHTML = `
             <div class="survey-redirect-wrap screen-height">
                 <div class="survey-redirect-card">
@@ -138,6 +140,43 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
 
+    function hasAnswer(answer: QuestionAnswer): boolean {
+        return Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
+    }
+
+    function syncAnsweredState(): void {
+        components.forEach((component, index) => {
+            answeredState[index] = hasAnswer(component.getAnswer())
+        })
+    }
+
+    function syncQuestionLocks(): void {
+        components.forEach((component, index) => {
+            if (index === 0) {
+                component.unlock()
+                return
+            }
+
+            const previousIndex = index - 1
+            const shouldLock = questions[previousIndex].isRequired && !answeredState[previousIndex]
+            if (shouldLock) {
+                component.lock()
+            } else {
+                component.unlock()
+            }
+        })
+    }
+
+    function collectAnswersByQuestionId(): Map<number, QuestionAnswer> {
+        return new Map<number, QuestionAnswer>(
+            questions.map((question, index) => [question.id, components[index].getAnswer()] as const),
+        )
+    }
+
+    function persistProgress(): void {
+        saveSurveyProgress(project.id, questions, currentQuestionIndex, collectAnswersByQuestionId())
+    }
+
     // Auto-scroll textarea into view on mobile when focused
     document.querySelectorAll('.survey-textarea').forEach(textarea => {
         textarea.addEventListener('focus', () => {
@@ -159,25 +198,16 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         actionBar.classList.toggle('survey-ready', isReady)
     }
 
-    components.forEach((component, index) => {
+    function syncSurveyState(): void {
+        syncAnsweredState()
+        syncQuestionLocks()
+        updateProgress()
+    }
+
+    components.forEach((component) => {
         component.onAnswer(() => {
-            const answer = component.getAnswer()
-            const hasAnswer = Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
-            answeredState[index] = hasAnswer
-
-            // Only lock/unlock next question if current question is required
-            if (index + 1 < components.length && questions[index].isRequired) {
-                const nextQuestion = components[index + 1]
-                const nextIndex = index + 1
-
-                if (!hasAnswer && !answeredState[nextIndex]) {
-                    nextQuestion.lock()
-                } else if (hasAnswer) {
-                    nextQuestion.unlock()
-                }
-            }
-
-            updateProgress()
+            syncSurveyState()
+            persistProgress()
         })
     })
 
@@ -213,6 +243,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         currentQuestionIndex = index
         scrollNav?.update(currentQuestionIndex, questions.length)
+        persistProgress()
 
         // Re-enable user scroll detection after scroll completes
         scrollTimeoutId = window.setTimeout(() => {
@@ -234,6 +265,26 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         }
     })
     scrollNav.update(currentQuestionIndex, questions.length)
+
+    const savedProgress = loadSurveyProgress(project.id, questions)
+    if (savedProgress) {
+        components.forEach((component, index) => {
+            const questionId = questions[index].id
+            if (!savedProgress.answersByQuestionId.has(questionId)) {
+                return
+            }
+
+            const savedAnswer = savedProgress.answersByQuestionId.get(questionId)
+            component.setAnswer(savedAnswer ?? null)
+        })
+
+        currentQuestionIndex = Math.min(
+            Math.max(savedProgress.currentQuestionIndex, -1),
+            questions.length - 1,
+        )
+    }
+
+    syncSurveyState()
 
     function updateCurrentQuestionFromScroll(): void {
         // Only update from scroll if this was a user scroll, not programmatic navigation
@@ -282,6 +333,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         if (currentQuestionIndex !== closestIndex) {
             currentQuestionIndex = closestIndex
             scrollNav?.update(currentQuestionIndex, questions.length)
+            persistProgress()
         }
     }
 
@@ -301,6 +353,14 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     // Keep currentQuestionIndex at -1 initially (hero section)
     // updateCurrentQuestionFromScroll() is called by scroll events
     isUserScroll = true
+
+    if (currentQuestionIndex >= 0) {
+        requestAnimationFrame(() => {
+            scrollToQuestion(currentQuestionIndex)
+        })
+    } else {
+        persistProgress()
+    }
 
     submitBtn.addEventListener('click', async () => {
         let allValid = true
@@ -350,6 +410,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         try {
             await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: project.id, answers })
             localStorage.setItem(completedKey, 'true')
+            clearSurveyProgress(project.id)
             cleanupSurveyPage()
             await navigate('completed')
         } catch {

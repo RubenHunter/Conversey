@@ -48,7 +48,7 @@ export function generateQuestionHeader(question: Question, questionNumber: numbe
                         <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
                     </svg>
                 </div>
-                <div class="survey-question-meta">${requiredBadge}${answerHintMarkup}</div>
+                <div class="survey-question-meta">${answerHintMarkup}${requiredBadge}</div>
             </div>
         </div>
     `
