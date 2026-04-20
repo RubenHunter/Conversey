@@ -408,7 +408,7 @@
   flex-direction: column;
   gap: var(--spacing-xs);
   overscroll-behavior: contain;
-  scroll-snap-type: y proximity;
+  scroll-snap-type: none;
 }
 
 /* Re-enable pointer events for interactive cards */
@@ -425,7 +425,7 @@
   background-color: color-mix(in srgb, var(--color-bg) 55%, white);
   transform-origin: center center;
   transition: transform var(--transition-fat), color var(--transition-fat), opacity var(--transition-fat), filter var(--transition-fat), border-color var(--transition-fat), background-color var(--transition-fat);
-  scroll-snap-align: center;
+  scroll-snap-align: none;
   opacity: 0.88;
   display: flex;
   flex-direction: column;
