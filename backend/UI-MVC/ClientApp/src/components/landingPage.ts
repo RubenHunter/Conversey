@@ -8,9 +8,11 @@ function isSurveyCompleted(projectId: number): boolean {
 
 // Debug: Clear survey completion flag (remove in production)
 function clearSurveyCompletion(): void {
-    const keys = Object.keys(localStorage).filter((key) => key.startsWith('survey-completed-'))
+    const keys = Object.keys(localStorage).filter(
+        (key) => key.startsWith('survey-completed-') || key.startsWith('conversey-survey-progress-'),
+    )
     keys.forEach((key) => localStorage.removeItem(key))
-    console.log('Survey completion flags cleared. Reload the page to retake the survey.')
+    console.log('Survey completion/progress flags cleared. Reload the page to retake the survey.')
 }
 
 // Expose to window for easy testing

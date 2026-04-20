@@ -55,6 +55,16 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
     const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
+
+    function applyTextValue(nextValue: string): void {
+        textValue = nextValue
+        textarea.value = textValue
+
+        const errorEl = wrapper.querySelector(`#error-${question.id}`)
+        if (textValue.trim().length > 0) {
+            errorEl?.classList.remove('show')
+        }
+    }
     
     textarea.addEventListener('focus', () => {
         if (isLocked) return
@@ -67,21 +77,18 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     textarea.addEventListener('input', () => {
         if (isLocked) return
-        textValue = textarea.value.trim()
-
-        // Hide error when user starts typing
-        const errorEl = wrapper.querySelector(`#error-${question.id}`)
-        if (textValue.length > 0) {
-            errorEl?.classList.remove('show')
-        }
+        applyTextValue(textarea.value)
 
         answerCallback?.()
     })
 
     return {
-        getAnswer: () => (textValue.length > 0 ? textValue : null),
+        getAnswer: () => {
+            const normalized = textValue.trim()
+            return normalized.length > 0 ? normalized : null
+        },
         validate: () => {
-            if (question.isRequired && textValue.length === 0) {
+            if (question.isRequired && textValue.trim().length === 0) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false
@@ -100,6 +107,9 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         },
         onAnswer: (cb) => {
             answerCallback = cb
+        },
+        setAnswer: (answer) => {
+            applyTextValue(typeof answer === 'string' ? answer : '')
         },
         getElement: () => wrapper,
     }
