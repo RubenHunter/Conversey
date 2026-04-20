@@ -63,6 +63,7 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
     rotatedIdeas.forEach((idea, index) => {
         const card = document.createElement('article')
         card.className = 'ideas-card'
+        card.setAttribute('data-idea-id', String(idea.id))
         card.setAttribute('aria-label', `Idea ${index + 1}: ${idea.body.substring(0, 50)}${idea.body.length > 50 ? '...' : ''}`)
 
         // Add user info (icon + date) for all cards

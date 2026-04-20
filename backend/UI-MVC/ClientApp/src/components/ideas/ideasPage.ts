@@ -148,6 +148,21 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                         <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
                     </section>
                 </div>
+                <button
+                    id="ideas-topic-trigger-floating"
+                    class="ideas-compose-topic-button ideas-compose-topic-button--floating"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="topic-modal"
+                    aria-label="Switch topic"
+                    hidden
+                >
+                    <span class="ideas-compose-topic-text">
+                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
+                        <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
+                    </span>
+                </button>
             </div>
         </div>
 
@@ -176,10 +191,33 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     <div id="idea-panel-post" class="idea-panel-post">
                         <div id="idea-panel-badges" class="idea-panel-badges"></div>
                         <p id="idea-panel-text" class="idea-panel-text"></p>
-                        <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
-                            <span aria-hidden="true">+</span>
-                            <span aria-hidden="true">:)</span>
-                        </button>
+                        <div id="idea-panel-edit-region" hidden>
+                            <textarea id="idea-panel-edit-input" class="idea-panel-input idea-panel-edit-input" rows="4" placeholder="Edit your idea..."></textarea>
+                            <div class="idea-panel-edit-actions">
+                                <button id="idea-panel-edit-cancel" class="idea-panel-send idea-panel-send--secondary" type="button">Cancel</button>
+                                <button id="idea-panel-edit-save" class="idea-panel-send" type="button" disabled>Save changes</button>
+                            </div>
+                        </div>
+                        <div class="idea-panel-post-actions">
+                            <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
+                                <span aria-hidden="true">+</span>
+                                <span aria-hidden="true">:)</span>
+                            </button>
+                            <button
+                                id="idea-panel-edit-toggle"
+                                class="survey-magic-btn idea-panel-edit-cta"
+                                type="button"
+                                aria-label="Edit idea before publish"
+                                title="Edit idea before publish"
+                                hidden
+                            >
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                                </svg>
+                                <span class="survey-magic-btn-text">Edit idea before publish</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="idea-panel-section idea-panel-section--responses">
@@ -236,6 +274,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
     const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
+    const topicFloatingTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
+    const topicFloatingTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-floating-value')!
     const topicModal = container.querySelector<HTMLDivElement>('#topic-modal')!
     const topicModalList = container.querySelector<HTMLDivElement>('#topic-modal-list')!
     const topicModalBackdrop = container.querySelector<HTMLDivElement>('#topic-modal-backdrop')!
@@ -250,12 +290,22 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
+    const ideasShell = container.querySelector<HTMLDivElement>('.ideas-shell')!
 
     const safetyReviewDialog = createSafetyReviewDialogController({ root: container })
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
         reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
+        updateIdeaAfterSafetyReview: (idea, text, markForReview) =>
+            updateIdeaAfterSafetyReview(
+                params.organizationSlug,
+                params.projectSlug,
+                idea.topicId,
+                idea.id,
+                text,
+                markForReview,
+            ),
         loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
         submitResponse: (idea, text) => addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text),
         updateResponseAfterSafetyReview: (idea, responseId, text, markForReview) =>
@@ -291,12 +341,20 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     }
 
     let isModalOpen = false
+    let topicModalInvoker: HTMLButtonElement = topicTrigger
 
-    function openTopicModal(): void {
+    function setTopicTriggerExpanded(isExpanded: boolean): void {
+        const value = isExpanded ? 'true' : 'false'
+        topicTrigger.setAttribute('aria-expanded', value)
+        topicFloatingTrigger.setAttribute('aria-expanded', value)
+    }
+
+    function openTopicModal(invoker: HTMLButtonElement = topicTrigger): void {
         isModalOpen = true
+        topicModalInvoker = invoker
         topicModal.hidden = false
         topicModalBackdrop.hidden = false
-        topicTrigger.setAttribute('aria-expanded', 'true')
+        setTopicTriggerExpanded(true)
         
         // Render topics in modal
         renderTopicsInModal()
@@ -309,10 +367,14 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         isModalOpen = false
         topicModal.hidden = true
         topicModalBackdrop.hidden = true
-        topicTrigger.setAttribute('aria-expanded', 'false')
+        setTopicTriggerExpanded(false)
         
         // Restore focus to trigger
-        topicTrigger.focus()
+        if (!topicModalInvoker.hidden) {
+            topicModalInvoker.focus()
+        } else {
+            topicTrigger.focus()
+        }
     }
 
     function renderTopicsInModal(): void {
@@ -357,7 +419,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     function focusTrapModal(): void {
         // Simple focus trap - focus first element in modal
-        const focusableElements = topicModal.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"]')
+        const focusableElements = topicModal.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])')
         if (focusableElements.length > 0) {
             focusableElements[0].focus()
         }
@@ -494,10 +556,13 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     }
 
     function render(): void {
-        topicTriggerValue.textContent = getActiveIdeasLabel(activeView, topics)
+        const activeLabel = getActiveIdeasLabel(activeView, topics)
+        topicTriggerValue.textContent = activeLabel
+        topicFloatingTriggerValue.textContent = activeLabel
+        topicFloatingTrigger.hidden = activeView.type !== 'my-ideas'
+        ideasShell.classList.toggle('ideas-shell--my-ideas', activeView.type === 'my-ideas')
 
-        const newIdeas = getVisibleIdeas()
-        visibleIdeasCache = newIdeas
+        visibleIdeasCache = getVisibleIdeas()
 
         renderCommunityIdeasList({
             list,
@@ -537,7 +602,15 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         if (isModalOpen) {
             closeTopicModal()
         } else {
-            openTopicModal()
+            openTopicModal(topicTrigger)
+        }
+    })
+
+    topicFloatingTrigger.addEventListener('click', () => {
+        if (isModalOpen) {
+            closeTopicModal()
+        } else {
+            openTopicModal(topicFloatingTrigger)
         }
     })
 

@@ -13,6 +13,7 @@ interface CreateIdeaPanelControllerParams {
     root: ParentNode
     reviewBeforePost: ReviewBeforePost
     reviewWithSuggestion: (original: string, suggestion: string) => Promise<PostSafetyDecision>
+    updateIdeaAfterSafetyReview: (idea: Idea, text: string, markForReview: boolean) => Promise<Idea>
     loadResponses: (idea: Idea) => Promise<IdeaResponse[]>
     submitResponse: (idea: Idea, text: string) => Promise<ResponseSubmitResult>
     updateResponseAfterSafetyReview: (
@@ -36,6 +37,7 @@ export function createIdeaPanelController({
     root,
     reviewBeforePost,
     reviewWithSuggestion,
+    updateIdeaAfterSafetyReview,
     loadResponses,
     submitResponse,
     updateResponseAfterSafetyReview,
@@ -49,9 +51,14 @@ export function createIdeaPanelController({
     const panel = root.querySelector<HTMLDivElement>('#idea-panel')!
     const panelClose = root.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const panelBadges = root.querySelector<HTMLDivElement>('#idea-panel-badges')!
+    const panelEditToggle = root.querySelector<HTMLButtonElement>('#idea-panel-edit-toggle')!
     const panelText = root.querySelector<HTMLParagraphElement>('#idea-panel-text')!
     const panelPost = root.querySelector<HTMLDivElement>('#idea-panel-post')!
     const panelIdeaEmoji = root.querySelector<HTMLButtonElement>('#idea-panel-emoji')!
+    const panelEditRegion = root.querySelector<HTMLDivElement>('#idea-panel-edit-region')!
+    const panelEditInput = root.querySelector<HTMLTextAreaElement>('#idea-panel-edit-input')!
+    const panelEditCancel = root.querySelector<HTMLButtonElement>('#idea-panel-edit-cancel')!
+    const panelEditSave = root.querySelector<HTMLButtonElement>('#idea-panel-edit-save')!
     const panelComments = root.querySelector<HTMLDivElement>('#idea-panel-comments')!
     const panelInput = root.querySelector<HTMLTextAreaElement>('#idea-panel-input')!
     const panelSend = root.querySelector<HTMLButtonElement>('#idea-panel-send')!
@@ -66,6 +73,8 @@ export function createIdeaPanelController({
     const pendingReactions = new Set<string>()
     let currentIdea: Idea | null = null
     let isSubmittingResponse = false
+    let isEditingIdea = false
+    let editBaseline = ''
     let pickerTarget: PickerTarget | null = null
 
     const ideaReactionRow = document.createElement('div')
@@ -140,6 +149,52 @@ export function createIdeaPanelController({
                 pulseReactionKey(`idea:${idea.id}:${reaction.emoji}`)
             }
         })
+    }
+
+    function isEditableIdea(idea: Idea | null): boolean {
+        return Boolean(idea && idea.authorType === 'self' && idea.pendingReview)
+    }
+
+    function syncEditedIdeaCard(idea: Idea): void {
+        const card = root.querySelector<HTMLElement>(`.ideas-card[data-idea-id="${idea.id}"]`)
+        if (!card) return
+
+        const body = card.querySelector<HTMLElement>('.ideas-card-body')
+        if (body) {
+            body.textContent = idea.body
+        }
+
+        card.setAttribute(
+            'aria-label',
+            `Idea: ${idea.body.substring(0, 50)}${idea.body.length > 50 ? '...' : ''}`,
+        )
+    }
+
+    function updateEditSaveState(): void {
+        const trimmed = panelEditInput.value.trim()
+        panelEditSave.disabled = !currentIdea || trimmed.length === 0 || trimmed === editBaseline
+    }
+
+    function enterEditMode(): void {
+        if (!currentIdea || !isEditableIdea(currentIdea)) return
+
+        isEditingIdea = true
+        editBaseline = currentIdea.body.trim()
+        panelEditInput.value = currentIdea.body
+        panelText.hidden = true
+        panelEditRegion.hidden = false
+        panelEditToggle.hidden = true
+        updateEditSaveState()
+        panelEditInput.focus()
+        panelEditInput.setSelectionRange(panelEditInput.value.length, panelEditInput.value.length)
+    }
+
+    function exitEditMode(): void {
+        isEditingIdea = false
+        panelEditRegion.hidden = true
+        panelText.hidden = false
+        panelEditToggle.hidden = !isEditableIdea(currentIdea)
+        updateEditSaveState()
     }
 
     function updateResponseReactions(ideaId: number, responseId: number, reactions: ResponseReactionSummary[]): void {
@@ -362,14 +417,29 @@ export function createIdeaPanelController({
             badge.textContent = 'Your idea'
             panelBadges.appendChild(badge)
         }
-        panelText.textContent = idea.body
+        if (idea.pendingReview) {
+            const reviewBadge = document.createElement('span')
+            reviewBadge.className = 'ideas-review-flag'
+            reviewBadge.textContent = 'Marked for review'
+            panelBadges.appendChild(reviewBadge)
+        }
 
-        
+        panelEditToggle.hidden = !isEditableIdea(idea)
+        if (!isEditingIdea || !isEditableIdea(idea)) {
+            panelText.textContent = idea.body
+            panelEditInput.value = idea.body
+            editBaseline = idea.body.trim()
+        }
+        panelText.hidden = isEditingIdea && isEditableIdea(idea)
+        panelEditRegion.hidden = !isEditingIdea || !isEditableIdea(idea)
 
         renderIdeaReactionRow(idea)
         renderComments(idea)
-        panelInput.value = ''
+        if (!isEditingIdea) {
+            panelInput.value = ''
+        }
         panelSend.disabled = true
+        updateEditSaveState()
     }
 
     async function refreshResponses(idea: Idea): Promise<void> {
@@ -460,6 +530,7 @@ export function createIdeaPanelController({
     function open(idea: Idea): void {
         currentIdea = idea
         pickerTarget = null
+        isEditingIdea = false
         if (!ideaReactionStore.has(idea.id)) {
             ideaReactionStore.set(idea.id, idea.reactions)
         }
@@ -493,6 +564,40 @@ export function createIdeaPanelController({
 
         pickerTarget = pickerTarget?.kind === 'idea' ? null : { kind: 'idea' }
         renderIdeaReactionRow(currentIdea)
+    })
+
+    panelEditToggle.addEventListener('click', (event) => {
+        event.stopPropagation()
+        enterEditMode()
+    })
+
+    panelEditCancel.addEventListener('click', () => {
+        if (!currentIdea) return
+        exitEditMode()
+        renderPanel(currentIdea)
+    })
+
+    panelEditInput.addEventListener('input', updateEditSaveState)
+
+    panelEditSave.addEventListener('click', async () => {
+        if (!currentIdea || !isEditableIdea(currentIdea) || !isEditingIdea) return
+
+        const nextBody = panelEditInput.value.trim()
+        if (nextBody.length === 0 || nextBody === editBaseline) return
+
+        panelEditSave.disabled = true
+        panelEditSave.textContent = 'Saving...'
+
+        try {
+            const updatedIdea = await updateIdeaAfterSafetyReview(currentIdea, nextBody, true)
+            Object.assign(currentIdea, updatedIdea, { pendingReview: true })
+            syncEditedIdeaCard(currentIdea)
+            exitEditMode()
+            renderPanel(currentIdea)
+        } finally {
+            panelEditSave.textContent = 'Save changes'
+            updateEditSaveState()
+        }
     })
 
     panelInput.addEventListener('input', () => {

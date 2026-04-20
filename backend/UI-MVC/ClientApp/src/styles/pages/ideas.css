@@ -39,6 +39,10 @@
   gap: var(--spacing-sm);
 }
 
+.ideas-shell--my-ideas .ideas-body {
+  padding-bottom: calc(var(--spacing-xl) * 3 + env(safe-area-inset-bottom));
+}
+
 .ideas-topic-switcher {
   position: relative;
   width: 100%;
@@ -176,6 +180,22 @@
   text-align: left;
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
   margin-bottom: var(--spacing-xs);
+}
+
+.ideas-compose-topic-button--floating {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 82;
+  width: min(calc(100vw - var(--spacing-xl)), 28rem);
+  justify-content: center;
+  margin: 0;
+  box-shadow: 0 var(--spacing-xs) var(--spacing-lg) color-mix(in srgb, var(--color-bg) 35%, transparent);
+}
+
+.ideas-compose-topic-button--floating .ideas-compose-topic-text {
+  justify-content: center;
 }
 
 .ideas-compose-topic-button:hover,
@@ -770,6 +790,22 @@
   color: var(--color-text);
 }
 
+.idea-panel-post-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.idea-panel-edit-cta {
+  margin-left: auto;
+}
+
+.idea-panel-edit-cta .survey-magic-btn-text {
+  white-space: nowrap;
+}
+
 .idea-panel-emoji-btn {
   display: inline-flex;
   align-items: center;
@@ -906,6 +942,7 @@
 }
 
 .idea-panel-reaction-picker-btn {
+  --reaction-index: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
@@ -1017,6 +1054,35 @@
 
 .idea-panel-send:disabled {
   opacity: 0.45;
+}
+
+.idea-panel-edit-region {
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+}
+
+.idea-panel-edit-input {
+  width: 100%;
+  min-height: calc(var(--spacing-xl) * 4.1);
+  resize: vertical;
+}
+
+.idea-panel-edit-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.idea-panel-edit-actions .idea-panel-send {
+  width: 100%;
+  margin: 0;
+  padding-inline: 0;
+}
+
+.idea-panel-send--secondary {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
 }
 
 .ideas-review-flag {

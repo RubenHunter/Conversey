@@ -76,12 +76,15 @@ input.survey-textarea {
   overflow: hidden;
 }
 
-.survey-magic-btn:focus .survey-magic-btn-text,
 .survey-magic-btn-focused .survey-magic-btn-text {
   width: 0;
 }
 
-.survey-magic-btn:focus,
+.survey-magic-btn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .survey-magic-btn-focused {
   padding: 0;
   width: clamp(var(--spacing-xl), 4vw, calc(var(--spacing-xl) * 1.5));
