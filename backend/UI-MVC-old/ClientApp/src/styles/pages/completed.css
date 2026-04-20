@@ -1,0 +1,24 @@
+﻿.completed-icon-badge {
+  background-color: var(--color-success-bg);
+}
+
+.completed-icon {
+  color: var(--color-success);
+}
+
+.completed-heading {
+  color: var(--color-text);
+}
+
+.completed-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+.completed-cta {
+  background-color: var(--color-secondary);
+  color: var(--color-text-on-primary);
+  border: none;
+  cursor: pointer;
+}
+
