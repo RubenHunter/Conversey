@@ -22,16 +22,6 @@ import { createTopicModalController } from './topicModal.ts'
 import { createIdeasListController } from './ideasListController.ts'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler.ts'
 
-// Fisher-Yates shuffle algorithm
-function shuffleArray<T>(array: T[]): T[] {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-}
-
 // Get label for active ideas view
 function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
     if (activeView.type === 'my-ideas') return 'My ideas'
@@ -47,7 +37,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     const organizationName = project.organizationName?.trim() || project.organizationSlug
     const topics = context.topics
-    const allIdeas = shuffleArray([...context.ideas])
+    const allIdeas = [...context.ideas]
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     const flaggedIdeaIds = new Set<number>()
@@ -122,7 +112,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <button id="topic-modal-close" class="modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="topic-modal-list" class="modal-list" role="listbox"></div>
+                <div id="topic-modal-list" class="modal-list"></div>
             </div>
         </div>
 
@@ -370,19 +360,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         topicModal.open(topicFloatingTrigger)
     })
 
-    window.addEventListener('scroll', () => {
+    list.addEventListener('scroll', () => {
         listController?.updateFromScroll()
-    }, { passive: true })
-
-    // Pause animation on hover, resume on mouseleave
-    list.addEventListener('mouseenter', () => {
-        listController?.stopRotation()
-    }, { passive: true })
-
-    list.addEventListener('mouseleave', () => {
-        if (!ideaPanel.isOpen() && listController) {
-            listController.startRotation()
-        }
     }, { passive: true })
 
     list.addEventListener('click', (event) => {

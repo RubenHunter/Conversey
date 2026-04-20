@@ -345,6 +345,24 @@
   font-weight: 600;
 }
 
+.modal-list-divider {
+  margin: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.modal-option--my-ideas {
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 35%, var(--color-border));
+  background-color: color-mix(in srgb, var(--color-secondary) 12%, var(--color-surface));
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
 .modal-option:focus {
   outline: none;
   box-shadow: 0 0 0 var(--spacing-sm) color-mix(in srgb, var(--color-primary-light) 35%, transparent);
@@ -377,21 +395,20 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: visible;
-  overscroll-behavior: none;
-  pointer-events: none;
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .ideas-list {
   flex: 1;
   min-height: 0;
-  overflow-y: visible;
+  overflow-y: auto;
   padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  overscroll-behavior: none;
-  pointer-events: none;
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
 }
 
 /* Re-enable pointer events for interactive cards */
@@ -523,10 +540,10 @@
 }
 
 .ideas-card.far {
-  transform: scale(0.9);
+  transform: scale(0.92);
   color: var(--color-text-secondary);
   filter: grayscale(30%);
-  opacity: 0.58;
+  opacity: 0.66;
 }
 
 .ideas-empty {

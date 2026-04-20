@@ -57,12 +57,16 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
         return
     }
 
-    // Rotate ideas: active idea first, then the rest in original order
-    const rotatedIdeas = [...ideas.slice(activeIndex), ...ideas.slice(0, activeIndex)]
-
-    rotatedIdeas.forEach((idea, index) => {
+    ideas.forEach((idea, index) => {
         const card = document.createElement('article')
         card.className = 'ideas-card'
+        if (index === activeIndex) {
+            card.classList.add('active')
+        } else if (Math.abs(index - activeIndex) === 1) {
+            card.classList.add('near')
+        } else {
+            card.classList.add('far')
+        }
         card.setAttribute('data-idea-id', String(idea.id))
         card.setAttribute('aria-label', `Idea ${index + 1}: ${idea.body.substring(0, 50)}${idea.body.length > 50 ? '...' : ''}`)
 
@@ -130,9 +134,8 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
             card.appendChild(body)
         }
 
-        // Store both original and rotated index
-        const originalIndex = ideas.indexOf(idea)
-        card.setAttribute('data-original-index', String(originalIndex))
+        // Keep stable index mapping for controller and click handlers.
+        card.setAttribute('data-original-index', String(index))
         card.setAttribute('data-idea-index', String(index))
         card.style.setProperty('--card-index', String(index))
         list.appendChild(card)

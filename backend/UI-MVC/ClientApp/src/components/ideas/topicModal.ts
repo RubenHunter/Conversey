@@ -75,27 +75,11 @@ export function createTopicModalController({
     function renderTopics(activeView: ActiveView): void {
         list.innerHTML = ''
 
-        // "My Ideas" option
-        const myIdeasOption = document.createElement('button')
-        myIdeasOption.className = 'modal-option'
-        myIdeasOption.textContent = 'My Ideas'
-        myIdeasOption.setAttribute('role', 'option')
-        myIdeasOption.setAttribute('data-view-type', 'my-ideas')
-        if (activeView.type === 'my-ideas') {
-            myIdeasOption.classList.add('selected')
-        }
-        myIdeasOption.addEventListener('click', () => {
-            onSelect({ type: 'my-ideas' })
-            close()
-        })
-        list.appendChild(myIdeasOption)
-
         // Topic options
         topics.forEach((topic) => {
             const option = document.createElement('button')
             option.className = 'modal-option'
             option.textContent = topic.title
-            option.setAttribute('role', 'option')
             option.setAttribute('data-topic-id', String(topic.id))
             if (activeView.type === 'topic' && activeView.topicId === topic.id) {
                 option.classList.add('selected')
@@ -106,6 +90,25 @@ export function createTopicModalController({
             })
             list.appendChild(option)
         })
+
+        const divider = document.createElement('div')
+        divider.className = 'modal-list-divider'
+        divider.setAttribute('role', 'separator')
+        //divider.textContent = 'Other views'
+        list.appendChild(divider)
+
+        const myIdeasOption = document.createElement('button')
+        myIdeasOption.className = 'modal-option modal-option--my-ideas'
+        myIdeasOption.textContent = 'My ideas'
+        myIdeasOption.setAttribute('data-view-type', 'my-ideas')
+        if (activeView.type === 'my-ideas') {
+            myIdeasOption.classList.add('selected')
+        }
+        myIdeasOption.addEventListener('click', () => {
+            onSelect({ type: 'my-ideas' })
+            close()
+        })
+        list.appendChild(myIdeasOption)
     }
 
     // Wire up event listeners

@@ -37,39 +37,22 @@ export function createIdeasListController({
     let isProgrammaticListScroll = false
     let listSyncFrame: number | null = null
 
-    function applyWheelStyles(): void {
-        const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
-        cards.forEach((card, index) => {
-            card.classList.remove('active', 'near', 'far')
-            if (index === 0) {
-                card.classList.add('active')
-            } else if (index === 1) {
-                card.classList.add('near')
-            } else if (index >= 2) {
-                card.classList.add('far')
-            }
-        })
-    }
+    function centerActiveCard(behavior: ScrollBehavior): void {
+        const activeCard = list.querySelector<HTMLElement>(`.ideas-card[data-original-index="${activeIdeaOriginalIndex}"]`)
+        if (!activeCard) return
 
-    function calculateVisibleCardCount(): number {
-        const card = list.querySelector<HTMLElement>('.ideas-card')
-        if (!card) return 3
+        isProgrammaticListScroll = true
+        if (listScrollUnlockTimeout !== null) {
+            window.clearTimeout(listScrollUnlockTimeout)
+        }
 
-        const containerHeight = list.getBoundingClientRect().height
-        const cardHeight = card.getBoundingClientRect().height
-        const gapHeight = 7 // pixels - from gap: 0.45rem
+        activeCard.scrollIntoView({ behavior, block: 'center' })
 
-        const maxCardsByHeight = Math.max(1, Math.floor(containerHeight / (cardHeight + gapHeight)))
-        return Math.min(5, maxCardsByHeight)
-    }
-
-    function updateVisibleCards(): void {
-        const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
-        const visibleCount = calculateVisibleCardCount()
-
-        cards.forEach((card, index) => {
-            card.style.display = index < visibleCount ? '' : 'none'
-        })
+        listScrollUnlockTimeout = window.setTimeout(() => {
+            isProgrammaticListScroll = false
+            listScrollUnlockTimeout = null
+            startRotation()
+        }, behavior === 'smooth' ? 380 : 120)
     }
 
     function startRotation(): void {
@@ -98,7 +81,9 @@ export function createIdeasListController({
             return
         }
 
-        stopRotation()
+        if (shouldScroll) {
+            stopRotation()
+        }
         const newActiveIndex = Math.max(0, Math.min(nextIndex, totalIdeas - 1))
 
         renderCommunityIdeasList({
@@ -111,14 +96,12 @@ export function createIdeasListController({
         })
 
         activeIdeaOriginalIndex = newActiveIndex
-        applyWheelStyles()
-        updateVisibleCards()
 
         if (onActiveIdeasChanged) {
             onActiveIdeasChanged(ideas[newActiveIndex], newActiveIndex)
         }
 
-        const activeCard = list.querySelector<HTMLElement>('.ideas-card:first-child')
+        const activeCard = list.querySelector<HTMLElement>(`.ideas-card[data-original-index="${newActiveIndex}"]`)
         if (activeCard) {
             activeCard.classList.remove('turn-focus')
             if (focusTurnTimeout !== null) {
@@ -133,19 +116,7 @@ export function createIdeasListController({
         }
 
         if (!shouldScroll) return
-
-        isProgrammaticListScroll = true
-        if (listScrollUnlockTimeout !== null) {
-            window.clearTimeout(listScrollUnlockTimeout)
-        }
-
-        activeCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-
-        listScrollUnlockTimeout = window.setTimeout(() => {
-            isProgrammaticListScroll = false
-            listScrollUnlockTimeout = null
-            startRotation()
-        }, 360)
+        centerActiveCard('smooth')
     }
 
     function updateFromScroll(): void {
@@ -159,7 +130,8 @@ export function createIdeasListController({
             const cards = list.querySelectorAll<HTMLElement>('.ideas-card')
             if (cards.length === 0) return
 
-            const centerY = window.innerHeight / 2
+            const listRect = list.getBoundingClientRect()
+            const centerY = listRect.top + listRect.height / 2
             let closestOriginalIndex = activeIdeaOriginalIndex
             let closestDistance = Number.POSITIVE_INFINITY
 
@@ -206,6 +178,10 @@ export function createIdeasListController({
             ideas = nextIdeas
             if (activeIdeaOriginalIndex >= ideas.length) {
                 activeIdeaOriginalIndex = 0
+            }
+            if (ideas.length > 0) {
+                setActive(activeIdeaOriginalIndex, false)
+                centerActiveCard('auto')
             }
         },
         getActiveIndex: () => activeIdeaOriginalIndex,
