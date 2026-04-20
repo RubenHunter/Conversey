@@ -19,36 +19,16 @@ public class WorkspaceRepository : IWorkspaceRepository
         return _context.Workspaces.ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Workspace> ReadAllWorkspacesWithProjects()
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .ToList().AsReadOnly();
-    }
-
     public Workspace ReadWorkspaceBySlug(Slug slug)
     {
-        return _context.Workspaces.SingleOrDefault(w => w.Slug == slug);
+        return _context.Workspaces.SingleOrDefault(w => w.Id == slug);
     }
 
-    public Workspace ReadWorkspaceBySlugWithProjects(Slug slug)
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Slug == slug);
-    }
-
-    public Workspace ReadWorkspaceById(int id)
+    public Workspace ReadWorkspaceById(Slug id)
     {
         return _context.Workspaces.SingleOrDefault(w => w.Id == id);
     }
 
-    public Workspace ReadWorkspaceByIdWithProjects(int id)
-    {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Id == id);
-    }
 
     public void CreateWorkspace(Workspace workspace)
     {
@@ -83,6 +63,7 @@ public class WorkspaceConfig: IEntityTypeConfiguration<Workspace>
         // Workspace 0-* Project
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
+            .HasForeignKey("WorkspaceId")
             .IsRequired();
         #endregion
 

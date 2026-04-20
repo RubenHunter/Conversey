@@ -1,32 +1,31 @@
 using Conversey.BL.Ai;
-using Conversey.BL.Ai.Managers;
+using Conversey.BL.Administration;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.BL.Subplatform;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Ideation;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Survey;
+using Conversey.BL.Ideation;
+using Conversey.BL.Survey;
 using Conversey.DAL;
-using Conversey.DAL.Subplatform;
-using Conversey.DAL.Subplatform.Ai;
-using Conversey.DAL.Subplatform.Survey;
-using Conversey.DAL.Subplatform.Survey.Ideas;
-using Conversey.DAL.Subplatform.Survey.Questions;
+using Conversey.DAL.Administration;
+using Conversey.DAL.Ideation;
+using Conversey.DAL.Survey;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
+using System.Runtime.CompilerServices;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
 public static class ManagerSeedData
 {
     public const string WorkspaceName = "Hogeschool Nova";
-    public const string ProjectTitle = "Actieplan Mentaal Welzijn 2026-2027";
-    public const string YouthToken = "st-amelie-01";
+    public const string ProjectName = "Actieplan Mentaal Welzijn 2026-2027";
+    public static readonly Guid YouthToken = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public static Slug WorkspaceSlug => Slug.FromName(WorkspaceName);
-    public static Slug ProjectSlug => Slug.FromName(ProjectTitle);
+    public static Slug ProjectSlug => Slug.FromName(ProjectName);
 }
 
 public sealed class ManagerIntegrationTestFixture : IDisposable
@@ -42,8 +41,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _connection = new SqliteConnection("Data Source=:memory:");
         _connection.Open();
 
-        services.AddDbContext<ConverseyDbContext>(options =>
-            options.UseSqlite(_connection));
+        services.AddDbContext<ConverseyDbContext>(options => options.UseSqlite(_connection));
 
         services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
@@ -56,13 +54,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IQuestionManager, QuestionManager>();
 
         services.AddSingleton(_aiConfig);
-        services.AddScoped<IAiManager>(provider => new AiManagerLogger(
-            new TestAiManager(new TestAiManagerConfig {
-                IsAllowed = true,
-                Alternative = "Please rephrase your idea in a respectful way."
-            }),
-            new Mock<IAuditRepository>().Object
-        ));
+        services.AddScoped<IAiManager>(_ => new TestAiManager(_aiConfig));
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -71,7 +63,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         dbContext.Database.EnsureDeleted();
         dbContext.Database.EnsureCreated();
-        DataSeeder.Seed(dbContext);
+        Seed(dbContext);
     }
 
     public IServiceScope CreateScope()
@@ -91,55 +83,123 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _connection.Dispose();
     }
 
-    private sealed class TestAiManager(TestAiManagerConfig config) : IAiManager
+    private static void Seed(ConverseyDbContext dbContext)
+    {
+        var workspace = new Workspace
+        {
+            Id = ManagerSeedData.WorkspaceSlug,
+            Name = ManagerSeedData.WorkspaceName,
+            Projects = new List<Project>()
+        };
+
+        var project = new Project
+        {
+            Id = ManagerSeedData.ProjectSlug,
+            Name = ManagerSeedData.ProjectName,
+            Description = "Seed project",
+            Status = Status.Active,
+            StartDate = DateTime.UtcNow.Date,
+            EndDate = DateTime.UtcNow.Date.AddDays(14),
+            InteractionForm = InteractionType.Chat,
+            Workspace = workspace,
+            Topic = new List<Topic>(),
+            Questions = new List<Question>(),
+            Youth = new List<Youth>()
+        };
+
+        var topic = new Topic
+        {
+            Name = "Studiedruk en evaluatie",
+            Context = "Seed topic",
+            Project = project,
+            Ideas = new List<Idea>()
+        };
+
+        var youth = new Youth
+        {
+            Id = ManagerSeedData.YouthToken,
+            Email = "seed@student.nova.be",
+            Project = project,
+            Ideas = new List<Idea>(),
+            Reactions = new List<Reaction>(),
+            Responses = new List<IdeaResponse>(),
+            Answers = new List<Answer>()
+        };
+
+        var question = new OpenQuestion
+        {
+            Text = "Hoe verbeteren we welzijn?",
+            Required = true,
+            Project = project
+        };
+
+        var idea = new Idea
+        {
+            Content = "Meer rustplekken op campus.",
+            Summary = "",
+            SubmissionDate = DateTime.UtcNow,
+            Status = ModerationStatus.Approved,
+            ModerationInfo = new ModerationInfo(),
+            Project = project,
+            Topic = topic,
+            Youth = youth,
+            Reactions = new List<IdeaReaction>(),
+            Responses = new List<IdeaResponse>()
+        };
+
+        var response = new IdeaResponse
+        {
+            Text = "Goed idee!",
+            CreatedAt = DateTime.UtcNow,
+            Status = ModerationStatus.Approved,
+            ModerationInfo = new ModerationInfo(),
+            Idea = idea,
+            Youth = youth,
+            Reactions = new List<ResponseReaction>()
+        };
+
+        dbContext.Workspaces.Add(workspace);
+        dbContext.Projects.Add(project);
+        dbContext.Topics.Add(topic);
+        dbContext.Youths.Add(youth);
+        dbContext.Questions.Add(question);
+        dbContext.Ideas.Add(idea);
+        dbContext.Responses.Add(response);
+        dbContext.SaveChanges();
+    }
+
+    private sealed class TestAiManager( TestAiManagerConfig config) : IAiManager
     {
         public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
         {
-            try
-            {
-                return Task.FromResult(config.Alternative);
-            }
-            catch (Exception exception)
-            {
-                return Task.FromException<string>(exception);
-            }
+            return Task.FromResult(config.Alternative);
         }
 
         public Task<ModerationDecision> ModerateContent(string content)
         {
-            try
-            {
-                return Task.FromResult(new ModerationDecision
-                {
-                    IsAllowed = config.IsAllowed
-                });
-            }
-            catch (Exception exception)
-            {
-                return Task.FromException<ModerationDecision>(exception);
-            }
+            return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
         }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
         }
 
         public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            CancellationToken cancellationToken = new CancellationToken())
+            CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "test")));
         }
 
-        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            CancellationToken cancellationToken = new CancellationToken())
+        public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            await Task.CompletedTask;
+            yield break;
         }
 
         public object GetService(Type serviceType, object serviceKey = null)
         {
-            throw new NotImplementedException();
+            return null;
         }
     }
 
@@ -149,5 +209,4 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         public string Alternative { get; set; } = "Please rephrase your idea in a respectful way.";
     }
 }
-
 

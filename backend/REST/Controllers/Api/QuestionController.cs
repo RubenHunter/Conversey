@@ -1,37 +1,30 @@
-﻿using Conversey.BL.Domain.Common;
-using Conversey.BL.Domain.Subplatform.Survey;
-using Conversey.BL.Domain.Subplatform.Survey.Questions;
-using Conversey.BL.Domain.Subplatform.Survey.Questions.Answers;
-using Conversey.BL.Subplatform.Survey;
-using Conversey.BL.Subplatform.Survey.Questions;
+using Conversey.BL.Survey;
 using Conversey.REST.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.REST.Controllers.Api;
 
 [ApiController]
-[Route("api/workspaces/{workspaceSlug}/projects/{projectSlug}")]
+[Route("api/workspaces/{workspaceId}/projects/{projectId}")]
 public class QuestionController : ControllerBase
 {
-    private readonly IProjectManager _projectManager;
     private readonly IQuestionManager _questionManager;
 
-    public QuestionController(IProjectManager projectManager, IQuestionManager questionManager)
+    public QuestionController(IQuestionManager questionManager)
     {
-        _projectManager = projectManager;
         _questionManager = questionManager;
     }
 
     [HttpGet("questions")]
-    public ActionResult<IReadOnlyCollection<QuestionDto>> GetQuestions(string workspaceSlug, string projectSlug)
+    public ActionResult<IReadOnlyCollection<QuestionDto>> GetQuestions(Slug workspaceId, Slug projectId)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-            IReadOnlyCollection<QuestionDto> dtos = (project.Questions ?? Array.Empty<Question>())
-                .OrderBy(question => question.Order)
-                .ThenBy(question => question.Id)
-                .Select(question => QuestionDto.From(question, project.Id))
+            var dtos = _questionManager.GetQuestions(workspaceId, projectId)
+                .Select(question => QuestionDto.From(question, projectId))
                 .ToList()
                 .AsReadOnly();
 
@@ -44,118 +37,18 @@ public class QuestionController : ControllerBase
     }
 
     [HttpPost("answers")]
-    public ActionResult SubmitAnswers(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
-    {
-        return SubmitAnswersInternal(workspaceSlug, projectSlug, submission);
-    }
-
-    // Backward-compatible alias while frontend switches from /responses to /answers.
-    [HttpPost("responses")]
-    public ActionResult SubmitResponsesAlias(string workspaceSlug, string projectSlug, [FromBody] SurveyAnswerSubmissionRequestDto submission)
-    {
-        return SubmitAnswersInternal(workspaceSlug, projectSlug, submission);
-    }
-
-    private ActionResult SubmitAnswersInternal(string workspaceSlug, string projectSlug, SurveyAnswerSubmissionRequestDto submission)
+    public ActionResult SubmitAnswers(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
         try
         {
-            var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
-
-            if (submission.ProjectId != project.Id)
-            {
-                return BadRequest("ProjectId in payload does not match route project.");
-            }
-
-            if (string.IsNullOrWhiteSpace(submission.YouthId))
-            {
-                return BadRequest("YouthId is required.");
-            }
-
-            Youth youth;
-            try
-            {
-                youth = _projectManager.GetYouthByToken(submission.YouthId);
-            }
-            catch (YouthNotFoundException)
-            {
-                youth = _projectManager.AddYouth(submission.YouthId, string.Empty, project.Id);
-            }
-
-            var questionsById = (project.Questions ?? Array.Empty<Question>())
-                .ToDictionary(question => question.Id);
-
-            foreach (var answer in submission.Answers)
-            {
-                if (!questionsById.TryGetValue(answer.QuestionId, out var question))
-                {
-                    return BadRequest($"Question {answer.QuestionId} does not belong to this project.");
-                }
-
-                bool hasOptions = question.Options.Count > 0;
-                bool hasOpenText = !string.IsNullOrWhiteSpace(answer.OpenTextValue);
-                bool hasSelectedOption = answer.SelectedOptionId.HasValue;
-
-                if (hasOpenText)
-                {
-                    if (hasOptions)
-                    {
-                        return BadRequest($"Question {question.Id} expects a selected option.");
-                    }
-
-                    _questionManager.AddTextAnswer(new OpenTextAnswer
-                    {
-                        YouthToken = youth.Token,
-                        Youth = youth,
-                        QuestionId = question.Id,
-                        Question = question,
-                        Value = answer.OpenTextValue.Trim()
-                    });
-
-                    continue;
-                }
-
-                if (hasSelectedOption)
-                {
-                    if (question is ScaleQuestion)
-                    {
-                        _questionManager.AddIntegerAnswer(new IntegerAnswer
-                        {
-                            YouthToken = youth.Token,
-                            Youth = youth,
-                            QuestionId = question.Id,
-                            Question = question,
-                            Value = answer.SelectedOptionId.Value
-                        });
-
-                        continue;
-                    }
-
-                    if (!hasOptions)
-                    {
-                        return BadRequest($"Question {question.Id} expects an open text answer.");
-                    }
-
-                    var selectedOption = question.Options.FirstOrDefault(option => option.Id == answer.SelectedOptionId);
-                    if (selectedOption is null)
-                    {
-                        return BadRequest($"Selected option {answer.SelectedOptionId} is invalid for question {question.Id}.");
-                    }
-
-                    _questionManager.AddTextAnswer(new ClosedTextAnswer
-                    {
-                        YouthToken = youth.Token,
-                        Youth = youth,
-                        QuestionId = question.Id,
-                        Question = question,
-                        Value = selectedOption.Text
-                    });
-
-                    continue;
-                }
-
-                return BadRequest($"Answer for question {question.Id} is missing content.");
-            }
+            _questionManager.SubmitAnswers(
+                workspaceId,
+                projectId,
+                submission.YouthId ?? string.Empty,
+                submission.Answers.Select(answer => (
+                    answer.QuestionId,
+                    answer.SelectedOptionId,
+                    answer.OpenTextValue ?? string.Empty)));
 
             return NoContent();
         }
@@ -163,22 +56,16 @@ public class QuestionController : ControllerBase
         {
             return NotFound();
         }
-    }
-
-    private Project GetProjectForWorkspace(string workspaceSlug, string projectSlug)
-    {
-        var project = _projectManager.GetProjectBySlugWithWorkspaceAndQuestions(ToSlug(projectSlug));
-
-        if (!string.Equals(project.Workspace.Slug.Text, workspaceSlug, StringComparison.OrdinalIgnoreCase))
+        catch (ValidationException e)
         {
-            throw new ProjectNotFoundException($"{workspaceSlug}/{projectSlug}");
+            return BadRequest(e.Message);
         }
-
-        return project;
     }
 
-    private static Slug ToSlug(string value)
+    // Backward-compatible alias while frontend switches from /responses to /answers.
+    [HttpPost("responses")]
+    public ActionResult SubmitResponsesAlias(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
-        return new Slug { Text = value.Trim().ToLowerInvariant() };
+        return SubmitAnswers(workspaceId, projectId, submission);
     }
 }

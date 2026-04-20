@@ -5,10 +5,10 @@ namespace Conversey.REST.Models.Dto;
 public class UpdateResponseAfterSafetyReviewDto
 {
     [Required]
-    public string Text { get; set; } = string.Empty;
+    public string Text { get; set; }
 
     [Required]
-    public string YouthToken { get; set; } = string.Empty;
+    public Guid YouthId { get; set; }
 
     public bool MarkForReview { get; set; }
 }

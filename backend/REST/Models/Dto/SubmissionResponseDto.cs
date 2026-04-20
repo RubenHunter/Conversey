@@ -1,5 +1,4 @@
 ﻿using Conversey.BL.Ai;
-using Conversey.BL.Domain.Subplatform.Survey.Ideation;
 
 namespace Conversey.REST.Models.Dto;
 

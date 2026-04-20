@@ -1,4 +1,6 @@
-﻿using Conversey.BL.Domain.Survey;
+﻿using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,6 +13,14 @@ public class QuestionRepository : IQuestionRepository
     public QuestionRepository(ConverseyDbContext dbContext)
     {
         _dbContext = dbContext;
+    }
+
+    public Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug projectSlug)
+    {
+        return _dbContext.Projects
+            .Include(project => project.Workspace)
+            .Include(project => project.Questions)
+            .SingleOrDefault(project => project.Id == projectSlug);
     }
 
     public Question ReadQuestionById(int questionId)
@@ -31,26 +41,71 @@ public class QuestionRepository : IQuestionRepository
         return _dbContext.Questions.ToList().AsReadOnly();
     }
 
-    public IReadOnlyCollection<Question> ReadAllQuestionsWithProject()
+    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithChoices(Slug projectSlug)
     {
-        return _dbContext.Questions
-            .Include(q => q.Project)
-            .ToList().AsReadOnly();
-    }
+        var questions = _dbContext.Questions
+            .Where(question => question.Project.Id == projectSlug)
+            .ToList();
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectId(int projectId)
-    {
-        return _dbContext.Questions
-            .Where(q => q.Project.Id == projectId)
-            .ToList().AsReadOnly();
-    }
+        if (questions.Count == 0)
+        {
+            return questions.AsReadOnly();
+        }
 
-    public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithProject(int projectId)
-    {
-        return _dbContext.Questions
-            .Include(q => q.Project)
-            .Where(q => q.Project.Id == projectId)
-            .ToList().AsReadOnly();
+        var choiceQuestionIds = questions
+            .Where(question => question is ChoiceQuestion<SingleChoice> || question is ChoiceQuestion<MultipleChoice>)
+            .Select(question => question.Id)
+            .ToHashSet();
+
+        if (choiceQuestionIds.Count == 0)
+        {
+            return questions.AsReadOnly();
+        }
+
+        var singleChoices = _dbContext.Set<SingleChoice>()
+            .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
+            .Select(choice => new
+            {
+                QuestionId = choice.Question.Id,
+                Choice = choice
+            })
+            .ToList()
+            .GroupBy(entry => entry.QuestionId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IList<SingleChoice>)group.Select(entry => entry.Choice).ToList());
+
+        var multipleChoices = _dbContext.Set<MultipleChoice>()
+            .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
+            .Select(choice => new
+            {
+                QuestionId = choice.Question.Id,
+                Choice = choice
+            })
+            .ToList()
+            .GroupBy(entry => entry.QuestionId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IList<MultipleChoice>)group.Select(entry => entry.Choice).ToList());
+
+        foreach (var question in questions)
+        {
+            if (question is ChoiceQuestion<SingleChoice> singleChoiceQuestion)
+            {
+                singleChoiceQuestion.PossibleChoices = singleChoices.TryGetValue(question.Id, out var values)
+                    ? values
+                    : new List<SingleChoice>();
+            }
+
+            if (question is ChoiceQuestion<MultipleChoice> multipleChoiceQuestion)
+            {
+                multipleChoiceQuestion.PossibleChoices = multipleChoices.TryGetValue(question.Id, out var values)
+                    ? values
+                    : new List<MultipleChoice>();
+            }
+        }
+
+        return questions.AsReadOnly();
     }
 
     public void CreateQuestion(Question question)
@@ -59,210 +114,229 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.SaveChanges();
     }
 
-    public void UpdateQuestion(Question question)
+    public Answer ReadAnswerById(int answerId)
     {
-        _dbContext.Questions.Update(question);
-        _dbContext.SaveChanges();
-    }
-
-    public bool DeleteQuestion(int questionId)
-    {
-        var question = _dbContext.Questions
-            .SingleOrDefault(q => q.Id == questionId);
-        if (question == null) return false;
-
-        _dbContext.Questions.Remove(question);
-        _dbContext.SaveChanges();
-        return true;
-    }
-
-    public TextAnswer ReadTextAnswerById(int answerId)
-    {
-        return _dbContext.TextAnswers
+        return _dbContext.Answers
             .SingleOrDefault(a => a.Id == answerId);
     }
 
-    public TextAnswer ReadTextAnswerByIdWithYouth(int answerId)
+    public void CreateAnswer(Answer answer)
     {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public TextAnswer ReadTextAnswerByIdWithQuestion(int answerId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public TextAnswer ReadTextAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionId(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouth(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<TextAnswer> ReadTextAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _dbContext.TextAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public void CreateTextAnswer(TextAnswer answer)
-    {
-        _dbContext.TextAnswers.Add(answer);
+        _dbContext.Answers.Add(answer);
         _dbContext.SaveChanges();
     }
 
-    public void UpdateTextAnswer(TextAnswer answer)
+    public void UpdateAnswer(Answer answer)
     {
-        _dbContext.TextAnswers.Update(answer);
+        _dbContext.Answers.Update(answer);
         _dbContext.SaveChanges();
     }
 
-    public bool DeleteTextAnswer(int answerId)
+    public bool DeleteAnswer(int answerId)
     {
-        var answer = _dbContext.TextAnswers
+        var answer = _dbContext.Answers
             .SingleOrDefault(a => a.Id == answerId);
         if (answer == null) return false;
 
-        _dbContext.TextAnswers.Remove(answer);
+        _dbContext.Answers.Remove(answer);
         _dbContext.SaveChanges();
         return true;
     }
 
-    public IntegerAnswer ReadIntegerAnswerById(int answerId)
+    public Youth ReadYouthByTokenWithProject(Guid youthToken)
     {
-        return _dbContext.IntegerAnswers
-            .SingleOrDefault(a => a.Id == answerId);
+        return _dbContext.Youths
+            .Include(youth => youth.Project)
+            .SingleOrDefault(youth => youth.Id == youthToken);
     }
 
-    public IntegerAnswer ReadIntegerAnswerByIdWithYouth(int answerId)
+    public Youth CreateYouth(Guid youthToken, Slug projectSlug)
     {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
+        var project = _dbContext.Projects
+            .Single(project => project.Id == projectSlug);
 
-    public IntegerAnswer ReadIntegerAnswerByIdWithQuestion(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
+        var youth = new Youth
+        {
+            Id = youthToken,
+            Email = $"{youthToken:N}@local.invalid",
+            Project = project
+        };
 
-    public IntegerAnswer ReadIntegerAnswerByIdWithYouthAndQuestion(int answerId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionId(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouth(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithQuestion(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public IReadOnlyCollection<IntegerAnswer> ReadIntegerAnswersByQuestionIdWithYouthAndQuestion(int questionId)
-    {
-        return _dbContext.IntegerAnswers
-            .Include(a => a.Youth)
-            .Include(a => a.Question)
-            .Where(a => a.QuestionId == questionId)
-            .ToList().AsReadOnly();
-    }
-
-    public void CreateIntegerAnswer(IntegerAnswer answer)
-    {
-        _dbContext.IntegerAnswers.Add(answer);
+        _dbContext.Youths.Add(youth);
         _dbContext.SaveChanges();
+
+        return _dbContext.Youths
+            .Include(createdYouth => createdYouth.Project)
+            .Single(createdYouth => createdYouth.Id == youthToken);
     }
 
-    public void UpdateIntegerAnswer(IntegerAnswer answer)
+    public SingleChoice ReadSingleChoiceByIdForQuestion(int questionId, int optionId)
     {
-        _dbContext.IntegerAnswers.Update(answer);
-        _dbContext.SaveChanges();
+        return _dbContext.Set<SingleChoice>()
+            .SingleOrDefault(choice =>
+                choice.Id == optionId &&
+                choice.Question.Id == questionId);
     }
 
-    public bool DeleteIntegerAnswer(int answerId)
+    public MultipleChoice ReadMultipleChoiceByIdForQuestion(int questionId, int optionId)
     {
-        var answer = _dbContext.IntegerAnswers
-            .SingleOrDefault(a => a.Id == answerId);
-        if (answer == null) return false;
-
-        _dbContext.IntegerAnswers.Remove(answer);
-        _dbContext.SaveChanges();
-        return true;
+        return _dbContext.Set<MultipleChoice>()
+            .SingleOrDefault(choice =>
+                choice.Id == optionId &&
+                choice.Question.Id == questionId);
     }
 }
 
-public class QuestionConfig<T> : IEntityTypeConfiguration<T> where T : Question
+public class QuestionConfig : IEntityTypeConfiguration<Question>
 {
-    public void Configure(EntityTypeBuilder<T> builder)
+    public void Configure(EntityTypeBuilder<Question> builder)
     {
         #region Properties
 
         builder.HasKey(q => q.Id);
         builder.Property(q => q.Text)
-            .HasMaxLength(500);
+            .HasMaxLength(500)
+            .IsRequired();
+
+        #endregion
+    }
+}
+
+public class OpenQuestionConfig : IEntityTypeConfiguration<OpenQuestion>
+{
+    public void Configure(EntityTypeBuilder<OpenQuestion> builder)
+    {
+        #region Relations
+
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as OpenQuestion)
+            .IsRequired();
+
+        #endregion
+
+    }
+}
+
+public class ScaleQuestionConfig : IEntityTypeConfiguration<ScaleQuestion>
+{
+    public void Configure(EntityTypeBuilder<ScaleQuestion> builder)
+    {
+        #region Properties
+        
+        builder.Property(q => q.LowerBound)
+            .IsRequired();
+        
+        builder.Property(q => q.UpperBound)
+            .IsRequired();
 
         #endregion
 
         #region Relations
 
-        switch (typeof(T))
-        {
-            case SingleChoiceQuestion: 
-        }
-
+        // ScaleQuestion has Answer<int> submissions
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as ScaleQuestion)
+            .IsRequired();
 
         #endregion
     }
 }
+
+// Base configuration for ChoiceQuestion
+public abstract class ChoiceQuestionConfig<TChoice, TQuestion> : IEntityTypeConfiguration<TQuestion>
+    where TChoice : Choice<TChoice>
+    where TQuestion : ChoiceQuestion<TChoice>
+{
+    public virtual void Configure(EntityTypeBuilder<TQuestion> builder)
+    {
+        #region Relations
+
+        // ChoiceQuestion -> Choices
+        builder.HasMany(q => q.PossibleChoices)
+            .WithOne(c => c.Question as TQuestion)
+            .IsRequired();
+
+        // ChoiceQuestion -> Answer<TChoice> submissions
+        builder.HasMany(q => q.AnswerSubmissions)
+            .WithOne(a => a.Question as TQuestion)
+            .IsRequired();
+
+        #endregion
+    }
+}
+
+// Concrete configurations for each choice question type
+public class SingleChoiceQuestionConfig : ChoiceQuestionConfig<SingleChoice, ChoiceQuestion<SingleChoice>>
+{
+}
+
+public class MultipleChoiceQuestionConfig : ChoiceQuestionConfig<MultipleChoice, ChoiceQuestion<MultipleChoice>>
+{
+}
+
+// Choice configurations
+public class SingleChoiceConfig : IEntityTypeConfiguration<SingleChoice>
+{
+    public void Configure(EntityTypeBuilder<SingleChoice> builder)
+    {
+        //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Text)
+            .HasMaxLength(250)
+            .IsRequired();
+    }
+}
+
+public class MultipleChoiceConfig : IEntityTypeConfiguration<MultipleChoice>
+{
+    public void Configure(EntityTypeBuilder<MultipleChoice> builder)
+    {
+        //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Text)
+            .HasMaxLength(250)
+            .IsRequired();
+    }
+}
+
+// Answer configurations
+public class AnswerStringConfig : IEntityTypeConfiguration<Answer<string>>
+{
+    public void Configure(EntityTypeBuilder<Answer<string>> builder)
+    {
+        builder.Property(a => a.Value)
+            .HasMaxLength(4000);
+    }
+}
+
+public class AnswerIntConfig : IEntityTypeConfiguration<Answer<int>>
+{
+    public void Configure(EntityTypeBuilder<Answer<int>> builder)
+    {
+        builder.Property(a => a.Value)
+            .IsRequired();
+    }
+}
+
+public class AnswerSingleChoiceConfig : IEntityTypeConfiguration<Answer<SingleChoice>>
+{
+    public void Configure(EntityTypeBuilder<Answer<SingleChoice>> builder)
+    {
+        // Answer<SingleChoice> -> SingleChoice reference
+        builder.HasOne(a => a.Value)
+            .WithMany()
+            .IsRequired();
+    }
+}
+
+public class AnswerMultipleChoiceConfig : IEntityTypeConfiguration<Answer<MultipleChoice>>
+{
+    public void Configure(EntityTypeBuilder<Answer<MultipleChoice>> builder)
+    {
+        // Answer<MultipleChoice> -> MultipleChoice reference
+        builder.HasOne(a => a.Value)
+            .WithMany()
+            .IsRequired();
+    }
+}
+
