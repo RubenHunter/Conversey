@@ -142,6 +142,20 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                                 <span aria-hidden="true">:)</span>
                             </button>
                             <button
+                                id="idea-panel-copy"
+                                class="idea-panel-copy-btn"
+                                type="button"
+                                aria-label="Use this idea as a starting point"
+                                title="Use this idea as a starting point"
+                                hidden
+                            >
+                                <svg class="idea-panel-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span>Use as starter</span>
+                            </button>
+                            <button
                                 id="idea-panel-edit-toggle"
                                 class="survey-magic-btn idea-panel-edit-cta"
                                 type="button"
@@ -218,6 +232,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const prompt = container.querySelector<HTMLParagraphElement>('#ideas-prompt')!
     const ideasGrid = container.querySelector<HTMLDivElement>('.ideas-grid')!
     const ideasCompose = container.querySelector<HTMLElement>('.ideas-compose')!
+    const textareaWrapper = container.querySelector<HTMLDivElement>('.survey-textarea-wrapper')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
     const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
@@ -225,6 +240,27 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const ideasShell = container.querySelector<HTMLDivElement>('.ideas-shell')!
+
+    let copyPulseTimeout: number | null = null
+
+    function pulseComposerWithCopiedIdea(ideaBody: string): void {
+        textarea.value = ideaBody
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+        textarea.focus()
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length)
+
+        textareaWrapper.classList.remove('ideas-compose-copied')
+        void textareaWrapper.offsetWidth
+        textareaWrapper.classList.add('ideas-compose-copied')
+
+        if (copyPulseTimeout !== null) {
+            window.clearTimeout(copyPulseTimeout)
+        }
+        copyPulseTimeout = window.setTimeout(() => {
+            textareaWrapper.classList.remove('ideas-compose-copied')
+            copyPulseTimeout = null
+        }, 850)
+    }
 
     // Create controllers
     const safetyReviewDialog = createSafetyReviewDialogController({ root: container })
@@ -259,6 +295,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             removeResponseReaction(params.organizationSlug, params.projectSlug, idea, responseId, youthToken, emoji),
         reactToIdea: (idea, emoji) => addIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
         unreactToIdea: (idea, emoji) => removeIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+        onCopyIdea: (idea) => {
+            pulseComposerWithCopiedIdea(idea.body)
+            listController?.startRotation()
+        },
         onIdeaReactionsUpdated: (ideaId, reactions) => {
             const ideaIndex = allIdeas.findIndex((item) => item.id === ideaId)
             if (ideaIndex < 0) return
@@ -395,6 +435,9 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     window.addEventListener('app:before-navigate', () => {
         listController?.cleanup()
         resizeObserver.disconnect()
+        if (copyPulseTimeout !== null) {
+            window.clearTimeout(copyPulseTimeout)
+        }
     }, { once: false })
 
     // Magic button focus behavior
