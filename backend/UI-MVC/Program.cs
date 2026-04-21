@@ -119,6 +119,9 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
+app.MapFallbackToController("Index", "Home");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseWebSockets();
