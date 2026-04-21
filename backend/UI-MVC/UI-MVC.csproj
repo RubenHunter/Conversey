@@ -18,7 +18,8 @@
     
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.6" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -26,10 +27,7 @@
     </ItemGroup>
 
     <Target Name="CopyClientAppPublicFiles" BeforeTargets="Build;Publish">
-        <Copy
-            SourceFiles="@(ClientAppPublicFiles)"
-            DestinationFiles="@(ClientAppPublicFiles->'wwwroot/%(RecursiveDir)%(Filename)%(Extension)')"
-            SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(ClientAppPublicFiles)" DestinationFiles="@(ClientAppPublicFiles->'wwwroot/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     </Target>
 
     <Target Name="BuildClientAppForPublish" BeforeTargets="Publish" Condition="'$(SkipClientBuild)' != 'true'">

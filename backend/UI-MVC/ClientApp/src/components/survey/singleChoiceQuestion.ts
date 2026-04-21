@@ -8,6 +8,7 @@ export interface QuestionComponent {
     unlock(): void
     onAnswer(callback: () => void): void
     getElement(): HTMLElement
+    destroy?(): void
 }
 
 export function renderSingleChoiceQuestion(question: Question, index: number): QuestionComponent {

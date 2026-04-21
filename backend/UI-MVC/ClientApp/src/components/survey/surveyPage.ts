@@ -11,19 +11,8 @@ import {renderOpenTextQuestion} from './openTextQuestion.ts'
 import {renderScaleQuestion} from './scaleQuestion.ts'
 import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
-
-function formatOrganizationName(organizationSlug: string): string {
-    return organizationSlug
-        .split('-')
-        .filter((part) => part.length > 0)
-        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
-        .join(' ')
-}
-
-function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
-    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
-    return clean.slice(0, 3).toUpperCase() || 'ORG'
-}
+import {initQuestionTTS} from './shared.ts'
+import { formatOrganizationName, getOrganizationBadge } from '../../utils/project.ts'
 
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -116,6 +105,9 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const progressBar = container.querySelector<HTMLDivElement>('#progress-bar')!
     const progressBadge = container.querySelector<HTMLSpanElement>('#progress-badge')!
 
+    // Set data attribute on container for language detection (default 'nl' for now)
+    surveyShell.setAttribute('data-survey-language', 'nl');
+
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
@@ -128,10 +120,14 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
         questionsContainer.appendChild(component.getElement())
 
+        // Initialize TTS for question title speaker button (default 'nl' for now)
+        initQuestionTTS(component.getElement(), question.text, String(question.id), 'nl');
+
         // Lock next questions only if current question is required
-        if (index > 0 && questions[index - 1].isRequired) {
-            component.lock()
-        }
+        // TEMP: Disabled for testing speech functionality
+        // if (index > 0 && questions[index - 1].isRequired) {
+        //     component.lock()
+        // }
 
         return component
     })
@@ -139,7 +135,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const answeredState = new Array<boolean>(questions.length).fill(false)
 
     // Auto-scroll textarea into view on mobile when focused
-    document.querySelectorAll('.survey-textarea').forEach(textarea => {
+    questionsContainer.querySelectorAll('.survey-textarea').forEach(textarea => {
         textarea.addEventListener('focus', () => {
             setTimeout(() => {
                 (textarea as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' })

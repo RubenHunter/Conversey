@@ -1,6 +1,7 @@
 import type { RouteParams } from '../utils/router.ts'
 import { navigate } from '../utils/router.ts'
 import { getProject } from '../services/projectService.ts'
+import { formatOrganizationName, getOrganizationBadge } from '../utils/project.ts'
 
 function isSurveyCompleted(projectId: number): boolean {
     return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
@@ -16,19 +17,6 @@ function clearSurveyCompletion(): void {
 // Expose to window for easy testing
 if (typeof window !== 'undefined') {
     ;(window as any).clearSurvey = clearSurveyCompletion
-}
-
-function formatOrganizationName(organizationSlug: string): string {
-    return organizationSlug
-        .split('-')
-        .filter((part) => part.length > 0)
-        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
-        .join(' ')
-}
-
-function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
-    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
-    return clean.slice(0, 3).toUpperCase() || 'ORG'
 }
 
 export async function renderLandingPage(container: HTMLElement, params: RouteParams): Promise<void> {

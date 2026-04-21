@@ -18,6 +18,8 @@ import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
 import { renderCommunityIdeasList } from './communityList.ts'
 import { renderIdeasComposer } from './composer.ts'
 import type { ActiveView } from './types.ts'
+import { bindMicButton } from '../../services/speechService'
+import { formatOrganizationName, getOrganizationBadge } from '../../utils/project.ts'
 
 // Fisher-Yates shuffle algorithm
 function shuffleArray<T>(array: T[]): T[] {
@@ -60,19 +62,6 @@ function updateVisibleCards(list: HTMLElement): void {
     cards.forEach((card, index) => {
         card.style.display = index < visibleCount ? '' : 'none'
     })
-}
-
-function formatOrganizationName(organizationSlug: string): string {
-    return organizationSlug
-        .split('-')
-        .filter((part) => part.length > 0)
-        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
-        .join(' ')
-}
-
-function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
-    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
-    return clean.slice(0, 3).toUpperCase() || 'ORG'
 }
 
 export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
@@ -138,7 +127,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                                     </svg>
                                     <span class="survey-magic-btn-text">Magic Mode</span>
                                 </button>
-                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
+                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input - Speak now">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                                     </svg>
@@ -608,6 +597,13 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
     })
 
+    // Setup STT for voice input on ideas
+    bindMicButton(speakBtn, textarea, () => 'nl', (text) => {
+        textarea.value = text
+        submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+
     submitBtn.addEventListener('click', async () => {
         if (activeView.type !== 'topic') return
 
@@ -721,7 +717,5 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     })
 
     render()
-    
-    // Start auto-rotation timer na initial render
     startRotationTimer()
 }
