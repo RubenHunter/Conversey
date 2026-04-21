@@ -1,4 +1,8 @@
-wwwroot/
+wwwroot/*
+!wwwroot/Conversey_logo.png
+!wwwroot/Conversey_logo.svg
+!wwwroot/Conversey_logo_bottom.png
+!wwwroot/Conversey_logo_side.png
 wwwroot-back/
 
 ## Ignore Visual Studio temporary files, build results, and
