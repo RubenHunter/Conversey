@@ -9,18 +9,11 @@
 		"build": "tsc && vite build",
 		"preview": "vite preview"
 	},
-	"dependencies": {
-		"jquery": "^3.7.1",
-		"jquery-validation": "^1.21.0",
-		"jquery-validation-unobtrusive": "^4.0.0"
-	},
 	"devDependencies": {
-		"@types/node": "^25.0.7",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
 		"tailwindcss": "^4.2.1",
 		"@tailwindcss/vite": "^4.2.1",
-		"@tailwindcss/typography": "^0.5.19",
-		"daisyui": "^5.5.19"
+		"@tailwindcss/typography": "^0.5.19"
 	}
 }

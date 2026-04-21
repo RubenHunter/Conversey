@@ -7,16 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      jquery:
-        specifier: ^3.7.1
-        version: 3.7.1
-      jquery-validation:
-        specifier: ^1.21.0
-        version: 1.22.1(jquery@3.7.1)
-      jquery-validation-unobtrusive:
-        specifier: ^4.0.0
-        version: 4.0.0
     devDependencies:
       '@tailwindcss/typography':
         specifier: ^0.5.19
@@ -24,12 +14,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.2.1
         version: 4.2.2(vite@7.3.1(@types/node@25.3.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3))
-      '@types/node':
-        specifier: ^25.0.7
-        version: 25.3.2
-      daisyui:
-        specifier: ^5.5.19
-        version: 5.5.19
       tailwindcss:
         specifier: ^4.2.1
         version: 4.2.2
@@ -554,9 +538,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  daisyui@5.5.19:
-    resolution: {integrity: sha512-pbFAkl1VCEh/MPCeclKL61I/MqRIFFhNU7yiXoDDRapXN4/qNCoMxeCCswyxEEhqL5eiTTfwHvucFtOE71C9sA==}
-
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -601,17 +582,6 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
-
-  jquery-validation-unobtrusive@4.0.0:
-    resolution: {integrity: sha512-1ervYFFv6LX/rp7ktuLnMakHNG0piNRDyROI8Ir3hL1vPIwylAehB1AY3BPrYJnzW3WmwWryZq+Bz4sazZK9iQ==}
-
-  jquery-validation@1.22.1:
-    resolution: {integrity: sha512-ePLXLWK7Rh5eR652YsuIu7YPeGlCXrsJUteVw5iZopiU17yaMd3FaDggs6yyNMl56p8TYVeDRmKGK3fPZrMeQw==}
-    peerDependencies:
-      jquery: ^1.7 || ^2.0 || ^3.1 || ^4.0
-
-  jquery@3.7.1:
-    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -1106,6 +1076,7 @@ snapshots:
   '@types/node@25.3.2':
     dependencies:
       undici-types: 7.18.2
+    optional: true
 
   chokidar@4.0.3:
     dependencies:
@@ -1113,8 +1084,6 @@ snapshots:
     optional: true
 
   cssesc@3.0.0: {}
-
-  daisyui@5.5.19: {}
 
   detect-libc@2.1.2: {}
 
@@ -1173,17 +1142,6 @@ snapshots:
     optional: true
 
   jiti@2.6.1: {}
-
-  jquery-validation-unobtrusive@4.0.0:
-    dependencies:
-      jquery: 3.7.1
-      jquery-validation: 1.22.1(jquery@3.7.1)
-
-  jquery-validation@1.22.1(jquery@3.7.1):
-    dependencies:
-      jquery: 3.7.1
-
-  jquery@3.7.1: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -1314,7 +1272,8 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  undici-types@7.18.2: {}
+  undici-types@7.18.2:
+    optional: true
 
   util-deprecate@1.0.2: {}
 

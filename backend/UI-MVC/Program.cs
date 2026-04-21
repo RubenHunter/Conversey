@@ -23,6 +23,7 @@ builder.Services.AddViteServices(options =>
 {
 	options.Server.Port = 4173;
     options.Server.AutoRun = true;
+    options.Server.PackageManager = "pnpm";
 });
 
 // Add repositories
@@ -116,16 +117,16 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Project}/{projectId}/{action=Landing}/{id?}")
     .WithStaticAssets();
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
-app.MapFallbackToController("Index", "Home");
+//app.MapFallbackToController("Index", "Home");
 
 if (app.Environment.IsDevelopment())
 {
     app.UseWebSockets();
-    app.UseViteDevelopmentServer(useMiddleware: true);
+    app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
 app.Run();

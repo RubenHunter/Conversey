@@ -1,12 +1,12 @@
-import type { RouteParams } from '../utils/router.ts'
 import { navigate } from '../utils/router.ts'
 import { getProject } from '../services/projectService.ts'
+import {ProjectContext, render} from "../main";
 
 function isSurveyCompleted(projectId: number): boolean {
     return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
 }
 
-export async function renderCompletedPage(container: HTMLElement, params: RouteParams): Promise<void> {
+async function renderCompletedPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
 
     if (!isSurveyCompleted(project.id)) {
@@ -43,3 +43,5 @@ export async function renderCompletedPage(container: HTMLElement, params: RouteP
         void navigate('ideas')
     })
 }
+
+render(renderCompletedPage)

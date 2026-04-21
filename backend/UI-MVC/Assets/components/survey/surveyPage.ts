@@ -1,5 +1,3 @@
-import type {RouteParams} from '../../utils/router.ts'
-import {navigate} from '../../utils/router.ts'
 import {getProject} from '../../services/projectService.ts'
 import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
 import {QuestionType} from '../../models/question.ts'
@@ -13,8 +11,9 @@ import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
+import {ProjectContext, render} from "../../main";
 
-export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
+export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const completedKey = `survey-completed-${project.id}`
 
@@ -31,7 +30,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             </div>
         `
 
-        const redirectTimer = window.setTimeout(() => {
+        /*TODO const redirectTimer = window.setTimeout(() => {
             void navigate('ideas', { replace: true })
         }, 3200)
 
@@ -41,7 +40,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
                 window.clearTimeout(redirectTimer)
             },
             { once: true },
-        )
+        )*/
 
         return
     }
@@ -83,7 +82,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-submit" class="survey-submit-btn" disabled>Submit Survey</button>
+                    <a id="btn-submit" class="survey-submit-btn" href="${params.projectSlug}/completed">Submit Survey</a>
                 </div>
             </div>
         </div>
@@ -92,7 +91,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const surveyShell = container.querySelector<HTMLDivElement>('#survey-shell')!
     const headerEl = container.querySelector<HTMLDivElement>('#survey-header')!
     const questionsContainer = container.querySelector<HTMLDivElement>('#questions-container')!
-    const submitBtn = container.querySelector<HTMLButtonElement>('#btn-submit')!
+    const submitBtn = container.querySelector<HTMLAnchorElement>('#btn-submit')!
     const actionBar = container.querySelector<HTMLDivElement>('#survey-action-bar')!
 
     const headerController = createSurveyHeaderController({ root: container })
@@ -170,8 +169,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         headerController.updateProgress(answeredCount, questions.length)
 
         const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
-
-        submitBtn.disabled = !isReady
+        
         actionBar.classList.toggle('survey-ready', isReady)
     }
 
@@ -380,8 +378,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
-
-        submitBtn.disabled = true
+        
         submitBtn.textContent = 'Submitting...'
 
         try {
@@ -389,11 +386,11 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             localStorage.setItem(completedKey, 'true')
             clearSurveyProgress(project.id)
             cleanupSurveyPage()
-            await navigate('completed')
         } catch {
-            submitBtn.disabled = false
             submitBtn.textContent = 'Submit Survey'
             alert('Failed to submit survey. Please try again.')
         }
     })
 }
+
+render(renderSurveyPage)

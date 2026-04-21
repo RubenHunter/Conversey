@@ -21,6 +21,7 @@ import { renderIdeasHeader } from './ideasHeader.ts'
 import { createTopicModalController } from './topicModal.ts'
 import { createIdeasListController } from './ideasListController.ts'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler.ts'
+import {render} from "../../main";
 
 // Get label for active ideas view
 function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
@@ -429,3 +430,5 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     render()
 }
+
+render(renderIdeasPage)
