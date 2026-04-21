@@ -12,19 +12,7 @@ import {renderScaleQuestion} from './scaleQuestion.ts'
 import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
-
-function formatOrganizationName(organizationSlug: string): string {
-    return organizationSlug
-        .split('-')
-        .filter((part) => part.length > 0)
-        .map((part) => (part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
-        .join(' ')
-}
-
-function getOrganizationBadge(organizationName: string, organizationSlug: string): string {
-    const clean = organizationName.replace(/[^a-z0-9]/gi, '') || organizationSlug.replace(/[^a-z0-9]/gi, '')
-    return clean.slice(0, 3).toUpperCase() || 'ORG'
-}
+import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
 
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -60,8 +48,8 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     const questions = await getQuestions(params.organizationSlug, params.projectSlug)
 
-    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
-    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
+    const organizationName = project.organizationName?.trim() || project.organizationSlug
+    const headerHTML = renderSurveyHeader({ organizationName, organizationSlug: project.organizationSlug })
 
     let currentQuestionIndex = -1 // Start at -1 to indicate we're at landing page section, not at any question yet
     let scrollNav: ScrollNav | null = null
@@ -70,16 +58,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     container.innerHTML = `
         <div class="survey-shell" id="survey-shell">
-            <div class="survey-topbar">
-                <div class="survey-topbar-left">
-                    <div class="survey-topbar-logo"><img src="/Conversey_logo.png" alt="Conversey" /></div>
-                    <div class="survey-topbar-logo-title">CONVERSEY</div>
-                </div>
-                <div class="survey-topbar-brand">
-                    <div class="survey-topbar-logo-badge">${organizationBadge}</div>
-                    <div class="survey-topbar-name">${organizationName}</div>
-                </div>
-            </div>
+            ${headerHTML}
 
             <section class="survey-hero" id="survey-hero">
                 <img src="${project.imageUrl}" alt="${project.title}" class="survey-hero-image" />
@@ -115,8 +94,8 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     const questionsContainer = container.querySelector<HTMLDivElement>('#questions-container')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#btn-submit')!
     const actionBar = container.querySelector<HTMLDivElement>('#survey-action-bar')!
-    const progressBar = container.querySelector<HTMLDivElement>('#progress-bar')!
-    const progressBadge = container.querySelector<HTMLSpanElement>('#progress-badge')!
+
+    const headerController = createSurveyHeaderController({ root: container })
 
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
@@ -188,9 +167,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
 
     function updateProgress(): void {
         const answeredCount = answeredState.filter(Boolean).length
-        const percentage = (answeredCount / questions.length) * 100
-        progressBar.style.width = `${percentage}%`
-        progressBadge.textContent = `${answeredCount} / ${questions.length}`
+        headerController.updateProgress(answeredCount, questions.length)
 
         const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
 
