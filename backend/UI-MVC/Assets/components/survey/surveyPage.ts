@@ -82,7 +82,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <a id="btn-submit" class="survey-submit-btn" href="${params.projectSlug}/completed">Submit Survey</a>
+                    <a id="btn-submit" class="survey-submit-btn" href="completed">Submit Survey</a>
                 </div>
             </div>
         </div>
