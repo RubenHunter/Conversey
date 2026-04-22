@@ -1,11 +1,10 @@
 using System.ComponentModel;
-using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
+using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Microsoft.AspNetCore.WebSockets;
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ai;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
 using Conversey.BL.Survey;
 using Conversey.DAL;
@@ -14,29 +13,18 @@ using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http.Headers;
-using Conversey.BL.Domain.Common;
+using Vite.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("FrontendDev", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
-// MVC 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddViteServices(options =>
+{
+	options.Server.Port = 4173;
+    options.Server.AutoRun = true;
+});
 
 // Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
@@ -50,6 +38,12 @@ builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
+
+builder.Services.AddDbContext<ConverseyDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default")
+        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+);
 
 // Speech service
 builder.Services.AddScoped<Conversey.BL.Speech.IMistralSpeechService>(provider =>
@@ -103,12 +97,6 @@ builder.Services.AddScoped<IAiManager>(provider =>
     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
 });
 
-builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Default")
-        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
-);
-
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
@@ -120,26 +108,26 @@ var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetO
 InitializeDatabase(resetDatabaseOnStart);
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-}
-else
-{
-    app.UseHttpsRedirection();
+    app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
 }
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
-
-app.UseCors("FrontendDev");
+app.UseHttpsRedirection();
+app.UseRouting();
 
 app.UseWebSockets();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapStaticAssets();
 
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}")
+    .WithStaticAssets();
 // WebSocket endpoint for real-time speech-to-text — transparent proxy to Mistral.
 app.Map("/ws/speech/transcribe", async context =>
 {
@@ -267,56 +255,14 @@ var useViteDevServer = app.Environment.IsDevelopment() &&
 var viteHealthCheckedAtUtc = DateTime.MinValue;
 var viteIsAvailable = false;
 
-async Task<bool> IsViteDevServerAvailableAsync()
+// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
+app.MapFallbackToController("Index", "Home");
+
+if (app.Environment.IsDevelopment())
 {
-    // Cache probe result briefly to avoid a socket check on every page request.
-    if (DateTime.UtcNow - viteHealthCheckedAtUtc < TimeSpan.FromSeconds(2))
-    {
-        return viteIsAvailable;
-    }
-
-    try
-    {
-        using var tcpClient = new System.Net.Sockets.TcpClient();
-        var connectTask = tcpClient.ConnectAsync("127.0.0.1", 5173);
-        var timeoutTask = Task.Delay(250);
-        var completedTask = await Task.WhenAny(connectTask, timeoutTask);
-
-        viteIsAvailable = completedTask == connectTask && tcpClient.Connected;
-    }
-    catch
-    {
-        viteIsAvailable = false;
-    }
-
-    viteHealthCheckedAtUtc = DateTime.UtcNow;
-    return viteIsAvailable;
+    app.UseWebSockets();
+    app.UseViteDevelopmentServer(useMiddleware: true);
 }
-
-app.MapFallback(async context =>
-{
-    if (context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
-    {
-        context.Response.StatusCode = StatusCodes.Status404NotFound;
-        return;
-    }
-
-    if (useViteDevServer && await IsViteDevServerAvailableAsync())
-    {
-        var viteTarget = $"http://localhost:5173{context.Request.Path}{context.Request.QueryString}";
-        context.Response.Redirect(viteTarget);
-        return;
-    }
-
-    if (!File.Exists(spaIndexFile))
-    {
-        context.Response.StatusCode = StatusCodes.Status404NotFound;
-        return;
-    }
-
-    context.Response.ContentType = "text/html; charset=utf-8";
-    await context.Response.SendFileAsync(spaIndexFile);
-});
 
 app.Run();
 

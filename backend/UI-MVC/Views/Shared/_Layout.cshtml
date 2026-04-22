@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="icon" type="image/x-icon" href="~/Conversey_logo.png" />
+
+    <script type="module" vite-src="~/main.ts"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    
+    <environment include="Development">
+        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
+    </environment>
+    <environment include="Production">
+        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true" />
+    </environment>
+</head>
+<body>
+	<div id="app" class="min-h-screen flex flex-col items-center justify-center gap-8">
+		@RenderBody()
+	</div>
+</body>
+</html>
