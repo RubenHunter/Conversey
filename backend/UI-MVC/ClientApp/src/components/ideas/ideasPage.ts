@@ -346,7 +346,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     function focusTrapModal(): void {
         // Simple focus trap - focus first element in modal
-        const focusableElements = topicModal.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"]')
+        const focusableElements = topicModal.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])')
         if (focusableElements.length > 0) {
             focusableElements[0].focus()
         }
@@ -598,7 +598,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     })
 
     // Setup STT for voice input on ideas
-    bindMicButton(speakBtn, textarea, () => 'nl', (text) => {
+    bindMicButton(speakBtn, textarea, () => 'nl', (text: string) => {
         textarea.value = text
         submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
         textarea.dispatchEvent(new Event('input', { bubbles: true }))

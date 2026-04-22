@@ -168,7 +168,7 @@ input.survey-textarea {
   transition: opacity 0.5s ease;
 }
 
-/* Inner ring — indigo, clockwise, tight to the button */
+/* Inner ring — uses primary color from theme */
 .stt-aura--active::before {
   inset: -7px;
   background: conic-gradient(
@@ -181,7 +181,7 @@ input.survey-textarea {
   opacity: 1;
 }
 
-/* Outer ring — violet-pink, counter-clockwise, wider spread */
+/* Outer ring — uses color mix with primary from theme */
 .stt-aura--active::after {
   inset: -14px;
   background: conic-gradient(
@@ -224,4 +224,40 @@ input.survey-textarea {
 .survey-speaker-btn:active {
   background-color: var(--color-primary);
   color: var(--color-surface);
+}
+
+/* ======================================================================== */
+/* Textarea Speech Feedback Styles */
+/* ======================================================================== */
+
+/* Shimmer effect for listening state - using theme colors */
+textarea.speech-listening,
+textarea.speech-processing {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-primary-light) 10%, transparent) 0%,
+    color-mix(in srgb, var(--color-primary-light) 30%, transparent) 50%,
+    color-mix(in srgb, var(--color-primary-light) 10%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: speech-shimmer 3s linear infinite;
+  cursor: wait;
+}
+
+textarea.speech-listening::placeholder,
+textarea.speech-processing::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Ensure textarea remains visible when disabled/readonly */
+textarea:readonly.speech-listening,
+textarea:readonly.speech-processing {
+  opacity: 1;
+  background-color: transparent;
+}
+
+@keyframes speech-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
