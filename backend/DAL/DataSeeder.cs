@@ -1,6 +1,7 @@
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Survey;
 
 namespace Conversey.DAL;
 
@@ -86,6 +87,82 @@ public static class DataSeeder
         };
 
         context.Youths.AddRange(students);
+
+        var mentaalSupportQuestion = new ChoiceQuestion<SingleChoice>
+        {
+            Text = "Hoe beoordeel je de toegankelijkheid van mentale ondersteuning op de campus?",
+            Required = true,
+            Project = mentaalWelzijnActieplan,
+            PossibleChoices = new List<SingleChoice>()
+        };
+        var mentaalSupportChoices = new List<SingleChoice>
+        {
+            new() { Text = "Helemaal onvoldoende", Question = mentaalSupportQuestion },
+            new() { Text = "Eerder onvoldoende", Question = mentaalSupportQuestion },
+            new() { Text = "Voldoende", Question = mentaalSupportQuestion },
+            new() { Text = "Goed", Question = mentaalSupportQuestion },
+            new() { Text = "Uitstekend", Question = mentaalSupportQuestion }
+        };
+        mentaalSupportQuestion.PossibleChoices = mentaalSupportChoices;
+
+        var mentaalStressScaleQuestion = new ScaleQuestion
+        {
+            Text = "Hoeveel stress ervaar je gemiddeld tijdens een opleidingsweek? (1 = zeer laag, 10 = zeer hoog)",
+            Required = true,
+            LowerBound = 1,
+            UpperBound = 10,
+            Project = mentaalWelzijnActieplan
+        };
+
+        var mentaalFlexQuestion = new ChoiceQuestion<SingleChoice>
+        {
+            Text = "Zou je gebruik maken van flexibele inhaalmomenten bij overbelasting?",
+            Required = true,
+            Project = mentaalWelzijnActieplan,
+            PossibleChoices = new List<SingleChoice>()
+        };
+        var mentaalFlexChoices = new List<SingleChoice>
+        {
+            new() { Text = "Ja, zeker", Question = mentaalFlexQuestion },
+            new() { Text = "Misschien, afhankelijk van het vak", Question = mentaalFlexQuestion },
+            new() { Text = "Nee", Question = mentaalFlexQuestion }
+        };
+        mentaalFlexQuestion.PossibleChoices = mentaalFlexChoices;
+
+        var mentaalOpenQuestion = new OpenQuestion
+        {
+            Text = "Welke concrete actie zou volgens jou het meeste verschil maken voor mentaal welzijn op school?",
+            Required = false,
+            Project = mentaalWelzijnActieplan
+        };
+
+        var mentaalQuestions = new List<Question>
+        {
+            mentaalSupportQuestion,
+            mentaalStressScaleQuestion,
+            mentaalFlexQuestion,
+            mentaalOpenQuestion
+        };
+        context.Questions.AddRange(mentaalQuestions);
+
+        var mentaalAnswers = new List<Answer>
+        {
+            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[0], Value = mentaalSupportChoices[2] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[0], Value = 7 },
+            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[0], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[0], Value = "Een wekelijkse deadlinevrije avond per opleiding zou direct stress verlagen." },
+
+            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[3], Value = mentaalSupportChoices[1] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[3], Value = 8 },
+            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[3], Value = mentaalFlexChoices[1] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[3], Value = "Maak begeleiding zichtbaarder in één centrale welzijnspagina." },
+
+            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[6], Value = mentaalSupportChoices[3] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[6], Value = 6 },
+            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[6], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[6], Value = "Bied meer stille ruimtes met korte ontspanningsoefeningen in piekweken." }
+        };
+        context.Answers.AddRange(mentaalAnswers);
 
         var ideas = new List<Idea>
         {
@@ -393,6 +470,82 @@ public static class DataSeeder
         };
 
         context.Youths.AddRange(cityYouths);
+
+        var cityGreenPriorityQuestion = new ChoiceQuestion<SingleChoice>
+        {
+            Text = "Welke prioriteit moet de stad eerst aanpakken?",
+            Required = true,
+            Project = vergroeningEnRecreatiePlan,
+            PossibleChoices = new List<SingleChoice>()
+        };
+        var cityGreenPriorityChoices = new List<SingleChoice>
+        {
+            new() { Text = "Meer bomen en schaduw", Question = cityGreenPriorityQuestion },
+            new() { Text = "Veiligere fiets- en wandelroutes", Question = cityGreenPriorityQuestion },
+            new() { Text = "Meer jeugdvriendelijke ontmoetingsplekken", Question = cityGreenPriorityQuestion },
+            new() { Text = "Meer inspraak voor jongeren", Question = cityGreenPriorityQuestion }
+        };
+        cityGreenPriorityQuestion.PossibleChoices = cityGreenPriorityChoices;
+
+        var cityLeefbaarheidScaleQuestion = new ScaleQuestion
+        {
+            Text = "Hoe leefbaar ervaar je je buurt vandaag? (1 = zeer slecht, 10 = zeer goed)",
+            Required = true,
+            LowerBound = 1,
+            UpperBound = 10,
+            Project = vergroeningEnRecreatiePlan
+        };
+
+        var cityParticipationQuestion = new ChoiceQuestion<SingleChoice>
+        {
+            Text = "Op welke manier wil je het liefst betrokken worden bij stadsbeleid?",
+            Required = true,
+            Project = vergroeningEnRecreatiePlan,
+            PossibleChoices = new List<SingleChoice>()
+        };
+        var cityParticipationChoices = new List<SingleChoice>
+        {
+            new() { Text = "Online bevragingen", Question = cityParticipationQuestion },
+            new() { Text = "Kwartaalpanel met stadsbestuur", Question = cityParticipationQuestion },
+            new() { Text = "Workshops in de buurt", Question = cityParticipationQuestion },
+            new() { Text = "Ik wil niet actief deelnemen", Question = cityParticipationQuestion }
+        };
+        cityParticipationQuestion.PossibleChoices = cityParticipationChoices;
+
+        var cityOpenQuestion = new OpenQuestion
+        {
+            Text = "Welke plek in Stad Linden zou jij als eerste vergroenen en waarom?",
+            Required = false,
+            Project = vergroeningEnRecreatiePlan
+        };
+
+        var cityQuestions = new List<Question>
+        {
+            cityGreenPriorityQuestion,
+            cityLeefbaarheidScaleQuestion,
+            cityParticipationQuestion,
+            cityOpenQuestion
+        };
+        context.Questions.AddRange(cityQuestions);
+
+        var citySurveyAnswers = new List<Answer>
+        {
+            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[0], Value = cityGreenPriorityChoices[0] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[0], Value = 5 },
+            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[0], Value = cityParticipationChoices[1] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[0], Value = "Het Stationsplein: daar is te weinig schaduw en bijna geen groene zitruimte." },
+
+            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[3], Value = cityGreenPriorityChoices[1] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[3], Value = 6 },
+            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[3], Value = cityParticipationChoices[2] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[3], Value = "Rond de campusroute: vooral voor veiligere, groene fietsverbindingen." },
+
+            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[6], Value = cityGreenPriorityChoices[2] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[6], Value = 4 },
+            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[6], Value = "Een braakliggend terrein in Noordwijk, als tijdelijke pop-up groene ontmoetingsplek." }
+        };
+        context.Answers.AddRange(citySurveyAnswers);
 
         var cityIdeas = new List<Idea>
         {
