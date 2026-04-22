@@ -11,6 +11,8 @@ using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
+using Conversey.UI_MVC.Middleware;
+using Conversey.UI_MVC.Models;
 using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 
@@ -90,6 +92,11 @@ builder.Services.AddScoped<IAiManager>(provider =>
     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
 });
 
+builder.Services.AddScoped<WorkspaceContext>();
+builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
+builder.Services.AddScoped<WorkspaceMiddleware>();
+
+
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
@@ -109,6 +116,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 
 app.UseAuthorization();
