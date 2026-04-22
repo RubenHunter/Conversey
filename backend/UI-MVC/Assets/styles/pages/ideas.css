@@ -409,6 +409,115 @@
   flex-direction: column;
   overflow: hidden;
   overscroll-behavior: contain;
+  position: relative;
+}
+
+.ideas-discovery {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-md);
+  margin: 0;
+  z-index: 4;
+}
+
+.ideas-discovery-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: calc(var(--spacing-xs) * 0.82) var(--spacing-md);
+  cursor: pointer;
+}
+
+.ideas-discovery-trigger:focus,
+.ideas-discovery-trigger:hover {
+  outline: none;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, var(--color-surface));
+}
+
+.ideas-discovery-trigger:active,
+.ideas-discovery-trigger[aria-expanded="true"] {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.ideas-discovery-chevron {
+  font-size: var(--font-size-xs);
+  transition: transform var(--transition-base);
+}
+
+.ideas-discovery-trigger[aria-expanded="true"] .ideas-discovery-chevron {
+  transform: rotate(180deg);
+}
+
+.ideas-discovery-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--spacing-xs));
+  min-width: calc(var(--spacing-xl) * 8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+}
+
+.ideas-discovery-option {
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  padding: calc(var(--spacing-xs) * 0.92) var(--spacing-sm);
+  cursor: pointer;
+}
+
+.ideas-discovery-option:hover,
+.ideas-discovery-option:focus,
+.ideas-discovery-option.selected {
+  outline: none;
+  background: color-mix(in srgb, var(--color-primary-light) 18%, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.ideas-discovery-badge {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.14rem 0.45rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ideas-discovery-badge--similar {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, var(--color-surface));
+}
+
+.ideas-discovery-badge--opposite {
+  border-color: color-mix(in srgb, var(--color-secondary) 42%, var(--color-border));
+  color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 12%, var(--color-surface));
+}
+
+.ideas-discovery-badge:hover,
+.ideas-discovery-badge:focus {
+  outline: none;
+  filter: brightness(1.02);
 }
 
 .ideas-list {
@@ -421,6 +530,26 @@
   gap: var(--spacing-xs);
   overscroll-behavior: contain;
   scroll-snap-type: none;
+}
+
+.ideas-load-more {
+  align-self: center;
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  padding: calc(var(--spacing-xs) * 0.9) var(--spacing-lg);
+  cursor: pointer;
+}
+
+.ideas-load-more:hover,
+.ideas-load-more:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 16%, var(--color-surface));
 }
 
 /* Re-enable pointer events for interactive cards */

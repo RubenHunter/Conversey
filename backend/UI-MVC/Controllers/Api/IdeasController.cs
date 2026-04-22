@@ -55,6 +55,45 @@ public class IdeasController : ControllerBase
         }
     }
 
+    [HttpGet("discover")]
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> DiscoverIdeas(
+        Slug workspaceId,
+        Slug projectId,
+        int topicId,
+        [FromQuery] Guid youthId,
+        [FromQuery] string category = "random",
+        [FromQuery] int limit = 15)
+    {
+        if (youthId == Guid.Empty)
+        {
+            return BadRequest("youthId is required.");
+        }
+
+        if (!Enum.TryParse<IdeaDiscoveryCategory>(category, ignoreCase: true, out var parsedCategory))
+        {
+            return BadRequest("category must be one of: similar, different, random.");
+        }
+
+        int boundedLimit = Math.Clamp(limit, 1, 15);
+
+        try
+        {
+            var ideas = await _manager.GetIdeaDiscoverySuggestions(
+                workspaceId,
+                projectId,
+                topicId,
+                youthId,
+                parsedCategory,
+                boundedLimit);
+
+            return Ok(ideas.Select(IdeaDto.From).ToList().AsReadOnly());
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
     [HttpGet("{ideaId:int}")]
     public ActionResult<IdeaDto> GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {

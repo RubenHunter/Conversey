@@ -22,6 +22,7 @@ export interface Idea {
     createdAt: string
     reactions: IdeaReactionSummary[]
     pendingReview: boolean
+    semanticCategories: string[]
 }
 
 export interface SubmitIdeaRequest {

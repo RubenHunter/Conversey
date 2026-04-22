@@ -2,6 +2,7 @@
 using Conversey.BL.Domain.Ideation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.Json;
 
 namespace Conversey.DAL.Ideation;
 
@@ -66,6 +67,36 @@ public class IdeaRepository : IIdeaRepository
             .Include(i => i.Reactions)
             .Where(i => i.Topic.Id == topicId)
             .ToList().AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Idea> ReadIdeasByTopicIdAndStatus(int topicId, ModerationStatus status)
+    {
+        return _dbContext.Ideas
+            .Include(i => i.Project)
+            .ThenInclude(p => p.Workspace)
+            .Include(i => i.Topic)
+            .Include(i => i.Youth)
+            .Include(i => i.Reactions)
+            .Where(i => i.Topic.Id == topicId && i.Status == status)
+            .OrderByDescending(i => i.SubmissionDate)
+            .ThenByDescending(i => i.Id)
+            .ToList()
+            .AsReadOnly();
+    }
+
+    public IReadOnlyCollection<Idea> ReadIdeasByTopicIdAndYouthId(int topicId, Guid youthId)
+    {
+        return _dbContext.Ideas
+            .Include(i => i.Project)
+            .ThenInclude(p => p.Workspace)
+            .Include(i => i.Topic)
+            .Include(i => i.Youth)
+            .Include(i => i.Reactions)
+            .Where(i => i.Topic.Id == topicId && i.Youth.Id == youthId)
+            .OrderByDescending(i => i.SubmissionDate)
+            .ThenByDescending(i => i.Id)
+            .ToList()
+            .AsReadOnly();
     }
 
     public void UpdateIdea(Idea idea)
@@ -215,6 +246,14 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
 
         builder.Property(i => i.Summary)
             .HasMaxLength(1000);
+
+        builder.Property(i => i.SemanticCategories)
+            .HasConversion(
+                categories => JsonSerializer.Serialize(categories ?? Array.Empty<string>(), (JsonSerializerOptions)null),
+                serialized => string.IsNullOrWhiteSpace(serialized)
+                    ? Array.Empty<string>()
+                    : JsonSerializer.Deserialize<string[]>(serialized) ?? Array.Empty<string>())
+            .HasColumnType("text");
 
         builder.Property(i => i.SubmissionDate);
 

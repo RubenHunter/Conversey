@@ -2,12 +2,16 @@ import { renderCommunityIdeasList } from './communityList.ts'
 import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 
+type DiscoveryBadgeType = 'similar' | 'opposite'
+
 interface CreateIdeasListControllerParams {
     list: HTMLElement
     ideas: Idea[]
     activeView: ActiveView
     topics: IdeaTopic[]
     flaggedIdeaIds: Set<number>
+    discoveryBadgeByIdeaId?: ReadonlyMap<number, DiscoveryBadgeType>
+    onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void
     onActiveIdeasChanged?: (nextIdea: Idea, originalIndex: number) => void
 }
 
@@ -27,6 +31,8 @@ export function createIdeasListController({
     activeView,
     topics,
     flaggedIdeaIds,
+    discoveryBadgeByIdeaId,
+    onDiscoveryBadgeClick,
     onActiveIdeasChanged,
 }: CreateIdeasListControllerParams): IdeasListController {
     let ideas = initialIdeas
@@ -93,6 +99,8 @@ export function createIdeasListController({
             topics,
             flaggedIdeaIds,
             activeIndex: newActiveIndex,
+            discoveryBadgeByIdeaId,
+            onDiscoveryBadgeClick,
         })
 
         activeIdeaOriginalIndex = newActiveIndex

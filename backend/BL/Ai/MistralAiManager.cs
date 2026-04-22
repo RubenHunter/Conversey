@@ -119,6 +119,248 @@ public sealed class MistralAiManager : IAiManager
         return string.IsNullOrWhiteSpace(content) ? "Please rephrase your message in a respectful way." : content.Trim();
     }
 
+    public async Task<IReadOnlyList<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    {
+        if (candidateIdeas.Count == 0 || limit <= 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        int cappedLimit = Math.Min(limit, candidateIdeas.Count);
+        var prompt = BuildIdeaRankingPrompt(referenceIdea, candidateIdeas, preferDifferent, cappedLimit);
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.1,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes."
+                },
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral idea ranking failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<int>();
+        }
+
+        return ParseRankedIndexes(content, candidateIdeas.Count, cappedLimit);
+    }
+
+    public async Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(
+        IReadOnlyList<string> ideas,
+        IReadOnlyList<string> existingCategories,
+        int maxCategoriesPerIdea)
+    {
+        if (ideas.Count == 0)
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        int cappedMax = Math.Clamp(maxCategoriesPerIdea, 1, 4);
+        var prompt = BuildIdeaCategorizationPrompt(ideas, existingCategories, cappedMax);
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.1,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = "You assign semantic categories to youth ideas. Return only strict JSON."
+                },
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral idea categorization failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        return ParseCategorizedIdeas(content, ideas.Count, cappedMax);
+    }
+
+    private static string BuildIdeaCategorizationPrompt(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    {
+        var indexedIdeas = string.Join("\n", ideas.Select((idea, index) => $"[{index}] {idea}"));
+        var existingCategoryList = existingCategories.Count == 0
+            ? "(none yet)"
+            : string.Join(", ", existingCategories.Distinct(StringComparer.OrdinalIgnoreCase));
+        return $$"""
+Categorize each idea semantically. One idea may belong to multiple categories.
+
+Existing categories already used in this topic (reuse these exact labels whenever possible):
+{{existingCategoryList}}
+
+Ideas:
+{{indexedIdeas}}
+
+Rules:
+- Use short, human-readable category names.
+- Max {{maxCategoriesPerIdea}} categories per idea.
+- Prefer reusing an existing category label when it is semantically close enough.
+- Do not invent idea indexes.
+- Avoid creating near-duplicate labels if an existing category already fits.
+- Return strict JSON only in this shape:
+{"items":[{"index":0,"categories":["Category A","Category B"]}]}
+""";
+    }
+
+    private static IReadOnlyDictionary<int, IReadOnlyList<string>> ParseCategorizedIdeas(string rawContent, int ideaCount, int maxCategoriesPerIdea)
+    {
+        var result = new Dictionary<int, IReadOnlyList<string>>();
+
+        string json = rawContent.Trim();
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        try
+        {
+            using var parsed = JsonDocument.Parse(json);
+            if (!parsed.RootElement.TryGetProperty("items", out var itemsElement) || itemsElement.ValueKind != JsonValueKind.Array)
+            {
+                return result;
+            }
+
+            foreach (var item in itemsElement.EnumerateArray())
+            {
+                if (!item.TryGetProperty("index", out var indexElement) || !indexElement.TryGetInt32(out int index)) continue;
+                if (index < 0 || index >= ideaCount) continue;
+
+                if (!item.TryGetProperty("categories", out var categoriesElement) || categoriesElement.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                var categories = categoriesElement
+                    .EnumerateArray()
+                    .Where(element => element.ValueKind == JsonValueKind.String)
+                    .Select(element => element.GetString()?.Trim() ?? string.Empty)
+                    .Where(category => category.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(maxCategoriesPerIdea)
+                    .ToList();
+
+                if (categories.Count > 0)
+                {
+                    result[index] = categories.AsReadOnly();
+                }
+            }
+
+            return result;
+        }
+        catch (JsonException)
+        {
+            return result;
+        }
+    }
+
+    private static string BuildIdeaRankingPrompt(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    {
+        var relationGoal = preferDifferent
+            ? "Rank ideas from MOST DIFFERENT perspective first compared to the reference idea."
+            : "Rank ideas from MOST SIMILAR meaning first compared to the reference idea.";
+
+        var candidates = string.Join("\n", candidateIdeas.Select((idea, index) => $"[{index}] {idea}"));
+
+        return $$"""
+Reference idea:
+{{referenceIdea}}
+
+Candidate ideas (use only these indexes):
+{{candidates}}
+
+Task:
+- {{relationGoal}}
+- Return exactly {{limit}} indexes if possible, otherwise return all valid indexes.
+- Do not invent indexes.
+- Return strict JSON only with this schema:
+{"rankedIndexes":[0,1,2]}
+""";
+    }
+
+    private static IReadOnlyList<int> ParseRankedIndexes(string rawContent, int candidateCount, int limit)
+    {
+        string json = rawContent.Trim();
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        try
+        {
+            using var parsed = JsonDocument.Parse(json);
+            if (!parsed.RootElement.TryGetProperty("rankedIndexes", out var indexesElement) || indexesElement.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<int>();
+            }
+
+            var picked = new List<int>();
+            var seen = new HashSet<int>();
+            foreach (var value in indexesElement.EnumerateArray())
+            {
+                if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out int index)) continue;
+                if (index < 0 || index >= candidateCount || !seen.Add(index)) continue;
+                picked.Add(index);
+                if (picked.Count >= limit) break;
+            }
+
+            return picked.AsReadOnly();
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<int>();
+        }
+    }
+
     private static ModerationInfo ParseModerationInfo(JsonElement result)
     {
         if (!result.TryGetProperty("categories", out var categories) || categories.ValueKind != JsonValueKind.Object)

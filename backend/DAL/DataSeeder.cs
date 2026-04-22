@@ -96,6 +96,19 @@ public static class DataSeeder
             CreateIdea(mentalWellbeing, axaTopics[4], axaYouths[7], "Offer a quiet online study room with fixed moments and a moderator for students who get distracted at home.", "Online study room", now.AddDays(-1))
         };
 
+        SetSemanticCategories(axaIdeas[0], "Study pressure", "Work-life balance");
+        SetSemanticCategories(axaIdeas[1], "Study pressure", "Support services");
+        SetSemanticCategories(axaIdeas[2], "Study pressure", "Study-life balance");
+        SetSemanticCategories(axaIdeas[3], "Study pressure", "Evaluation & exams");
+        SetSemanticCategories(axaIdeas[4], "Study pressure", "Planning & organization");
+        SetSemanticCategories(axaIdeas[5], "Evaluation & exams", "Support services");
+        SetSemanticCategories(axaIdeas[6], "Study pressure", "Planning & organization");
+        SetSemanticCategories(axaIdeas[7], "Support services");
+        SetSemanticCategories(axaIdeas[8], "Community & belonging", "Support services");
+        SetSemanticCategories(axaIdeas[9], "Wellbeing spaces", "Community & belonging");
+        SetSemanticCategories(axaIdeas[10], "Support services", "Community & belonging");
+        SetSemanticCategories(axaIdeas[11], "Digital learning", "Study-life balance");
+
         var axaResponses = new List<IdeaResponse>
         {
             CreateResponse(axaIdeas[0], axaYouths[3], "Great idea. A no-deadline evening would really help to decompress.", now.AddDays(-11).AddHours(2)),
@@ -201,6 +214,18 @@ public static class DataSeeder
             CreateIdea(actieplan, schoolTopics[2], schoolYouths[3], "Voorzie tijdens examenweken stille ontspanningsruimtes met water, fruit en ademhalingsoefeningen.", "Stille ontspanningsruimtes", now.AddDays(-9)),
             CreateIdea(actieplan, schoolTopics[1], schoolYouths[5], "Organiseer maandelijks een lunchsessie over stressmanagement met studentenbegeleiding.", "Maandelijkse stress-lunch", now.AddDays(-2))
         };
+
+        SetSemanticCategories(schoolIdeas[0], "Study pressure", "Work-life balance");
+        SetSemanticCategories(schoolIdeas[1], "Study pressure", "Support services");
+        SetSemanticCategories(schoolIdeas[2], "Study pressure", "Evaluation & exams");
+        SetSemanticCategories(schoolIdeas[3], "Study pressure", "Planning & organization");
+        SetSemanticCategories(schoolIdeas[4], "Evaluation & exams", "Support services");
+        SetSemanticCategories(schoolIdeas[5], "Study pressure", "Planning & organization");
+        SetSemanticCategories(schoolIdeas[6], "Study pressure", "Wellbeing spaces");
+        SetSemanticCategories(schoolIdeas[7], "Support services");
+        SetSemanticCategories(schoolIdeas[8], "Community & belonging", "Support services");
+        SetSemanticCategories(schoolIdeas[9], "Wellbeing spaces", "Community & belonging");
+        SetSemanticCategories(schoolIdeas[10], "Support services", "Community & belonging");
 
         var schoolResponses = new List<IdeaResponse>
         {
@@ -440,6 +465,15 @@ public static class DataSeeder
         }
 
         return reaction;
+    }
+
+    private static void SetSemanticCategories(Idea idea, params string[] categories)
+    {
+        idea.SemanticCategories = categories
+            .Select(category => category.Trim())
+            .Where(category => category.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 }
 
