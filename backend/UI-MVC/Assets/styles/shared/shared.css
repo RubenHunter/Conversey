@@ -123,6 +123,40 @@ input.survey-textarea {
   position: relative;
 }
 
+/* Timer text - positioned over button content, shown when recording is active */
+.survey-mic-btn .timer-text {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-surface);
+  pointer-events: none;
+  animation: none;
+}
+
+/* Show timer when recording is active */
+.stt-aura--active .survey-mic-btn .timer-text {
+  display: flex;
+}
+
+/* Hide original button content (icons, text) when recording is active */
+.stt-aura--active .survey-mic-btn > :not(.timer-text) {
+  display: none !important;
+}
+
+/* Blinking animation for timer at <=10 seconds */
+@keyframes timer-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.stt-aura--active .survey-mic-btn .timer-text.timer-blink {
+  animation: timer-blink 0.5s ease-in-out infinite;
+}
+
 .survey-mic-btn:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
   color: var(--color-primary);
@@ -259,6 +293,8 @@ textarea:readonly.speech-processing {
   opacity: 1;
   background-color: transparent;
 }
+
+
 
 @keyframes speech-shimmer {
   0% { background-position: 200% 0; }
