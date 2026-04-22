@@ -125,7 +125,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{projectId}/{action=Landing}/{id?}")
+    pattern: "{controller=Project}/{action=Landing}/{id?}")
     .WithStaticAssets();
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
