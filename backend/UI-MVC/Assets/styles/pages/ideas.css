@@ -535,6 +535,9 @@
 .ideas-load-more {
   align-self: center;
   margin: var(--spacing-xs) 0 var(--spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-surface);
@@ -543,6 +546,7 @@
   font-size: var(--font-size-sm);
   padding: calc(var(--spacing-xs) * 0.9) var(--spacing-lg);
   cursor: pointer;
+  transition: border-color var(--transition-base), background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), opacity var(--transition-base);
 }
 
 .ideas-load-more:hover,
@@ -550,6 +554,60 @@
   outline: none;
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary-light) 16%, var(--color-surface));
+}
+
+.ideas-load-more:disabled {
+  cursor: progress;
+  opacity: 0.82;
+}
+
+.ideas-load-more-icon {
+  position: relative;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  flex: 0 0 auto;
+}
+
+.ideas-load-more-arrow {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+  font-size: 1.05rem;
+}
+
+.ideas-load-more-icon::before {
+  content: '';
+  position: absolute;
+  inset: -0.28rem;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  border-right-color: transparent;
+  border-top-color: transparent;
+  opacity: 0;
+}
+
+.ideas-load-more--loading .ideas-load-more-icon::before {
+  opacity: 1;
+  animation: ideas-load-more-spin 0.9s linear infinite;
+}
+
+.ideas-load-more-text {
+  text-align: left;
+}
+
+@keyframes ideas-load-more-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Re-enable pointer events for interactive cards */

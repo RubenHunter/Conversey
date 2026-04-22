@@ -93,7 +93,16 @@ public sealed class NoopAiManager : IAiManager
                 categories.Add("Digital learning");
 
             if (categories.Count == 0)
-                categories.Add("General ideas");
+            {
+                if (canonicalExisting.Count > 0)
+                {
+                    categories.AddRange(canonicalExisting.Take(Math.Max(1, maxCategoriesPerIdea)));
+                }
+                else
+                {
+                    categories.Add("General ideas");
+                }
+            }
 
             if (canonicalExisting.Count > 0)
             {

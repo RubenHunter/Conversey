@@ -1,7 +1,7 @@
 ﻿import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 
-type DiscoveryBadgeType = 'similar' | 'opposite'
+type DiscoveryBadgeType = 'similar' | 'different'
 
 interface RenderCommunityListParams {
     list: HTMLDivElement
@@ -54,7 +54,7 @@ function createUserInfoElement(_authorType: Idea['authorType'], createdAt: strin
 }
 
 function getDiscoveryBadgeLabel(badge: DiscoveryBadgeType): string {
-    return badge === 'similar' ? 'Similar' : 'Opposite'
+    return badge === 'similar' ? 'Most similar' : 'Least similar'
 }
 
 function createDiscoveryBadgeElement(
@@ -66,7 +66,7 @@ function createDiscoveryBadgeElement(
     button.type = 'button'
     button.className = `ideas-discovery-badge ideas-discovery-badge--${badge}`
     button.textContent = getDiscoveryBadgeLabel(badge)
-    button.title = `Show only ${badge === 'similar' ? 'similar' : 'opposite'} ideas`
+    button.title = `Show only ${badge === 'similar' ? 'most similar' : 'least similar'} ideas`
     button.setAttribute('data-discovery-badge', badge)
     button.setAttribute('data-idea-id', String(ideaId))
     button.addEventListener('click', (event) => {

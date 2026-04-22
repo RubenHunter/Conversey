@@ -11,7 +11,7 @@ namespace Conversey.BL.Ideation;
 
 public class IdeaManager: IIdeaManager
 {
-    private const int DiscoveryCandidateLimit = 15;
+    private const int DiscoveryCandidateLimit = 30;
     private const int CategorizationBatchSize = 20;
     private const int MaxCategoriesPerIdea = 3;
     private readonly IIdeaRepository _repository;

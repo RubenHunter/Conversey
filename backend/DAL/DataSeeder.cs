@@ -80,7 +80,7 @@ public static class DataSeeder
 
         var axaIdeas = new List<Idea>
         {
-            // Study pressure and evaluation (axaTopics[0]) - 7 ideas
+            // Study pressure and evaluation (axaTopics[0]) - 22 ideas
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[0], "Plan one fixed deadline-free block every week so students always get at least one evening without school work.", "Weekly deadline-free block", now.AddDays(-12)),
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[4], "Allow a flexible catch-up moment when students feel overloaded, without extra administrative barriers.", "Flexible catch-up moment", now.AddDays(-8)),
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[6], "Spread large group assignments better across the semester so peak weeks are less heavy.", "Better spread of group work", now.AddDays(-6)),
@@ -88,6 +88,21 @@ public static class DataSeeder
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[2], "Provide clear study guides with estimated hours per course so students can plan better.", "Study guides with hours", now.AddDays(-4)),
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[3], "Offer optional review sessions before exams to help students prepare without mandatory attendance.", "Optional review sessions", now.AddDays(-3)),
             CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[5], "Create a buffer period between major assignment deadlines to prevent overlap and reduce pressure.", "Buffer between deadlines", now.AddDays(-2)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[7], "Publish a shared assessment calendar so students can see all deadlines and exams in one place.", "Shared assessment calendar", now.AddDays(-13)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[1], "Offer a weekly planning workshop to help students break large assignments into smaller steps.", "Weekly planning workshop", now.AddDays(-14)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[2], "Move mandatory quizzes away from the same week as large project deliveries.", "Separate quizzes from projects", now.AddDays(-15)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[3], "Let lecturers announce estimated study load before each course starts so students can plan work and rest.", "Announce study load early", now.AddDays(-16)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[4], "Introduce one catch-up week in the middle of the semester with no graded deadlines.", "Mid-semester catch-up week", now.AddDays(-17)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[5], "Limit group projects to one major milestone per fortnight so teams are not constantly under pressure.", "Fortnightly project milestones", now.AddDays(-18)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[6], "Offer short exam-prep videos that explain the most important points in under ten minutes.", "Short exam prep videos", now.AddDays(-19)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[0], "Build a deadline dashboard that shows the next three weeks at a glance and highlights overload.", "Deadline dashboard", now.AddDays(-20)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[1], "Allow students to swap presentation slots when two deadlines fall on the same day.", "Swap presentation slots", now.AddDays(-21)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[2], "Create quiet study pods that can be reserved during exam weeks for focused preparation.", "Reserveable study pods", now.AddDays(-22)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[3], "Ask each course to publish one 'minimum to know' summary so students can study more efficiently.", "Minimum-to-know summaries", now.AddDays(-23)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[4], "Schedule one optional no-assessment week after a heavy exam block to allow recovery.", "Recovery week after exams", now.AddDays(-24)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[5], "Make assignment instructions shorter and clearer so students spend less time decoding expectations.", "Shorter assignment instructions", now.AddDays(-25)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[6], "Coordinate feedback deadlines across courses so students do not receive several major comments at once.", "Coordinate feedback deadlines", now.AddDays(-26)),
+            CreateIdea(mentalWellbeing, axaTopics[0], axaYouths[7], "Provide an overload warning when students have too many deadlines within the same 5-day window.", "Overload warning", now.AddDays(-27)),
             // Other topics
             CreateIdea(mentalWellbeing, axaTopics[1], axaYouths[1], "Create a central wellbeing page with all support channels, opening hours and contact options.", "Central wellbeing page", now.AddDays(-11)),
             CreateIdea(mentalWellbeing, axaTopics[2], axaYouths[2], "Start small peer-support groups of eight students that meet every two weeks.", "Peer-support groups", now.AddDays(-10)),
@@ -104,10 +119,25 @@ public static class DataSeeder
         SetSemanticCategories(axaIdeas[5], "Evaluation & exams", "Support services");
         SetSemanticCategories(axaIdeas[6], "Study pressure", "Planning & organization");
         SetSemanticCategories(axaIdeas[7], "Support services");
-        SetSemanticCategories(axaIdeas[8], "Community & belonging", "Support services");
-        SetSemanticCategories(axaIdeas[9], "Wellbeing spaces", "Community & belonging");
-        SetSemanticCategories(axaIdeas[10], "Support services", "Community & belonging");
-        SetSemanticCategories(axaIdeas[11], "Digital learning", "Study-life balance");
+        SetSemanticCategories(axaIdeas[8], "Evaluation & exams", "Planning & organization");
+        SetSemanticCategories(axaIdeas[9], "Planning & organization", "Support services");
+        SetSemanticCategories(axaIdeas[10], "Study pressure", "Work-life balance");
+        SetSemanticCategories(axaIdeas[11], "Study pressure", "Support services");
+        SetSemanticCategories(axaIdeas[12], "Study pressure", "Planning & organization");
+        SetSemanticCategories(axaIdeas[13], "Evaluation & exams", "Support services");
+        SetSemanticCategories(axaIdeas[14], "Support services", "Community & belonging");
+        SetSemanticCategories(axaIdeas[15], "Wellbeing spaces", "Community & belonging");
+        SetSemanticCategories(axaIdeas[16], "Digital learning", "Study-life balance");
+        SetSemanticCategories(axaIdeas[17], "Planning & organization", "Work-life balance");
+        SetSemanticCategories(axaIdeas[18], "Evaluation & exams", "Support services");
+        SetSemanticCategories(axaIdeas[19], "Community & belonging");
+        SetSemanticCategories(axaIdeas[20], "Study pressure");
+        SetSemanticCategories(axaIdeas[21], "Digital learning", "Study-life balance");
+        SetSemanticCategories(axaIdeas[22], "Support services");
+        SetSemanticCategories(axaIdeas[23], "Community & belonging", "Support services");
+        SetSemanticCategories(axaIdeas[24], "Wellbeing spaces", "Community & belonging");
+        SetSemanticCategories(axaIdeas[25], "Support services", "Community & belonging");
+        SetSemanticCategories(axaIdeas[26], "Digital learning", "Study-life balance");
 
         var axaResponses = new List<IdeaResponse>
         {

@@ -26,7 +26,7 @@ interface IdeasContext {
 }
 
 export type IdeaDiscoveryCategory = 'similar' | 'different' | 'random'
-export const IDEA_DISCOVERY_MAX_RESULTS = 15
+export const IDEA_DISCOVERY_MAX_RESULTS = 30
 
 export function getIdeasYouthToken(projectKey: string | number): string {
     const key = `${IDEAS_USER_KEY}-${String(projectKey)}`

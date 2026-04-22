@@ -2,7 +2,7 @@ import { renderCommunityIdeasList } from './communityList.ts'
 import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 
-type DiscoveryBadgeType = 'similar' | 'opposite'
+type DiscoveryBadgeType = 'similar' | 'different'
 
 interface CreateIdeasListControllerParams {
     list: HTMLElement

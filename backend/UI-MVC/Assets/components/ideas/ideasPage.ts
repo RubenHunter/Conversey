@@ -6,7 +6,6 @@ import {
     IDEA_DISCOVERY_MAX_RESULTS,
     getIdeasContext,
     getIdeasYouthToken,
-    type IdeaDiscoveryCategory,
     updateIdeaAfterSafetyReview,
 } from '../../services/ideaService.ts'
 import {
@@ -29,7 +28,7 @@ import { createTopicModalController } from './topicModal.ts'
 import { createIdeasListController } from './ideasListController.ts'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler.ts'
 
-type DiscoveryBadgeType = 'similar' | 'opposite'
+type DiscoveryBadgeType = 'similar' | 'different'
 
 // Get label for active ideas view
 function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
@@ -38,15 +37,16 @@ function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): strin
     return topic ? topic.title : 'Select a topic'
 }
 
-type DiscoveryMode = 'all' | IdeaDiscoveryCategory
+type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 10
 const MAX_EXTRA_LOADS = 2
+const LOAD_MORE_SCROLL_THRESHOLD = 24
 
-const DISCOVERY_LABELS: Record<IdeaDiscoveryCategory, string> = {
-    similar: 'Similar ideas',
-    different: 'Opposite ideas',
-    random: 'Random ideas',
+const DISCOVERY_LABELS: Record<DiscoveryMode, string> = {
+    all: 'All ideas',
+    similar: 'Most similar ideas',
+    different: 'Least similar ideas',
 }
 
 interface DiscoveryFeed {
@@ -61,6 +61,25 @@ function shuffleIdeas<T>(items: T[]): T[] {
         ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
     }
     return next
+}
+
+function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
+    return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+}
+
+function getTopicSemanticCategories(allIdeas: Idea[], topicId: number): string[] {
+    const categories = new Set<string>()
+    allIdeas
+        .filter((idea) => idea.topicId === topicId)
+        .forEach((idea) => {
+            idea.semanticCategories.forEach((category) => {
+                if (category.trim().length > 0) {
+                    categories.add(category)
+                }
+            })
+        })
+
+    return [...categories].sort((a, b) => a.localeCompare(b))
 }
 
 
@@ -97,14 +116,18 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                                 <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                             </button>
                             <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden>
-                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Opposite ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="random" role="menuitem" type="button">Random ideas</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Most similar ideas</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Least similar ideas</button>
                                 <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
                             </div>
                         </div>
                         <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
-                        <button id="ideas-load-more" class="ideas-load-more" type="button" hidden>Show 10 more ideas</button>
+                        <button id="ideas-load-more" class="ideas-load-more" type="button" hidden>
+                            <span class="ideas-load-more-icon" aria-hidden="true">
+                                <span class="ideas-load-more-arrow">↓</span>
+                            </span>
+                            <span id="ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 10 more ideas</span>
+                        </button>
                     </section>
 
                     <section class="ideas-compose" aria-label="Create idea">
@@ -269,6 +292,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const topicFloatingTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-floating-value')!
     const list = container.querySelector<HTMLDivElement>('#ideas-list')!
     const loadMoreBtn = container.querySelector<HTMLButtonElement>('#ideas-load-more')!
+    const loadMoreText = container.querySelector<HTMLSpanElement>('#ideas-load-more-text')!
     const prompt = container.querySelector<HTMLParagraphElement>('#ideas-prompt')!
     const ideasGrid = container.querySelector<HTMLDivElement>('.ideas-grid')!
     const ideasCompose = container.querySelector<HTMLElement>('.ideas-compose')!
@@ -292,6 +316,9 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     let suppressListScrollSyncUntil = 0
     let extraLoadsUsed = 0
     let showPostPreviewPair = false
+    let latestSubmittedIdea: Idea | null = null
+    let isLoadingMoreIdeas = false
+    let autoLoadArmed = true
 
     function resetIdeasListToTop(): void {
         list.scrollTo({ top: 0, behavior: 'auto' })
@@ -303,25 +330,33 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     function resetPaging(): void {
         extraLoadsUsed = 0
+        isLoadingMoreIdeas = false
+        autoLoadArmed = true
     }
 
     function getVisibleLimit(): number {
         return IDEAS_BATCH_SIZE * (1 + extraLoadsUsed)
     }
 
-    function getTopicSemanticCategories(topicId: number): string[] {
-        const categories = new Set<string>()
-        allIdeas
-            .filter((idea) => idea.topicId === topicId)
-            .forEach((idea) => {
-                idea.semanticCategories.forEach((category) => {
-                    if (category.trim().length > 0) {
-                        categories.add(category)
-                    }
-                })
-            })
+    function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
+        const previewIdeas: Idea[] = []
+        const previewBadges = new Map<number, DiscoveryBadgeType>()
+        const seen = new Set<number>()
 
-        return [...categories].sort((a, b) => a.localeCompare(b))
+        const addIdea = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): void => {
+            if (!idea || seen.has(idea.id)) return
+            seen.add(idea.id)
+            previewIdeas.push(idea)
+            if (badge && previewBadges.size < 2) {
+                previewBadges.set(idea.id, badge)
+            }
+        }
+
+        addIdea(similarIdeas[0], 'similar')
+        addIdea(differentIdeas[0], 'different')
+        addIdea(submittedIdea)
+
+        return createDiscoveryFeed(previewIdeas, previewBadges)
     }
 
     function renderDiscoveryMenuOptions(): void {
@@ -330,25 +365,23 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             return
         }
 
-        const topicId = activeView.topicId
-        if (hasOwnIdeaInTopic(topicId)) {
+        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
+            const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
+            const semanticButtons = categories
+                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+                .join('')
+
             discoveryMenu.innerHTML = `
-                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Opposite ideas</button>
-                <button class="ideas-discovery-option" data-discovery-mode="random" role="menuitem" type="button">Random ideas</button>
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>
+                ${semanticButtons}
             `
             return
         }
 
-        const categories = getTopicSemanticCategories(topicId)
-        const semanticButtons = categories
-            .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-            .join('')
-
         discoveryMenu.innerHTML = `
-            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>
-            ${semanticButtons}
+            <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Most similar ideas</button>
+            <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Least similar ideas</button>
+            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
         `
     }
 
@@ -364,32 +397,30 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         const badgeByIdeaId = new Map<number, DiscoveryBadgeType>()
         const seen = new Set<number>()
 
-        const addIdea = (idea: Idea, badge: DiscoveryBadgeType): void => {
+        const addIdea = (idea: Idea, badge?: DiscoveryBadgeType, shouldBadge = false): void => {
             if (seen.has(idea.id) || mixedIdeas.length >= IDEA_DISCOVERY_MAX_RESULTS) return
             seen.add(idea.id)
             mixedIdeas.push(idea)
-            badgeByIdeaId.set(idea.id, badge)
+            if (shouldBadge && badge && !badgeByIdeaId.has(idea.id) && badgeByIdeaId.size < 2) {
+                badgeByIdeaId.set(idea.id, badge)
+            }
         }
 
-        if (similarIdeas[0]) addIdea(similarIdeas[0], 'similar')
-        if (oppositeIdeas[0]) addIdea(oppositeIdeas[0], 'opposite')
+        if (similarIdeas[0]) addIdea(similarIdeas[0], 'similar', true)
+        if (oppositeIdeas[0]) addIdea(oppositeIdeas[0], 'different', true)
 
         const remaining = shuffleIdeas([
             ...similarIdeas.slice(1).map((idea) => ({ idea, badge: 'similar' as DiscoveryBadgeType })),
-            ...oppositeIdeas.slice(1).map((idea) => ({ idea, badge: 'opposite' as DiscoveryBadgeType })),
+            ...oppositeIdeas.slice(1).map((idea) => ({ idea, badge: 'different' as DiscoveryBadgeType })),
         ])
 
-        remaining.forEach(({ idea, badge }) => addIdea(idea, badge))
+        remaining.forEach(({ idea, badge }) => addIdea(idea, badge, false))
 
         if (mixedIdeas.length === 0) {
             return createDiscoveryFeed([], new Map())
         }
 
         return createDiscoveryFeed(mixedIdeas.slice(0, IDEA_DISCOVERY_MAX_RESULTS), badgeByIdeaId)
-    }
-
-    function hasOwnIdeaInTopic(topicId: number): boolean {
-        return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
     }
 
     function closeDiscoveryMenu(): void {
@@ -409,23 +440,19 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
             return
         }
 
-        const enabled = hasOwnIdeaInTopic(activeView.topicId)
+        const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, activeView.topicId)
         discoveryRoot.hidden = false
         renderDiscoveryMenuOptions()
 
-        if (!enabled) {
-            discoveryLabel.textContent = selectedSemanticCategory ?? 'Broad selection'
-        } else {
-            discoveryLabel.textContent = discoveryMode === 'all' ? 'Explore ideas' : DISCOVERY_LABELS[discoveryMode]
-        }
+        discoveryLabel.textContent = ownIdeaExists ? DISCOVERY_LABELS[discoveryMode] : (selectedSemanticCategory ?? 'Broad selection')
 
         const options = discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option')
         options.forEach((option) => {
             const mode = option.dataset.discoveryMode
             const semanticCategory = option.dataset.semanticCategory
-            const isOwnMode = enabled && mode === discoveryMode
-            const isBroadSelection = !enabled && !selectedSemanticCategory && mode === 'all'
-            const isSemanticSelection = !enabled && !!selectedSemanticCategory && semanticCategory === selectedSemanticCategory
+            const isOwnMode = ownIdeaExists && mode === discoveryMode
+            const isBroadSelection = !ownIdeaExists && !selectedSemanticCategory && mode === 'all'
+            const isSemanticSelection = !ownIdeaExists && !!selectedSemanticCategory && semanticCategory === selectedSemanticCategory
             option.classList.toggle('selected', isOwnMode || isBroadSelection || isSemanticSelection)
         })
     }
@@ -437,73 +464,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         }
 
         const topicId = activeView.topicId
-        const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-        const hasOwnIdea = hasOwnIdeaInTopic(topicId)
-
-        if (!hasOwnIdea) {
-            if (!selectedSemanticCategory) {
-                // Broad selection: prioritize semantic variety, then fill with remaining ideas.
-                const byCategory = new Map<string, Idea[]>()
-                const withoutCategories: Idea[] = []
-
-                topicIdeas.forEach((idea) => {
-                    if (idea.semanticCategories.length === 0) {
-                        withoutCategories.push(idea)
-                        return
-                    }
-
-                    idea.semanticCategories.forEach((category) => {
-                        const bucket = byCategory.get(category) ?? []
-                        bucket.push(idea)
-                        byCategory.set(category, bucket)
-                    })
-                })
-
-                const broad: Idea[] = []
-                const seen = new Set<number>()
-                const categories = [...byCategory.keys()]
-                let added = true
-                while (added) {
-                    added = false
-                    categories.forEach((category) => {
-                        const bucket = byCategory.get(category)
-                        if (!bucket || bucket.length === 0) return
-                        const nextIdea = bucket.shift()!
-                        if (seen.has(nextIdea.id)) return
-                        seen.add(nextIdea.id)
-                        broad.push(nextIdea)
-                        added = true
-                    })
-                }
-
-                withoutCategories.forEach((idea) => {
-                    if (seen.has(idea.id)) return
-                    seen.add(idea.id)
-                    broad.push(idea)
-                })
-
-                topicIdeas.forEach((idea) => {
-                    if (seen.has(idea.id)) return
-                    seen.add(idea.id)
-                    broad.push(idea)
-                })
-
-                return createDiscoveryFeed(broad, new Map())
-            }
-
-            const categoryFilter = selectedSemanticCategory.toLowerCase()
-            const filtered = topicIdeas.filter((idea) =>
-                idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
-            )
-            return createDiscoveryFeed(filtered, new Map())
-        }
-
-        if (discoveryMode === 'all') {
-            return createDiscoveryFeed(topicIdeas, new Map())
-        }
-
-        const cacheSuffix = discoveryMode === 'random' && showPostPreviewPair ? 'preview' : 'full'
-        const cacheKey = `${topicId}:${discoveryMode}:${cacheSuffix}`
+        const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, topicId)
+        const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
+        const cacheSuffix = discoveryMode === 'all' && showPostPreviewPair ? 'preview' : 'full'
+        const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
         const cached = discoveryCache.get(cacheKey)
         if (cached) {
             return cached
@@ -512,7 +476,64 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         try {
             let discovered: DiscoveryFeed
 
-            if (discoveryMode === 'random') {
+            if (!ownIdeaExists) {
+                const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
+
+                if (!selectedSemanticCategory) {
+                    const byCategory = new Map<string, Idea[]>()
+                    const withoutCategories: Idea[] = []
+
+                    topicIdeas.forEach((idea) => {
+                        if (idea.semanticCategories.length === 0) {
+                            withoutCategories.push(idea)
+                            return
+                        }
+
+                        idea.semanticCategories.forEach((category) => {
+                            const bucket = byCategory.get(category) ?? []
+                            bucket.push(idea)
+                            byCategory.set(category, bucket)
+                        })
+                    })
+
+                    const broad: Idea[] = []
+                    const seen = new Set<number>()
+                    const categories = [...byCategory.keys()]
+                    let added = true
+                    while (added) {
+                        added = false
+                        categories.forEach((category) => {
+                            const bucket = byCategory.get(category)
+                            if (!bucket || bucket.length === 0) return
+                            const nextIdea = bucket.shift()!
+                            if (seen.has(nextIdea.id)) return
+                            seen.add(nextIdea.id)
+                            broad.push(nextIdea)
+                            added = true
+                        })
+                    }
+
+                    withoutCategories.forEach((idea) => {
+                        if (seen.has(idea.id)) return
+                        seen.add(idea.id)
+                        broad.push(idea)
+                    })
+
+                    topicIdeas.forEach((idea) => {
+                        if (seen.has(idea.id)) return
+                        seen.add(idea.id)
+                        broad.push(idea)
+                    })
+
+                    discovered = createDiscoveryFeed(broad, new Map())
+                } else {
+                    const categoryFilter = selectedSemanticCategory.toLowerCase()
+                    const filtered = topicIdeas.filter((idea) =>
+                        idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
+                    )
+                    discovered = createDiscoveryFeed(filtered, new Map())
+                }
+            } else if (discoveryMode === 'all') {
                 const [similarIdeas, oppositeIdeas] = await Promise.all([
                     getDiscoveredIdeasForTopic(
                         params.organizationSlug,
@@ -533,17 +554,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 ])
 
                 if (showPostPreviewPair) {
-                    const previewIdeas: Idea[] = []
-                    const previewBadges = new Map<number, DiscoveryBadgeType>()
-                    if (similarIdeas[0]) {
-                        previewIdeas.push(similarIdeas[0])
-                        previewBadges.set(similarIdeas[0].id, 'similar')
-                    }
-                    if (oppositeIdeas[0] && !previewBadges.has(oppositeIdeas[0].id)) {
-                        previewIdeas.push(oppositeIdeas[0])
-                        previewBadges.set(oppositeIdeas[0].id, 'opposite')
-                    }
-                    discovered = createDiscoveryFeed(previewIdeas, previewBadges)
+                    const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                    discovered = createPostPreviewFeed(similarIdeas, oppositeIdeas, submittedIdea)
                 } else {
                     discovered = createMixedDiscoveryFeed(similarIdeas, oppositeIdeas)
                 }
@@ -556,17 +568,14 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                     discoveryMode,
                     IDEA_DISCOVERY_MAX_RESULTS,
                 )
-                discovered = createDiscoveryFeed(
-                    sourceIdeas,
-                    new Map(),
-                )
+                discovered = createDiscoveryFeed(sourceIdeas, new Map())
             }
 
             discoveryCache.set(cacheKey, discovered)
             return discovered
         } catch (error) {
             console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
-            return createDiscoveryFeed(topicIdeas.slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
+            return createDiscoveryFeed(allIdeas.filter((idea) => idea.topicId === topicId).slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
         }
     }
 
@@ -638,10 +647,11 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
         onIdeaSubmitted: (idea, isFlagged) => {
             allIdeas.unshift(idea)
+            latestSubmittedIdea = idea
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = 'random'
+            discoveryMode = 'all'
             selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
@@ -659,9 +669,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         ideasShell.classList.toggle('ideas-shell--my-ideas', activeView.type === 'my-ideas')
     }
 
-    async function render(options?: { resetListPosition?: boolean; preserveScroll?: boolean; preserveActive?: boolean }): Promise<void> {
+    async function render(options?: { resetListPosition?: boolean; preserveScroll?: boolean; preserveActive?: boolean; stickToBottom?: boolean }): Promise<void> {
         const renderToken = ++discoveryRequestToken
         const previousScrollTop = options?.preserveScroll ? list.scrollTop : 0
+        const previousBottomOffset = options?.preserveScroll ? Math.max(0, list.scrollHeight - (list.scrollTop + list.clientHeight)) : 0
         const previousActiveIndex = options?.preserveActive ? (listController?.getActiveIndex() ?? 0) : 0
         if (options?.resetListPosition) {
             suppressListScrollSync(350)
@@ -707,13 +718,16 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 suppressListScrollSync(350)
                 resetIdeasListToTop()
             } else if (options?.preserveScroll) {
-                list.scrollTop = previousScrollTop
+                if (options.stickToBottom) {
+                    list.scrollTop = Math.max(0, list.scrollHeight - list.clientHeight - previousBottomOffset)
+                } else {
+                    list.scrollTop = previousScrollTop
+                }
             }
             listController.startRotation()
         }
 
-        const hasMoreIdeas = visibleIdeasCache.length > pagedIdeas.length
-        loadMoreBtn.hidden = !(hasMoreIdeas && extraLoadsUsed < MAX_EXTRA_LOADS)
+        updateLoadMoreButton()
 
         renderIdeasComposer({
             activeView,
@@ -729,6 +743,53 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         })
 
         topicModal.renderTopics(activeView)
+    }
+
+    function hasMoreIdeasToLoad(): boolean {
+        return visibleIdeasCache.length > getVisibleLimit() && extraLoadsUsed < MAX_EXTRA_LOADS
+    }
+
+    function isNearBottom(): boolean {
+        return list.scrollHeight - list.clientHeight - list.scrollTop <= LOAD_MORE_SCROLL_THRESHOLD
+    }
+
+    function updateLoadMoreButton(): void {
+        const hasMoreIdeas = hasMoreIdeasToLoad()
+        const shouldShow = hasMoreIdeas && (isLoadingMoreIdeas || isNearBottom())
+        loadMoreBtn.hidden = !shouldShow
+        loadMoreBtn.disabled = isLoadingMoreIdeas || !hasMoreIdeas
+        loadMoreBtn.classList.toggle('ideas-load-more--loading', isLoadingMoreIdeas)
+        loadMoreBtn.setAttribute('aria-busy', String(isLoadingMoreIdeas))
+        loadMoreText.textContent = isLoadingMoreIdeas
+            ? 'Loading 10 more ideas...'
+            : 'Click or scroll down to load 10 more ideas'
+
+        if (loadMoreBtn.parentElement !== list) {
+            list.appendChild(loadMoreBtn)
+        }
+    }
+
+    async function loadMoreIdeas(trigger: 'click' | 'scroll'): Promise<void> {
+        if (isLoadingMoreIdeas || !hasMoreIdeasToLoad()) return
+
+        isLoadingMoreIdeas = true
+        autoLoadArmed = false
+        updateLoadMoreButton()
+
+        const shouldStickToBottom = trigger === 'scroll' || (list.scrollTop + list.clientHeight >= list.scrollHeight - LOAD_MORE_SCROLL_THRESHOLD)
+
+        try {
+            await new Promise<void>((resolve) => {
+                window.setTimeout(resolve, 180)
+            })
+
+            extraLoadsUsed += 1
+            showPostPreviewPair = false
+            await render({ preserveScroll: true, preserveActive: true, stickToBottom: shouldStickToBottom })
+        } finally {
+            isLoadingMoreIdeas = false
+            updateLoadMoreButton()
+        }
     }
 
     // Wire up event listeners
@@ -758,7 +819,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         const selectedMode = option.dataset.discoveryMode as DiscoveryMode | undefined
         const semanticCategory = option.dataset.semanticCategory
 
-        if (hasOwnIdeaInTopic(activeView.topicId)) {
+        if (hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
             if (!selectedMode) return
             discoveryMode = selectedMode
             selectedSemanticCategory = null
@@ -775,10 +836,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     })
 
     loadMoreBtn.addEventListener('click', () => {
-        if (extraLoadsUsed >= MAX_EXTRA_LOADS) return
-        extraLoadsUsed += 1
-        showPostPreviewPair = false
-        void render({ preserveScroll: true, preserveActive: true })
+        void loadMoreIdeas('click')
     })
 
     document.addEventListener('click', (event) => {
@@ -791,6 +849,16 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     list.addEventListener('scroll', () => {
         if (performance.now() < suppressListScrollSyncUntil) return
         listController?.updateFromScroll()
+        const distanceFromBottom = list.scrollHeight - list.clientHeight - list.scrollTop
+        if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
+            if (autoLoadArmed && hasMoreIdeasToLoad()) {
+                autoLoadArmed = false
+                void loadMoreIdeas('scroll')
+            }
+        } else {
+            autoLoadArmed = true
+        }
+        updateLoadMoreButton()
     }, { passive: true })
 
     list.addEventListener('click', (event) => {

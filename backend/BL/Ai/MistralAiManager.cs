@@ -137,7 +137,7 @@ public sealed class MistralAiManager : IAiManager
                 new
                 {
                     role = "system",
-                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes."
+                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return only clearly similar ideas; for difference tasks, return only clearly contrasting ideas; avoid borderline overlap."
                 },
                 new
                 {
@@ -231,7 +231,7 @@ public sealed class MistralAiManager : IAiManager
         return $$"""
 Categorize each idea semantically. One idea may belong to multiple categories.
 
-Existing categories already used in this topic (reuse these exact labels whenever possible):
+These are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:
 {{existingCategoryList}}
 
 Ideas:
@@ -241,6 +241,7 @@ Rules:
 - Use short, human-readable category names.
 - Max {{maxCategoriesPerIdea}} categories per idea.
 - Prefer reusing an existing category label when it is semantically close enough.
+- Avoid near-duplicate labels when an existing category already covers the same meaning.
 - Do not invent idea indexes.
 - Avoid creating near-duplicate labels if an existing category already fits.
 - Return strict JSON only in this shape:
@@ -304,8 +305,8 @@ Rules:
     private static string BuildIdeaRankingPrompt(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         var relationGoal = preferDifferent
-            ? "Rank ideas from MOST DIFFERENT perspective first compared to the reference idea."
-            : "Rank ideas from MOST SIMILAR meaning first compared to the reference idea.";
+            ? "Return only ideas that clearly CONTRAST with the reference idea. Prefer ideas that feel opposite, divergent, or meaningfully different. Skip weakly-related, neutral, or borderline ideas."
+            : "Return only ideas that clearly MATCH the reference idea. Prefer ideas that share the same core meaning, theme, or intent. Skip weakly-related, neutral, or borderline ideas.";
 
         var candidates = string.Join("\n", candidateIdeas.Select((idea, index) => $"[{index}] {idea}"));
 
@@ -318,7 +319,8 @@ Candidate ideas (use only these indexes):
 
 Task:
 - {{relationGoal}}
-- Return exactly {{limit}} indexes if possible, otherwise return all valid indexes.
+- Treat the result as a pure set for this relation; do not include ideas that would also reasonably fit the opposite relation.
+- Return up to {{limit}} indexes, but fewer is better than including borderline ideas.
 - Do not invent indexes.
 - Return strict JSON only with this schema:
 {"rankedIndexes":[0,1,2]}

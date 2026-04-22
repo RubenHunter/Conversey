@@ -62,7 +62,7 @@ public class IdeasController : ControllerBase
         int topicId,
         [FromQuery] Guid youthId,
         [FromQuery] string category = "random",
-        [FromQuery] int limit = 15)
+        [FromQuery] int limit = 30)
     {
         if (youthId == Guid.Empty)
         {
@@ -74,7 +74,7 @@ public class IdeasController : ControllerBase
             return BadRequest("category must be one of: similar, different, random.");
         }
 
-        int boundedLimit = Math.Clamp(limit, 1, 15);
+        int boundedLimit = Math.Clamp(limit, 1, 30);
 
         try
         {
