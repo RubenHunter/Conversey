@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
 using Conversey.BL.Administration;
-using Microsoft.AspNetCore.WebSockets;
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
