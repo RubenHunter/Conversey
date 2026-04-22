@@ -13,6 +13,7 @@ using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,25 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         builder.Configuration.GetConnectionString("Default")
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options => 
+{
+    options.SignIn.RequireConfirmedAccount = true;
+    options.Password.RequiredLength = 6;
+})
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ConverseyDbContext>();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/access-denied";
+    options.LogoutPath = "/logout";
+});
+
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+
 
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
@@ -111,13 +131,16 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapRazorPages();
 
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{projectId}/{action=Landing}/{id?}")
+    pattern: "{controller=Project}/{action=Landing}/{id?}")
     .WithStaticAssets();
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
@@ -135,8 +158,78 @@ void InitializeDatabase(bool drop)
 {
     using (var scope = app.Services.CreateScope())
     {
-        var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
-        if (!dbCtx.CreateDatabase(drop)) return;
-        DataSeeder.Seed(dbCtx);
+        var services = scope.ServiceProvider;
+        var dbCtx = services.GetRequiredService<ConverseyDbContext>();
+        // Create database schema first (including Identity tables)
+        var created = dbCtx.CreateDatabase(drop);
+        // Then seed Identity and Roles
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        SeedIdentity(userManager, roleManager);
+        if (created)
+        {
+            DataSeeder.Seed(dbCtx);
+        }
+    }
+}
+
+void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+{
+    // Create roles if they don't exist
+    if (!roleManager.RoleExistsAsync("User").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("User")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("Admin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+    }
+
+    EnsureSeedUser(userManager, "admin@hogeschool.nova.be");
+    EnsureSeedUser(userManager, "admin@stad.linden.be");
+}
+
+void EnsureSeedUser(UserManager<IdentityUser> userManager, string email)
+{
+    var user = userManager.FindByEmailAsync(email).Result;
+    if (user == null)
+    {
+        user = new IdentityUser
+        {
+            Email = email,
+            UserName = email,
+            EmailConfirmed = true
+        };
+        userManager.CreateAsync(user, "Test123!").Wait();
+    }
+    else
+    {
+        var changed = false;
+        if (user.UserName != email)
+        {
+            user.UserName = email;
+            changed = true;
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            userManager.UpdateAsync(user).Wait();
+        }
+
+        if (!userManager.HasPasswordAsync(user).Result)
+        {
+            userManager.AddPasswordAsync(user, "Test123!").Wait();
+        }
+    }
+
+    if (!userManager.IsInRoleAsync(user, "Admin").Result)
+    {
+        userManager.AddToRoleAsync(user, "Admin").Wait();
     }
 }

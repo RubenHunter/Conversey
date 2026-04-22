@@ -1,4 +1,4 @@
-@import "tailwindcss" /*source("..")*/;
+@import "tailwindcss" source("..");
 @import "./styles/theme.css";
 @import "./styles/shared/shared.css";
 @import "./styles/shared/topbar.css";
