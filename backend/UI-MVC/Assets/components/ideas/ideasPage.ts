@@ -54,15 +54,6 @@ interface DiscoveryFeed {
     badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>
 }
 
-function shuffleIdeas<T>(items: T[]): T[] {
-    const next = [...items]
-    for (let index = next.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1))
-        ;[next[index], next[swapIndex]] = [next[swapIndex], next[index]]
-    }
-    return next
-}
-
 function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
     return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
 }
@@ -382,6 +373,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     let showPostPreviewPair = false
     let latestSubmittedIdea: Idea | null = null
     let isLoadingMoreIdeas = false
+    let autoLoadArmed = true
 
     function resetIdeasListToTop(): void {
         list.scrollTo({top: 0, behavior: 'auto'})
@@ -394,6 +386,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     function resetPaging(): void {
         extraLoadsUsed = 0
         isLoadingMoreIdeas = false
+        autoLoadArmed = true
     }
 
     function getMaxExtraLoads(): number {
@@ -794,7 +787,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         // Create new list controller
         listController = createIdeasListController({
             list,
-            ideas: visibleIdeasCache,
+            ideas: pagedIdeas,
             activeView,
             topics,
             flaggedIdeaIds,
@@ -892,8 +885,8 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
         isLoadingMoreIdeas = true
         updateLoadMoreButton()
 
-        // Scroll the button into center view and suppress sync for the full countdown
-        suppressListScrollSync(2500)
+        // Scroll the button into center view and briefly pause auto-scroll while it activates
+        suppressListScrollSync(1000)
         loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
         const firstNewIndex = getVisibleLimit()
@@ -996,8 +989,20 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     document.addEventListener('keydown', handleKeyDown)
 
     list.addEventListener('scroll', () => {
+        if (performance.now() < suppressListScrollSyncUntil) return
         listController?.updateFromScroll()
+        const distanceFromBottom = list.scrollHeight - list.clientHeight - list.scrollTop
+        if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
+            if (autoLoadArmed && hasMoreIdeasToLoad()) {
+                autoLoadArmed = false
+                void loadMoreIdeas()
+            }
+        } else {
+            autoLoadArmed = true
+        }
+        updateLoadMoreButton()
     }, { passive: true })
+
 
     list.addEventListener('click', (event) => {
         const target = event.target as HTMLElement
