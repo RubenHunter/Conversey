@@ -11,4 +11,6 @@ public interface IProjectManager
     Youth GetYouth(Project project, Guid youthId);
 
     Youth AddYouth(Guid token, string email, Slug projectId);
+    
+    IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
 }

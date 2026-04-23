@@ -52,6 +52,14 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
+    public IReadOnlyCollection<Project> ReadAllProjectsFromWorkspaceId(Slug workspaceId)
+    {
+        return _dbContext.Projects
+            .Include(p => p.Workspace)
+            .Where(p => p.Workspace.Id == workspaceId)
+            .ToList()
+            .AsReadOnly();
+    }
 }
 
 #region ProjectConfig

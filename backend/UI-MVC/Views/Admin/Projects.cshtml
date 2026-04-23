@@ -1,13 +1,27 @@
+@model IReadOnlyCollection<Conversey.BL.Domain.Administration.Project>
 @{
     ViewData["Title"] = "Projects";
-    var tableViewData = new ViewDataDictionary(ViewData)
+    var projects = Model ?? Array.Empty<Conversey.BL.Domain.Administration.Project>();
+    var tableModel = new Conversey.UI_MVC.Models.Admin.AdminTableViewModel
     {
-        ["SectionTitle"] = "All Projects",
-        ["TableDescription"] = "Manage all projects from one place.",
-        ["CreateUrl"] = Url.Action("CreateProject", "Admin"),
-        ["CreateButtonLabel"] = "Create new project",
-        ["EmptyState"] = "Projects will show up here once they are created.",
-        ["ColumnHeaders"] = new[] { "Name", "Status", "Created", "Actions" }
+        SectionTitle = "All Projects",
+        TableDescription = "Manage all projects from one place.",
+        CreateUrl = Url.Action("CreateProject", "Admin") ?? "#",
+        CreateButtonLabel = "Create new project",
+        EmptyState = "Projects will show up here once they are created.",
+        ColumnHeaders = ["Name", "Status", "Created", "Actions"],
+        Rows = projects
+            .Select(project => new Conversey.UI_MVC.Models.Admin.AdminTableRowViewModel
+            {
+                Cells =
+                [
+                    project.Name ?? "-",
+                    project.Status.ToString(),
+                    project.StartDate == default ? "-" : project.StartDate.ToString("yyyy-MM-dd"),
+                    "View"
+                ]
+            })
+            .ToList()
     };
 }
 
@@ -20,7 +34,6 @@
                 ← Back to admin panel
             </a>
         </div>
-
-        @await Html.PartialAsync("_AdminTableWithCreate", null, tableViewData)
+        @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
     </div>
 </div>

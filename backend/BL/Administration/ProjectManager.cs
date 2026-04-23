@@ -54,6 +54,11 @@ public class ProjectManager: IProjectManager
         return youth;
     }
 
+    public IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId)
+    {
+        return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
+    }
+
 
     private void Validate(object obj)
     {
