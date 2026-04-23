@@ -12,9 +12,16 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         workspaceContext.CurrentWorkspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
         if (workspaceContext.CurrentWorkspace == null)
         {
+            var path = context.Request.Path;
+            if (path.StartsWithSegments("/Identity", StringComparison.OrdinalIgnoreCase))
+            {
+                return next(context);
+            }
+
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return Task.CompletedTask;
         }
+
         return next(context);
     }
 }

@@ -13,11 +13,14 @@ using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -48,7 +51,7 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => 
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequiredLength = 6;
@@ -58,13 +61,36 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/login";
-    options.AccessDeniedPath = "/access-denied";
-    options.LogoutPath = "/logout";
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.LogoutPath = "/Identity/Account/Logout";
 });
 
 builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole("Admin");
+        policy.AddRequirements(new WorkspaceAdminRequirement());
+    });
+});
+
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(viteDevCorsPolicy, policy =>
+//     {
+//         policy.WithOrigins(
+//                 "http://localhost:4173",
+//                 "https://localhost:4173",
+//                 "http://localhost:4180",
+//                 "https://localhost:7093")
+//             .AllowAnyHeader()
+//             .AllowAnyMethod()
+//             .AllowCredentials();
+//     });
+// });
 
 
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
@@ -115,6 +141,7 @@ builder.Services.AddScoped<IAiManager>(provider =>
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
 builder.Services.AddScoped<WorkspaceMiddleware>();
+builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
 
 TypeDescriptor.AddAttributes(
@@ -138,6 +165,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
+
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseCors(viteDevCorsPolicy);
+// }
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -171,7 +203,7 @@ void InitializeDatabase(bool drop)
         // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
         // Then seed Identity and Roles
-        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
         if (created)
@@ -181,7 +213,7 @@ void InitializeDatabase(bool drop)
     }
 }
 
-void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
 {
     // Create roles if they don't exist
     if (!roleManager.RoleExistsAsync("User").Result)
@@ -193,20 +225,22 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
         roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
     }
 
-    EnsureSeedUser(userManager, "admin@hogeschool.nova.be");
-    EnsureSeedUser(userManager, "admin@stad.linden.be");
+    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
+    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
 }
 
-void EnsureSeedUser(UserManager<IdentityUser> userManager, string email)
+void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
 {
+    var normalizedWorkspaceId = Slug.FromName(workspaceId);
     var user = userManager.FindByEmailAsync(email).Result;
     if (user == null)
     {
-        user = new IdentityUser
+        user = new ApplicationUser
         {
             Email = email,
             UserName = email,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            WorkspaceId = normalizedWorkspaceId
         };
         userManager.CreateAsync(user, "Test123!").Wait();
     }
@@ -222,6 +256,12 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email)
         if (!user.EmailConfirmed)
         {
             user.EmailConfirmed = true;
+            changed = true;
+        }
+        
+        if (user.WorkspaceId != normalizedWorkspaceId)
+        {
+            user.WorkspaceId = normalizedWorkspaceId;
             changed = true;
         }
 

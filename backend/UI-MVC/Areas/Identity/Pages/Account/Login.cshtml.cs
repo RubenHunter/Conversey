@@ -7,10 +7,11 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using Conversey.DAL;
+using Conversey.UI_MVC.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
@@ -19,12 +20,20 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly WorkspaceContext _workspaceContext;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            WorkspaceContext workspaceContext,
+            ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
+            _workspaceContext = workspaceContext;
             _logger = logger;
         }
 
@@ -109,11 +118,30 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                var user = await _userManager.FindByEmailAsync(Input.Email);
+                if (user == null)
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    return Page();
+                }
+
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
+                    var workspace = _workspaceContext.CurrentWorkspace;
+                    if (workspace == null ||
+                        string.IsNullOrWhiteSpace(user.WorkspaceId.Text) ||
+                        user.WorkspaceId != workspace.Id)
+                    {
+                        _logger.LogWarning("Workspace mismatch for login attempt.");
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+
+                    await _signInManager.SignInAsync(user, Input.RememberMe);
                     _logger.LogInformation("User logged in.");
                     return LocalRedirect(Url.Content("~/admin"));
                 }
