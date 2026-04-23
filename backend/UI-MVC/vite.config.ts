@@ -32,6 +32,16 @@ export default defineConfig(async () => {
         },
         server: {
             strictPort: true,
+            // host: true,
+            // cors: {
+            //     origin: [
+            //         'http://localhost:4180',
+            //         'https://localhost:7093',
+            //         'http://hogeschool-nova.localhost:4180',
+            //         'https://hogeschool-nova.localhost:7093'
+            //     ],
+            //     credentials: true
+            // }
         },
         optimizeDeps: {
             include: []
