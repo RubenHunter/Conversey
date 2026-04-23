@@ -12,7 +12,11 @@ export interface ProjectContext {
 }
 
 export function navigate(to: string) {
-	location.hash = to;
+	window.location.href = `/${parseProject()}/${to}`;
+}
+
+function parseProject() {
+	return window.location.pathname.split('/')[1];
 }
 
 function parseRoute(): ProjectContext {
@@ -20,7 +24,7 @@ function parseRoute(): ProjectContext {
 	const domain = window.location.hostname
 
 	const organizationSlug = domain.split(".")[0]
-	const projectSlug = path.split('/')[1];
+	const projectSlug = parseProject();
 
 	return { organizationSlug, projectSlug }
 }
