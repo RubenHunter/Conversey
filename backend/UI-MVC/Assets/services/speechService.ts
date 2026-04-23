@@ -10,7 +10,7 @@ const SPEECH_CONFIG = {
   TRANSCRIBE_INTERVAL_MS: 2000,
   MIN_AUDIO_SIZE: 60000,
   DOT_ANIMATION_INTERVAL_MS: 500,
-  TRANSCRIBE_MODEL: 'voxtral-mini-transcribe-2507',
+  TRANSCRIBE_MODEL: 'voxtral-mini-latest',
   TTS_MODEL: 'voxtral-mini-tts-latest',
   DEFAULT_LANGUAGE: 'nl',
   AUDIO_TIMEOUT_MS: 200,
