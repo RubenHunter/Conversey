@@ -24,6 +24,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages()
+    .AddRazorPagesOptions(options =>
+    {
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
+    });
 
 builder.Services.AddViteServices(options =>
 {
@@ -61,9 +69,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Identity/Account/Login";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-    options.LogoutPath = "/Identity/Account/Logout";
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/access-denied";
+    options.LogoutPath = "/logout";
 });
 
 builder.Services.AddAuthentication();

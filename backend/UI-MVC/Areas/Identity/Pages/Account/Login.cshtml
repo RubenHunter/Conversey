@@ -1,5 +1,7 @@
 @page
+@using Conversey.UI_MVC.Models
 @model LoginModel
+@inject WorkspaceContext WorkspaceContext
 
 @{
     ViewData["Title"] = "Log in";
@@ -8,7 +10,8 @@
 <div class="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
     <div class="w-full max-w-md">
         <h1 class="text-3xl font-bold mb-8 text-center">@ViewData["Title"]</h1>
-        <section class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-l font-semibold mb-4 text-center">@WorkspaceContext.CurrentWorkspace.Name</h2>
+        <section class="bg-white rounded-lg shadow-md p-10 m-5">
             <form id="account" method="post">
                 <h2 class="text-xl font-semibold mb-4">Use a local account to log in.</h2>
                 <hr class="mb-4" />

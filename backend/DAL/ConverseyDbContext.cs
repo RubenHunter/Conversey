@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-public class ConverseyDbContext : IdentityDbContext<IdentityUser>
+public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
 {
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<WorkspaceAdmin> WorkspaceAdmins { get; set; }
@@ -73,6 +73,13 @@ public class ConverseyDbContext : IdentityDbContext<IdentityUser>
 
         modelBuilder.Entity<WorkspaceAdmin>()
             .HasOne(wa => wa.Workspace);
+
+        modelBuilder.Entity<ApplicationUser>()
+            .Property(user => user.WorkspaceId)
+            .HasConversion(
+                workspaceId => workspaceId.Text,
+                value => Slug.FromName(value ?? string.Empty))
+            .HasMaxLength(128);
     }
 
     public bool CreateDatabase(bool resetDatabase)
