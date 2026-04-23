@@ -26,6 +26,7 @@ interface CreateIdeaPanelControllerParams {
     unreactToResponse: (idea: Idea, responseId: number, emoji: string) => Promise<ResponseReactionSummary[]>
     reactToIdea: (idea: Idea, emoji: string) => Promise<IdeaReactionSummary[]>
     unreactToIdea: (idea: Idea, emoji: string) => Promise<IdeaReactionSummary[]>
+    onCopyIdea: (idea: Idea) => void
     onIdeaReactionsUpdated: (ideaId: number, reactions: IdeaReactionSummary[]) => void
 }
 
@@ -45,6 +46,7 @@ export function createIdeaPanelController({
     unreactToResponse,
     reactToIdea,
     unreactToIdea,
+    onCopyIdea,
     onIdeaReactionsUpdated,
 }: CreateIdeaPanelControllerParams): IdeaPanelController {
     const panelBackdrop = root.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
@@ -52,6 +54,7 @@ export function createIdeaPanelController({
     const panelClose = root.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const panelBadges = root.querySelector<HTMLDivElement>('#idea-panel-badges')!
     const panelEditToggle = root.querySelector<HTMLButtonElement>('#idea-panel-edit-toggle')!
+    const panelCopyButton = root.querySelector<HTMLButtonElement>('#idea-panel-copy')!
     const panelText = root.querySelector<HTMLParagraphElement>('#idea-panel-text')!
     const panelPost = root.querySelector<HTMLDivElement>('#idea-panel-post')!
     const panelIdeaEmoji = root.querySelector<HTMLButtonElement>('#idea-panel-emoji')!
@@ -425,6 +428,7 @@ export function createIdeaPanelController({
         }
 
         panelEditToggle.hidden = !isEditableIdea(idea)
+        panelCopyButton.hidden = idea.authorType === 'self'
         if (!isEditingIdea || !isEditableIdea(idea)) {
             panelText.textContent = idea.body
             panelEditInput.value = idea.body
@@ -569,6 +573,16 @@ export function createIdeaPanelController({
     panelEditToggle.addEventListener('click', (event) => {
         event.stopPropagation()
         enterEditMode()
+    })
+
+    panelCopyButton.addEventListener('click', (event) => {
+        event.stopPropagation()
+        if (!currentIdea || currentIdea.authorType === 'self') return
+        const ideaToCopy = currentIdea
+        close()
+        window.setTimeout(() => {
+            onCopyIdea(ideaToCopy)
+        }, 220)
     })
 
     panelEditCancel.addEventListener('click', () => {
