@@ -77,6 +77,11 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _aiConfig.Alternative = alternative;
     }
 
+    public void SetAiCategorizationBehavior(bool throwOnCategorize)
+    {
+        _aiConfig.ThrowOnCategorize = throwOnCategorize;
+    }
+
     public void Dispose()
     {
         _serviceProvider.Dispose();
@@ -215,6 +220,11 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
         {
+            if (config.ThrowOnCategorize)
+            {
+                throw new InvalidOperationException("Test categorization failure");
+            }
+
             var result = new Dictionary<int, IReadOnlyList<string>>();
             var canonicalExisting = existingCategories
                 .Select(category => (category ?? string.Empty).Trim())
@@ -295,6 +305,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
     {
         public bool IsAllowed { get; set; } = true;
         public string Alternative { get; set; } = "Please rephrase your idea in a respectful way.";
+        public bool ThrowOnCategorize { get; set; }
     }
 }
 

@@ -6,6 +6,7 @@ import {
     IDEA_DISCOVERY_MAX_RESULTS,
     getIdeasContext,
     getIdeasYouthToken,
+    saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
     type IdeaDiscoveryCategory,
 } from '../../services/ideaService.ts'
@@ -22,6 +23,7 @@ import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import { resolveInitialIdeasView } from './initialView.ts'
 import { createIdeaPanelController } from './ideaPanel.ts'
 import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
+import { createFirstIdeaContactDialogController } from './firstIdeaContactDialog.ts'
 import { renderIdeasComposer } from './composer.ts'
 import type { ActiveView } from './types.ts'
 import { renderIdeasHeader } from './ideasHeader.ts'
@@ -338,6 +340,33 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
                 <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
             </div>
         </div>
+
+        <div id="first-idea-contact-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
+        <div id="first-idea-contact-dialog" class="modal first-idea-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-title" hidden>
+            <div class="modal-header">
+                <h3 id="first-idea-contact-title">Stay in touch about your idea</h3>
+            </div>
+            <div class="modal-body first-idea-contact-body">
+                <p class="first-idea-contact-copy">You can leave your email if you want us to contact you about your ideas.</p>
+                <label class="first-idea-contact-field" for="first-idea-contact-email">
+                    <span class="first-idea-contact-label">Email address</span>
+                    <input id="first-idea-contact-email" class="first-idea-contact-input" type="email" autocomplete="email" placeholder="you@example.com" />
+                </label>
+                <label class="first-idea-contact-check">
+                    <input id="first-idea-contact-permission" class="first-idea-contact-checkbox" type="checkbox" />
+                    <span>I agree to be contacted about this idea.</span>
+                </label>
+                <a class="first-idea-contact-privacy-link" href="https://treecompany.be/privacyverklaring/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                <label class="first-idea-contact-check first-idea-contact-check--remember">
+                    <input id="first-idea-contact-remember" class="first-idea-contact-checkbox" type="checkbox" />
+                    <span>Remember my choice</span>
+                </label>
+            </div>
+            <div class="first-idea-contact-actions">
+                <button id="first-idea-contact-deny" class="safety-review-btn first-idea-contact-deny" type="button">Deny</button>
+                <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>Allow contact</button>
+            </div>
+        </div>
     `
 
     const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
@@ -362,6 +391,7 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     const discoveryTrigger = container.querySelector<HTMLButtonElement>('#ideas-discovery-trigger')!
     const discoveryLabel = container.querySelector<HTMLSpanElement>('#ideas-discovery-label')!
     const discoveryMenu = container.querySelector<HTMLDivElement>('#ideas-discovery-menu')!
+    const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
 
     let discoveryMode: DiscoveryMode = 'all'
     let selectedSemanticCategory: string | null = null
@@ -374,6 +404,11 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
     let latestSubmittedIdea: Idea | null = null
     let isLoadingMoreIdeas = false
     let autoLoadArmed = true
+
+    const firstIdeaContactDialog = createFirstIdeaContactDialogController({
+        root: container,
+        storageKey: firstIdeaContactStorageKey,
+    })
 
     function resetIdeasListToTop(): void {
         list.scrollTo({top: 0, behavior: 'auto'})
@@ -398,6 +433,15 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     function getVisibleLimit(): number {
         return IDEAS_BATCH_SIZE * (1 + extraLoadsUsed)
+    }
+
+    function persistContactEmailIfGranted(choice: { email: string; permissionGranted: boolean; remembered: boolean } | null): void {
+        if (!choice?.permissionGranted || choice.email.trim().length === 0) return
+
+        void saveYouthContactEmail(params.organizationSlug, params.projectSlug, youthToken, choice.email.trim())
+            .catch((error) => {
+                console.warn('[ideas] failed to persist contact email', error)
+            })
     }
 
     function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
@@ -1063,6 +1107,10 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
         submitBtn.disabled = true
         submitBtn.textContent = 'Checking...'
+
+        void firstIdeaContactDialog.open().then((choice) => {
+            persistContactEmailIfGranted(choice)
+        })
 
         try {
             await submitHandler.submit(body, activeView)

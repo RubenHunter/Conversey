@@ -442,26 +442,38 @@ public class IdeaManager: IIdeaManager
 
     private void AssignSemanticCategoriesToIdea(Idea idea, int topicId)
     {
-        var existingCategories = LoadTopicSemanticCategories(topicId);
-        var categorization = _aiManager
-            .CategorizeIdeas(
-                new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
-                existingCategories,
-                MaxCategoriesPerIdea)
-            .GetAwaiter()
-            .GetResult();
+        string[] categories = { "General ideas" };
 
-        var rawCategories = categorization.TryGetValue(0, out var assigned)
-            ? assigned
-            : Array.Empty<string>();
+        try
+        {
+            var existingCategories = LoadTopicSemanticCategories(topicId);
+            var categorization = _aiManager
+                .CategorizeIdeas(
+                    new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
+                    existingCategories,
+                    MaxCategoriesPerIdea)
+                .GetAwaiter()
+                .GetResult();
 
-        var canonical = CanonicalizeSemanticCategories(rawCategories, existingCategories)
-            .Take(MaxCategoriesPerIdea)
-            .ToArray();
+            var rawCategories = categorization.TryGetValue(0, out var assigned)
+                ? assigned
+                : Array.Empty<string>();
 
-        idea.SemanticCategories = canonical.Length > 0
-            ? canonical
-            : new[] { "General ideas" };
+            var canonical = CanonicalizeSemanticCategories(rawCategories, existingCategories)
+                .Take(MaxCategoriesPerIdea)
+                .ToArray();
+
+            if (canonical.Length > 0)
+            {
+                categories = canonical;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaDiscovery] Semantic categorization failed for idea {idea.Id}: {ex.Message}");
+        }
+
+        idea.SemanticCategories = categories;
 
         _repository.UpdateIdea(idea);
     }

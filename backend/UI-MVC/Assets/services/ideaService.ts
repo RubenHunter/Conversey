@@ -211,3 +211,15 @@ export async function getDiscoveredIdeasForTopic(
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }
 
+export async function saveYouthContactEmail(
+    workspaceSlug: string,
+    projectSlug: string,
+    youthToken: string,
+    email: string,
+): Promise<void> {
+    await apiFetch<void>(`/workspaces/${workspaceSlug}/projects/${projectSlug}/youth/${encodeURIComponent(youthToken)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ email }),
+    })
+}
+
