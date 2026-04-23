@@ -1,4 +1,4 @@
-import { getProject } from '../services/projectService.ts'
+import { getProject } from '../services/projectService'
 import {ProjectContext, render} from "../main";
 
 function isSurveyCompleted(projectId: number): boolean {

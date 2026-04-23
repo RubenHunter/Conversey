@@ -1,5 +1,5 @@
-import { getProject } from '../services/projectService.ts'
-import {ProjectContext, render} from "../main";
+import { getProject } from '../services/projectService'
+import {navigate, ProjectContext, render} from "../main";
 
 function isSurveyCompleted(projectId: number): boolean {
     return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
@@ -9,7 +9,7 @@ async function renderCompletedPage(container: HTMLElement, params: ProjectContex
     const project = await getProject(params.organizationSlug, params.projectSlug)
 
     if (!isSurveyCompleted(project.id)) {
-        //TODO await navigate('survey', { replace: true })
+        navigate('survey')
         return
     }
 
@@ -26,7 +26,7 @@ async function renderCompletedPage(container: HTMLElement, params: ProjectContex
     `
 
     const redirectTimer = window.setTimeout(() => {
-        //TODO void navigate('ideas', { replace: true })
+        navigate("ideas");
     }, 3200)
 
     window.addEventListener(
