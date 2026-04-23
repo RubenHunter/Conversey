@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Projects";
+    var tableViewData = new ViewDataDictionary(ViewData)
+    {
+        ["SectionTitle"] = "All Projects",
+        ["TableDescription"] = "Manage all projects from one place.",
+        ["CreateUrl"] = Url.Action("CreateProject", "Admin"),
+        ["CreateButtonLabel"] = "Create new project",
+        ["EmptyState"] = "Projects will show up here once they are created.",
+        ["ColumnHeaders"] = new[] { "Name", "Status", "Created", "Actions" }
+    };
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="mb-6">
+            <a
+                href="@Url.Action("Index", "Admin")"
+                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                ← Back to admin panel
+            </a>
+        </div>
+
+        @await Html.PartialAsync("_AdminTableWithCreate", null, tableViewData)
+    </div>
+</div>

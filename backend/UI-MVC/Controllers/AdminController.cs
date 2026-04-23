@@ -12,4 +12,16 @@ public class AdminController : Controller
     {
         return View();
     }
+
+    [HttpGet("/admin/projects")]
+    public IActionResult Projects()
+    {
+        return View();
+    }
+
+    [HttpGet("/admin/projects/new")]
+    public IActionResult CreateProject()
+    {
+        return View();
+    }
 }
