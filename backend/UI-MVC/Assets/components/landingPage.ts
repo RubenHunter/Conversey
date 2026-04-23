@@ -1,6 +1,5 @@
-import type { RouteParams } from '../utils/router.ts'
-import { navigate } from '../utils/router.ts'
 import { getProject } from '../services/projectService.ts'
+import {ProjectContext, render} from "../main";
 
 function isSurveyCompleted(projectId: number): boolean {
     return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
@@ -33,7 +32,7 @@ function getOrganizationBadge(organizationName: string, organizationSlug: string
     return clean.slice(0, 3).toUpperCase() || 'ORG'
 }
 
-export async function renderLandingPage(container: HTMLElement, params: RouteParams): Promise<void> {
+export async function renderLandingPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
     const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
@@ -52,18 +51,14 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                 <p class="text-center mb-8 completed-text">
                     You have already filled in this survey. Thank you for your participation!
                 </p>
-                <button
+                <a
                     id="btn-ideas"
-                    class="w-full py-3 px-6 rounded-xl font-semibold text-base transition-all completed-cta">
+                    class="w-full py-3 px-6 rounded-xl font-semibold text-base transition-all completed-cta"
+                    href="${params.projectSlug}/ideas">
                     Continue to Ideas
-                </button>
+                </a>
             </div>
         `
-
-        const ideasButton = container.querySelector<HTMLButtonElement>('#btn-ideas')
-        ideasButton?.addEventListener('click', () => {
-            void navigate('ideas')
-        })
         return
     }
 
@@ -102,18 +97,18 @@ export async function renderLandingPage(container: HTMLElement, params: RoutePar
                 </div>
 
                 <div class="flex justify-center relative landing-start-wrap">
-                    <button
+                    <a
                         id="btn-start-survey"
-                        class="font-bold transition-all active:scale-[0.95] landing-start-btn">
+                        class="font-bold transition-all active:scale-[0.95] landing-start-btn"
+                        href="${params.projectSlug}/survey">
                         Start Survey
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
     `
-
-    const startButton = container.querySelector<HTMLButtonElement>('#btn-start-survey')
-    startButton?.addEventListener('click', () => {
-        navigate('survey')
-    })
 }
+
+render(renderLandingPage)
+
+

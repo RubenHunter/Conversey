@@ -1,5 +1,3 @@
-import type {RouteParams} from '../../utils/router.ts'
-import {navigate} from '../../utils/router.ts'
 import {getProject} from '../../services/projectService.ts'
 import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
 import {QuestionType} from '../../models/question.ts'
@@ -13,8 +11,9 @@ import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
+import {navigate, ProjectContext, render} from "../../main";
 
-export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
+export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const completedKey = `survey-completed-${project.id}`
 
@@ -32,7 +31,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         `
 
         const redirectTimer = window.setTimeout(() => {
-            void navigate('ideas', { replace: true })
+            void navigate('ideas')
         }, 3200)
 
         window.addEventListener(
@@ -83,7 +82,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-submit" class="survey-submit-btn" disabled>Submit Survey</button>
+                    <button id="btn-submit" class="survey-submit-btn">Submit Survey</button>
                 </div>
             </div>
         </div>
@@ -170,8 +169,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         headerController.updateProgress(answeredCount, questions.length)
 
         const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
-
-        submitBtn.disabled = !isReady
+        
         actionBar.classList.toggle('survey-ready', isReady)
     }
 
@@ -380,8 +378,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
-
-        submitBtn.disabled = true
+        
         submitBtn.textContent = 'Submitting...'
 
         try {
@@ -389,11 +386,12 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             localStorage.setItem(completedKey, 'true')
             clearSurveyProgress(project.id)
             cleanupSurveyPage()
-            await navigate('completed')
+            navigate("completed");
         } catch {
-            submitBtn.disabled = false
             submitBtn.textContent = 'Submit Survey'
             alert('Failed to submit survey. Please try again.')
         }
     })
 }
+
+render(renderSurveyPage)

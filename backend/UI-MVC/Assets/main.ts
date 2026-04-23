@@ -1,20 +1,40 @@
 import "./main.css";
-import { initRouter, registerView, navigate, getInitialView } from './utils/router.ts'
-import { renderLandingPage } from './components/landingPage.ts'
-import { renderSurveyPage } from './components/survey/surveyPage.ts'
-import { renderCompletedPage } from './components/completedPage.ts'
-import { renderIdeasPage } from './components/ideas/ideasPage.ts'
+
+let app: HTMLDivElement;
 
 function init(): void {
-	initRouter()
+	app = document.querySelector<HTMLDivElement>('#app')
+}
 
-	registerView('landing', renderLandingPage)
-	registerView('survey', renderSurveyPage)
-	registerView('completed', renderCompletedPage)
-	registerView('ideas', renderIdeasPage)
+export interface ProjectContext {
+	organizationSlug: string
+	projectSlug: string
+}
 
-	const initialView = getInitialView()
-	void navigate(initialView, { replace: true })
+export function navigate(to: string) {
+	location.hash = to;
+}
+
+function parseRoute(): ProjectContext {
+	const path = window.location.pathname
+	const domain = window.location.hostname
+
+	const organizationSlug = domain.split(".")[0]
+	const projectSlug = path.split('/')[1];
+
+	return { organizationSlug, projectSlug }
+}
+
+function getApp():HTMLDivElement {
+	if (!app) {
+		throw new Error('App container #app not found')
+	}
+	return app;
+}
+
+type ViewRenderer = (container: HTMLElement, params: ProjectContext) => void | Promise<void>
+export function render(renderer: ViewRenderer): void {
+	renderer(getApp(), parseRoute());
 }
 
 init()
