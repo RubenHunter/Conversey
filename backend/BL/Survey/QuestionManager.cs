@@ -27,17 +27,21 @@ public class QuestionManager: IQuestionManager
     public void SubmitAnswers(
         Slug workspaceSlug,
         Slug projectSlug,
-        string youthId,
+        Guid youthId,
         IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers)
     {
         var project = _projectManager.GetProjectById(workspaceSlug, projectSlug);
 
-        if (!Guid.TryParse(youthId?.Trim(), out var youthToken))
+        Youth youth;
+        try
         {
-            throw new ValidationException("YouthId must be a valid GUID.");
+            youth = _projectManager.GetYouth(project, youthId);
         }
-
-        var youth = _projectManager.GetYouth(project, youthToken);
+        catch (YouthNotFoundException)
+        {
+            youth = _projectManager.AddYouth(youthId, null, projectSlug);
+        }
+        
 
         foreach (var answerInput in answers ?? Array.Empty<(int QuestionId, int? SelectedOptionId, string OpenTextValue)>())
         {

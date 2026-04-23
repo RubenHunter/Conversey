@@ -11,6 +11,10 @@ export interface ProjectContext {
 	projectSlug: string
 }
 
+export function navigate(to: string) {
+	location.hash = to;
+}
+
 function parseRoute(): ProjectContext {
 	const path = window.location.pathname
 	const domain = window.location.hostname

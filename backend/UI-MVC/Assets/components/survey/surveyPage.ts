@@ -11,7 +11,7 @@ import type {ScrollNav} from '../scrollNav.ts'
 import {renderScrollNav} from '../scrollNav.ts'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
-import {ProjectContext, render} from "../../main";
+import {navigate, ProjectContext, render} from "../../main";
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -30,8 +30,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             </div>
         `
 
-        /*TODO const redirectTimer = window.setTimeout(() => {
-            void navigate('ideas', { replace: true })
+        const redirectTimer = window.setTimeout(() => {
+            void navigate('ideas')
         }, 3200)
 
         window.addEventListener(
@@ -40,7 +40,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 window.clearTimeout(redirectTimer)
             },
             { once: true },
-        )*/
+        )
 
         return
     }
@@ -82,7 +82,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <a id="btn-submit" class="survey-submit-btn" href="completed">Submit Survey</a>
+                    <button id="btn-submit" class="survey-submit-btn">Submit Survey</button>
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     const surveyShell = container.querySelector<HTMLDivElement>('#survey-shell')!
     const headerEl = container.querySelector<HTMLDivElement>('#survey-header')!
     const questionsContainer = container.querySelector<HTMLDivElement>('#questions-container')!
-    const submitBtn = container.querySelector<HTMLAnchorElement>('#btn-submit')!
+    const submitBtn = container.querySelector<HTMLButtonElement>('#btn-submit')!
     const actionBar = container.querySelector<HTMLDivElement>('#survey-action-bar')!
 
     const headerController = createSurveyHeaderController({ root: container })
@@ -386,6 +386,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             localStorage.setItem(completedKey, 'true')
             clearSurveyProgress(project.id)
             cleanupSurveyPage()
+            navigate("completed");
         } catch {
             submitBtn.textContent = 'Submit Survey'
             alert('Failed to submit survey. Please try again.')

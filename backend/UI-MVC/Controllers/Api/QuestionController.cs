@@ -44,7 +44,7 @@ public class QuestionController : ControllerBase
             _questionManager.SubmitAnswers(
                 workspaceId,
                 projectId,
-                submission.YouthId ?? string.Empty,
+                submission.YouthId,
                 submission.Answers.Select(answer => (
                     answer.QuestionId,
                     answer.SelectedOptionId,
