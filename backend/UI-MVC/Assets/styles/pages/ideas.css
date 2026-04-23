@@ -490,6 +490,22 @@
   color: var(--color-primary);
 }
 
+.ideas-discovery-separator {
+  margin: var(--spacing-xs) 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.ideas-discovery-section-label {
+  margin: 0;
+  padding: calc(var(--spacing-xs) * 0.5) var(--spacing-sm) calc(var(--spacing-xs) * 0.25);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .ideas-discovery-badge {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
@@ -532,6 +548,10 @@
   scroll-snap-type: none;
 }
 
+.ideas-list--has-more {
+  padding-bottom: 14rem;
+}
+
 .ideas-load-more {
   align-self: center;
   margin: var(--spacing-xs) 0 var(--spacing-sm);
@@ -565,7 +585,6 @@
   position: relative;
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -580,34 +599,52 @@
   font-size: 1.05rem;
 }
 
-.ideas-load-more-icon::before {
-  content: '';
+.ideas-load-more-ring {
   position: absolute;
   inset: -0.28rem;
-  border-radius: 999px;
-  border: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
-  border-right-color: transparent;
-  border-top-color: transparent;
+  transform: rotate(-90deg);
+  pointer-events: none;
   opacity: 0;
+  transition: opacity var(--transition-base);
 }
 
-.ideas-load-more--loading .ideas-load-more-icon::before {
+.ideas-load-more-ring-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  stroke-width: 3;
+}
+
+.ideas-load-more-ring-fill {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-dasharray: 87.96;
+  stroke-dashoffset: 87.96;
+  stroke-linecap: round;
+}
+
+.ideas-load-more--loading .ideas-load-more-ring {
   opacity: 1;
-  animation: ideas-load-more-spin 0.9s linear infinite;
+}
+
+.ideas-load-more--loading .ideas-load-more-ring-fill {
+  animation: ideas-load-more-fill 2s linear forwards;
 }
 
 .ideas-load-more-text {
   text-align: left;
 }
 
-@keyframes ideas-load-more-spin {
-  from {
-    transform: rotate(0deg);
-  }
+@keyframes ideas-load-more-fill {
+  from { stroke-dashoffset: 87.96; }
+  to { stroke-dashoffset: 0; }
+}
 
-  to {
-    transform: rotate(360deg);
-  }
+.ideas-empty-state {
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 /* Re-enable pointer events for interactive cards */

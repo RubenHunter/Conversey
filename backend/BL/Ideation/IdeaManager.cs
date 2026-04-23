@@ -197,16 +197,6 @@ public class IdeaManager: IIdeaManager
             if (pickedIdeas.Count >= cappedLimit) break;
         }
 
-        if (pickedIdeas.Count < cappedLimit)
-        {
-            foreach (Idea candidate in candidates)
-            {
-                if (!seenIdeaIds.Add(candidate.Id)) continue;
-                pickedIdeas.Add(candidate);
-                if (pickedIdeas.Count >= cappedLimit) break;
-            }
-        }
-
         string source = aiCallFailed
             ? "fallback-ai-error"
             : (rankedIndexes.Count > 0 && pickedIdeas.Count == rankedIndexes.Count

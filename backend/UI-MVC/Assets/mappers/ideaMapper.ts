@@ -56,6 +56,7 @@ export function mapApiIdeaTopicToIdeaTopic(dto: ApiIdeaTopicDto): IdeaTopic {
         title: pickString(dto.title, dto.Title) ?? `Topic ${id}`,
         prompt: pickString(dto.prompt, dto.Prompt) ?? '',
         order: pickNumber(dto.order, dto.Order),
+        maxBroadSelectionLoads: 3,
     }
 }
 

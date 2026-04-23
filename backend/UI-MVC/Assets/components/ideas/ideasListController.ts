@@ -130,6 +130,18 @@ export function createIdeasListController({
     function updateFromScroll(): void {
         if (ideas.length === 0 || isProgrammaticListScroll) return
 
+        // Boundary snap: at extreme top → first card; at extreme bottom → last card
+        if (list.scrollTop <= 6) {
+            if (activeIdeaOriginalIndex !== 0) setActive(0, false)
+            return
+        }
+        const distToBottom = list.scrollHeight - list.clientHeight - list.scrollTop
+        if (distToBottom <= 6) {
+            const lastIndex = ideas.length - 1
+            if (activeIdeaOriginalIndex !== lastIndex) setActive(lastIndex, false)
+            return
+        }
+
         if (listSyncFrame !== null) {
             window.cancelAnimationFrame(listSyncFrame)
         }

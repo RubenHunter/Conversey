@@ -58,7 +58,8 @@ function mapTopic(topicDto: ApiTopicDto | undefined): ProjectTopic | undefined {
 
     if (!name) return undefined
 
-    return { id, name, context }
+    const maxBroadSelectionLoads = topicDto.maxBroadSelectionLoads ?? topicDto.MaxBroadSelectionLoads ?? 3
+    return { id, name, context, maxBroadSelectionLoads }
 }
 
 function mapTopics(topicDtos: ApiTopicDto[] | undefined): ProjectTopic[] | undefined {

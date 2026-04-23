@@ -137,7 +137,7 @@ public sealed class MistralAiManager : IAiManager
                 new
                 {
                     role = "system",
-                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return only clearly similar ideas; for difference tasks, return only clearly contrasting ideas; avoid borderline overlap."
+                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive."
                 },
                 new
                 {
@@ -305,8 +305,8 @@ Rules:
     private static string BuildIdeaRankingPrompt(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         var relationGoal = preferDifferent
-            ? "Return only ideas that clearly CONTRAST with the reference idea. Prefer ideas that feel opposite, divergent, or meaningfully different. Skip weakly-related, neutral, or borderline ideas."
-            : "Return only ideas that clearly MATCH the reference idea. Prefer ideas that share the same core meaning, theme, or intent. Skip weakly-related, neutral, or borderline ideas.";
+            ? "Return ideas that take a noticeably different angle, theme, or approach than the reference idea. Include ideas with a different focus or perspective, not just extreme opposites. Skip only ideas that are nearly identical in meaning to the reference."
+            : "Return ideas that share a similar theme, goal, or approach with the reference idea. Skip ideas that are clearly unrelated or focused on a completely different topic.";
 
         var candidates = string.Join("\n", candidateIdeas.Select((idea, index) => $"[{index}] {idea}"));
 
@@ -319,8 +319,7 @@ Candidate ideas (use only these indexes):
 
 Task:
 - {{relationGoal}}
-- Treat the result as a pure set for this relation; do not include ideas that would also reasonably fit the opposite relation.
-- Return up to {{limit}} indexes, but fewer is better than including borderline ideas.
+- Return up to {{limit}} indexes, ordered from best to least fitting for this relation.
 - Do not invent indexes.
 - Return strict JSON only with this schema:
 {"rankedIndexes":[0,1,2]}

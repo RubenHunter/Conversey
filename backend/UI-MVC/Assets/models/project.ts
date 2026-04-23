@@ -17,6 +17,7 @@ export interface ProjectTopic {
     id: number
     name: string
     context: string
+    maxBroadSelectionLoads: number
 }
 
 export interface ProjectStyle {

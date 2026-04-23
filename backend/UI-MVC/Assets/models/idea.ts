@@ -11,6 +11,7 @@ export interface IdeaTopic {
     title: string
     prompt: string
     order?: number
+    maxBroadSelectionLoads: number
 }
 
 export interface Idea {

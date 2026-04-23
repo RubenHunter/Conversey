@@ -53,6 +53,7 @@ function mapProjectTopicsToIdeaTopics(project: Project): IdeaTopic[] {
             title: topic.name,
             prompt: topic.context,
             order: index + 1,
+            maxBroadSelectionLoads: topic.maxBroadSelectionLoads ?? 3,
         }))
         .sort((a, b) => (a.order ?? a.id) - (b.order ?? b.id))
 }
