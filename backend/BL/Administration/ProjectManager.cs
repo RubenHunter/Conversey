@@ -9,10 +9,12 @@ namespace Conversey.BL.Administration;
 public class ProjectManager: IProjectManager
 {
     private readonly IProjectRepository _projectRepository;
+    private readonly IWorkspaceManager _workspaceManager;
 
-    public ProjectManager(IProjectRepository projectRepository)
+    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager)
     {
         _projectRepository = projectRepository;
+        _workspaceManager = workspaceManager;
     }
 
     public Project GetProject(Workspace workspace, Slug projectId)
@@ -59,6 +61,67 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }
 
+    public Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm)
+    {
+        var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            var results = new List<ValidationResult>
+            {
+                new("Name is required", ["Name"])
+            };
+
+            var ex = new ValidationException("Validation failed");
+            ex.Data["ValidationResults"] = results;
+            throw ex;
+        }
+        
+        var project = new Project
+        {
+            Id = Slug.FromName(name),
+            Name = name,
+            Description = description,
+            Status = status,
+            StartDate = startDate.ToUniversalTime(),
+            EndDate = endDate.ToUniversalTime(),
+            InteractionForm = interactionForm,
+
+            Workspace = workspace
+        };
+        
+        Validate(project);
+
+        _projectRepository.CreateProject(project);
+        return project;
+    }
+
+    public void EditProject(Project updatedProject)
+    {
+        Validate(updatedProject);
+        var existing = GetProjectById(updatedProject.Workspace.Id, updatedProject.Id);
+
+        if (existing == null)
+            throw new ProjectNotFoundException(updatedProject.Id);
+
+        existing.Name = updatedProject.Name;
+        existing.Description = updatedProject.Description;
+        existing.Status = updatedProject.Status;
+        existing.StartDate = updatedProject.StartDate;
+        existing.EndDate = updatedProject.EndDate;
+        existing.InteractionForm = updatedProject.InteractionForm;
+        existing.Workspace = updatedProject.Workspace;
+        
+        
+        _projectRepository.UpdateProject(existing);
+    }
+
+    public void RemoveProject(Slug projectId, Slug workspaceId)
+    {
+        _projectRepository.DeleteProject(projectId, workspaceId);
+    }
+
 
     private void Validate(object obj)
     {
@@ -67,7 +130,12 @@ public class ProjectManager: IProjectManager
 
         if (!Validator.TryValidateObject(obj, context, validationResults, true))
         {
-            throw new ValidationException(string.Join("; ", validationResults.Select(r => r.ErrorMessage)));
+            var ex = new ValidationException("Validation failed");
+
+            // attach structured data
+            ex.Data["ValidationResults"] = validationResults;
+
+            throw ex;
         }
     }
 }

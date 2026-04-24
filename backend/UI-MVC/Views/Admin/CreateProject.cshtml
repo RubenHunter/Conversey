@@ -1,3 +1,5 @@
+@model Conversey.UI_MVC.Models.Admin.ProjectFormViewModel
+
 @{
     ViewData["Title"] = "Create Project";
 }
@@ -13,8 +15,6 @@
             </a>
         </div>
 
-        <p class="mt-4 text-gray-700">
-            Project creation form placeholder.
-        </p>
+        @await Html.PartialAsync("_ProjectForm", Model)
     </div>
 </div>

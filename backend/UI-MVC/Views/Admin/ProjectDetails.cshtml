@@ -1,0 +1,118 @@
+@model Conversey.BL.Domain.Administration.Project
+@Html.AntiForgeryToken()
+
+@{
+    ViewData["Title"] = "Project Details";
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-4xl">
+
+        <!-- Back -->
+        <div class="mb-6">
+            <a href="@Url.Action("Projects", "Admin")"
+               class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                ← Back to projects
+            </a>
+        </div>
+
+        <!-- Card -->
+        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">
+                        @Model.Name
+                    </h1>
+
+                    <p class="mt-1 text-sm text-gray-500">
+                        Project ID: @Model.Id.Text
+                    </p>
+                </div>
+
+                <!-- Status badge -->
+                @{
+                    var statusColor = Model.Status switch
+                    {
+                        Conversey.BL.Domain.Administration.Status.Active => "bg-green-100 text-green-700",
+                        Conversey.BL.Domain.Administration.Status.Draft => "bg-yellow-100 text-yellow-700",
+                        Conversey.BL.Domain.Administration.Status.Archived => "bg-gray-100 text-gray-600",
+                        _ => "bg-gray-100 text-gray-600"
+                    };
+                }
+
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium @statusColor">
+                    @Model.Status
+                </span>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-6 space-y-6">
+
+                <!-- Description -->
+                <div>
+                    <h2 class="text-sm font-semibold text-gray-700">Description</h2>
+                    <p class="mt-2 whitespace-normal text-sm text-gray-600">
+                        @(string.IsNullOrWhiteSpace(Model.Description) ? "No description provided." : Model.Description)
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">Status</h3>
+                        <p class="mt-1 text-sm text-gray-800">@Model.Status</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">Interaction Type</h3>
+                        <p class="mt-1 text-sm text-gray-800">@Model.InteractionForm</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">Start Date</h3>
+                        <p class="mt-1 text-sm text-gray-800">
+                            @(Model.StartDate == default ? "-" : Model.StartDate.ToString("yyyy-MM-dd"))
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">End Date</h3>
+                        <p class="mt-1 text-sm text-gray-800">
+                            @(Model.EndDate == default ? "-" : Model.EndDate.ToString("yyyy-MM-dd"))
+                        </p>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">Workspace</h3>
+                        <p class="mt-1 text-sm text-gray-800">
+                            @Model.Workspace?.Name
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer actions -->
+            <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+
+                <a href="@Url.Action("EditProject", "Admin", new { id = Model.Id.Text })"
+                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    Edit
+                </a>
+
+                <button type="button"
+                        data-delete-id="@Model.Id.Text"
+                        data-delete-name="@Model.Name"
+                        data-delete-endpoint="/admin/project/delete"
+                        class="inline-flex items-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                    Delete
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_DeleteModal")

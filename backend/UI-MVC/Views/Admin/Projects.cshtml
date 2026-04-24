@@ -1,27 +1,139 @@
+@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Mvc.Rendering
 @model IReadOnlyCollection<Conversey.BL.Domain.Administration.Project>
+@Html.AntiForgeryToken()
+
 @{
     ViewData["Title"] = "Projects";
     var projects = Model ?? Array.Empty<Conversey.BL.Domain.Administration.Project>();
-    var tableModel = new Conversey.UI_MVC.Models.Admin.AdminTableViewModel
+
+    var tableModel = new Conversey.UI_MVC.Models.Admin.AdminTableViewModel<Conversey.BL.Domain.Administration.Project>
     {
         SectionTitle = "All Projects",
         TableDescription = "Manage all projects from one place.",
         CreateUrl = Url.Action("CreateProject", "Admin") ?? "#",
         CreateButtonLabel = "Create new project",
         EmptyState = "Projects will show up here once they are created.",
-        ColumnHeaders = ["Name", "Status", "Created", "Actions"],
-        Rows = projects
-            .Select(project => new Conversey.UI_MVC.Models.Admin.AdminTableRowViewModel
+        RowId = p => p.Id.Text,
+        
+        Items = projects.ToList(),
+
+        Columns =
+        [
+            new()
             {
-                Cells =
-                [
-                    project.Name ?? "-",
-                    project.Status.ToString(),
-                    project.StartDate == default ? "-" : project.StartDate.ToString("yyyy-MM-dd"),
-                    "View"
-                ]
-            })
-            .ToList()
+                Header = "Name",
+                Template = p =>
+                {
+                    var link = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("ProjectDetails", "Admin", new { id = p.Id.Text })!
+                        }
+                    };
+                    link.AddCssClass("text-indigo-600 hover:underline");
+
+                    link.InnerHtml.Append(p.Name ?? "-");
+
+                    return link;
+                }
+            },
+            new()
+            {
+                Header = "Status",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(p.Status.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Interaction Form",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(p.InteractionForm.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Start Date",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+
+                    var text = p.StartDate == default
+                        ? "-"
+                        : p.StartDate.ToString("yyyy-MM-dd");
+
+                    span.InnerHtml.Append(text);
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "End Date",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+
+                    var text = p.StartDate == default
+                        ? "-"
+                        : p.EndDate.ToString("yyyy-MM-dd");
+
+                    span.InnerHtml.Append(text);
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Actions",
+                Template = p =>
+                {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
+                    // EDIT BUTTON
+                    var edit = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("EditProject", "Admin", new { id = p.Id.Text })!
+                        }
+                    };
+                    edit.AddCssClass("text-blue-600 hover:underline");
+                    edit.InnerHtml.Append("Edit");
+
+                    var divider = new TagBuilder("p");
+                    divider.InnerHtml.Append("|");
+                    
+                    // DELETE BUTTON
+                    var delete = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-delete-id"] = p.Id.Text,
+                            ["data-delete-name"] = p.Name ?? "-",
+                            ["data-delete-endpoint"] = "/admin/project/delete"
+                        }
+                    };
+
+                    delete.AddCssClass("text-red-600 hover:underline");
+                    delete.InnerHtml.Append("Delete");
+
+                    container.InnerHtml.AppendHtml(edit);
+                    container.InnerHtml.AppendHtml(divider);
+                    container.InnerHtml.AppendHtml(delete);
+
+                    return container;
+                }
+            }
+        ]
     };
 }
 
@@ -37,3 +149,5 @@
         @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
     </div>
 </div>
+
+@await Html.PartialAsync("_DeleteModal")
