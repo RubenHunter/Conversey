@@ -17,6 +17,8 @@ public class Idea
     public ModerationStatus Status { get; set; }
     public ModerationInfo ModerationInfo { get; set; }
 
+    public string[] SemanticCategories { get; set; } = Array.Empty<string>();
+
     [Required]
     public Project Project { get; set; }
 

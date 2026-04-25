@@ -56,6 +56,7 @@ export function mapApiIdeaTopicToIdeaTopic(dto: ApiIdeaTopicDto): IdeaTopic {
         title: pickString(dto.title, dto.Title) ?? `Topic ${id}`,
         prompt: pickString(dto.prompt, dto.Prompt) ?? '',
         order: pickNumber(dto.order, dto.Order),
+        maxBroadSelectionLoads: 3,
     }
 }
 
@@ -92,6 +93,10 @@ export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): I
         createdAt: pickString(dto.createdAt, dto.CreatedAt, dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
         reactions,
         pendingReview: isPendingStatus(dto.status ?? dto.Status),
+        semanticCategories: (dto.semanticCategories ?? dto.SemanticCategories ?? [])
+            .filter((category): category is string => typeof category === 'string')
+            .map((category) => category.trim())
+            .filter((category) => category.length > 0),
     }
 }
 

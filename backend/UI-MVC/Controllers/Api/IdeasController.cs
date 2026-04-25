@@ -55,6 +55,39 @@ public class IdeasController : ControllerBase
         }
     }
 
+    [HttpGet("discover")]
+    public ActionResult<IEnumerable<IdeaDto>> DiscoverIdeas(
+        Slug workspaceId,
+        Slug projectId,
+        int topicId,
+        [FromQuery] Guid youthId,
+        [FromQuery] IdeaDiscoveryCategory category = IdeaDiscoveryCategory.Random,
+        [FromQuery] int limit = 30)
+    {
+        if (youthId == Guid.Empty)
+        {
+            return BadRequest("youthId is required.");
+        }
+        int boundedLimit = Math.Clamp(limit, 1, 30);
+
+        try
+        {
+            var ideas = _manager.GetIdeaDiscoverySuggestions(
+                workspaceId,
+                projectId,
+                topicId,
+                youthId,
+                category,
+                boundedLimit);
+
+            return Ok(ideas.Select(IdeaDto.From).ToList().AsReadOnly());
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
     [HttpGet("{ideaId:int}")]
     public ActionResult<IdeaDto> GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {

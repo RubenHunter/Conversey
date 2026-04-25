@@ -25,6 +25,9 @@ interface IdeasContext {
     ideas: Idea[]
 }
 
+export type IdeaDiscoveryCategory = 'similar' | 'different' | 'random'
+export const IDEA_DISCOVERY_MAX_RESULTS = 30
+
 export function getIdeasYouthToken(projectKey: string | number): string {
     const key = `${IDEAS_USER_KEY}-${String(projectKey)}`
     const existing = localStorage.getItem(key)
@@ -50,6 +53,7 @@ function mapProjectTopicsToIdeaTopics(project: Project): IdeaTopic[] {
             title: topic.name,
             prompt: topic.context,
             order: index + 1,
+            maxBroadSelectionLoads: topic.maxBroadSelectionLoads ?? 3,
         }))
         .sort((a, b) => (a.order ?? a.id) - (b.order ?? b.id))
 }
@@ -193,3 +197,17 @@ export async function updateIdeaAfterSafetyReview(
 
     return mapApiIdeaToIdea(dto, getIdeasYouthToken(projectSlug))
 }
+
+export async function getDiscoveredIdeasForTopic(
+    workspaceSlug: string,
+    projectSlug: string,
+    topicId: number,
+    youthToken: string,
+    category: IdeaDiscoveryCategory,
+    limit = IDEA_DISCOVERY_MAX_RESULTS,
+): Promise<Idea[]> {
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/discover?youthId=${encodeURIComponent(youthToken)}&category=${encodeURIComponent(category)}&limit=${limit}`
+    const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
+    return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
+}
+

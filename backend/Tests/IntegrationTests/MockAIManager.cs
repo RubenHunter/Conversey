@@ -42,4 +42,31 @@ public class MockAiManager : IAiManager
             Categories = new ModerationInfo()
         });
     }
+
+    public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    {
+        if (candidateIdeas.Count == 0 || limit <= 0)
+        {
+            return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
+        }
+
+        var ordered = Enumerable.Range(0, candidateIdeas.Count);
+        if (preferDifferent)
+        {
+            ordered = ordered.Reverse();
+        }
+
+        return Task.FromResult(ordered.Take(limit));
+    }
+
+    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    {
+        var result = new Dictionary<int, IReadOnlyList<string>>();
+        for (int index = 0; index < ideas.Count; index++)
+        {
+            result[index] = new[] { existingCategories.FirstOrDefault() ?? "General ideas" };
+        }
+
+        return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
+    }
 }

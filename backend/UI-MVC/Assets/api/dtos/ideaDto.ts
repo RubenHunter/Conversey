@@ -36,6 +36,8 @@ export interface ApiIdeaDto {
     CreatedAt?: string
     submissionDate?: string
     SubmissionDate?: string
+    semanticCategories?: string[]
+    SemanticCategories?: string[]
     reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
     Reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
 }

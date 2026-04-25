@@ -5,6 +5,8 @@ export interface ApiTopicDto {
     Name?: string
     context?: string
     Context?: string
+    maxBroadSelectionLoads?: number
+    MaxBroadSelectionLoads?: number
 }
 
 export interface ApiProjectStyleDto {

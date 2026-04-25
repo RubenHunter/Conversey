@@ -11,6 +11,7 @@ export interface IdeaTopic {
     title: string
     prompt: string
     order?: number
+    maxBroadSelectionLoads: number
 }
 
 export interface Idea {
@@ -22,6 +23,7 @@ export interface Idea {
     createdAt: string
     reactions: IdeaReactionSummary[]
     pendingReview: boolean
+    semanticCategories: string[]
 }
 
 export interface SubmitIdeaRequest {

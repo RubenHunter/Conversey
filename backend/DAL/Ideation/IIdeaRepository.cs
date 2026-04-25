@@ -9,6 +9,8 @@ public interface IIdeaRepository
     Idea ReadIdeaByIdWithProjectAndResponses(int ideaId);
     IReadOnlyCollection<Idea> ReadIdeasByYouthId(Guid youthId);
     IReadOnlyCollection<Idea> ReadIdeasByTopicId(int topicId);
+    IReadOnlyCollection<Idea> ReadIdeasByTopicIdAndStatus(int topicId, ModerationStatus status);
+    IReadOnlyCollection<Idea> ReadIdeasByTopicIdAndYouthId(int topicId, Guid youthId);
 
     
     void UpdateIdea(Idea idea);
