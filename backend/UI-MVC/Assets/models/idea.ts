@@ -7,7 +7,7 @@ export interface IdeaReactionSummary {
 
 export interface IdeaTopic {
     id: number
-    projectId: number
+    projectId: string | number
     title: string
     prompt: string
     order?: number
@@ -16,7 +16,7 @@ export interface IdeaTopic {
 
 export interface Idea {
     id: number
-    projectId: number
+    projectId: string | number
     topicId: number
     body: string
     authorType: IdeaAuthorType
@@ -27,7 +27,7 @@ export interface Idea {
 }
 
 export interface SubmitIdeaRequest {
-    projectId: number
+    projectId: string | number
     topicId: number
     body: string
     authorType: IdeaAuthorType

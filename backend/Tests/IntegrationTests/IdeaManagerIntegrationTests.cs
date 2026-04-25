@@ -60,6 +60,39 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
+    public void SubmitIdea_WhenCategorizationFails_ShouldStillPersistIdea()
+    {
+        _fixture.SetAiModerationBehavior(isAllowed: true);
+        _fixture.SetAiCategorizationBehavior(throwOnCategorize: true);
+
+        try
+        {
+            using var scope = _fixture.CreateScope();
+            var manager = scope.ServiceProvider.GetRequiredService<IIdeaManager>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+            var topicId = dbContext.Topics
+                .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
+                .Select(topic => topic.Id)
+                .First();
+
+            var response = manager.SubmitIdea(
+                ManagerSeedData.WorkspaceSlug,
+                ManagerSeedData.ProjectSlug,
+                topicId,
+                Guid.NewGuid(),
+                "Idea that should survive categorization failure");
+
+            var approved = Assert.IsType<SubmissionResponse.Approved>(response);
+            Assert.Equal(ModerationStatus.Approved, approved.Idea.Status);
+            Assert.Equal(new[] { "General ideas" }, approved.Idea.SemanticCategories);
+        }
+        finally
+        {
+            _fixture.SetAiCategorizationBehavior(throwOnCategorize: false);
+        }
+    }
+
+    [Fact]
     public void SubmitIdea_WhenTopicAlreadyHasACategory_ShouldReuseTheExistingLabel()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);

@@ -39,7 +39,8 @@ public class QuestionManager: IQuestionManager
         }
         catch (YouthNotFoundException)
         {
-            youth = _projectManager.AddYouth(youthId, null, projectSlug);
+            var tempEmail = $"{youthId:N}@{projectSlug.Text}.temp.com";
+            youth = _projectManager.AddYouth(youthId, tempEmail, projectSlug);
         }
         
 

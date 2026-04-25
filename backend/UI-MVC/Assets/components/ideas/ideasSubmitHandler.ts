@@ -6,7 +6,7 @@ import type { PostSafetyDecision } from './safetyReviewDialog.ts'
 interface CreateIdeasSubmitHandlerParams {
     organizationSlug: string
     projectSlug: string
-    projectId: number
+    projectId: string | number
     reviewBeforePost: (text: string) => Promise<PostSafetyDecision>
     reviewWithSuggestion: (original: string, suggestion: string) => Promise<PostSafetyDecision>
     onIdeaSubmitted: (idea: Idea, flagged: boolean) => void
@@ -118,5 +118,4 @@ export function createIdeasSubmitHandler({
 
     return { submit }
 }
-
 
