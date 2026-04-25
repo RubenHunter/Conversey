@@ -119,7 +119,7 @@ public sealed class MistralAiManager : IAiManager
         return string.IsNullOrWhiteSpace(content) ? "Please rephrase your message in a respectful way." : content.Trim();
     }
 
-    public async Task<IReadOnlyList<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public async Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
@@ -271,19 +271,36 @@ Rules:
 
             foreach (var item in itemsElement.EnumerateArray())
             {
-                if (!item.TryGetProperty("index", out var indexElement) || !indexElement.TryGetInt32(out int index)) continue;
+                if (!item.TryGetProperty("index", out var indexElement)) continue;
+
+                int index;
+
+                if (indexElement.ValueKind == JsonValueKind.Number)
+                {
+                    if (!indexElement.TryGetInt32(out index)) continue;
+                }
+                else if (indexElement.ValueKind == JsonValueKind.String)
+                {
+                    if (!int.TryParse(indexElement.GetString(), out index)) continue;
+                }
+                else
+                {
+                    continue;
+                }
+
                 if (index < 0 || index >= ideaCount) continue;
 
-                if (!item.TryGetProperty("categories", out var categoriesElement) || categoriesElement.ValueKind != JsonValueKind.Array)
+                if (!item.TryGetProperty("categories", out var categoriesElement) ||
+                    categoriesElement.ValueKind != JsonValueKind.Array)
                 {
                     continue;
                 }
 
                 var categories = categoriesElement
                     .EnumerateArray()
-                    .Where(element => element.ValueKind == JsonValueKind.String)
-                    .Select(element => element.GetString()?.Trim() ?? string.Empty)
-                    .Where(category => category.Length > 0)
+                    .Where(e => e.ValueKind == JsonValueKind.String)
+                    .Select(e => e.GetString()?.Trim() ?? string.Empty)
+                    .Where(c => c.Length > 0)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Take(maxCategoriesPerIdea)
                     .ToList();
@@ -356,9 +373,9 @@ Task:
 
             return picked.AsReadOnly();
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            return Array.Empty<int>();
+            throw new AiRankingException("Invalid AI response", ex);
         }
     }
 

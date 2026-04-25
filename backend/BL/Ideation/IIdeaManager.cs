@@ -26,7 +26,7 @@ public interface IIdeaManager
     Idea GetIdeaByIdWithProjectAndResponses(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     IEnumerable<Idea> GetIdeasFromProjectByYouthId(Slug workspaceId, Slug projectId, Guid youthId);
     IEnumerable<Idea> GetIdeasByProjectIdAndTopicId(Slug workspaceId, Slug projectId, int topicId);
-    Task<IReadOnlyCollection<Idea>> GetIdeaDiscoverySuggestions(Slug workspaceId, Slug projectId, int topicId, Guid youthId,
+    IEnumerable<Idea> GetIdeaDiscoverySuggestions(Slug workspaceId, Slug projectId, int topicId, Guid youthId,
         IdeaDiscoveryCategory category, int limit);
     Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, int ideaId, ModerationStatus newStatus, string newContent);
 
