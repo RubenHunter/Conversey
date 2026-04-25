@@ -1,4 +1,4 @@
-@import "tailwindcss" /*source("..")*/;
+@import "tailwindcss" source("..");
 @import "./styles/theme.css";
 @import "./styles/shared/shared.css";
 @import "./styles/shared/topbar.css";
@@ -7,11 +7,11 @@
 @import "./styles/pages/landing.css";
 @import "./styles/pages/survey.css";
 
-* {
-	margin: 0;
-	padding: 0;
-	box-sizing: border-box;
-}
+/** {*/
+/*	margin: 0;*/
+/*	padding: 0;*/
+/*	box-sizing: border-box;*/
+/*}*/
 
 html,
 body {
