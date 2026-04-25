@@ -5,6 +5,24 @@ function pickString(...values: Array<string | undefined>): string | undefined {
     return values.find((value) => typeof value === 'string' && value.length > 0)
 }
 
+function extractSlugText(value: unknown): string | undefined {
+    if (typeof value === 'string' && value.length > 0) {
+        return value
+    }
+
+    if (value && typeof value === 'object') {
+        const maybeSlug = value as { text?: unknown; Text?: unknown }
+        if (typeof maybeSlug.text === 'string' && maybeSlug.text.length > 0) {
+            return maybeSlug.text
+        }
+        if (typeof maybeSlug.Text === 'string' && maybeSlug.Text.length > 0) {
+            return maybeSlug.Text
+        }
+    }
+
+    return undefined
+}
+
 function toSlug(value: string): string {
     return value
         .trim()
@@ -83,13 +101,17 @@ function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | unde
 
 export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint: string, projectSlugHint: string): Project {
     const title = pickString(dto.title, dto.Title) ?? projectSlugHint
-    const slug = pickString(dto.slug, dto.Slug) ?? toSlug(title)
+    const idSlug = extractSlugText(dto.id ?? dto.Id)
+    const slug = pickString(dto.slug, dto.Slug) ?? idSlug ?? toSlug(title)
+    const organizationSlug = pickString(dto.organizationSlug, dto.OrganizationSlug)
+        ?? extractSlugText(dto.organizationId ?? dto.OrganizationId)
+        ?? organizationSlugHint
     const topics = mapTopics(dto.topics ?? dto.Topics)
 
     return {
-        id: dto.id ?? dto.Id ?? 0,
+        id: idSlug ?? slug,
         slug,
-        organizationSlug: pickString(dto.organizationSlug, dto.OrganizationSlug) ?? organizationSlugHint,
+        organizationSlug,
         organizationName: pickString(dto.organizationName, dto.OrganizationName),
         title,
         description: pickString(dto.description, dto.Description) ?? '',

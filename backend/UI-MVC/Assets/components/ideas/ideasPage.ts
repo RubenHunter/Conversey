@@ -5,7 +5,7 @@ import {
     getDiscoveredIdeasForTopic,
     IDEA_DISCOVERY_MAX_RESULTS,
     getIdeasContext,
-    getIdeasYouthToken,
+    getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
     type IdeaDiscoveryCategory,
@@ -125,7 +125,7 @@ function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
 export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
-    const youthToken = getIdeasYouthToken(project.slug)
+    const youthToken = getOrCreateProjectScopedYouthId(project.slug)
 
     const organizationName = project.organizationName?.trim() || project.organizationSlug
     const topics = context.topics

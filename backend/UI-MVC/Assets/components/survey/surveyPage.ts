@@ -15,10 +15,11 @@ import {navigate, ProjectContext, render} from "../../main";
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const completedKey = `survey-completed-${project.id}`
+    const projectSlugKey = params.projectSlug
+    const completedKey = `survey-completed-${projectSlugKey}`
 
     if (localStorage.getItem(completedKey) === 'true') {
-        clearSurveyProgress(project.id)
+        clearSurveyProgress(projectSlugKey)
         container.innerHTML = `
             <div class="survey-redirect-wrap screen-height">
                 <div class="survey-redirect-card">
@@ -152,7 +153,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     }
 
     function persistProgress(): void {
-        saveSurveyProgress(project.id, questions, currentQuestionIndex, collectAnswersByQuestionId())
+        saveSurveyProgress(projectSlugKey, questions, currentQuestionIndex, collectAnswersByQuestionId())
     }
 
     // Auto-scroll textarea into view on mobile when focused
@@ -241,7 +242,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     })
     scrollNav.update(currentQuestionIndex, questions.length)
 
-    const savedProgress = loadSurveyProgress(project.id, questions)
+    const savedProgress = loadSurveyProgress(projectSlugKey, questions)
     if (savedProgress) {
         components.forEach((component, index) => {
             const questionId = questions[index].id
@@ -382,9 +383,9 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         submitBtn.textContent = 'Submitting...'
 
         try {
-            await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: project.id, answers })
+            await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')
-            clearSurveyProgress(project.id)
+            clearSurveyProgress(params.projectSlug)
             cleanupSurveyPage()
             navigate("completed");
         } catch {

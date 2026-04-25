@@ -3,22 +3,7 @@ import { mapApiIdeaToIdea, mapSubmitIdeaRequestToApiSubmitIdeaRequest } from '..
 import type { Idea, IdeaTopic, SubmitIdeaRequest } from '../models/idea.ts'
 import type { Project } from '../models/project.ts'
 import { apiFetch } from './apiService.ts'
-
-const IDEAS_USER_KEY = 'conversey-ideas-user-id'
-
-function isGuid(value: string): boolean {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-}
-
-function createGuidToken(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-        return crypto.randomUUID()
-    }
-
-    // Fallback for older environments where randomUUID is unavailable.
-    const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    return `00000000-0000-4000-8000-${seed.padEnd(12, '0').slice(0, 12)}`
-}
+import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'
 
 interface IdeasContext {
     topics: IdeaTopic[]
@@ -28,17 +13,9 @@ interface IdeasContext {
 export type IdeaDiscoveryCategory = 'similar' | 'different' | 'random'
 export const IDEA_DISCOVERY_MAX_RESULTS = 30
 
-export function getIdeasYouthToken(projectKey: string | number): string {
-    const key = `${IDEAS_USER_KEY}-${String(projectKey)}`
-    const existing = localStorage.getItem(key)
-    if (existing && isGuid(existing)) return existing
-
-    const userId = createGuidToken()
-
-    localStorage.setItem(key, userId)
-    return userId
+export function getOrCreateProjectScopedYouthId(projectSlug: string): string {
+    return getOrCreateProjectYouthId(projectSlug)
 }
-
 function mapProjectTopicsToIdeaTopics(project: Project): IdeaTopic[] {
     const sourceTopics = project.topics && project.topics.length > 0
         ? project.topics
@@ -59,13 +36,13 @@ function mapProjectTopicsToIdeaTopics(project: Project): IdeaTopic[] {
 }
 
 async function getCommunityIdeasForTopic(workspaceSlug: string, projectSlug: string, topicId: number, youthToken: string): Promise<Idea[]> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas`
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizeSlugForClient(projectSlug)}/topics/${topicId}/ideas`
     const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }
 
 async function getMyIdeas(workspaceSlug: string, projectSlug: string, youthToken: string): Promise<Idea[]> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/youth/${encodeURIComponent(youthToken)}/ideas`
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizeSlugForClient(projectSlug)}/youth/${encodeURIComponent(youthToken)}/ideas`
     const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }
@@ -81,7 +58,7 @@ function mergeIdeas(communityIdeas: Idea[], myIdeas: Idea[]): Idea[] {
 
 export async function getIdeasContext(workspaceSlug: string, projectSlug: string, project: Project): Promise<IdeasContext> {
     const topics = mapProjectTopicsToIdeaTopics(project)
-    const youthToken = getIdeasYouthToken(project.slug)
+    const youthToken = getOrCreateProjectScopedYouthId(projectSlug)
 
     const communityPerTopic = await Promise.all(
         topics.map((topic) => getCommunityIdeasForTopic(workspaceSlug, projectSlug, topic.id, youthToken)),
@@ -105,9 +82,10 @@ export interface IdeaSubmitResult {
 }
 
 export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<IdeaSubmitResult> {
-    const youthToken = getIdeasYouthToken(projectSlug)
+    const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
+    const youthToken = getOrCreateProjectScopedYouthId(normalizedProjectSlug)
     const requestDto = mapSubmitIdeaRequestToApiSubmitIdeaRequest(request, youthToken)
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${request.topicId}/ideas`
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/topics/${request.topicId}/ideas`
 
     console.log('[AI moderation] sending idea to backend for moderation...', { content: request.body })
 
@@ -179,7 +157,8 @@ export async function updateIdeaAfterSafetyReview(
     content: string,
     markForReview: boolean,
 ): Promise<Idea> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/${ideaId}`
+    const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/topics/${topicId}/ideas/${ideaId}`
 
     const payload: UpdateIdeaAfterSafetyReviewRequest = {
         content,
@@ -195,7 +174,7 @@ export async function updateIdeaAfterSafetyReview(
         `[AI moderation] updated idea ${ideaId} after safety dialog; status=${markForReview ? 'Pending' : 'Approved'}`,
     )
 
-    return mapApiIdeaToIdea(dto, getIdeasYouthToken(projectSlug))
+    return mapApiIdeaToIdea(dto, getOrCreateProjectScopedYouthId(normalizedProjectSlug))
 }
 
 export async function getDiscoveredIdeasForTopic(
@@ -206,7 +185,8 @@ export async function getDiscoveredIdeasForTopic(
     category: IdeaDiscoveryCategory,
     limit = IDEA_DISCOVERY_MAX_RESULTS,
 ): Promise<Idea[]> {
-    const endpoint = `/workspaces/${workspaceSlug}/projects/${projectSlug}/topics/${topicId}/ideas/discover?youthId=${encodeURIComponent(youthToken)}&category=${encodeURIComponent(category)}&limit=${limit}`
+    const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/topics/${topicId}/ideas/discover?youthId=${encodeURIComponent(youthToken)}&category=${encodeURIComponent(category)}&limit=${limit}`
     const dtos = await apiFetch<ApiIdeaDto[]>(endpoint)
     return dtos.map((dto) => mapApiIdeaToIdea(dto, youthToken))
 }
@@ -217,9 +197,9 @@ export async function saveYouthContactEmail(
     youthToken: string,
     email: string,
 ): Promise<void> {
-    await apiFetch<void>(`/workspaces/${workspaceSlug}/projects/${projectSlug}/youth/${encodeURIComponent(youthToken)}`, {
+    const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
+    await apiFetch<void>(`/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/youth/${encodeURIComponent(youthToken)}`, {
         method: 'PUT',
         body: JSON.stringify({ email }),
     })
 }
-
