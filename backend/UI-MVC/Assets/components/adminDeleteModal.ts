@@ -18,7 +18,7 @@ class DeleteModal {
                 const el = e.currentTarget as HTMLButtonElement;
 
                 this.currentId = el.dataset.deleteId!;
-                this.endpoint = el.dataset.deleteEndpoint || "/admin/project/delete";
+                this.endpoint = el.dataset.deleteEndpoint;
 
                 const name = el.dataset.deleteName || "this item";
 

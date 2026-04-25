@@ -119,7 +119,7 @@
                             ["type"] = "button",
                             ["data-delete-id"] = p.Id.Text,
                             ["data-delete-name"] = p.Name ?? "-",
-                            ["data-delete-endpoint"] = "/admin/project/delete"
+                            ["data-delete-endpoint"] = $"/admin/project/delete/{p.Id.Text}"
                         }
                     };
 

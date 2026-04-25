@@ -58,11 +58,11 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     }
 
     [HttpGet("/admin/projects/{id}")]
-    public IActionResult ProjectDetails(string id)
+    public IActionResult ProjectDetails(Slug id)
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, Slug.FromName(id));
+            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
             return View(project);
         }
         catch (Exception e)
@@ -74,11 +74,11 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     }
 
     [HttpGet("/admin/project/{id}")]
-    public IActionResult EditProject(string id)
+    public IActionResult EditProject(Slug id)
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, Slug.FromName(id));
+            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
             
             return View(EditVm(project));
         }
@@ -91,12 +91,12 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     }
     
     [HttpPost("/admin/project/{id}")]
-    public IActionResult EditProject(string id, ProjectFormViewModel projectFormViewModel)
+    public IActionResult EditProject(Slug id, ProjectFormViewModel projectFormViewModel)
     {
         try
         {
             var project = projectFormViewModel.Project;
-            project.Id = Slug.FromName(id);
+            project.Id = id;
             project.Workspace = workspaceContext.CurrentWorkspace;
             project.StartDate = project.StartDate.ToUniversalTime();
             project.EndDate = project.EndDate.ToUniversalTime();
@@ -117,13 +117,13 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
         return View(EditVm(projectFormViewModel.Project));
     }
 
-    [HttpPost("/admin/project/delete")]
+    [HttpPost("/admin/project/delete/{id}")]
     [ValidateAntiForgeryToken]
-    public IActionResult DeleteProject([FromBody] string id)
+    public IActionResult DeleteProject(Slug id)
     {
         try
         {
-            projectManager.RemoveProject(Slug.FromName(id), workspaceContext.CurrentWorkspace.Id);
+            projectManager.RemoveProject(id, workspaceContext.CurrentWorkspace.Id);
             return RedirectToAction("Projects");
         }
         catch (Exception ex)
