@@ -58,4 +58,23 @@ public class ProjectManagerIntegrationTests : IClassFixture<ManagerIntegrationTe
         var loaded = manager.GetYouth(project, token);
         Assert.Equal(token, loaded.Id);
     }
+
+    [Fact]
+    public void AddYouth_WhenExistingPlaceholderYouthExists_ShouldUpdateEmail()
+    {
+        using var scope = _fixture.CreateScope();
+        var manager = scope.ServiceProvider.GetRequiredService<IProjectManager>();
+        var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
+        var token = Guid.NewGuid();
+
+        var placeholder = manager.AddYouth(token, $"{token:N}@local.invalid", ManagerSeedData.ProjectSlug);
+        var updated = manager.AddYouth(token, "integration-updated@example.com", ManagerSeedData.ProjectSlug);
+        var workspace = workspaceManager.GetWorkspaceById(ManagerSeedData.WorkspaceSlug);
+        var project = manager.GetProjectById(workspace.Id, ManagerSeedData.ProjectSlug);
+
+        Assert.Equal(token, placeholder.Id);
+        Assert.Equal(token, updated.Id);
+        Assert.Equal("integration-updated@example.com", updated.Email);
+        Assert.Equal("integration-updated@example.com", manager.GetYouth(project, token).Email);
+    }
 }

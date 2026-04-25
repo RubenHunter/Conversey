@@ -1,3 +1,5 @@
+type ApiSlugValue = string | { text?: string; Text?: string }
+
 export interface ApiTopicDto {
     id?: number
     Id?: number
@@ -18,8 +20,10 @@ export type ApiProjectStatusDto = 'Draft' | 'Active' | 'Archived' | string | num
 export type ApiInteractionTypeDto = 'Chat' | 'Vertical_Scroll' | 'VerticalScroll' | string | number
 
 export interface ApiProjectDto {
-    id?: number
-    Id?: number
+    id?: ApiSlugValue
+    Id?: ApiSlugValue
+    organizationId?: ApiSlugValue
+    OrganizationId?: ApiSlugValue
     slug?: string
     Slug?: string
     organizationSlug?: string

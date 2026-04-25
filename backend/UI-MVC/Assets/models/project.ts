@@ -26,7 +26,7 @@ export interface ProjectStyle {
 }
 
 export interface Project {
-    id: number
+    id: string
     slug: string
     organizationSlug: string
     organizationName?: string
