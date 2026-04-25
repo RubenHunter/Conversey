@@ -4,3 +4,6 @@ public class AiException(string message, Exception exception) : Exception(messag
 {
     
 }
+
+public class AiRankingException(string message, Exception exception)
+    : AiException(message, exception);

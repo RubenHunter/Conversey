@@ -13,6 +13,7 @@ public class IdeaDto
     public DateTime SubmissionDate { get; set; }
     public ModerationStatus Status { get; set; }
     public IEnumerable<ReactionDto> Reactions { get; set; }
+    public IEnumerable<string> SemanticCategories { get; set; } = Array.Empty<string>();
 
     public static IdeaDto From(Idea idea)
     {
@@ -25,6 +26,7 @@ public class IdeaDto
             YouthId = idea.Youth.Id,
             SubmissionDate = idea.SubmissionDate,
             Status = idea.Status,
+            SemanticCategories = idea.SemanticCategories ?? Array.Empty<string>(),
             Reactions = (idea.Reactions ?? Array.Empty<IdeaReaction>())
                 .GroupBy(r => r.Emoji)
                 .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })

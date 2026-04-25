@@ -47,6 +47,30 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    <None Include="wwwroot\images\Conversey_logo.png">
+      <Link>wwwroot\Conversey_logo.png</Link>
+      <TargetPath>wwwroot/Conversey_logo.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo.svg">
+      <Link>wwwroot\Conversey_logo.svg</Link>
+      <TargetPath>wwwroot/Conversey_logo.svg</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo_bottom.png">
+      <Link>wwwroot\Conversey_logo_bottom.png</Link>
+      <TargetPath>wwwroot/Conversey_logo_bottom.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo_side.png">
+      <Link>wwwroot\Conversey_logo_side.png</Link>
+      <TargetPath>wwwroot/Conversey_logo_side.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
 		
   </ItemGroup>
 
