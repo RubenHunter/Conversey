@@ -6,6 +6,7 @@ using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Ideation;
 using IAiManager = Conversey.BL.Ai.IAiManager;
 using ModerationDecision = Conversey.BL.Ai.ModerationDecision;
+using System.Linq;
 
 namespace Conversey.BL.Ideation;
 
@@ -109,7 +110,7 @@ public class IdeaManager: IIdeaManager
         return ideas;
     }
 
-    public async Task<IReadOnlyCollection<Idea>> GetIdeaDiscoverySuggestions(
+    public IEnumerable<Idea> GetIdeaDiscoverySuggestions(
         Slug workspaceId,
         Slug projectId,
         int topicId,
@@ -168,15 +169,15 @@ public class IdeaManager: IIdeaManager
             return fallbackPicks;
         }
 
-        IReadOnlyList<int> rankedIndexes;
+        IEnumerable<int> rankedIndexes;
         bool aiCallFailed = false;
         try
         {
-            rankedIndexes = await _aiManager.RankIdeasByRelation(
+            rankedIndexes = _aiManager.RankIdeasByRelation(
                 referenceIdea,
                 candidates.Select(idea => idea.Content).ToList().AsReadOnly(),
                 category == IdeaDiscoveryCategory.Different,
-                cappedLimit);
+                cappedLimit).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
@@ -199,11 +200,11 @@ public class IdeaManager: IIdeaManager
 
         string source = aiCallFailed
             ? "fallback-ai-error"
-            : (rankedIndexes.Count > 0 && pickedIdeas.Count == rankedIndexes.Count
+            : (rankedIndexes.Count() > 0 && pickedIdeas.Count == rankedIndexes.Count()
                 ? "ai-ranked"
-                : (rankedIndexes.Count > 0 ? "ai-ranked+fallback-fill" : "fallback-empty-ai-ranking"));
+                : (rankedIndexes.Count() > 0 ? "ai-ranked+fallback-fill" : "fallback-empty-ai-ranking"));
 
-        LogDiscovery(scope, source, candidates.Count, rankedIndexes.Count, pickedIdeas.Count);
+        LogDiscovery(scope, source, candidates.Count, rankedIndexes.Count(), pickedIdeas.Count);
 
         return pickedIdeas.AsReadOnly();
     }

@@ -1,6 +1,6 @@
 import '../../styles/pages/ideas.css'
-import type { RouteParams } from '../../utils/router.ts'
-import { getProject } from '../../services/projectService.ts'
+//import type { RouteParams } from '../../utils/router.ts'
+import { getProject } from '../../services/projectService'
 import {
     getDiscoveredIdeasForTopic,
     IDEA_DISCOVERY_MAX_RESULTS,
@@ -9,7 +9,7 @@ import {
     saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
     type IdeaDiscoveryCategory,
-} from '../../services/ideaService.ts'
+} from '../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -18,18 +18,19 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../services/ideaResponseService.ts'
-import type { Idea, IdeaTopic } from '../../models/idea.ts'
-import { resolveInitialIdeasView } from './initialView.ts'
-import { createIdeaPanelController } from './ideaPanel.ts'
-import { createSafetyReviewDialogController } from './safetyReviewDialog.ts'
-import { createFirstIdeaContactDialogController } from './firstIdeaContactDialog.ts'
-import { renderIdeasComposer } from './composer.ts'
+} from '../../services/ideaResponseService'
+import type { Idea, IdeaTopic } from '../../models/idea'
+import { resolveInitialIdeasView } from './initialView'
+import { createIdeaPanelController } from './ideaPanel'
+import { createSafetyReviewDialogController } from './safetyReviewDialog'
+import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
+import { renderIdeasComposer } from './composer'
 import type { ActiveView } from './types.ts'
-import { renderIdeasHeader } from './ideasHeader.ts'
-import { createTopicModalController } from './topicModal.ts'
-import { createIdeasListController } from './ideasListController.ts'
-import { createIdeasSubmitHandler } from './ideasSubmitHandler.ts'
+import { renderIdeasHeader } from './ideasHeader'
+import { createTopicModalController } from './topicModal'
+import { createIdeasListController } from './ideasListController'
+import { createIdeasSubmitHandler } from './ideasSubmitHandler'
+import {ProjectContext, render} from "../../main";
 
 type DiscoveryBadgeType = 'similar' | 'different'
 
@@ -121,7 +122,7 @@ function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
 }
 
 
-export async function renderIdeasPage(container: HTMLElement, params: RouteParams): Promise<void> {
+export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getIdeasYouthToken(project.slug)
@@ -1122,3 +1123,5 @@ export async function renderIdeasPage(container: HTMLElement, params: RouteParam
 
     void render()
 }
+
+render(renderIdeasPage)

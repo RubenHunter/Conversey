@@ -4,7 +4,6 @@ using Conversey.BL.Domain.Survey;
 
 namespace Conversey.BL.Domain.Administration;
 
-//TODO make this extend IdentityUser
 public class Youth
 {
     [Required]

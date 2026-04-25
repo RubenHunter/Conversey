@@ -202,11 +202,11 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
         }
 
-        public Task<IReadOnlyList<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
         {
             if (candidateIdeas.Count == 0 || limit <= 0)
             {
-                return Task.FromResult<IReadOnlyList<int>>(Array.Empty<int>());
+                return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
             }
 
             var ordered = Enumerable.Range(0, candidateIdeas.Count);
@@ -215,7 +215,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 ordered = ordered.Reverse();
             }
 
-            return Task.FromResult<IReadOnlyList<int>>(ordered.Take(limit).ToList().AsReadOnly());
+            return Task.FromResult(ordered.Take(limit));
         }
 
         public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)

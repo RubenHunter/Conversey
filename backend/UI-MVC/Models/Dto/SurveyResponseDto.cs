@@ -7,7 +7,7 @@ namespace Conversey.UI_MVC.Models.Dto;
 public class SurveyAnswerSubmissionRequestDto
 {
     public Slug ProjectId { get; set; }
-    public string? YouthId { get; set; }
+    public Guid YouthId { get; set; }
     public IReadOnlyCollection<SurveyAnswerDto> Answers { get; set; } = Array.Empty<SurveyAnswerDto>();
 }
 

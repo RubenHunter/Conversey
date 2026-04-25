@@ -7,7 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig(async () => {
     const files = fs.readdirSync('./Assets');
     const inputEntries = files
-			.filter(file => file.endsWith('.ts') )
+        .filter(file => file.endsWith('.ts') )
         .reduce((acc, file) => {
             const fileName = path.parse(file).name;
             acc[fileName] = path.join('./Assets', file);
@@ -18,9 +18,9 @@ export default defineConfig(async () => {
         appType: 'custom',
         root: 'Assets',
         publicDir: 'public',
-			plugins: [
-				tailwindcss(),
-			],
+        plugins: [
+            tailwindcss(),
+        ],
         build: {
             emptyOutDir: true,
             manifest: true,
@@ -32,6 +32,16 @@ export default defineConfig(async () => {
         },
         server: {
             strictPort: true,
+            // host: true,
+            // cors: {
+            //     origin: [
+            //         'http://localhost:4180',
+            //         'https://localhost:7093',
+            //         'http://hogeschool-nova.localhost:4180',
+            //         'https://hogeschool-nova.localhost:7093'
+            //     ],
+            //     credentials: true
+            // }
         },
         optimizeDeps: {
             include: []

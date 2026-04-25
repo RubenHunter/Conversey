@@ -5,11 +5,22 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Conversey.UI_MVC</RootNamespace>
+    <AssemblyName>Conversey.UI_MVC</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.7" />
     <PackageReference Include="Vite.AspNetCore" Version="2.4.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
+
   </ItemGroup>
+  
+  
 
   <ItemGroup>
     <Content Remove="package-lock.json" />
@@ -36,11 +47,43 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    <None Include="wwwroot\images\Conversey_logo.png">
+      <Link>wwwroot\Conversey_logo.png</Link>
+      <TargetPath>wwwroot/Conversey_logo.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo.svg">
+      <Link>wwwroot\Conversey_logo.svg</Link>
+      <TargetPath>wwwroot/Conversey_logo.svg</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo_bottom.png">
+      <Link>wwwroot\Conversey_logo_bottom.png</Link>
+      <TargetPath>wwwroot/Conversey_logo_bottom.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="wwwroot\images\Conversey_logo_side.png">
+      <Link>wwwroot\Conversey_logo_side.png</Link>
+      <TargetPath>wwwroot/Conversey_logo_side.png</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
 		
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BL\BL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Survey\SurveyView.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Contact.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Privacy.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Test.cshtml" />
   </ItemGroup>
 
 
