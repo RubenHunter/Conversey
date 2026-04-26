@@ -54,10 +54,12 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
     if (typeof rawType === 'number') {
         if (rawType === 0) return InteractionType.Chat
         if (rawType === 1) return InteractionType.VerticalScroll
+        if (rawType === 2) return InteractionType.UserDefined
         return undefined
     }
 
     if (rawType === InteractionType.Chat || rawType.toLowerCase() === 'chat') return InteractionType.Chat
+    if (rawType === InteractionType.UserDefined || rawType.toLowerCase() === 'userdefined') return InteractionType.UserDefined
 
     const normalized = rawType.replace(/\s|-/g, '_').toLowerCase()
     if (normalized === 'vertical_scroll' || normalized === 'verticalscroll') {

@@ -12,6 +12,7 @@ import {renderScrollNav} from '../scrollNav'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
 import {navigate, ProjectContext, render} from "../../main";
+import {InteractionType} from '../../models/project'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -395,4 +396,12 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     })
 }
 
-render(renderSurveyPage)
+render(async (container, params) => {
+    const project = await getProject(params.organizationSlug, params.projectSlug)
+    if (project.interactionType === InteractionType.Chat) {
+        const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+        await renderChatSurveyPage(container, params, project)
+    } else {
+        await renderSurveyPage(container, params)
+    }
+})
