@@ -62,6 +62,10 @@
     <_ContentIncludedByDefault Remove="Views\Home\Test.cshtml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="Views\WorkspaceAdmin\Index.cshtml" />
+  </ItemGroup>
+
 
 
   <!-- Ensure Node environment on Build -->

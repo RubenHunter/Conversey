@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
@@ -46,12 +47,14 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
+builder.Services.AddScoped<IAdminManager, AdminManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -59,7 +62,7 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequiredLength = 6;
@@ -77,12 +80,15 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireRole("Admin");
-        policy.AddRequirements(new WorkspaceAdminRequirement());
-    });
+options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
+        {
+            policy.AddRequirements(new WorkspaceAdminRequirement());
+        });
+
+        options.AddPolicy(ConverseyAdminPolicy.Name, policy =>
+        {
+            policy.AddRequirements(new ConverseyAdminRequirement());
+        });
 });
 
 // builder.Services.AddCors(options =>
@@ -150,6 +156,7 @@ builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
 
 
 TypeDescriptor.AddAttributes(
@@ -211,81 +218,99 @@ void InitializeDatabase(bool drop)
         // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
         // Then seed Identity and Roles
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        SeedIdentity(userManager, roleManager);
         if (created)
         {
             DataSeeder.Seed(dbCtx);
+            SeedIdentity(userManager, roleManager, dbCtx);
         }
     }
 }
 
-void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, ConverseyDbContext dbCtx)
 {
     // Create roles if they don't exist
     if (!roleManager.RoleExistsAsync("User").Result)
     {
         roleManager.CreateAsync(new IdentityRole("User")).Wait();
     }
-    if (!roleManager.RoleExistsAsync("Admin").Result)
+    if (!roleManager.RoleExistsAsync("WorkspaceAdmin").Result)
     {
-        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+        roleManager.CreateAsync(new IdentityRole("WorkspaceAdmin")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("ConverseyAdmin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("ConverseyAdmin")).Wait();
     }
 
-    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
-    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
+    // Seed ConverseyAdmin
+    EnsureSeedUser(userManager, "admin@conversey.be", "ConverseyAdmin");
+
+    // Seed WorkspaceAdmins
+    var hogeschoolNovaWorkspace = dbCtx.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("hogeschool-nova"));
+    var stadLindenWorkspace = dbCtx.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("stad-linden"));
+
+    if (hogeschoolNovaWorkspace == null)
+    {
+        hogeschoolNovaWorkspace = new Workspace
+        {
+            Id = Slug.FromName("hogeschool-nova"),
+            Name = "Hogeschool Nova"
+        };
+        dbCtx.Workspaces.Add(hogeschoolNovaWorkspace);
+        dbCtx.SaveChanges();
+    }
+
+    if (stadLindenWorkspace == null)
+    {
+        stadLindenWorkspace = new Workspace
+        {
+            Id = Slug.FromName("stad-linden"),
+            Name = "Stad Linden"
+        };
+        dbCtx.Workspaces.Add(stadLindenWorkspace);
+        dbCtx.SaveChanges();
+    }
+
+    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "WorkspaceAdmin", hogeschoolNovaWorkspace);
+    EnsureSeedUser(userManager, "admin@stad.linden.be", "WorkspaceAdmin", stadLindenWorkspace);
 }
 
-void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
+void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string role, Workspace workspace = null)
 {
-    var normalizedWorkspaceId = Slug.FromName(workspaceId);
     var user = userManager.FindByEmailAsync(email).Result;
     if (user == null)
     {
-        user = new ApplicationUser
+        if (role == "ConverseyAdmin")
         {
-            Email = email,
-            UserName = email,
-            EmailConfirmed = true,
-            WorkspaceId = normalizedWorkspaceId
-        };
+            user = new ConverseyAdminUser
+            {
+                Email = email,
+                UserName = email,
+                EmailConfirmed = true
+            };
+        }
+        else if (role == "WorkspaceAdmin")
+        {
+            user = new WorkspaceAdminUser
+            {
+                Email = email,
+                UserName = email,
+                EmailConfirmed = true,
+                Workspace = workspace
+            };
+        }
+        else
+        {
+            return;
+        }
+
         userManager.CreateAsync(user, "Test123!").Wait();
     }
-    else
+
+    if (!userManager.IsInRoleAsync(user, role).Result)
     {
-        var changed = false;
-        if (user.UserName != email)
-        {
-            user.UserName = email;
-            changed = true;
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            changed = true;
-        }
-        
-        if (user.WorkspaceId != normalizedWorkspaceId)
-        {
-            user.WorkspaceId = normalizedWorkspaceId;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            userManager.UpdateAsync(user).Wait();
-        }
-
-        if (!userManager.HasPasswordAsync(user).Result)
-        {
-            userManager.AddPasswordAsync(user, "Test123!").Wait();
-        }
-    }
-
-    if (!userManager.IsInRoleAsync(user, "Admin").Result)
-    {
-        userManager.AddToRoleAsync(user, "Admin").Wait();
+        userManager.AddToRoleAsync(user, role).Wait();
     }
 }
