@@ -40,15 +40,15 @@ interface OpenTextState {
     floatingConfirmRow: HTMLElement | null
 }
 
+// Matches the speaker icon used in vertical scroll mode (shared.ts)
+const SPEAKER_SVG = `<svg class="chat-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
+</svg>`
+
 const AI_AVATAR = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="18" cy="18" r="18" fill="var(--color-primary)"/>
   <circle cx="18" cy="14" r="5" fill="white" fill-opacity="0.9"/>
   <path d="M6 32c0-5.523 5.373-9 12-9s12 3.477 12 9" fill="white" fill-opacity="0.9"/>
-</svg>`
-
-const SPEAKER_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
 </svg>`
 
 const MAGIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -256,6 +256,7 @@ export async function renderChatSurveyPage(
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
     let openTextState: OpenTextState | null = null
+    let activeConfirmIndex: number | null = null
     let activeSendHandler: (() => void | Promise<void>) | null = null
 
     // ===== Progress =====
@@ -299,27 +300,60 @@ export async function renderChatSurveyPage(
         animated?: boolean
         bubbleClass?: string
         questionNum?: number
+        required?: boolean
     }
 
     async function appendAiBubble(text: string, options: AiBubbleOptions = {}): Promise<void> {
-        const { animated = true, bubbleClass, questionNum } = options
+        const { animated = true, bubbleClass, questionNum, required } = options
         if (animated) {
             showTyping()
             await wait(650 + Math.min(text.length * 7, 850))
             hideTyping()
         }
-        const numHtml = questionNum != null
-            ? `<span class="chat-question-num">${questionNum}.</span> `
-            : ''
-        const extraClass = bubbleClass ? ` ${bubbleClass}` : ''
+
         const row = document.createElement('div')
         row.className = 'chat-row chat-row--ai'
-        row.innerHTML = `
-            <div class="chat-avatar">${AI_AVATAR}</div>
-            <div class="chat-bubble-group">
-                <div class="chat-bubble chat-bubble--ai${extraClass}">${numHtml}${esc(text)}</div>
-                <button class="chat-speaker-btn" type="button" disabled aria-label="Read aloud">${SPEAKER_SVG}</button>
-            </div>`
+
+        const bubbleEl = document.createElement('div')
+        const extraClass = bubbleClass ? ` ${bubbleClass}` : ''
+        bubbleEl.className = `chat-bubble chat-bubble--ai${extraClass}`
+
+        if (questionNum != null) {
+            const numEl = document.createElement('span')
+            numEl.className = 'chat-question-num'
+            numEl.textContent = `${questionNum}.`
+            bubbleEl.appendChild(numEl)
+            bubbleEl.appendChild(document.createTextNode(' '))
+        }
+
+        bubbleEl.appendChild(document.createTextNode(text))
+
+        if (required) {
+            bubbleEl.appendChild(document.createTextNode(' '))
+            const badge = document.createElement('span')
+            badge.className = 'chat-required-badge'
+            badge.textContent = 'Required'
+            bubbleEl.appendChild(badge)
+        }
+
+        const speakerBtn = document.createElement('button')
+        speakerBtn.className = 'chat-speaker-btn'
+        speakerBtn.type = 'button'
+        speakerBtn.disabled = true
+        speakerBtn.setAttribute('aria-label', 'Read aloud')
+        speakerBtn.innerHTML = SPEAKER_SVG
+
+        const group = document.createElement('div')
+        group.className = 'chat-bubble-group'
+        group.appendChild(bubbleEl)
+        group.appendChild(speakerBtn)
+
+        const avatarDiv = document.createElement('div')
+        avatarDiv.className = 'chat-avatar'
+        avatarDiv.innerHTML = AI_AVATAR
+
+        row.appendChild(avatarDiv)
+        row.appendChild(group)
         messagesEl.appendChild(row)
         scrollToBottom()
     }
@@ -338,6 +372,17 @@ export async function renderChatSurveyPage(
         const hasText = chatInput.value.trim().length > 0
         micIcon.classList.toggle('chat-icon-hidden', hasText)
         sendIcon.classList.toggle('chat-icon-hidden', !hasText)
+    }
+
+    // ===== Inline confirm =====
+    function showInlineConfirm(index: number): void {
+        activeConfirmIndex = index
+        confirmInlineBtn.hidden = false
+    }
+
+    function hideInlineConfirm(): void {
+        activeConfirmIndex = null
+        confirmInlineBtn.hidden = true
     }
 
     // ===== Open text: multi-message =====
@@ -401,6 +446,7 @@ export async function renderChatSurveyPage(
         answeredState[index] = bundled.trim().length > 0
         updateProgress()
         openTextState = null
+        hideInlineConfirm()
         deactivateInput()
 
         await wait(350)
@@ -420,7 +466,7 @@ export async function renderChatSurveyPage(
         chatInput.style.height = 'auto'
         sendBtn.disabled = false
         magicBtn.hidden = false
-        confirmInlineBtn.hidden = false
+        showInlineConfirm(questionIndex)
         activeSendHandler = sendOpenTextMessage
         updateSendIcon()
         setTimeout(() => chatInput.focus(), 50)
@@ -433,7 +479,7 @@ export async function renderChatSurveyPage(
         chatInput.style.height = 'auto'
         sendBtn.disabled = false
         magicBtn.hidden = false
-        confirmInlineBtn.hidden = true
+        hideInlineConfirm()
         activeSendHandler = handler
         updateSendIcon()
         setTimeout(() => chatInput.focus(), 50)
@@ -447,7 +493,6 @@ export async function renderChatSurveyPage(
         chatInput.placeholder = placeholder
         sendBtn.disabled = true
         magicBtn.hidden = true
-        confirmInlineBtn.hidden = true
         updateSendIcon()
     }
 
@@ -471,6 +516,8 @@ export async function renderChatSurveyPage(
     confirmInlineBtn.addEventListener('click', () => {
         if (openTextState !== null) {
             void confirmOpenText(openTextState.questionIndex)
+        } else if (activeConfirmIndex !== null) {
+            void confirmQuestion(activeConfirmIndex)
         }
     })
 
@@ -486,6 +533,7 @@ export async function renderChatSurveyPage(
 
         answeredState[index] = true
         updateProgress()
+        hideInlineConfirm()
 
         await wait(350)
         if (index < questions.length - 1) {
@@ -502,6 +550,7 @@ export async function renderChatSurveyPage(
         await appendAiBubble(q.text, {
             bubbleClass: 'chat-bubble--question-title',
             questionNum: index + 1,
+            required: q.isRequired,
         })
 
         if (q.hint?.trim()) {
@@ -511,7 +560,7 @@ export async function renderChatSurveyPage(
 
         if (q.type === QuestionType.OpenText) {
             const hintRow = document.createElement('div')
-            hintRow.className = 'chat-row chat-row--ai chat-row--hint'
+            hintRow.className = 'chat-row chat-row--hint'
             hintRow.innerHTML = `
                 <div class="chat-avatar chat-avatar--spacer"></div>
                 <p class="chat-open-text-hint">Type your answer in the chat bar below</p>`
@@ -556,6 +605,7 @@ export async function renderChatSurveyPage(
         scrollToBottom()
 
         deactivateInput('Select your answer above...')
+        showInlineConfirm(index)
     }
 
     // ===== Submit section =====
@@ -599,6 +649,18 @@ export async function renderChatSurveyPage(
                 localStorage.setItem(completedKey, 'true')
                 clearSurveyProgress(projectSlugKey)
                 submitRow.remove()
+
+                // Success feedback before transitioning
+                const successRow = document.createElement('div')
+                successRow.className = 'chat-submit-success'
+                successRow.innerHTML = `
+                    <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
+                    <p class="chat-submit-success-title">Submitted successfully!</p>
+                    <p class="chat-submit-success-sub">Moving to ideation phase...</p>`
+                messagesEl.appendChild(successRow)
+                scrollToBottom()
+
+                await wait(2200)
                 await enterIdeasPhase()
             } catch {
                 btn.disabled = false
@@ -615,6 +677,25 @@ export async function renderChatSurveyPage(
                 el.classList.add('chat-survey-history-locked')
             }
         })
+    }
+
+    // ===== Offensive content notification =====
+    function showOffensiveNotice(): void {
+        if (chatShell.querySelector('#chat-offensive-notice')) return
+        const notice = document.createElement('div')
+        notice.id = 'chat-offensive-notice'
+        notice.className = 'chat-offensive-notice'
+        notice.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            <span>Offensive language detected</span>`
+        const inputWrap = chatShell.querySelector('.chat-input-wrap')
+        chatShell.insertBefore(notice, inputWrap)
+    }
+
+    function hideOffensiveNotice(): void {
+        chatShell.querySelector('#chat-offensive-notice')?.remove()
     }
 
     // ===== Ideation phase =====
@@ -635,10 +716,9 @@ export async function renderChatSurveyPage(
         const progressStrip = container.querySelector<HTMLElement>('#chat-progress-strip')!
         progressStrip.hidden = true
 
-        let currentTopicId = firstTopic.id
-        let currentSort: 'all' | 'similar' | 'different' = 'all'
+        let currentView: ActiveView = { type: 'topic', topicId: firstTopic.id }
 
-        // Build topic selector HTML
+        // Build topic selector HTML (topics + My Ideas option)
         const topicOptions = topics
             .map(
                 (t) =>
@@ -659,6 +739,11 @@ export async function renderChatSurveyPage(
             </button>
             <ul class="chat-topic-dropdown" id="chat-topic-dropdown" role="listbox" hidden>
                 ${topicOptions}
+                <li class="chat-topic-separator" role="separator" aria-hidden="true"></li>
+                <li class="chat-topic-option chat-topic-option--my-ideas" data-view="my-ideas" role="option" aria-selected="false">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    My ideas
+                </li>
             </ul>`
 
         const ideasArea = document.createElement('div')
@@ -666,10 +751,16 @@ export async function renderChatSurveyPage(
         ideasArea.innerHTML = `
             <div class="chat-ideas-area-header">
                 <span class="chat-ideas-area-title">Community ideas</span>
-                <div class="chat-sort-tabs" id="chat-sort-tabs">
-                    <button class="chat-sort-tab chat-sort-tab--active" data-sort="all" type="button">All</button>
-                    <button class="chat-sort-tab" data-sort="similar" type="button">Similar</button>
-                    <button class="chat-sort-tab" data-sort="different" type="button">Different</button>
+                <div class="ideas-discovery chat-discovery-wrap" id="chat-discovery">
+                    <button class="ideas-discovery-trigger" id="chat-discovery-trigger" type="button" aria-expanded="false" aria-haspopup="menu">
+                        <span id="chat-discovery-label">Broad selection</span>
+                        <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="ideas-discovery-menu chat-discovery-menu" id="chat-discovery-menu" role="menu" hidden>
+                        <button class="ideas-discovery-option selected" data-chat-sort="broad" role="menuitem" type="button">Broad selection</button>
+                        <button class="ideas-discovery-option" data-chat-sort="similar" role="menuitem" type="button">Similar ideas</button>
+                        <button class="ideas-discovery-option" data-chat-sort="different" role="menuitem" type="button">Differing ideas</button>
+                    </div>
                 </div>
             </div>
             <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>`
@@ -680,15 +771,24 @@ export async function renderChatSurveyPage(
 
         const ideasListEl = container.querySelector<HTMLDivElement>('#chat-ideas-list')!
         const flaggedIdeaIds = new Set<number>()
+        let currentSort: 'broad' | 'similar' | 'different' = 'broad'
 
         const safetyDialog = createSafetyReviewDialogController({ root: container })
+
+        // Wrap reviewWithSuggestion to show notification before dialog
+        const reviewWithSuggestion = async (orig: string, sugg: string) => {
+            showOffensiveNotice()
+            await wait(1000)
+            hideOffensiveNotice()
+            return safetyDialog.reviewWithSuggestion(orig, sugg)
+        }
 
         let listController: ReturnType<typeof createIdeasListController> | null = null
 
         const ideaPanel = createIdeaPanelController({
             root: container,
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
-            reviewWithSuggestion: (orig, sugg) => safetyDialog.reviewWithSuggestion(orig, sugg),
+            reviewWithSuggestion,
             updateIdeaAfterSafetyReview: (idea, text, mark) =>
                 updateIdeaAfterSafetyReview(
                     params.organizationSlug,
@@ -739,32 +839,44 @@ export async function renderChatSurveyPage(
             },
         })
 
+        function getCurrentIdeas(): Idea[] {
+            if (currentView.type === 'my-ideas') {
+                return allIdeas.filter((x) => x.authorType === 'self')
+            }
+            const topicId = currentView.topicId
+            let filtered = allIdeas.filter((x) => x.topicId === topicId).slice(0, 20)
+            if (currentSort === 'different') {
+                filtered = filtered.slice().reverse()
+            }
+            return filtered
+        }
+
         function renderIdeasList(): void {
             if (listController) {
                 listController.cleanup()
                 listController = null
             }
-            const currentActiveView: ActiveView = { type: 'topic', topicId: currentTopicId }
-            let topicIdeas = allIdeas.filter((x) => x.topicId === currentTopicId).slice(0, 20)
-            // Placeholder ordering — Similar/Different will use AI ranking in the future
-            if (currentSort === 'different') {
-                topicIdeas = topicIdeas.slice().reverse()
-            }
-            if (topicIdeas.length === 0) {
+            const displayIdeas = getCurrentIdeas()
+            if (displayIdeas.length === 0) {
                 ideasListEl.innerHTML = `<p class="ideas-empty-state">No ideas shared yet. Be the first!</p>`
                 return
             }
             listController = createIdeasListController({
                 list: ideasListEl,
-                ideas: topicIdeas,
-                activeView: currentActiveView,
+                ideas: displayIdeas,
+                activeView: currentView,
                 topics,
                 flaggedIdeaIds,
             })
             listController.startRotation()
         }
 
-        // Topic selector interactions
+        // Ideas list scroll → sync active card
+        ideasListEl.addEventListener('scroll', () => {
+            listController?.updateFromScroll()
+        }, { passive: true })
+
+        // Topic selector
         const topicTrigger = topicSelectorEl.querySelector<HTMLButtonElement>('#chat-topic-trigger')!
         const topicDropdown = topicSelectorEl.querySelector<HTMLElement>('#chat-topic-dropdown')!
         const topicTriggerName = topicSelectorEl.querySelector<HTMLElement>('#chat-topic-trigger-name')!
@@ -777,63 +889,108 @@ export async function renderChatSurveyPage(
         })
 
         topicDropdown.addEventListener('click', (e) => {
-            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-topic-id]')
+            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-topic-id], [data-view="my-ideas"]')
             if (!opt) return
 
-            const newTopicId = Number(opt.getAttribute('data-topic-id'))
-            if (newTopicId === currentTopicId) {
-                topicDropdown.hidden = true
-                topicTrigger.setAttribute('aria-expanded', 'false')
-                return
-            }
-
-            const newTopic = topics.find((t) => t.id === newTopicId)
-            if (!newTopic) return
-
-            currentTopicId = newTopicId
-            topicTriggerName.textContent = newTopic.title
             topicDropdown.hidden = true
             topicTrigger.setAttribute('aria-expanded', 'false')
 
-            topicDropdown.querySelectorAll('[data-topic-id]').forEach((el) => {
-                const isActive = Number(el.getAttribute('data-topic-id')) === newTopicId
+            if (opt.getAttribute('data-view') === 'my-ideas') {
+                // My ideas view
+                const alreadyActive = currentView.type === 'my-ideas'
+                if (alreadyActive) return
+
+                currentView = { type: 'my-ideas' }
+                topicTriggerName.textContent = 'My ideas'
+
+                topicDropdown.querySelectorAll('[data-topic-id]').forEach((el) => {
+                    el.classList.remove('chat-topic-option--active')
+                    el.setAttribute('aria-selected', 'false')
+                })
+                opt.classList.add('chat-topic-option--active')
+                opt.setAttribute('aria-selected', 'true')
+
+                renderIdeasList()
+                deactivateInput('Select a topic above to share your idea...')
+                return
+            }
+
+            const newTopicId = Number(opt.getAttribute('data-topic-id'))
+            const newTopic = topics.find((t) => t.id === newTopicId)
+            if (!newTopic) return
+
+            const alreadyActive = currentView.type === 'topic' && currentView.topicId === newTopicId
+            if (alreadyActive) return
+
+            currentView = { type: 'topic', topicId: newTopicId }
+            topicTriggerName.textContent = newTopic.title
+
+            topicDropdown.querySelectorAll('[data-topic-id], [data-view="my-ideas"]').forEach((el) => {
+                const isActive =
+                    el.getAttribute('data-topic-id') === String(newTopicId)
                 el.classList.toggle('chat-topic-option--active', isActive)
                 el.setAttribute('aria-selected', String(isActive))
             })
 
             renderIdeasList()
             void appendAiBubble(newTopic.prompt?.trim() || `What are your thoughts on: "${newTopic.title}"?`)
+            activateIdeaInput('Share your idea...', handleIdeaSubmit)
         })
 
-        const closeDropdownOnOutsideClick = (e: MouseEvent): void => {
+        // Discovery dropdown
+        const discoveryEl = ideasArea.querySelector<HTMLElement>('#chat-discovery')!
+        const discoveryTrigger = ideasArea.querySelector<HTMLButtonElement>('#chat-discovery-trigger')!
+        const discoveryLabel = ideasArea.querySelector<HTMLSpanElement>('#chat-discovery-label')!
+        const discoveryMenu = ideasArea.querySelector<HTMLElement>('#chat-discovery-menu')!
+
+        const discoveryLabels: Record<string, string> = {
+            broad: 'Broad selection',
+            similar: 'Similar ideas',
+            different: 'Differing ideas',
+        }
+
+        discoveryTrigger.addEventListener('click', (e) => {
+            e.stopPropagation()
+            const opening = discoveryMenu.hidden
+            discoveryMenu.hidden = !opening
+            discoveryTrigger.setAttribute('aria-expanded', String(opening))
+        })
+
+        discoveryMenu.addEventListener('click', (e) => {
+            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-sort]')
+            if (!opt) return
+            const sort = opt.getAttribute('data-chat-sort') as 'broad' | 'similar' | 'different'
+            currentSort = sort
+            discoveryLabel.textContent = discoveryLabels[sort]
+            discoveryMenu.querySelectorAll('[data-chat-sort]').forEach((el) => {
+                el.classList.toggle('selected', el.getAttribute('data-chat-sort') === sort)
+            })
+            discoveryMenu.hidden = true
+            discoveryTrigger.setAttribute('aria-expanded', 'false')
+            renderIdeasList()
+        })
+
+        const closeMenusOnOutsideClick = (e: MouseEvent): void => {
             if (!topicSelectorEl.contains(e.target as Node)) {
                 topicDropdown.hidden = true
                 topicTrigger.setAttribute('aria-expanded', 'false')
             }
+            if (!discoveryEl.contains(e.target as Node)) {
+                discoveryMenu.hidden = true
+                discoveryTrigger.setAttribute('aria-expanded', 'false')
+            }
         }
-        document.addEventListener('click', closeDropdownOnOutsideClick)
-
-        // Sort tabs
-        const sortTabsEl = ideasArea.querySelector<HTMLElement>('#chat-sort-tabs')!
-        sortTabsEl.addEventListener('click', (e) => {
-            const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-sort]')
-            if (!btn) return
-            currentSort = btn.getAttribute('data-sort') as 'all' | 'similar' | 'different'
-            sortTabsEl.querySelectorAll('.chat-sort-tab').forEach((el) => {
-                el.classList.toggle('chat-sort-tab--active', el.getAttribute('data-sort') === currentSort)
-            })
-            renderIdeasList()
-        })
+        document.addEventListener('click', closeMenusOnOutsideClick)
 
         // Ideas list click → open panel
         ideasListEl.addEventListener('click', (e) => {
             const card = (e.target as HTMLElement).closest<HTMLElement>('.ideas-card')
             if (!card || !listController) return
             const idx = Number(card.getAttribute('data-original-index'))
-            const topicIdeas = allIdeas.filter((x) => x.topicId === currentTopicId).slice(0, 20)
-            if (!Number.isFinite(idx) || idx < 0 || idx >= topicIdeas.length) return
+            const displayIdeas = getCurrentIdeas()
+            if (!Number.isFinite(idx) || idx < 0 || idx >= displayIdeas.length) return
             listController.setActive(idx, true)
-            ideaPanel.open(topicIdeas[idx])
+            ideaPanel.open(displayIdeas[idx])
         })
 
         container.querySelector<HTMLElement>('#idea-panel-backdrop')?.addEventListener('click', () => {
@@ -847,7 +1004,7 @@ export async function renderChatSurveyPage(
             'app:before-navigate',
             () => {
                 listController?.cleanup()
-                document.removeEventListener('click', closeDropdownOnOutsideClick)
+                document.removeEventListener('click', closeMenusOnOutsideClick)
             },
             { once: true },
         )
@@ -863,7 +1020,7 @@ export async function renderChatSurveyPage(
             projectSlug: params.projectSlug,
             projectId: project.id,
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
-            reviewWithSuggestion: (orig, sugg) => safetyDialog.reviewWithSuggestion(orig, sugg),
+            reviewWithSuggestion,
             onIdeaSubmitted: (idea: Idea) => {
                 allIdeas.unshift(idea)
                 renderIdeasList()
@@ -874,16 +1031,19 @@ export async function renderChatSurveyPage(
         async function handleIdeaSubmit(): Promise<void> {
             const text = chatInput.value.trim()
             if (!text) return
+            if (currentView.type !== 'topic') return
 
             deactivateInput('Submitting...')
             appendUserBubble(text)
 
             try {
-                await submitHandler.submit(text, { type: 'topic', topicId: currentTopicId })
+                await submitHandler.submit(text, currentView)
             } catch {
                 await appendAiBubble('Sorry, something went wrong. Please try again.')
             } finally {
-                activateIdeaInput('Share another idea...', handleIdeaSubmit)
+                if (currentView.type === 'topic') {
+                    activateIdeaInput('Share another idea...', handleIdeaSubmit)
+                }
             }
         }
 

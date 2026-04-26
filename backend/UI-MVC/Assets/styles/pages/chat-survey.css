@@ -122,7 +122,6 @@
   display: block;
 }
 
-/* Invisible spacer that keeps open-text hint aligned */
 .chat-avatar--spacer {
   visibility: hidden;
 }
@@ -135,7 +134,7 @@
   min-width: 0;
 }
 
-/* ===== Speaker button ===== */
+/* ===== Speaker button — same icon as vertical scroll mode ===== */
 .chat-speaker-btn {
   width: 26px;
   height: 26px;
@@ -144,7 +143,7 @@
   border: none;
   background: transparent;
   color: var(--color-text-muted);
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
   display: flex;
   align-items: center;
@@ -154,7 +153,7 @@
   margin-bottom: 2px;
 }
 
-.chat-speaker-btn svg {
+.chat-speaker-icon {
   width: 14px;
   height: 14px;
 }
@@ -202,6 +201,22 @@
   margin-right: 2px;
 }
 
+/* Required badge inside bubble */
+.chat-required-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
 /* ===== Typing indicator ===== */
 .chat-bubble--typing {
   display: flex;
@@ -237,10 +252,9 @@
 }
 
 .chat-answer-region {
-  padding-left: calc(32px + 4px); /* align with bubble left edge */
+  padding-left: calc(32px + 4px);
 }
 
-/* Strip out vertical-scroll spacing from embedded components */
 .chat-question-component {
   margin-bottom: 0 !important;
 }
@@ -257,7 +271,6 @@
   margin-top: 0;
 }
 
-/* Open text hint */
 .chat-open-text-hint {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -266,7 +279,6 @@
   margin: 0;
 }
 
-/* Error message placement within chat question blocks */
 .chat-question-block .survey-error {
   padding-left: calc(32px + 4px);
 }
@@ -350,6 +362,48 @@
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+}
+
+/* ===== Submit success card ===== */
+.chat-submit-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg) var(--spacing-md);
+  text-align: center;
+  animation: chatRowIn 400ms ease forwards;
+}
+
+.chat-submit-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.chat-submit-success-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 3;
+}
+
+.chat-submit-success-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.chat-submit-success-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
 }
 
 /* ===== Input wrap ===== */
@@ -462,6 +516,27 @@
   height: 20px;
 }
 
+/* ===== Offensive content notice ===== */
+.chat-offensive-notice {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: color-mix(in srgb, #ef4444 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  animation: chatRowIn 200ms ease forwards;
+}
+
+.chat-offensive-notice svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* ===== Survey history lock (ideation phase) ===== */
 .chat-survey-history-locked {
   opacity: 0.35;
@@ -479,7 +554,7 @@
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
-  z-index: 10;
+  z-index: 20;
 }
 
 .chat-topic-trigger {
@@ -533,9 +608,13 @@
   list-style: none;
   padding: var(--spacing-xs) 0;
   margin: 0;
+  z-index: 30;
 }
 
 .chat-topic-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
   cursor: pointer;
   font-size: var(--font-size-sm);
@@ -550,6 +629,21 @@
 .chat-topic-option--active {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+.chat-topic-separator {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--spacing-xs) 0;
+  padding: 0;
+}
+
+.chat-topic-option--my-ideas {
+  color: var(--color-text-secondary);
+}
+
+.chat-topic-option--my-ideas.chat-topic-option--active {
+  color: var(--color-primary);
 }
 
 /* ===== Ideas area ===== */
@@ -582,33 +676,17 @@
   color: var(--color-text-secondary);
 }
 
-/* Sort tabs */
-.chat-sort-tabs {
-  display: flex;
-  gap: 4px;
+/* Discovery dropdown positioned within the ideas area header */
+.chat-discovery-wrap {
+  position: relative;
 }
 
-.chat-sort-tab {
-  padding: 2px var(--spacing-sm);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
-}
-
-.chat-sort-tab:hover {
-  background-color: var(--color-disabled-bg);
-  color: var(--color-text);
-}
-
-.chat-sort-tab--active {
-  background-color: var(--color-primary);
-  color: var(--color-text-on-primary);
-  border-color: var(--color-primary);
+.chat-discovery-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 160px;
+  z-index: 10;
 }
 
 /* Scope the ideas-list inside chat to its scrollable area */
