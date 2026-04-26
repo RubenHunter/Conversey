@@ -13,6 +13,7 @@ import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../..
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
 import {navigate, ProjectContext, render} from "../../main";
 import {InteractionType} from '../../models/project'
+import {getSurveyStrings} from '../../i18n/survey'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -396,12 +397,101 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     })
 }
 
+async function showLayoutPicker(container: HTMLElement, storageKey: string): Promise<'chat' | 'classic'> {
+    const t = getSurveyStrings()
+
+    return new Promise((resolve) => {
+        container.innerHTML = `
+            <div class="layout-picker-wrap">
+                <div class="layout-picker-card">
+                    <h2 class="layout-picker-title"></h2>
+                    <div class="layout-picker-options">
+                        <button class="layout-picker-option" data-layout="classic" type="button">
+                            <div class="layout-picker-option-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                    <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                                </svg>
+                            </div>
+                            <strong></strong>
+                            <p></p>
+                        </button>
+                        <button class="layout-picker-option" data-layout="chat" type="button">
+                            <div class="layout-picker-option-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </div>
+                            <strong></strong>
+                            <p></p>
+                        </button>
+                    </div>
+                    <label class="layout-picker-remember">
+                        <input type="checkbox" id="layout-picker-remember">
+                        <span></span>
+                    </label>
+                </div>
+            </div>`
+
+        const card = container.querySelector('.layout-picker-card')!
+        card.querySelector<HTMLElement>('.layout-picker-title')!.textContent = t.layoutPickerTitle
+        card.querySelector<HTMLElement>('.layout-picker-remember span')!.textContent = t.layoutPickerSave
+
+        const pickerBtns = container.querySelectorAll<HTMLButtonElement>('.layout-picker-option')
+        const classicBtn = pickerBtns[0]
+        const chatBtn = pickerBtns[1]
+        classicBtn.querySelector('strong')!.textContent = t.layoutPickerClassic
+        classicBtn.querySelector('p')!.textContent = t.layoutPickerClassicDesc
+        chatBtn.querySelector('strong')!.textContent = t.layoutPickerChat
+        chatBtn.querySelector('p')!.textContent = t.layoutPickerChatDesc
+
+        container.querySelectorAll<HTMLButtonElement>('[data-layout]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const layout = btn.getAttribute('data-layout') as 'chat' | 'classic'
+                const remember = (container.querySelector<HTMLInputElement>('#layout-picker-remember'))?.checked ?? false
+                if (remember) {
+                    localStorage.setItem(storageKey, layout)
+                }
+                resolve(layout)
+            })
+        })
+    })
+}
+
 render(async (container, params) => {
     const project = await getProject(params.organizationSlug, params.projectSlug)
+
     if (project.interactionType === InteractionType.Chat) {
         const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
         await renderChatSurveyPage(container, params, project)
-    } else {
-        await renderSurveyPage(container, params)
+        return
     }
+
+    if (project.interactionType === InteractionType.UserDefined) {
+        const layoutKey = `survey-layout-${params.projectSlug}`
+        const savedLayout = localStorage.getItem(layoutKey)
+
+        if (savedLayout === 'chat') {
+            const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+            await renderChatSurveyPage(container, params, project)
+            return
+        }
+
+        if (savedLayout === 'classic') {
+            await renderSurveyPage(container, params)
+            return
+        }
+
+        const choice = await showLayoutPicker(container, layoutKey)
+        if (choice === 'chat') {
+            const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+            await renderChatSurveyPage(container, params, project)
+        } else {
+            await renderSurveyPage(container, params)
+        }
+        return
+    }
+
+    await renderSurveyPage(container, params)
 })

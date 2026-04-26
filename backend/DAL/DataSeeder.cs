@@ -423,7 +423,7 @@ public static class DataSeeder
             Status = Status.Active,
             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
-            InteractionForm = InteractionType.Chat,
+            InteractionForm = InteractionType.UserDefined,
             Workspace = stadLinden
         };
         vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
