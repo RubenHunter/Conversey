@@ -2,12 +2,16 @@ import { renderCommunityIdeasList } from './communityList.ts'
 import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 
+type DiscoveryBadgeType = 'similar' | 'different'
+
 interface CreateIdeasListControllerParams {
     list: HTMLElement
     ideas: Idea[]
     activeView: ActiveView
     topics: IdeaTopic[]
     flaggedIdeaIds: Set<number>
+    discoveryBadgeByIdeaId?: ReadonlyMap<number, DiscoveryBadgeType>
+    onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void
     onActiveIdeasChanged?: (nextIdea: Idea, originalIndex: number) => void
 }
 
@@ -27,6 +31,8 @@ export function createIdeasListController({
     activeView,
     topics,
     flaggedIdeaIds,
+    discoveryBadgeByIdeaId,
+    onDiscoveryBadgeClick,
     onActiveIdeasChanged,
 }: CreateIdeasListControllerParams): IdeasListController {
     let ideas = initialIdeas
@@ -93,6 +99,8 @@ export function createIdeasListController({
             topics,
             flaggedIdeaIds,
             activeIndex: newActiveIndex,
+            discoveryBadgeByIdeaId,
+            onDiscoveryBadgeClick,
         })
 
         activeIdeaOriginalIndex = newActiveIndex
@@ -121,6 +129,18 @@ export function createIdeasListController({
 
     function updateFromScroll(): void {
         if (ideas.length === 0 || isProgrammaticListScroll) return
+
+        // Boundary snap: at extreme top → first card; at extreme bottom → last card
+        if (list.scrollTop <= 6) {
+            if (activeIdeaOriginalIndex !== 0) setActive(0, false)
+            return
+        }
+        const distToBottom = list.scrollHeight - list.clientHeight - list.scrollTop
+        if (distToBottom <= 6) {
+            const lastIndex = ideas.length - 1
+            if (activeIdeaOriginalIndex !== lastIndex) setActive(lastIndex, false)
+            return
+        }
 
         if (listSyncFrame !== null) {
             window.cancelAnimationFrame(listSyncFrame)

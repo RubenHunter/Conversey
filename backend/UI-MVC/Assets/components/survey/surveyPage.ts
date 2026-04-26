@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type {RouteParams} from '../../utils/router.ts'
 import {navigate} from '../../utils/router.ts'
 import {getProject} from '../../services/projectService.ts'
@@ -14,14 +15,32 @@ import {renderScrollNav} from '../scrollNav.ts'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
 import {initQuestionTTS} from './shared.ts'
-import { formatOrganizationName, getOrganizationBadge } from '../../utils/project.ts'
 
 export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
+=======
+import {getProject} from '../../services/projectService'
+import {getQuestions, submitAnswers} from '../../services/surveyService'
+import {QuestionType} from '../../models/question'
+import type {ResponseAnswer} from '../../models/response'
+import type {QuestionAnswer, QuestionComponent} from './singleChoiceQuestion'
+import {renderSingleChoiceQuestion} from './singleChoiceQuestion'
+import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion'
+import {renderOpenTextQuestion} from './openTextQuestion'
+import {renderScaleQuestion} from './scaleQuestion'
+import type {ScrollNav} from '../scrollNav'
+import {renderScrollNav} from '../scrollNav'
+import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
+import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
+import {navigate, ProjectContext, render} from "../../main";
+
+export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+>>>>>>> origin/development
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const completedKey = `survey-completed-${project.id}`
+    const projectSlugKey = params.projectSlug
+    const completedKey = `survey-completed-${projectSlugKey}`
 
     if (localStorage.getItem(completedKey) === 'true') {
-        clearSurveyProgress(project.id)
+        clearSurveyProgress(projectSlugKey)
         container.innerHTML = `
             <div class="survey-redirect-wrap screen-height">
                 <div class="survey-redirect-card">
@@ -34,7 +53,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         `
 
         const redirectTimer = window.setTimeout(() => {
-            void navigate('ideas', { replace: true })
+            void navigate('ideas')
         }, 3200)
 
         window.addEventListener(
@@ -85,7 +104,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-submit" class="survey-submit-btn" disabled>Submit Survey</button>
+                    <button id="btn-submit" class="survey-submit-btn">Submit Survey</button>
                 </div>
             </div>
         </div>
@@ -161,7 +180,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     }
 
     function persistProgress(): void {
-        saveSurveyProgress(project.id, questions, currentQuestionIndex, collectAnswersByQuestionId())
+        saveSurveyProgress(projectSlugKey, questions, currentQuestionIndex, collectAnswersByQuestionId())
     }
 
     // Auto-scroll textarea into view on mobile when focused
@@ -178,8 +197,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
         headerController.updateProgress(answeredCount, questions.length)
 
         const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
-
-        submitBtn.disabled = !isReady
+        
         actionBar.classList.toggle('survey-ready', isReady)
     }
 
@@ -251,7 +269,7 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
     })
     scrollNav.update(currentQuestionIndex, questions.length)
 
-    const savedProgress = loadSurveyProgress(project.id, questions)
+    const savedProgress = loadSurveyProgress(projectSlugKey, questions)
     if (savedProgress) {
         components.forEach((component, index) => {
             const questionId = questions[index].id
@@ -388,20 +406,20 @@ export async function renderSurveyPage(container: HTMLElement, params: RoutePara
             if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
-
-        submitBtn.disabled = true
+        
         submitBtn.textContent = 'Submitting...'
 
         try {
-            await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: project.id, answers })
+            await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')
-            clearSurveyProgress(project.id)
+            clearSurveyProgress(params.projectSlug)
             cleanupSurveyPage()
-            await navigate('completed')
+            navigate("completed");
         } catch {
-            submitBtn.disabled = false
             submitBtn.textContent = 'Submit Survey'
             alert('Failed to submit survey. Please try again.')
         }
     })
 }
+
+render(renderSurveyPage)

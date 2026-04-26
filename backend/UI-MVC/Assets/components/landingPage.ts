@@ -1,7 +1,7 @@
 import type { RouteParams } from '../utils/router.ts'
 import { navigate } from '../utils/router.ts'
 import { getProject } from '../services/projectService.ts'
-import { formatOrganizationName, getOrganizationBadge } from '../utils/project.ts'
+import { getOrganizationBranding } from '../components/organizationBranding.ts'
 
 function isSurveyCompleted(projectId: number): boolean {
     return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
@@ -23,8 +23,9 @@ if (typeof window !== 'undefined') {
 
 export async function renderLandingPage(container: HTMLElement, params: RouteParams): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
-    const organizationName = project.organizationName?.trim() || formatOrganizationName(project.organizationSlug)
-    const organizationBadge = getOrganizationBadge(organizationName, project.organizationSlug)
+    const { displayName: organizationName, badge: organizationBadge } = getOrganizationBranding(
+        project.organizationName ?? '', project.organizationSlug
+    )
 
     if (isSurveyCompleted(project.id)) {
         container.innerHTML = `

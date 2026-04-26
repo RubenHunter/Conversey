@@ -10,32 +10,39 @@ namespace Conversey.BL.Survey;
 public class QuestionManager: IQuestionManager
 {
     private readonly IQuestionRepository _questionRepository;
+    private readonly IProjectManager _projectManager;
 
-    public QuestionManager(IQuestionRepository questionRepository)
+    public QuestionManager(IQuestionRepository questionRepository, IProjectManager projectManager)
     {
         _questionRepository = questionRepository;
+        _projectManager = projectManager;
     }
 
     public IEnumerable<Question> GetQuestions(Slug workspaceSlug, Slug projectSlug)
     {
-        _ = GetProjectForWorkspace(workspaceSlug, projectSlug);
+        _ = _projectManager.GetProjectById(workspaceSlug, projectSlug);
         return _questionRepository.ReadQuestionsByProjectIdWithChoices(projectSlug);
     }
 
     public void SubmitAnswers(
         Slug workspaceSlug,
         Slug projectSlug,
-        string youthId,
+        Guid youthId,
         IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers)
     {
-        var project = GetProjectForWorkspace(workspaceSlug, projectSlug);
+        var project = _projectManager.GetProjectById(workspaceSlug, projectSlug);
 
-        if (!Guid.TryParse(youthId?.Trim(), out var youthToken))
+        Youth youth;
+        try
         {
-            throw new ValidationException("YouthId must be a valid GUID.");
+            youth = _projectManager.GetYouth(project, youthId);
         }
-
-        var youth = ResolveYouth(project, youthToken);
+        catch (YouthNotFoundException)
+        {
+            var tempEmail = $"{youthId:N}@{projectSlug.Text}.temp.com";
+            youth = _projectManager.AddYouth(youthId, tempEmail, projectSlug);
+        }
+        
 
         foreach (var answerInput in answers ?? Array.Empty<(int QuestionId, int? SelectedOptionId, string OpenTextValue)>())
         {
@@ -116,35 +123,6 @@ public class QuestionManager: IQuestionManager
         {
             throw new AnswerNotFoundException(answerId.ToString());
         }
-    }
-
-    private Project GetProjectForWorkspace(Slug workspaceSlug, Slug projectId)
-    {
-        var project = _questionRepository.ReadProjectBySlugWithWorkspaceAndQuestions(projectId)
-                      ?? throw new ProjectNotFoundException(projectId);
-
-        if (project.Workspace?.Id != workspaceSlug)
-        {
-            throw new ProjectNotFoundException(projectId);
-        }
-
-        return project;
-    }
-
-    private Youth ResolveYouth(Project project, Guid youthToken)
-    {
-        var youth = _questionRepository.ReadYouthByTokenWithProject(youthToken);
-        if (youth == null)
-        {
-            return _questionRepository.CreateYouth(youthToken, project.Id);
-        }
-
-        if (youth.Project?.Id != project.Id)
-        {
-            throw new ValidationException($"Youth '{youthToken}' does not belong to project '{project.Id.Text}'.");
-        }
-
-        return youth;
     }
 
     private void SubmitScaleAnswer(

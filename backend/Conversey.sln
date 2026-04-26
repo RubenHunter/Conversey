@@ -13,14 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UI-MVC", "UI-MVC\UI-MVC.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{B8A23451-EEDE-40B6-9823-B39B89A34DDC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClientApp", "ClientApp", "{2CAAE150-B8B3-4F6E-8A1A-836713F39CB8}"
-	ProjectSection(SolutionItems) = preProject
-		REST\ClientApp\package.json = REST\ClientApp\package.json
-		REST\ClientApp\pnpm-lock.yaml = REST\ClientApp\pnpm-lock.yaml
-		REST\ClientApp\tsconfig.json = REST\ClientApp\tsconfig.json
-		REST\ClientApp\vite.config.ts = REST\ClientApp\vite.config.ts
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

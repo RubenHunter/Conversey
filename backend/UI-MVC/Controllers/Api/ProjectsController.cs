@@ -8,11 +8,11 @@ namespace Conversey.UI_MVC.Controllers.Api;
 
 [ApiController]
 [Route("api/workspaces/{workspaceId}/projects")]
-public class ProjectController : ControllerBase
+public class ProjectsController : ControllerBase
 {
     private readonly IProjectManager _manager;
 
-    public ProjectController(IProjectManager manager)
+    public ProjectsController(IProjectManager manager)
     {
         _manager = manager;
     }

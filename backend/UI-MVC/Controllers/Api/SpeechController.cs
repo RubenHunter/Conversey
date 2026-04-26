@@ -1,11 +1,9 @@
 using Conversey.BL.Speech;
-using Microsoft.AspNetCore.Authorization;
+using Conversey.UI_MVC.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
-[ApiController]
-[Route("api/speech")]
 public class SpeechController : Controller
 {
     private readonly IMistralSpeechService _speechService;
@@ -17,17 +15,7 @@ public class SpeechController : Controller
         _configuration = configuration;
     }
 
-    /// <summary>
-    /// Converteert spraak (audio) naar tekst met Voxtral Mini Transcribe.
-    /// </summary>
-    /// <param name="audioBase64">Audio in base64-formaat.</param>
-    /// <param name="language">Taalcode (nl, en, fr). Default: nl.</param>
-    /// <returns>De herkende tekst.</returns>
     [HttpPost("transcribe")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(string), 200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(500)]
     public async Task<ActionResult<string>> Transcribe([FromBody] TranscribeRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.AudioBase64))
@@ -54,19 +42,7 @@ public class SpeechController : Controller
         }
     }
 
-    /// <summary>
-    /// Converteert tekst naar spraak met Voxtral TTS.
-    /// </summary>
-    /// <param name="request">Request met tekst en taal.</param>
-    /// <returns>Audio stream (MP3).</returns>
-
-
-
     [HttpPost("synthesize")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(FileResult), 200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(500)]
     public async Task<IActionResult> Synthesize([FromBody] SynthesizeRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
@@ -89,17 +65,4 @@ public class SpeechController : Controller
             });
         }
     }
-}
-
-public class TranscribeRequest
-{
-    public string AudioBase64 { get; set; } = string.Empty;
-    public string Language { get; set; }
-    public string Prompt { get; set; }
-}
-
-public class SynthesizeRequest
-{
-    public string Text { get; set; } = string.Empty;
-    public string Language { get; set; }
 }

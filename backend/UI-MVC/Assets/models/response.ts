@@ -8,6 +8,6 @@ export interface ResponseAnswer {
 }
 
 export interface SurveyResponse {
-    projectId: number
+    projectId: string
     answers: ResponseAnswer[]
 }

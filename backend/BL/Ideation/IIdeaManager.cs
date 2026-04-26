@@ -26,6 +26,8 @@ public interface IIdeaManager
     Idea GetIdeaByIdWithProjectAndResponses(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     IEnumerable<Idea> GetIdeasFromProjectByYouthId(Slug workspaceId, Slug projectId, Guid youthId);
     IEnumerable<Idea> GetIdeasByProjectIdAndTopicId(Slug workspaceId, Slug projectId, int topicId);
+    IEnumerable<Idea> GetIdeaDiscoverySuggestions(Slug workspaceId, Slug projectId, int topicId, Guid youthId,
+        IdeaDiscoveryCategory category, int limit);
     Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, int ideaId, ModerationStatus newStatus, string newContent);
 
     
@@ -43,3 +45,11 @@ public interface IIdeaManager
     IEnumerable<ResponseReaction> GetResponseReactionsByResponseId(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId);
     void RemoveResponseReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, Guid youthId, int reactionId);
 }
+
+public enum IdeaDiscoveryCategory
+{
+    Similar,
+    Different,
+    Random
+}
+

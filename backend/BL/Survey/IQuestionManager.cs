@@ -9,7 +9,7 @@ public interface IQuestionManager
     void SubmitAnswers(
         Slug workspaceSlug,
         Slug projectSlug,
-        string youthId,
+        Guid youthId,
         IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers);
 
     Question GetQuestionById(int questionId);

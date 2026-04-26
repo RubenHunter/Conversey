@@ -77,6 +77,11 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         _aiConfig.Alternative = alternative;
     }
 
+    public void SetAiCategorizationBehavior(bool throwOnCategorize)
+    {
+        _aiConfig.ThrowOnCategorize = throwOnCategorize;
+    }
+
     public void Dispose()
     {
         _serviceProvider.Dispose();
@@ -140,6 +145,22 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             SubmissionDate = DateTime.UtcNow,
             Status = ModerationStatus.Approved,
             ModerationInfo = new ModerationInfo(),
+            SemanticCategories = new[] { "Wellbeing spaces" },
+            Project = project,
+            Topic = topic,
+            Youth = youth,
+            Reactions = new List<IdeaReaction>(),
+            Responses = new List<IdeaResponse>()
+        };
+
+        var pressureIdea = new Idea
+        {
+            Content = "Beperk deadlines tijdens de examenperiode.",
+            Summary = "",
+            SubmissionDate = DateTime.UtcNow.AddMinutes(-5),
+            Status = ModerationStatus.Approved,
+            ModerationInfo = new ModerationInfo(),
+            SemanticCategories = new[] { "Study pressure" },
             Project = project,
             Topic = topic,
             Youth = youth,
@@ -164,6 +185,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         dbContext.Youths.Add(youth);
         dbContext.Questions.Add(question);
         dbContext.Ideas.Add(idea);
+        dbContext.Ideas.Add(pressureIdea);
         dbContext.Responses.Add(response);
         dbContext.SaveChanges();
     }
@@ -178,6 +200,74 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         public Task<ModerationDecision> ModerateContent(string content)
         {
             return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
+        }
+
+        public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        {
+            if (candidateIdeas.Count == 0 || limit <= 0)
+            {
+                return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
+            }
+
+            var ordered = Enumerable.Range(0, candidateIdeas.Count);
+            if (preferDifferent)
+            {
+                ordered = ordered.Reverse();
+            }
+
+            return Task.FromResult(ordered.Take(limit));
+        }
+
+        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+        {
+            if (config.ThrowOnCategorize)
+            {
+                throw new InvalidOperationException("Test categorization failure");
+            }
+
+            var result = new Dictionary<int, IReadOnlyList<string>>();
+            var canonicalExisting = existingCategories
+                .Select(category => (category ?? string.Empty).Trim())
+                .Where(category => category.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            for (int index = 0; index < ideas.Count; index++)
+            {
+                var text = (ideas[index] ?? string.Empty).ToLowerInvariant();
+                var categories = new List<string>();
+
+                if (text.Contains("stress") || text.Contains("druk") || text.Contains("exam") || text.Contains("deadline"))
+                    categories.Add("Study Pressure");
+                if (text.Contains("coach") || text.Contains("support") || text.Contains("psych") || text.Contains("help"))
+                    categories.Add("Support services");
+                if (text.Contains("campus") || text.Contains("group") || text.Contains("peer") || text.Contains("connected"))
+                    categories.Add("Community & belonging");
+                if (text.Contains("online") || text.Contains("digital") || text.Contains("hybrid"))
+                    categories.Add("Digital learning");
+
+                if (categories.Count == 0)
+                {
+                    if (canonicalExisting.Count > 0)
+                    {
+                        categories.AddRange(canonicalExisting.Take(Math.Max(1, maxCategoriesPerIdea)));
+                    }
+                    else
+                    {
+                        categories.Add("General ideas");
+                    }
+                }
+
+                var normalized = categories
+                    .Select(category => canonicalExisting.FirstOrDefault(existing => NormalizeCategoryKey(existing) == NormalizeCategoryKey(category)) ?? category)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(Math.Max(1, maxCategoriesPerIdea))
+                    .ToList();
+
+                result[index] = normalized.AsReadOnly();
+            }
+
+            return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
         }
 
         public void Dispose()
@@ -201,12 +291,21 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         {
             return null;
         }
+
+        private static string NormalizeCategoryKey(string value)
+        {
+            return new string((value ?? string.Empty)
+                .ToLowerInvariant()
+                .Where(char.IsLetterOrDigit)
+                .ToArray());
+        }
     }
 
     private sealed class TestAiManagerConfig
     {
         public bool IsAllowed { get; set; } = true;
         public string Alternative { get; set; } = "Please rephrase your idea in a respectful way.";
+        public bool ThrowOnCategorize { get; set; }
     }
 }
 
