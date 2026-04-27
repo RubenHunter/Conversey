@@ -45,7 +45,7 @@ export function generateQuestionHeader(question: Question, questionNumber: numbe
             <div>
                 <div class="survey-question-title">
                     <span>${escapeHtml(question.text)}</span>
-                    <button class="survey-speaker-btn" title="Lees voor" aria-label="Lees vraag voor" data-question-id="${question.id}">
+                    <button class="survey-speaker-btn" title="Lees voor" aria-label="Lees vraag voor" data-question-id="${question.id}" data-question-text="${escapeHtml(question.text)}">
                         <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
                         </svg>
@@ -57,12 +57,27 @@ export function generateQuestionHeader(question: Question, questionNumber: numbe
     `
 }
 
-export function initQuestionTTS(wrapper: HTMLElement, text: string, questionId: string, language: string = 'nl'): void {
-  const btn = wrapper.querySelector<HTMLElement>(`.survey-speaker-btn[data-question-id="${questionId}"]`);
-  if (!btn) return;
+// Helper to setup TTS for question speaker buttons
+export function initQuestionSpeakerForWrapper(wrapper: HTMLElement): void {
+    const speakerBtn = wrapper.querySelector<HTMLButtonElement>('.survey-speaker-btn');
+    if (!speakerBtn) return;
+    
+    const getLanguage = () => {
+        const el = document.querySelector<HTMLElement>('[data-survey-language]');
+        return el?.dataset.surveyLanguage || 'nl';
+    };
+    
+    const questionText = speakerBtn.dataset.questionText || '';
+    const questionId = speakerBtn.dataset.questionId || '';
+    
+    if (!questionText || !questionId) return;
+    
+    initQuestionSpeaker(speakerBtn, questionText, questionId, getLanguage());
+}
 
+function initQuestionSpeaker(speakerButtonHtml: HTMLButtonElement, text: string, questionId: string, language: string = 'nl'): void {
   const tts = getTTSManager();
-  let isSpeaking = false;
+  let modelIsSpeaking = false;
   let player: HTMLAudioElement | null = null;
   let audioUrl: string | null = null;
 
@@ -79,61 +94,61 @@ export function initQuestionTTS(wrapper: HTMLElement, text: string, questionId: 
     }
   }
 
-  btn.addEventListener('click', async (e) => {
+    speakerButtonHtml.addEventListener('click', async (e) => {
     e.preventDefault();
-    const wasSpeaking = isSpeaking;
-    isSpeaking = !isSpeaking;
+    const modelWasSpeaking = modelIsSpeaking;
+    modelIsSpeaking = !modelIsSpeaking;
 
-    if (wasSpeaking) {
-      cleanupAudio();
-      btn.classList.remove('active');
-    } else {
-      // Show active state on button only (no text status)
-      btn.classList.add('active');
-      
-      try {
-        // Fetch audio inside click handler to maintain user gesture context
-        cleanupAudio();
-        const audioBlob = await tts.synthesizeSpeech(text, language);
-        player = new Audio();
-        audioUrl = URL.createObjectURL(audioBlob);
-        player.src = audioUrl;
-        
-        player.onended = () => {
-          cleanupAudio();
-          btn.classList.remove('active');
-          isSpeaking = false;
-        };
-        player.onerror = () => {
-          cleanupAudio();
-          btn.classList.remove('active');
-          isSpeaking = false;
-        };
-        
-        // Play must happen in direct response to user gesture
-        const playPromise = player.play();
-        
-        if (playPromise !== undefined) {
-          await playPromise.catch(() => {
+        if (!modelWasSpeaking) {
+            // Show active state on button only (no text status)
+            speakerButtonHtml.classList.add('active');
+
+            try {
+                // Fetch audio inside click handler to maintain user gesture context
+                cleanupAudio();
+                const audioBlob = await tts.synthesizeSpeech(text, language);
+                player = new Audio();
+                audioUrl = URL.createObjectURL(audioBlob);
+                player.src = audioUrl;
+
+                player.onended = () => {
+                    cleanupAudio();
+                    speakerButtonHtml.classList.remove('active');
+                    modelIsSpeaking = false;
+                };
+                player.onerror = () => {
+                    cleanupAudio();
+                    speakerButtonHtml.classList.remove('active');
+                    modelIsSpeaking = false;
+                };
+
+                // Play must happen in direct response to user gesture
+                const playPromise = player.play();
+
+                if (playPromise !== undefined) {
+                    await playPromise.catch(() => {
+                        cleanupAudio();
+                        speakerButtonHtml.classList.remove('active');
+                        modelIsSpeaking = false;
+                    });
+                }
+
+                // Fallback cleanup
+                setTimeout(() => {
+                    if (player && !player.ended) {
+                        cleanupAudio();
+                        speakerButtonHtml.classList.remove('active');
+                        modelIsSpeaking = false;
+                    }
+                }, text.length * 200);
+            } catch (err) {
+                cleanupAudio();
+                speakerButtonHtml.classList.remove('active');
+                modelIsSpeaking = false;
+            }
+        } else {
             cleanupAudio();
-            btn.classList.remove('active');
-            isSpeaking = false;
-          });
+            speakerButtonHtml.classList.remove('active');
         }
-        
-        // Fallback cleanup
-        setTimeout(() => {
-          if (player && !player.ended) {
-            cleanupAudio();
-            btn.classList.remove('active');
-            isSpeaking = false;
-          }
-        }, text.length * 200);
-      } catch (err) {
-        cleanupAudio();
-        btn.classList.remove('active');
-        isSpeaking = false;
-      }
-    }
-  });
+    });
 }

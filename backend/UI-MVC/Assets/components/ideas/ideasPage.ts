@@ -30,7 +30,8 @@ import { renderIdeasHeader } from './ideasHeader'
 import { createTopicModalController } from './topicModal'
 import { createIdeasListController } from './ideasListController'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler'
-import {ProjectContext, render} from "../../main";
+import { render } from "../../shared";
+import type { ProjectContext } from "../../shared";
 
 type DiscoveryBadgeType = 'similar' | 'different'
 
@@ -1123,5 +1124,3 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     void render()
 }
-
-render(renderIdeasPage)

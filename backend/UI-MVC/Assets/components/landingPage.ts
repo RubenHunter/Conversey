@@ -1,5 +1,5 @@
-import type { RouteParams } from '../utils/router.ts'
-import { navigate } from '../utils/router.ts'
+import { navigate } from '../shared'
+import type { ProjectContext } from '../shared'
 import { getProject } from '../services/projectService.ts'
 import { getOrganizationBranding } from '../components/organizationBranding.ts'
 
@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
     ;(window as any).clearSurvey = clearSurveyCompletion
 }
 
-export async function renderLandingPage(container: HTMLElement, params: RouteParams): Promise<void> {
+export async function renderLandingPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const { displayName: organizationName, badge: organizationBadge } = getOrganizationBranding(
         project.organizationName ?? '', project.organizationSlug

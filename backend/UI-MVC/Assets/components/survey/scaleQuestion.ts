@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared.ts'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared.ts'
 
 export function renderScaleQuestion(question: Question, index: number): QuestionComponent {
     let scaleValue: number | null = null
@@ -32,6 +32,9 @@ export function renderScaleQuestion(question: Question, index: number): Question
             Please provide a numeric answer to continue.
         </p>
     `
+
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
 
     const input = wrapper.querySelector<HTMLInputElement>(`#scale-${question.id}`)!
 
