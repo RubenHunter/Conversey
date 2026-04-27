@@ -39,6 +39,8 @@ export default defineConfig(async () => {
             manifest: true,
             outDir: './wwwroot',
             assetsDir: '',
+            minify: 'esbuild',
+            sourcemap: false,
             rollupOptions: {
                 input: inputEntries
             },

@@ -14,6 +14,7 @@ COPY . .
 
 # 3. Frontend Build
 WORKDIR /src/UI-MVC
+RUN rm -rf wwwroot && mkdir wwwroot
 RUN pnpm install
 RUN pnpm build
 
