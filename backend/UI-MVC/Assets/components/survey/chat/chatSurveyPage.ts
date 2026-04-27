@@ -5,7 +5,6 @@ import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
 import { QuestionType } from '../../../models/question'
-import type { Question } from '../../../models/question'
 import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../singleChoiceQuestion'
@@ -57,6 +56,9 @@ interface OpenTextState {
 
 type DiscoveryBadgeType = 'similar' | 'different'
 type DiscoveryMode = 'all' | 'similar' | 'different'
+
+const IDEAS_BATCH_SIZE = 7
+const LOAD_MORE_SCROLL_THRESHOLD = 24
 
 interface DiscoveryFeed {
     ideas: Idea[]
@@ -629,9 +631,16 @@ export async function renderChatSurveyPage(
     // ===== Lock survey history =====
     function lockSurveyHistory(): void {
         Array.from(messagesEl.children).forEach((el) => {
-            if (el instanceof HTMLElement) {
-                el.classList.add('chat-survey-history-locked')
-            }
+            if (!(el instanceof HTMLElement)) return
+            el.classList.add('chat-survey-history-locked')
+            // Keep history scrollable while preventing edits on old answer controls.
+            el.querySelectorAll<HTMLElement>('button, input, textarea, select, [role="button"], [contenteditable="true"]').forEach((control) => {
+                control.setAttribute('tabindex', '-1')
+                control.setAttribute('aria-disabled', 'true')
+                if (control instanceof HTMLButtonElement || control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) {
+                    control.disabled = true
+                }
+            })
         })
     }
 
@@ -686,6 +695,9 @@ export async function renderChatSurveyPage(
         let discoveryRequestToken = 0
         let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
         let visibleIdeasCache: Idea[] = []
+        let extraLoadsUsed = 0
+        let isLoadingMoreIdeas = false
+        let autoLoadArmed = true
         const discoveryCache = new Map<string, DiscoveryFeed>()
 
         const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
@@ -722,12 +734,24 @@ export async function renderChatSurveyPage(
                     <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden></div>
                 </div>
                 <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>
+                <button id="chat-ideas-load-more" class="ideas-load-more" type="button" hidden>
+                    <span class="ideas-load-more-icon" aria-hidden="true">
+                        <svg class="ideas-load-more-ring" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <circle class="ideas-load-more-ring-track" cx="18" cy="18" r="14"/>
+                            <circle class="ideas-load-more-ring-fill" cx="18" cy="18" r="14"/>
+                        </svg>
+                        <span class="ideas-load-more-arrow">↓</span>
+                    </span>
+                    <span id="chat-ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 7 more ideas</span>
+                </button>
             </section>`
 
         chatShell.classList.add('chat-shell--ideas')
         chatShell.insertBefore(ideasArea, scrollAreaEl)
 
         const ideasListEl = container.querySelector<HTMLDivElement>('#chat-ideas-list')!
+        const loadMoreBtn = container.querySelector<HTMLButtonElement>('#chat-ideas-load-more')!
+        const loadMoreText = container.querySelector<HTMLSpanElement>('#chat-ideas-load-more-text')!
         const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
         const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
         const topicFloatingTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
@@ -784,6 +808,7 @@ export async function renderChatSurveyPage(
                     selectedSemanticCategory = null
                     showPostPreviewPair = false
                 }
+                resetPaging()
                 closeDiscoveryMenu()
                 void renderIdeasList()
                 topicModal.renderTopics(activeView)
@@ -802,6 +827,74 @@ export async function renderChatSurveyPage(
 
         function hasOwnIdeaInTopic(topicId: number): boolean {
             return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+        }
+
+        function resetPaging(): void {
+            extraLoadsUsed = 0
+            isLoadingMoreIdeas = false
+            autoLoadArmed = true
+        }
+
+        function getMaxExtraLoads(): number {
+            if (activeView.type !== 'topic') return 3
+            const topic = topics.find((item) => item.id === activeView.topicId)
+            return topic?.maxBroadSelectionLoads ?? 3
+        }
+
+        function getVisibleLimit(): number {
+            return IDEAS_BATCH_SIZE * (1 + extraLoadsUsed)
+        }
+
+        function hasMoreIdeasToLoad(): boolean {
+            return visibleIdeasCache.length > getVisibleLimit() && extraLoadsUsed < getMaxExtraLoads()
+        }
+
+        function updateLoadMoreButton(): void {
+            const wasLoading = loadMoreBtn.classList.contains('ideas-load-more--loading')
+            const hasMoreIdeas = hasMoreIdeasToLoad()
+
+            loadMoreBtn.hidden = !hasMoreIdeas
+            loadMoreBtn.disabled = isLoadingMoreIdeas || !hasMoreIdeas
+            loadMoreBtn.classList.toggle('ideas-load-more--loading', isLoadingMoreIdeas)
+            loadMoreBtn.setAttribute('aria-busy', String(isLoadingMoreIdeas))
+            loadMoreText.textContent = isLoadingMoreIdeas
+                ? 'Loading 7 more ideas...'
+                : 'Click or scroll down to load 7 more ideas'
+
+            ideasListEl.classList.toggle('ideas-list--has-more', hasMoreIdeas)
+
+            if (isLoadingMoreIdeas && !wasLoading) {
+                const ringFill = loadMoreBtn.querySelector<SVGCircleElement>('.ideas-load-more-ring-fill')
+                if (ringFill) {
+                    ringFill.style.animation = 'none'
+                    void ringFill.getBoundingClientRect()
+                    ringFill.style.animation = ''
+                }
+            }
+        }
+
+        async function loadMoreIdeas(): Promise<void> {
+            if (isLoadingMoreIdeas || !hasMoreIdeasToLoad()) return
+
+            isLoadingMoreIdeas = true
+            updateLoadMoreButton()
+            loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+            const firstNewIndex = getVisibleLimit()
+
+            try {
+                await new Promise<void>((resolve) => {
+                    window.setTimeout(resolve, 2000)
+                })
+
+                extraLoadsUsed += 1
+                showPostPreviewPair = false
+                await renderIdeasList()
+                listController?.setActive(firstNewIndex, true)
+            } finally {
+                isLoadingMoreIdeas = false
+                updateLoadMoreButton()
+            }
         }
 
         function getTopicSemanticCategories(topicId: number): string[] {
@@ -1000,7 +1093,17 @@ export async function renderChatSurveyPage(
             const label = getActiveIdeasLabel(activeView)
             topicTriggerValue.textContent = label
             topicFloatingTriggerValue.textContent = label
-            topicFloatingTrigger.hidden = activeView.type !== 'my-ideas'
+            // Floating switch-topic button is for vertical ideas page UX only.
+            topicFloatingTrigger.hidden = true
+
+            const inputWrap = chatShell.querySelector<HTMLElement>('.chat-input-wrap')
+            if (!inputWrap) return
+
+            const isMyIdeasView = activeView.type === 'my-ideas'
+            inputWrap.classList.toggle('chat-input-wrap--muted', isMyIdeasView)
+            if (isMyIdeasView) {
+                deactivateInput(t.selectTopicToShare)
+            }
         }
 
         async function renderIdeasList(): Promise<void> {
@@ -1013,20 +1116,22 @@ export async function renderChatSurveyPage(
 
             visibleIdeasCache = discoveryFeed.ideas
             discoveryBadgeByIdeaId = discoveryFeed.badgesByIdeaId
+            const pagedIdeas = visibleIdeasCache.slice(0, getVisibleLimit())
 
             if (listController) {
                 listController.cleanup()
             }
 
-            if (visibleIdeasCache.length === 0) {
+            if (pagedIdeas.length === 0) {
                 ideasListEl.innerHTML = `<p class="ideas-empty-state">${esc(t.noIdeas)}</p>`
+                updateLoadMoreButton()
                 listController = null
                 return
             }
 
             listController = createIdeasListController({
                 list: ideasListEl,
-                ideas: visibleIdeasCache,
+                ideas: pagedIdeas,
                 activeView,
                 topics,
                 flaggedIdeaIds,
@@ -1034,6 +1139,7 @@ export async function renderChatSurveyPage(
                 onDiscoveryBadgeClick: (badge) => {
                     discoveryMode = badge === 'similar' ? 'similar' : 'different'
                     showPostPreviewPair = false
+                    resetPaging()
                     closeDiscoveryMenu()
                     void renderIdeasList()
                 },
@@ -1041,6 +1147,7 @@ export async function renderChatSurveyPage(
             listController.setActive(0, false)
             listController.startRotation()
             topicModal.renderTopics(activeView)
+            updateLoadMoreButton()
         }
 
         const submitHandler = createIdeasSubmitHandler({
@@ -1055,6 +1162,7 @@ export async function renderChatSurveyPage(
                 discoveryMode = 'all'
                 selectedSemanticCategory = null
                 showPostPreviewPair = true
+                resetPaging()
                 discoveryCache.clear()
                 void renderIdeasList()
                 void appendAiBubble(t.ideaShared)
@@ -1123,13 +1231,30 @@ export async function renderChatSurveyPage(
             }
 
             showPostPreviewPair = false
+            resetPaging()
             closeDiscoveryMenu()
             void renderIdeasList()
         })
 
         ideasListEl.addEventListener('scroll', () => {
             listController?.updateFromScroll()
+
+            const distanceFromBottom = ideasListEl.scrollHeight - ideasListEl.clientHeight - ideasListEl.scrollTop
+            if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
+                if (autoLoadArmed && hasMoreIdeasToLoad()) {
+                    autoLoadArmed = false
+                    void loadMoreIdeas()
+                }
+            } else {
+                autoLoadArmed = true
+            }
+
+            updateLoadMoreButton()
         }, { passive: true })
+
+        loadMoreBtn.addEventListener('click', () => {
+            void loadMoreIdeas()
+        })
 
         ideasListEl.addEventListener('click', (event) => {
             const card = (event.target as HTMLElement).closest<HTMLElement>('.ideas-card')
@@ -1180,7 +1305,8 @@ export async function renderChatSurveyPage(
     if (savedProgress && savedProgress.currentQuestionIndex > 0 && questions.length > 0) {
         const resumeAt = Math.min(savedProgress.currentQuestionIndex, questions.length)
         confirmedUpToIndex = resumeAt
-        savedProgress.openTextDraftsByQuestionId.forEach((messages, questionId) => {
+        const savedOpenTextDrafts = savedProgress.openTextDraftsByQuestionId ?? new Map<number, string[]>()
+        savedOpenTextDrafts.forEach((messages, questionId) => {
             openTextDraftsByQuestionId.set(questionId, [...messages])
         })
 
@@ -1239,7 +1365,8 @@ export async function renderChatSurveyPage(
     } else {
         if (savedProgress) {
             confirmedUpToIndex = Math.max(0, Math.min(savedProgress.currentQuestionIndex, questions.length))
-            savedProgress.openTextDraftsByQuestionId.forEach((messages, questionId) => {
+            const savedOpenTextDrafts = savedProgress.openTextDraftsByQuestionId ?? new Map<number, string[]>()
+            savedOpenTextDrafts.forEach((messages, questionId) => {
                 openTextDraftsByQuestionId.set(questionId, [...messages])
             })
         }

@@ -182,6 +182,9 @@ export function renderChatShellTemplate({
             </div>
             <div class="chat-input-wrap">
                 <div class="chat-input-bar">
+                    <button id="chat-magic-btn" class="survey-magic-btn chat-magic-btn" type="button" aria-label="${esc(strings.magicMode)}" hidden>
+                        ${MAGIC_SVG}
+                    </button>
                     <textarea
                         id="chat-input"
                         class="chat-input"
@@ -189,10 +192,6 @@ export function renderChatShellTemplate({
                         rows="1"
                         disabled
                     ></textarea>
-                    <button id="chat-magic-btn" class="survey-magic-btn chat-magic-btn" type="button" aria-label="${esc(strings.magicMode)}" hidden>
-                        ${MAGIC_SVG}
-                        <span class="survey-magic-btn-text">${esc(strings.magicMode)}</span>
-                    </button>
                     <button id="chat-confirm-inline-btn" class="chat-confirm-inline-btn" type="button" aria-label="Confirm answer and continue" hidden>
                         ${CHECKMARK_SVG}
                     </button>
@@ -209,5 +208,4 @@ export function renderChatShellTemplate({
         </div>
         ${IDEATION_MODALS_HTML}`
 }
-
 

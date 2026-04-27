@@ -462,8 +462,17 @@
 
 /* Magic mode button override for chat bar */
 .chat-magic-btn {
+  width: 40px;
   height: 40px;
-  padding: 0 var(--spacing-sm);
+  min-width: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-magic-btn .survey-magic-btn-text {
+  display: none;
 }
 
 /* Inline confirm button (next to send) */
@@ -547,9 +556,13 @@
 
 /* ===== Survey history lock (ideation phase) ===== */
 .chat-survey-history-locked {
-  opacity: 0.35;
+  opacity: 0.5;
+  pointer-events: auto;
+  user-select: text;
+}
+
+.chat-survey-history-locked :is(button, input, textarea, select, [role="button"], [contenteditable="true"]) {
   pointer-events: none;
-  user-select: none;
 }
 
 /* ===== Topic selector ===== */
@@ -656,13 +669,17 @@
 
 /* ===== Ideas area ===== */
 .chat-ideas-area {
-  flex: 0 0 42vh;
-  min-height: 0;
+  flex: 0 0 45svh;
+  height: 45svh;
+  min-height: 45svh;
+  max-height: 45svh;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg);
   display: flex;
   flex-direction: column;
-  border-bottom: 2px solid var(--color-border);
-  background-color: var(--color-bg);
-  overflow: hidden;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
 }
 
 .chat-ideas-area-header {
@@ -723,9 +740,10 @@
 }
 
 .chat-shell--ideas .chat-ideas-area {
-  flex: 0 0 auto;
-  min-height: 320px;
-  max-height: 58svh;
+  flex: 0 0 45svh;
+  height: 45svh;
+  min-height: 45svh;
+  max-height: 45svh;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-bg);
@@ -737,8 +755,20 @@
 
 .chat-shell--ideas .chat-ideas-top-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
+  width: 100%;
+}
+
+.chat-shell--ideas .chat-ideas-top-row .ideas-compose-topic-button {
+  width: 100%;
+  margin: 0;
+  justify-content: space-between;
+}
+
+.chat-shell--ideas .chat-ideas-top-row .ideas-compose-topic-text {
+  width: 100%;
+  justify-content: space-between;
 }
 
 .chat-shell--ideas .ideas-community {
@@ -750,6 +780,17 @@
   height: 100%;
 }
 
+.chat-shell--ideas .ideas-load-more {
+  width: calc(100% - (var(--spacing-md) * 2));
+  justify-content: center;
+ /* margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);*/
+}
+
+.chat-shell--ideas #ideas-topic-trigger-floating {
+  display: none !important;
+}
+
 .chat-shell--ideas .ideas-discovery {
   top: calc(var(--spacing-lg) + 8px);
   right: var(--spacing-md);
@@ -757,5 +798,15 @@
 }
 
 .chat-shell--ideas .chat-scroll-area {
+  flex: 1 1 55svh;
   min-height: 0;
+}
+
+.chat-input-wrap--muted {
+  opacity: 0.7;
+}
+
+.chat-input-wrap--muted .chat-input {
+  background-color: var(--color-disabled-bg);
+  color: var(--color-text-muted);
 }
