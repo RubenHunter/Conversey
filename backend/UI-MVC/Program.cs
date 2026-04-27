@@ -178,7 +178,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{action=Ideas}/{id?}")
+    pattern: "{controller=Project}/{action=Survey}/{id?}")
     .WithStaticAssets();
 
 if (app.Environment.IsDevelopment())
