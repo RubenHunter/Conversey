@@ -19,6 +19,7 @@ services:
       - AI__Provider=Mistral
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
       - ConnectionStrings__Default=${DB_CONN}
+      - Database__ResetOnStart=true
     depends_on:
       - db-proxy
 
