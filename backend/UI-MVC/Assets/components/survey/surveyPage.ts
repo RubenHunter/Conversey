@@ -1,23 +1,3 @@
-<<<<<<< HEAD
-import type {RouteParams} from '../../utils/router.ts'
-import {navigate} from '../../utils/router.ts'
-import {getProject} from '../../services/projectService.ts'
-import {getQuestions, submitAnswers} from '../../services/surveyService.ts'
-import {QuestionType} from '../../models/question.ts'
-import type {ResponseAnswer} from '../../models/response.ts'
-import type {QuestionAnswer, QuestionComponent} from './singleChoiceQuestion.ts'
-import {renderSingleChoiceQuestion} from './singleChoiceQuestion.ts'
-import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion.ts'
-import {renderOpenTextQuestion} from './openTextQuestion.ts'
-import {renderScaleQuestion} from './scaleQuestion.ts'
-import type {ScrollNav} from '../scrollNav.ts'
-import {renderScrollNav} from '../scrollNav.ts'
-import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService.ts'
-import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
-import {initQuestionTTS} from './shared.ts'
-
-export async function renderSurveyPage(container: HTMLElement, params: RouteParams): Promise<void> {
-=======
 import {getProject} from '../../services/projectService'
 import {getQuestions, submitAnswers} from '../../services/surveyService'
 import {QuestionType} from '../../models/question'
@@ -34,7 +14,6 @@ import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
 import {navigate, ProjectContext, render} from "../../main";
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
->>>>>>> origin/development
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
@@ -118,9 +97,6 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
     const headerController = createSurveyHeaderController({ root: container })
 
-    // Set data attribute on container for language detection (default 'nl' for now)
-    surveyShell.setAttribute('data-survey-language', 'nl');
-
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
@@ -132,9 +108,6 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                     : renderOpenTextQuestion(question, index)
 
         questionsContainer.appendChild(component.getElement())
-
-        // Initialize TTS for question title speaker button (default 'nl' for now)
-        initQuestionTTS(component.getElement(), question.text, String(question.id), 'nl');
 
         // Lock next questions only if current question is required
         if (index > 0 && questions[index - 1].isRequired) {
