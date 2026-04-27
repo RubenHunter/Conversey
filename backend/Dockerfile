@@ -12,15 +12,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 # 2. Kopieer alles
 COPY . .
 
-# 3. Maak de bestanden aan EN zorg dat ze niet leeg zijn (sommige tools skippen 0-byte files)
-RUN mkdir -p UI-MVC/wwwroot/images/ && \
-    echo "svg-data" > UI-MVC/wwwroot/images/Conversey_logo.svg && \
-    echo "png-data" > UI-MVC/wwwroot/images/Conversey_logo.png && \
-    echo "png-data" > UI-MVC/wwwroot/images/Conversey_logo_bottom.png && \
-    echo "png-data" > UI-MVC/wwwroot/images/Conversey_logo_side.png && \
-    mkdir -p UI-MVC/wwwroot/.vite/ && \
-    echo '{"main.js":"main.js"}' > UI-MVC/wwwroot/.vite/manifest.json
-
 # 4. Restore
 RUN dotnet restore "UI-MVC/UI-MVC.csproj"
 
