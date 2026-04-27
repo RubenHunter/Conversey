@@ -8,14 +8,13 @@ WORKDIR /src
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
-# 2. Installeer pnpm global (jouw csproj gebruikt pnpm)
+# 2. Installeer pnpm global
 RUN npm install -g pnpm
 
-# 3. Kopieer de volledige solution
+# 3. Kopieer de broncode
 COPY . .
 
-# 4. HACK: Maak de mappen en bestanden aan waar de .csproj naar zoekt.
-# Dit voorkomt de MSB3030 en StaticWebAsset errors.
+# 4. HACK: Maak dummy bestanden aan zodat de compiler niet klaagt over ontbrekende bronnen
 RUN mkdir -p UI-MVC/wwwroot/images/ && \
     touch UI-MVC/wwwroot/images/Conversey_logo.png && \
     touch UI-MVC/wwwroot/images/Conversey_logo.svg && \
@@ -28,13 +27,14 @@ RUN mkdir -p UI-MVC/wwwroot/images/ && \
 RUN dotnet restore "UI-MVC/UI-MVC.csproj"
 
 # 6. Publish de applicatie
-# We voegen extra vlaggen toe om de asset-optimalisatie die crasht te omzeilen.
+# We voegen /p:ResolveStaticWebAssetsInputs=false toe om de corrupte asset-pipeline te negeren.
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
     -c Release \
     -o /app/publish \
     /p:UseAppHost=false \
     /p:PublishCompressedAssets=false \
-    /p:DisableStaticWebAssetsFingerprinting=true
+    /p:DisableStaticWebAssetsFingerprinting=true \
+    /p:ResolveStaticWebAssetsInputs=false
 
 # ==========================================
 # RUNTIME STAGE
@@ -42,10 +42,10 @@ RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-# Kopieer de gepubliceerde bestanden van de build stage
+# Kopieer de output van de build stage
 COPY --from=build /app/publish .
 
-# Zorg dat de poort openstaat
+# Exposeer de poort
 EXPOSE 8080
 
 # Start de applicatie
