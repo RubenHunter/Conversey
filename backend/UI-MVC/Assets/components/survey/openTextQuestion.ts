@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared.ts'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared'
 import { bindMicButton } from '../../services/speechService'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {

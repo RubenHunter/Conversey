@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared.ts'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared'
 
 export function renderScaleQuestion(question: Question, index: number): QuestionComponent {
     let scaleValue: number | null = null

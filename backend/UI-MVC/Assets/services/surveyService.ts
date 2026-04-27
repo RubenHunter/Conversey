@@ -1,10 +1,10 @@
 import type { ApiQuestionDto } from '../api/dtos/questionDto.ts'
-import { mapApiQuestionsToQuestions } from '../mappers/questionMapper.ts'
-import { mapSurveyResponseToApiResponseDto } from '../mappers/responseMapper.ts'
+import { mapApiQuestionsToQuestions } from '../mappers/questionMapper'
+import { mapSurveyResponseToApiResponseDto } from '../mappers/responseMapper'
 import type { Question } from '../models/question.ts'
 import type { SurveyResponse } from '../models/response.ts'
-import { apiFetch } from './apiService.ts'
-import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'
+import { apiFetch } from './apiService'
+import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService'
 
 export function getOrCreateProjectScopedYouthId(projectSlug: string): string {
     return getOrCreateProjectYouthId(projectSlug)

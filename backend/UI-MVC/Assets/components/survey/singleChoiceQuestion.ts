@@ -1,5 +1,5 @@
 import type { Question } from '../../models/question.ts'
-import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared.ts'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared'
 
 export type QuestionAnswer = number | string | number[] | null
 

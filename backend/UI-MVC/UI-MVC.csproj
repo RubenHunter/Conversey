@@ -18,8 +18,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
   </ItemGroup>
-  
-  
+
   <ItemGroup>
     <Content Remove="package-lock.json" />
     <Content Remove="package.json" />
@@ -28,12 +27,11 @@
     <None Include="package-lock.json" />
     <None Include="package.json" />
     <None Include="tsconfig.json" />
-<!--    <Content Include="wwwroot\.vite\manifest.json" />-->
+    <!--    <Content Include="wwwroot\.vite\manifest.json" />-->
 
     <!-- Don't remove this line or your manifest.json won't be copied on publish -->
     <Content Include="wwwroot\.vite\**" />
-
-
+    
     <Content Remove="Assets\*.ico" />
     <Contenty Remove="Assets\*.svg" />
     <Content Remove="Assets\*.png" />
@@ -45,22 +43,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
-  
+
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BL\BL.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="Views\Survey\SurveyView.cshtml" />
-    <_ContentIncludedByDefault Remove="Views\Home\Contact.cshtml" />
-    <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
-    <_ContentIncludedByDefault Remove="Views\Home\Privacy.cshtml" />
-    <_ContentIncludedByDefault Remove="Views\Home\Test.cshtml" />
-  </ItemGroup>
-
-
 
   <!-- Ensure Node environment on Build -->
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
