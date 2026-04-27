@@ -16,10 +16,14 @@ export default defineConfig(async () => {
 
     const allFiles = getFiles('./Assets');
     const inputEntries = allFiles
-        .filter(file => file.endsWith('.ts'))
+        .filter(file => 
+            file.endsWith('main.ts') || 
+            file.endsWith('main.css') || 
+            file.endsWith('Page.ts')
+        )
         .reduce((acc, file) => {
             const relativePath = path.relative('./Assets', file);
-            const fileName = relativePath.replace(/\\/g, '/').replace(/\.ts$/, '');
+            const fileName = relativePath.replace(/\\/g, '/').replace(/\.(ts|css)$/, '');
             acc[fileName] = path.join('./Assets', relativePath);
             return acc;
         }, {} as Record<string, string>);
