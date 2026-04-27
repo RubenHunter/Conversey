@@ -12,18 +12,21 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 # 2. Kopieer alles
 COPY . .
 
+# 3. Frontend Build
+WORKDIR "/src/UI-MVC"
+RUN pnpm install
+RUN pnpm build
+
+WORKDIR "/src"
+
 # 4. Restore
 RUN dotnet restore "UI-MVC/UI-MVC.csproj"
 
-# 5. De "Nuke" Publish
-# We zetten de compressie op 'None' via de interne vlag van de Web SDK
+# 5. Publish
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false \
-    /p:PublishCompressedAssets=false \
-    /p:StaticWebAssetCompressionLevel=None \
-    /p:DisableStaticWebAssetsFingerprinting=true
+    /p:UseAppHost=false
 
 # ==========================================
 # RUNTIME STAGE
