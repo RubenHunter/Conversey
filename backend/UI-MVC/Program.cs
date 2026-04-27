@@ -16,6 +16,7 @@ using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -171,6 +172,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
+    RequestPath = "/Assets"
+});
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 
