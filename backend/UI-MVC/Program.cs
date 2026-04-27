@@ -19,7 +19,17 @@ using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Forwarded Headers for Nginx
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 // const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
@@ -158,6 +168,8 @@ TypeDescriptor.AddAttributes(
 );
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
