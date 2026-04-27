@@ -1,4 +1,4 @@
-﻿using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Common;
 using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models;
 
@@ -19,7 +19,7 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
             }
 
             context.Response.StatusCode = StatusCodes.Status404NotFound;
-            return Task.CompletedTask;
+            return context.Response.WriteAsync($"Workspace not found for subdomain: {subdomain}. Check your database and Slug names.");
         }
 
         return next(context);
