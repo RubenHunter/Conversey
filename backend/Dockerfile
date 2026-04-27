@@ -13,16 +13,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 COPY . .
 
 # 3. Frontend Build
-WORKDIR "/src/UI-MVC"
+WORKDIR /src/UI-MVC
 RUN pnpm install
 RUN pnpm build
 
-WORKDIR "/src"
-
-# 4. Restore
-RUN dotnet restore "UI-MVC/UI-MVC.csproj"
-
-# 5. Publish
+# 4. Publish
+WORKDIR /src
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
     -c Release \
     -o /app/publish \
