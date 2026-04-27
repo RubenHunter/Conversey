@@ -5,12 +5,22 @@ import tailwindcss from "@tailwindcss/vite";
 
 
 export default defineConfig(async () => {
-    const files = fs.readdirSync('./Assets');
-    const inputEntries = files
-        .filter(file => file.endsWith('.ts') )
+    const getFiles = (dir: string): string[] => {
+        const subdirs = fs.readdirSync(dir);
+        const files = subdirs.map((subdir) => {
+            const res = path.resolve(dir, subdir);
+            return fs.statSync(res).isDirectory() ? getFiles(res) : res;
+        });
+        return Array.prototype.concat(...files);
+    };
+
+    const allFiles = getFiles('./Assets');
+    const inputEntries = allFiles
+        .filter(file => file.endsWith('.ts'))
         .reduce((acc, file) => {
-            const fileName = path.parse(file).name;
-            acc[fileName] = path.join('./Assets', file);
+            const relativePath = path.relative('./Assets', file);
+            const fileName = relativePath.replace(/\\/g, '/').replace(/\.ts$/, '');
+            acc[fileName] = path.join('./Assets', relativePath);
             return acc;
         }, {} as Record<string, string>);
 
