@@ -1,36 +1,34 @@
-# ==========================================
-# BUILD STAGE
-# ==========================================
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+FROM node:20-alpine AS client-build
+WORKDIR /src/backend/UI-MVC
 
-# 1. Installeer Node.js & pnpm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g pnpm
+COPY UI-MVC/package.json UI-MVC/pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
-# 2. Kopieer alles
+COPY UI-MVC/ ./
+RUN pnpm run build
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS publish
+WORKDIR /src/backend
+
+COPY *.sln ./
+COPY BL/*.csproj BL/
+COPY DAL/*.csproj DAL/
+COPY Domain/*.csproj Domain/
+COPY UI-MVC/*.csproj UI-MVC/
+
+RUN dotnet restore UI-MVC/UI-MVC.csproj
+
 COPY . .
+COPY --from=client-build /src/backend/UI-MVC/wwwroot /src/backend/UI-MVC/wwwroot
 
-# 3. Frontend Build
-WORKDIR /src/UI-MVC
-RUN rm -rf wwwroot && mkdir wwwroot
-RUN pnpm install
-RUN pnpm build
+RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClientBuild=true
 
-# 4. Publish
-WORKDIR /src
-RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
-    -c Release \
-    -o /app/publish \
-    /p:UseAppHost=false
-
-# ==========================================
-# RUNTIME STAGE
-# ==========================================
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
 
+COPY --from=publish /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+
 ENTRYPOINT ["dotnet", "Conversey.UI_MVC.dll"]

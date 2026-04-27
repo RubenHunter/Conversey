@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared.ts'
+import { generateQuestionHeader } from './shared'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     let textValue = ''

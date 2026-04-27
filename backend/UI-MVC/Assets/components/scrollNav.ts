@@ -1,3 +1,4 @@
+
 export interface ScrollNav {
     update(currentIndex: number, totalCount: number): void
     destroy(): void
