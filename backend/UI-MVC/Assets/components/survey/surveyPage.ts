@@ -437,7 +437,13 @@ render(async (container, params) => {
             return
         }
 
-        const choice = await showLayoutPicker(container, layoutKey)
+        const organizationName = project.organizationName?.trim() || project.organizationSlug
+        const choice = await showLayoutPicker({
+            container,
+            storageKey: layoutKey,
+            organizationName,
+            organizationSlug: project.organizationSlug,
+        })
         if (choice === 'chat') {
             const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)

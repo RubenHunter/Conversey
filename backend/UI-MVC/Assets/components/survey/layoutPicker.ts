@@ -1,17 +1,32 @@
 import { getSurveyStrings } from '../../i18n/survey'
+import { renderSurveyHeader } from './surveyHeader'
 
 const chatExampleImage = new URL('../../chat_example.png', import.meta.url).href
 const classicExampleImage = new URL('../../classic_example.png', import.meta.url).href
 
-export async function showLayoutPicker(
-    container: HTMLElement,
+
+interface ShowLayoutPickerParams {
+    container: HTMLElement
     storageKey: string
-): Promise<'chat' | 'classic'> {
+    organizationName: string
+    organizationSlug: string
+}
+
+export async function showLayoutPicker({
+    container,
+    storageKey,
+    organizationName,
+    organizationSlug,
+}: ShowLayoutPickerParams): Promise<'chat' | 'classic'> {
     const t = getSurveyStrings()
+    const headerHTML = renderSurveyHeader({ organizationName, organizationSlug })
+    
 
     return new Promise((resolve) => {
         container.innerHTML = `
             <div class="layout-picker-wrap">
+                ${headerHTML}
+
                 <div class="layout-picker-header">
                     <h1 class="layout-picker-title">${t.layoutPickerTitle}</h1>
                 </div>
