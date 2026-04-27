@@ -1,10 +1,11 @@
-import {navigate, ProjectContext, render} from "../main";
+import { navigate, render } from "../shared";
+import type { ProjectContext } from "../shared";
 
 function isSurveyCompleted(projectSlug: string): boolean {
     return localStorage.getItem(`survey-completed-${projectSlug}`) === 'true'
 }
 
-async function renderCompletedPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+export async function renderCompletedPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     if (!isSurveyCompleted(params.projectSlug)) {
         navigate('survey')
         return
@@ -34,5 +35,3 @@ async function renderCompletedPage(container: HTMLElement, params: ProjectContex
         { once: true },
     )
 }
-
-render(renderCompletedPage)
