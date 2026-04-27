@@ -1,22 +1,23 @@
 # --- STAGE 1: Frontend Build ---
 FROM node:20-alpine AS client-build
-WORKDIR /app
+# We zetten de WORKDIR op de UI-MVC map zelf
+WORKDIR /app/UI-MVC
 
-# Kopieer package bestanden
+# Kopieer package bestanden (relatief aan de backend map)
 COPY UI-MVC/package.json UI-MVC/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 
-# Kopieer de rest van de UI-MVC map
+# Kopieer de rest van de UI-MVC broncode
 COPY UI-MVC/ ./
 
-# Bouw de frontend. Dit maakt de map '/app/dist' aan omdat WORKDIR /app is.
-# Mocht Vite het toch in een submap zetten, vangen we dat op in de laatste stap.
+# Bouw de frontend -> dit maakt de map /app/UI-MVC/dist aan
 RUN pnpm run build
 
 # --- STAGE 2: .NET Build & Publish ---
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS publish
 WORKDIR /src
 
+# Kopieer alles voor de .NET restore
 COPY Conversey.sln ./
 COPY BL/BL.csproj BL/
 COPY DAL/DAL.csproj DAL/
@@ -33,10 +34,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-# DE FIX: We kopiëren de inhoud van de dist map. 
-# Omdat we in Stage 1 'WORKDIR /app' gebruikten en de bestanden van UI-MVC 
-# direct in /app hebben gezet, staat de output in /app/dist.
-COPY --from=client-build /app/dist ./wwwroot
+# DE FIX: We kopiëren nu specifiek vanuit de submap waar Vite de bestanden dumpt
+COPY --from=client-build /app/UI-MVC/dist ./wwwroot
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Conversey.UI-MVC.dll"]
