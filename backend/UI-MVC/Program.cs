@@ -187,9 +187,14 @@ void InitializeDatabase(bool drop)
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
-        if (created || !dbCtx.Workspaces.Any())
+        if (created || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")))
         {
+            Console.WriteLine("DEBUG: Seeding database because hogeschool-nova was not found...");
             DataSeeder.Seed(dbCtx);
+        }
+        else 
+        {
+            Console.WriteLine("DEBUG: Database already contains hogeschool-nova, skipping seed.");
         }
     }
 }
