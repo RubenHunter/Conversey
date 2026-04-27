@@ -1,42 +1,96 @@
-using System.Net.Http.Headers;
-using System.Text;
+using System.Net.Http.Json;
 using System.Text.Json;
+using Conversey.BL.Domain.Ai;
+using Conversey.BL.Domain.Ideation;
+using Microsoft.Extensions.AI;
 
 namespace Conversey.BL.Ai;
 
-public class MistralAiManager : IAiManager
+public sealed class MistralAiManager : IAiManager
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiKey;
-    private readonly string _modelName;
+    private readonly string _completionsModel;
     private readonly string _moderationModel;
 
-    public MistralAiManager(HttpClient httpClient, string apiKey, string modelName = "mistral-small-latest", string moderationModel = "mistral-moderation-latest")
+    public MistralAiManager(HttpClient httpClient, AiManagerConfig config)
     {
         _httpClient = httpClient;
-        _apiKey = apiKey;
-        _modelName = modelName;
-        _moderationModel = moderationModel;
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+        _completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
+        _moderationModel = string.IsNullOrWhiteSpace(config.ModerationModel) ? "mistral-moderation-latest" : config.ModerationModel;
     }
-    
-    public string GenerateAiAlternative(string prompt)
+
+    public void Dispose()
     {
-        if (string.IsNullOrWhiteSpace(prompt))
-            throw new ArgumentException("Prompt cannot be empty.", nameof(prompt));
+    }
 
-        Console.WriteLine($"Prompt: {prompt}");
+    public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
+        CancellationToken cancellationToken = default)
+    {
+        var response = new ChatResponse(new ChatMessage(ChatRole.Assistant, "Mistral chat client bridge is not used in this flow."));
+        return Task.FromResult(response);
+    }
 
-        var request = new
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,
+        ChatOptions options = null, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        yield break;
+    }
+
+    public object GetService(Type serviceType, object serviceKey = null)
+    {
+        return null;
+    }
+
+    public async Task<ModerationDecision> ModerateContent(string content)
+    {
+        var payload = new
         {
-            model = _modelName,
+            model = _moderationModel,
+            input = content
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("moderations", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral moderation failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+
+        if (!root.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array || results.GetArrayLength() == 0)
+        {
+            throw new AiException("Mistral moderation response did not contain results.", null);
+        }
+
+        var first = results[0];
+        var info = ParseModerationInfo(first);
+
+        var flagged = first.TryGetProperty("flagged", out var flaggedElement) && flaggedElement.ValueKind == JsonValueKind.True;
+        var isAllowed = !flagged && !HasAnyModerationFlag(info);
+
+        return new ModerationDecision
+        {
+            IsAllowed = isAllowed,
+            Categories = info
+        };
+    }
+
+    public async Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
+    {
+        var payload = new
+        {
+            model = _completionsModel,
             temperature = 0.2,
             messages = new object[]
             {
                 new
                 {
                     role = "system",
-                    content = "You rewrite offensive or toxic user text into a respectful and safe alternative for a youth platform. Preserve the original meaning as much as possible, but remove insults, hate, threats, sexual harassment, and other inappropriate language. Return only the rewritten alternative text and nothing else."
+                    content = "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text."
                 },
                 new
                 {
@@ -45,125 +99,319 @@ public class MistralAiManager : IAiManager
                 }
             }
         };
-        
-        var json = JsonSerializer.Serialize(request);
-        Console.WriteLine($"Verzonden alternative request: {json}");
-        
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        try
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = _httpClient.PostAsync("chat/completions", content).Result;
-            var responseJson = response.Content.ReadAsStringAsync().Result;
-            
-            Console.WriteLine($"Alternative response body: {responseJson}");
-
-            response.EnsureSuccessStatusCode();
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            };
-            
-            var result = JsonSerializer.Deserialize<Response>(responseJson, options);
-
-            if (result?.Choices == null || result.Choices.Length == 0)
-            {
-                throw new Exception($"Ongeldige response van Mistral API: Geen 'choices' gevonden. Response: {responseJson}");
-            }
-
-            var alternativeText = result.Choices[0].Message.Content?.Trim();
-            
-            if (string.IsNullOrWhiteSpace(alternativeText))
-            {
-                throw new Exception("Mistral API gaf geen alternatieve tekst terug.");
-            }
-
-            return alternativeText;
+            throw new AiException($"Mistral suggestion generation failed ({(int)response.StatusCode}): {body}", null);
         }
-        catch (HttpRequestException ex)
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+        if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
         {
-            Console.WriteLine($"HttpRequestException: {ex.Message}");
-            throw new Exception($"Fout bij het aanroepen van Mistral API: {ex.Message}", ex);
+            return "Please rephrase your message in a respectful way.";
         }
-        catch (JsonException ex)
-        {
-            Console.WriteLine($"JsonException: {ex.Message}");
-            throw new Exception($"Fout bij het deserialiseren van de API-response: {ex.Message}", ex);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception: {ex.Message}");
-            throw new Exception($"Onverwachte fout: {ex.Message}", ex);
-        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        return string.IsNullOrWhiteSpace(content) ? "Please rephrase your message in a respectful way." : content.Trim();
     }
 
-    public ModerationDecision ModerateContent(string content)
+    public async Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
-        if (string.IsNullOrWhiteSpace(content))
-            throw new ArgumentException("Inhoud mag niet leeg zijn.", nameof(content));
-
-        var request = new
+        if (candidateIdeas.Count == 0 || limit <= 0)
         {
-            model = _moderationModel,
-            input = new[] { content }
+            return Array.Empty<int>();
+        }
+
+        int cappedLimit = Math.Min(limit, candidateIdeas.Count);
+        var prompt = BuildIdeaRankingPrompt(referenceIdea, candidateIdeas, preferDifferent, cappedLimit);
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.1,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive."
+                },
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
         };
 
-        var json = JsonSerializer.Serialize(request);
-        var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral idea ranking failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<int>();
+        }
+
+        return ParseRankedIndexes(content, candidateIdeas.Count, cappedLimit);
+    }
+
+    public async Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(
+        IReadOnlyList<string> ideas,
+        IReadOnlyList<string> existingCategories,
+        int maxCategoriesPerIdea)
+    {
+        if (ideas.Count == 0)
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        int cappedMax = Math.Clamp(maxCategoriesPerIdea, 1, 4);
+        var prompt = BuildIdeaCategorizationPrompt(ideas, existingCategories, cappedMax);
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.1,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = "You assign semantic categories to youth ideas. Return only strict JSON."
+                },
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral idea categorization failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new Dictionary<int, IReadOnlyList<string>>();
+        }
+
+        return ParseCategorizedIdeas(content, ideas.Count, cappedMax);
+    }
+
+    private static string BuildIdeaCategorizationPrompt(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    {
+        var indexedIdeas = string.Join("\n", ideas.Select((idea, index) => $"[{index}] {idea}"));
+        var existingCategoryList = existingCategories.Count == 0
+            ? "(none yet)"
+            : string.Join(", ", existingCategories.Distinct(StringComparer.OrdinalIgnoreCase));
+        return $$"""
+Categorize each idea semantically. One idea may belong to multiple categories.
+
+These are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:
+{{existingCategoryList}}
+
+Ideas:
+{{indexedIdeas}}
+
+Rules:
+- Use short, human-readable category names.
+- Max {{maxCategoriesPerIdea}} categories per idea.
+- Prefer reusing an existing category label when it is semantically close enough.
+- Avoid near-duplicate labels when an existing category already covers the same meaning.
+- Do not invent idea indexes.
+- Avoid creating near-duplicate labels if an existing category already fits.
+- Return strict JSON only in this shape:
+{"items":[{"index":0,"categories":["Category A","Category B"]}]}
+""";
+    }
+
+    private static IReadOnlyDictionary<int, IReadOnlyList<string>> ParseCategorizedIdeas(string rawContent, int ideaCount, int maxCategoriesPerIdea)
+    {
+        var result = new Dictionary<int, IReadOnlyList<string>>();
+
+        string json = rawContent.Trim();
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
 
         try
         {
-            var response = _httpClient.PostAsync("moderations", httpContent).Result;
-            var responseJson = response.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine($"Response body: {responseJson}");
-
-            response.EnsureSuccessStatusCode();
-
-            var options = new JsonSerializerOptions
+            using var parsed = JsonDocument.Parse(json);
+            if (!parsed.RootElement.TryGetProperty("items", out var itemsElement) || itemsElement.ValueKind != JsonValueKind.Array)
             {
-                PropertyNameCaseInsensitive = true
-            };
+                return result;
+            }
 
-            var result = JsonSerializer.Deserialize<ModerationResponse>(responseJson, options);
-
-            if (result?.Results == null || result.Results.Length == 0)
-                throw new Exception("Ongeldige moderation response: geen results gevonden.");
-
-            var moderation = result.Results[0];
-            var categories = moderation.Categories;
-
-            Console.WriteLine($"[Mistral] Category flags — sexual={categories.Sexual}, hate={categories.HateAndDiscrimination}, violence={categories.ViolenceAndThreats}, dangerous={categories.DangerousAndCriminalContent}, selfharm={categories.SelfHarm}, pii={categories.Pii}");
-
-            var blocked =
-                categories.Sexual ||
-                categories.HateAndDiscrimination ||
-                categories.ViolenceAndThreats ||
-                categories.DangerousAndCriminalContent ||
-                categories.SelfHarm ||
-                categories.Pii;
-
-            return new ModerationDecision
+            foreach (var item in itemsElement.EnumerateArray())
             {
-                IsAllowed = !blocked,
-                Categories = categories
-            };
+                if (!item.TryGetProperty("index", out var indexElement)) continue;
+
+                int index;
+
+                if (indexElement.ValueKind == JsonValueKind.Number)
+                {
+                    if (!indexElement.TryGetInt32(out index)) continue;
+                }
+                else if (indexElement.ValueKind == JsonValueKind.String)
+                {
+                    if (!int.TryParse(indexElement.GetString(), out index)) continue;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (index < 0 || index >= ideaCount) continue;
+
+                if (!item.TryGetProperty("categories", out var categoriesElement) ||
+                    categoriesElement.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                var categories = categoriesElement
+                    .EnumerateArray()
+                    .Where(e => e.ValueKind == JsonValueKind.String)
+                    .Select(e => e.GetString()?.Trim() ?? string.Empty)
+                    .Where(c => c.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(maxCategoriesPerIdea)
+                    .ToList();
+
+                if (categories.Count > 0)
+                {
+                    result[index] = categories.AsReadOnly();
+                }
+            }
+
+            return result;
         }
-        catch (HttpRequestException ex)
+        catch (JsonException)
         {
-            Console.WriteLine($"HttpRequestException: {ex.Message}");
-            throw new Exception($"Fout bij het aanroepen van Mistral API: {ex.Message}", ex);
+            return result;
+        }
+    }
+
+    private static string BuildIdeaRankingPrompt(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    {
+        var relationGoal = preferDifferent
+            ? "Return ideas that take a noticeably different angle, theme, or approach than the reference idea. Include ideas with a different focus or perspective, not just extreme opposites. Skip only ideas that are nearly identical in meaning to the reference."
+            : "Return ideas that share a similar theme, goal, or approach with the reference idea. Skip ideas that are clearly unrelated or focused on a completely different topic.";
+
+        var candidates = string.Join("\n", candidateIdeas.Select((idea, index) => $"[{index}] {idea}"));
+
+        return $$"""
+Reference idea:
+{{referenceIdea}}
+
+Candidate ideas (use only these indexes):
+{{candidates}}
+
+Task:
+- {{relationGoal}}
+- Return up to {{limit}} indexes, ordered from best to least fitting for this relation.
+- Do not invent indexes.
+- Return strict JSON only with this schema:
+{"rankedIndexes":[0,1,2]}
+""";
+    }
+
+    private static IReadOnlyList<int> ParseRankedIndexes(string rawContent, int candidateCount, int limit)
+    {
+        string json = rawContent.Trim();
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        try
+        {
+            using var parsed = JsonDocument.Parse(json);
+            if (!parsed.RootElement.TryGetProperty("rankedIndexes", out var indexesElement) || indexesElement.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<int>();
+            }
+
+            var picked = new List<int>();
+            var seen = new HashSet<int>();
+            foreach (var value in indexesElement.EnumerateArray())
+            {
+                if (value.ValueKind != JsonValueKind.Number || !value.TryGetInt32(out int index)) continue;
+                if (index < 0 || index >= candidateCount || !seen.Add(index)) continue;
+                picked.Add(index);
+                if (picked.Count >= limit) break;
+            }
+
+            return picked.AsReadOnly();
         }
         catch (JsonException ex)
         {
-            Console.WriteLine($"JsonException: {ex.Message}");
-            throw new Exception($"Fout bij het deserialiseren van de API-response: {ex.Message}", ex);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception: {ex.Message}");
-            throw;
+            throw new AiRankingException("Invalid AI response", ex);
         }
     }
+
+    private static ModerationInfo ParseModerationInfo(JsonElement result)
+    {
+        if (!result.TryGetProperty("categories", out var categories) || categories.ValueKind != JsonValueKind.Object)
+        {
+            return new ModerationInfo();
+        }
+
+        return new ModerationInfo
+        {
+            Sexual = GetBoolean(categories, "sexual"),
+            HateAndDiscrimination = GetBoolean(categories, "hate_and_discrimination") || GetBoolean(categories, "hate"),
+            ViolenceAndThreats = GetBoolean(categories, "violence_and_threats") || GetBoolean(categories, "violence"),
+            DangerousAndCriminalContent = GetBoolean(categories, "dangerous_and_criminal_content"),
+            SelfHarm = GetBoolean(categories, "self_harm"),
+            Pii = GetBoolean(categories, "pii")
+        };
+    }
+
+    private static bool GetBoolean(JsonElement obj, string property)
+    {
+        if (!obj.TryGetProperty(property, out var value)) return false;
+        return value.ValueKind == JsonValueKind.True;
+    }
+
+    private static bool HasAnyModerationFlag(ModerationInfo info)
+    {
+        return info.Sexual ||
+               info.HateAndDiscrimination ||
+               info.ViolenceAndThreats ||
+               info.DangerousAndCriminalContent ||
+               info.SelfHarm ||
+               info.Pii;
+    }
 }
+
+
