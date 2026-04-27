@@ -79,13 +79,15 @@ builder.Services.AddAuthorization(options =>
 });
 
 // Speech service
+builder.Services.AddSingleton<Conversey.BL.Speech.IMistralVoiceManager, Conversey.BL.Speech.MistralVoiceManager>();
 builder.Services.AddScoped<Conversey.BL.Speech.IMistralSpeechManager>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    var voiceManager = provider.GetRequiredService<Conversey.BL.Speech.IMistralVoiceManager>();
     return new Conversey.BL.Speech.MistralSpeechManager(
-        httpClient, 
+        httpClient,
         builder.Configuration["AI:Mistral:ApiKey"] ?? "",
-        ttsVoice: "en_paul_neutral"
+        voiceManager
     );
 });
 
