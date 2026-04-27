@@ -27,7 +27,7 @@ RUN dotnet restore UI-MVC/UI-MVC.csproj
 COPY . .
 
 # Kopieer de GEBOUWDE frontend van de vorige stage
-COPY --from=client-build /src/UI-MVC/wwwroot ./UI-MVC/wwwroot
+COPY --from=client-build /src/wwwroot ./UI-MVC/wwwroot
 
 # Publiceer de applicatie
 RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClientBuild=true
