@@ -21,13 +21,69 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
     }
     
     [HttpPost("/admin/workspaces/admins/new")]
-    public IActionResult CreateWorkspaceAdmin(AdminFormViewModel<WorkspaceAdmin> workspaceAdminFormViewModel)
+    public async Task<IActionResult> CreateWorkspaceAdmin(AdminFormViewModel<WorkspaceAdmin> workspaceAdminFormViewModel)
     {
-        adminManager.AddWorkspaceAdmin(workspaceAdminFormViewModel.FormItem.Email,
+        await adminManager.AddWorkspaceAdmin(workspaceAdminFormViewModel.FormItem.Email,
             workspaceAdminFormViewModel.FormItem.Workspace.Id);
         return RedirectToAction("WorkspaceDetails", "ConverseyAdmin",
             new { id = workspaceAdminFormViewModel.FormItem.Workspace.Id});
         
+    }
+    
+    [HttpGet("/admin/workspace/admin/{id}")]
+    public async Task<IActionResult> EditWorkspaceAdmin(Guid id)
+    {
+        try
+        {
+            var workspaceAdmin = await adminManager.GetWorkspaceAdminById(id);
+
+            return View(EditFormVm(workspaceAdmin));
+        }
+        catch (NotFoundException e)
+        {
+            //TODO 404 Page
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    [HttpPost("/admin/workspace/admin/{id}")]
+    public async Task<IActionResult> EditWorkspaceAdmin(Guid id, AdminFormViewModel<WorkspaceAdmin> workspaceAdminViewModel)
+    {
+        try
+        {
+            var workspaceAdmin = workspaceAdminViewModel.FormItem;
+            await adminManager.EditWorkspaceAdmin(workspaceAdmin);
+
+            return RedirectToAction("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceAdmin.Workspace.Id });
+        }
+        catch (NotFoundException notFoundException)
+        {
+            ModelState.AddModelError(string.Empty, notFoundException.Message);
+        }
+        catch (ValidationException ex)
+        {
+            ApplyValidationExceptionToModelState(ex);
+        }
+
+        return View(EditFormVm(workspaceAdminViewModel.FormItem));
+    }
+    
+    [HttpPost("/admin/workspace-user/delete/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteWorkspaceAdmin(Guid id)
+    {
+        try
+        {
+            var workspaceAdmin = await adminManager.GetWorkspaceAdminById(id);
+            var workspace = workspaceAdmin.Workspace;
+            await adminManager.RemoveWorkspaceAdmin(id);
+            return RedirectToAction("WorkspaceDetails", "ConverseyAdmin", workspace);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
     
     private AdminFormViewModel<WorkspaceAdmin> CreateFormVm(WorkspaceAdmin workspaceAdmin)

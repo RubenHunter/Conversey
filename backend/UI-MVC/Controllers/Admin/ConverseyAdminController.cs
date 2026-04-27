@@ -48,23 +48,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         {
             var workspace = workspaceManager.GetWorkspaceById(id);
             var workspaceAdmins = adminManager.GetAllWorkspaceAdminsByWorkspaceIdWithWorkspace(id);
-            //var users =
-            //    (await userManager.GetUsersInRoleAsync("WorkspaceAdmin"))
-            //    .Where(u =>
-            //    {
-            //        if (u is WorkspaceAdminUser)
-            //        {
-            //            var wau = (WorkspaceAdminUser)u;
-            //            if (wau?.Workspace?.Id == workspace.Id)
-            //            {
-            //                return true;
-            //            }
-            //        }
-            //
-            //        return false;
-            //    });
-
-
+            
             return View(new AdminWorkspaceDetailsViewModel
             {                           
                 Workspace = workspace,
@@ -119,20 +103,20 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         return View(EditFormVm(workspaceFormViewModel.FormItem));
     }
     
-    // [HttpPost("/admin/workspace/delete/{id}")]
-    // [ValidateAntiForgeryToken]
-    // public IActionResult DeleteProject(Slug id)
-    // {
-    //     try
-    //     {
-    //         projectManager.RemoveProject(id, workspaceContext.CurrentWorkspace.Id);
-    //         return RedirectToAction("Projects");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         return BadRequest(ex.Message);
-    //     }
-    // }
+    [HttpPost("/admin/workspace/delete/{id}")]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteWorkspace(Slug id)
+    {
+        try
+        {
+            workspaceManager.RemoveWorkspace(id);
+            return RedirectToAction("Workspaces");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
     
     
     private AdminFormViewModel<Workspace> CreateFormVm(Workspace workspace)

@@ -8,5 +8,9 @@ public interface IAdminRepository
     IReadOnlyCollection<WorkspaceAdmin> ReadAllWorkspaceAdminsByWorkspaceIdWithWorkspace(Slug id);
     IReadOnlyCollection<WorkspaceAdminUser> ReadAllWorkspaceAdmins();
 
-    public void CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
+    Task<WorkspaceAdmin> ReadWorkspaceAdminById(Guid id);
+    Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
+    Task UpdateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
+    Task DeleteWorkspaceAdmin(Guid workspaceAdminId);
+
 }

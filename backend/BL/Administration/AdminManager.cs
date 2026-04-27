@@ -16,12 +16,17 @@ public class AdminManager : IAdminManager
         _workspaceManager = workspaceManager;
     }
 
+    public async Task<WorkspaceAdmin> GetWorkspaceAdminById(Guid id)
+    {
+        return await _adminRepository.ReadWorkspaceAdminById(id);
+    }
+
     public IEnumerable<WorkspaceAdmin> GetAllWorkspaceAdminsByWorkspaceIdWithWorkspace(Slug id)
     {
         return _adminRepository.ReadAllWorkspaceAdminsByWorkspaceIdWithWorkspace(id);
     }
 
-    public WorkspaceAdmin AddWorkspaceAdmin(string email, Slug workspaceId)
+    public async Task<WorkspaceAdmin> AddWorkspaceAdmin(string email, Slug workspaceId)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
 
@@ -31,11 +36,25 @@ public class AdminManager : IAdminManager
             Workspace = workspace
         };
         Validate(workspaceAdmin);
-        _adminRepository.CreateWorkspaceAdmin(workspaceAdmin);
+        await _adminRepository.CreateWorkspaceAdmin(workspaceAdmin);
         return workspaceAdmin;
+    }
+
+    public async Task EditWorkspaceAdmin(WorkspaceAdmin workspaceAdmin)
+    {
+        workspaceAdmin.Workspace = _workspaceManager.GetWorkspaceById(workspaceAdmin.Workspace.Id);
+        Validate(workspaceAdmin);
+        await _adminRepository.UpdateWorkspaceAdmin(workspaceAdmin);
+    }
+
+    public async Task RemoveWorkspaceAdmin(Guid workspaceAdminId)
+    {
+        await _adminRepository.DeleteWorkspaceAdmin(workspaceAdminId);
     }
     
     
+
+
     private void Validate(object obj)
     {
         var validationResults = new List<ValidationResult>();

@@ -54,6 +54,12 @@ public class WorkspaceManager: IWorkspaceManager
 
     }
 
+    public void RemoveWorkspace(Slug id)
+    {
+        var workspace = GetWorkspaceById(id);
+        _workspaceRepository.DeleteWorkspace(workspace);
+    }
+
     private void Validate(object obj)
     {
         var validationResults = new List<ValidationResult>();

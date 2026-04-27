@@ -41,6 +41,12 @@ public class WorkspaceRepository : IWorkspaceRepository
         _context.Workspaces.Update(updatedWorkspace);
         _context.SaveChanges();
     }
+
+    public void DeleteWorkspace(Workspace workspace)
+    {
+        _context.Workspaces.Remove(workspace);
+        _context.SaveChanges();
+    }
 }
 
 #region WorkspaceConfig
@@ -70,7 +76,8 @@ public class WorkspaceConfig: IEntityTypeConfiguration<Workspace>
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
             .HasForeignKey("WorkspaceId")
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
         #endregion
 
     }

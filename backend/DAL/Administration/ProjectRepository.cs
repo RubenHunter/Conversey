@@ -79,6 +79,12 @@ public class ProjectRepository : IProjectRepository
         _dbContext.Projects.Remove(project);
         _dbContext.SaveChanges();
     }
+
+    public void DeleteAllProjectsFromWorkspaceId(Slug workspaceId)
+    {
+        var projects = ReadAllProjectsFromWorkspaceId(workspaceId);
+        _dbContext.Projects.RemoveRange(projects);
+    }
 }
 
 #region ProjectConfig
@@ -120,20 +126,23 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
         builder
             .HasMany(p => p.Topic)
             .WithOne(t => t.Project)
-            .HasForeignKey("ProjectId");
+            .HasForeignKey("ProjectId")
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Project 1-* Youth
         builder
             .HasMany(p => p.Youth)
             .WithOne(y => y.Project)
-            .HasForeignKey("ProjectId");
+            .HasForeignKey("ProjectId")
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Project 1-* Question
         builder
             .HasMany(p => p.Questions)
             .WithOne(q => q.Project)
             .HasForeignKey("ProjectId")
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
 
         #endregion

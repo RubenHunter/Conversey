@@ -10,4 +10,5 @@ public interface IWorkspaceRepository
     Workspace ReadWorkspaceById(Slug id);
     void CreateWorkspace(Workspace workspace);
     void UpdateWorkspace(Workspace updatedWorkspace);
+    void DeleteWorkspace(Workspace workspace);
 }

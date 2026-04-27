@@ -9,4 +9,5 @@ public interface IWorkspaceManager
     Workspace AddWorkspace(string name);
     Workspace GetWorkspaceById(Slug id);
     void EditWorkspace(Workspace updatedWorkspace);
+    void RemoveWorkspace(Slug id);
 }
