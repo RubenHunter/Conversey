@@ -44,17 +44,4 @@
     <_ContentIncludedByDefault Remove="Views\Home\Test.cshtml" />
   </ItemGroup>
 
-  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
-    <Exec Command="node --version" ContinueOnError="true">
-      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
-    </Exec>
-    <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. Please install Node.js." />
-    <Message Importance="high" Text="Restoring dependencies using 'pnpm'..." />
-    <Exec Command="pnpm install" />
-  </Target>
-
-  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
-    <Exec Command="pnpm run build" />
-  </Target>
-
 </Project>
