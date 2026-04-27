@@ -11,7 +11,24 @@ import type {ScrollNav} from '../scrollNav'
 import {renderScrollNav} from '../scrollNav'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
-import {navigate, ProjectContext, render} from "../../main";
+import { navigate, render } from "../../shared";
+import type { ProjectContext } from "../../shared";
+
+const SUPPORTED_LANGUAGES = ['en', 'fr', 'nl'] as const
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
+
+function resolveSurveyLanguage(projectLanguage: string | undefined): SupportedLanguage {
+    const candidates = [
+        projectLanguage,
+        navigator.language.split('-')[0].toLowerCase(),
+    ]
+    for (const lang of candidates) {
+        if (lang && (SUPPORTED_LANGUAGES as readonly string[]).includes(lang)) {
+            return lang as SupportedLanguage
+        }
+    }
+    return 'nl'
+}
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -56,8 +73,9 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     let isUserScroll = false // Track whether the scroll was from user or from programmatic navigation
     let scrollTimeoutId: number | null = null // Track pending scroll timeout to cancel if needed
 
+    const surveyLanguage = resolveSurveyLanguage(project.language)
     container.innerHTML = `
-        <div class="survey-shell" id="survey-shell">
+        <div class="survey-shell" id="survey-shell" data-survey-language="${surveyLanguage}">
             ${headerHTML}
 
             <section class="survey-hero" id="survey-hero">
@@ -394,5 +412,3 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         }
     })
 }
-
-render(renderSurveyPage)

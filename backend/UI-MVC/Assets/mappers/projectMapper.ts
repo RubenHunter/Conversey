@@ -120,6 +120,7 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         startDate: pickString(dto.startDate, dto.StartDate),
         endDate: pickString(dto.endDate, dto.EndDate),
         interactionType: mapInteractionType(dto.interactionType ?? dto.InteractionType ?? dto.interactionForm ?? dto.InteractionForm),
+        language: pickString(dto.language, dto.Language),
         topic: mapTopic(dto.topic ?? dto.Topic) ?? topics?.[0],
         topics,
         style: mapStyle(dto.style ?? dto.Style),

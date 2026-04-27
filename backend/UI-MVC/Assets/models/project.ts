@@ -37,6 +37,7 @@ export interface Project {
     startDate?: string
     endDate?: string
     interactionType?: InteractionType
+    language?: string
     topic?: ProjectTopic
     topics?: ProjectTopic[]
     style?: ProjectStyle

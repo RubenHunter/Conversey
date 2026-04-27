@@ -90,6 +90,11 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .Property(p => p.ImageUrl)
             .HasMaxLength(2048);
 
+        builder
+            .Property(p => p.Language)
+            .HasMaxLength(5)
+            .HasDefaultValue("nl");
+
         #endregion
 
 
