@@ -26,7 +26,8 @@ RUN dotnet restore "UI-MVC/UI-MVC.csproj"
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false
+    /p:UseAppHost=false \
+    /p:PublishCompressedAssets=false
 
 # Gebruik de .NET 10 ASP.NET runtime voor de uiteindelijke image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
