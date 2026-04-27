@@ -1,36 +1,42 @@
-# ==========================================
-# BUILD STAGE
-# ==========================================
+# 1. Frontend Build
+FROM node:20-alpine AS client-build
+WORKDIR /src
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Kopieer alleen de frontend bestanden
+COPY UI-MVC/package.json UI-MVC/pnpm-lock.yaml ./UI-MVC/
+WORKDIR /src/UI-MVC
+RUN pnpm install
+
+COPY UI-MVC/ ./
+RUN pnpm run build
+
+# 2. .NET Publish
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# 1. Installeer Node.js & pnpm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g pnpm
+# Kopieer projectbestanden
+COPY *.sln ./
+COPY BL/*.csproj BL/
+COPY DAL/*.csproj DAL/
+COPY Domain/*.csproj Domain/
+COPY UI-MVC/*.csproj UI-MVC/
+RUN dotnet restore UI-MVC/UI-MVC.csproj
 
-# 2. Kopieer alles
+# Kopieer de rest van de broncode
 COPY . .
 
-# 3. Frontend Build
-WORKDIR /src/UI-MVC
-RUN pnpm install
-RUN pnpm build
+# Kopieer de GEBOUWDE frontend van de vorige stage
+COPY --from=client-build /src/UI-MVC/wwwroot ./UI-MVC/wwwroot
 
-# 4. Publish
-WORKDIR /src
-RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
-    -c Release \
-    -o /app/publish \
-    /p:UseAppHost=false \
-    /p:SkipClientBuild=true
+# Publiceer de applicatie
+RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClientBuild=true
 
-# ==========================================
-# RUNTIME STAGE
-# ==========================================
+# 3. Final Image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Conversey.UI_MVC.dll"]
