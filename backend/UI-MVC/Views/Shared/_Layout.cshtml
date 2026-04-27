@@ -9,6 +9,8 @@
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
+    <script type="module" vite-src="~/components/adminDeleteModal.ts"></script>
+    
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
     </environment>
