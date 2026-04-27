@@ -10,6 +10,8 @@ public interface IProjectRepository
     Youth ReadYouthByIdAndProjectId(Guid youthId, Slug projectId);
     Topic ReadTopicByIdAndProjectId(int topicId, Slug projectId);
     void CreateYouth(Youth youth);
+    void UpdateYouth(Youth youth);
+    
     IReadOnlyCollection<Project> ReadAllProjectsFromWorkspaceId(Slug workspaceId);
     
     void CreateProject(Project project);

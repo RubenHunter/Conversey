@@ -1,4 +1,4 @@
-import { QuestionType, type Question } from '../../models/question.ts'
+import { QuestionType, type Question } from '../../models/question'
 
 function escapeHtml(value: string): string {
     return value

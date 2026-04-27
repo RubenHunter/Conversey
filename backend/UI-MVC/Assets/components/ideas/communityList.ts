@@ -1,6 +1,8 @@
 ﻿import type { Idea, IdeaTopic } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 
+type DiscoveryBadgeType = 'similar' | 'different'
+
 interface RenderCommunityListParams {
     list: HTMLDivElement
     ideas: Idea[]
@@ -8,6 +10,8 @@ interface RenderCommunityListParams {
     topics: IdeaTopic[]
     flaggedIdeaIds: ReadonlySet<number>
     activeIndex: number
+    discoveryBadgeByIdeaId?: ReadonlyMap<number, DiscoveryBadgeType>
+    onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void
 }
 
 function formatDate(isoString: string): string {
@@ -49,7 +53,39 @@ function createUserInfoElement(_authorType: Idea['authorType'], createdAt: strin
     return userInfo
 }
 
-export function renderCommunityIdeasList({ list, ideas, activeView, topics, flaggedIdeaIds, activeIndex }: RenderCommunityListParams): void {
+function getDiscoveryBadgeLabel(badge: DiscoveryBadgeType): string {
+    return badge === 'similar' ? 'Most similar' : 'Least similar'
+}
+
+function createDiscoveryBadgeElement(
+    ideaId: number,
+    badge: DiscoveryBadgeType,
+    onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void,
+): HTMLButtonElement {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = `ideas-discovery-badge ideas-discovery-badge--${badge}`
+    button.textContent = getDiscoveryBadgeLabel(badge)
+    button.title = `Show only ${badge === 'similar' ? 'most similar' : 'least similar'} ideas`
+    button.setAttribute('data-discovery-badge', badge)
+    button.setAttribute('data-idea-id', String(ideaId))
+    button.addEventListener('click', (event) => {
+        event.stopPropagation()
+        onDiscoveryBadgeClick?.(badge)
+    })
+    return button
+}
+
+export function renderCommunityIdeasList({
+    list,
+    ideas,
+    activeView,
+    topics,
+    flaggedIdeaIds,
+    activeIndex,
+    discoveryBadgeByIdeaId,
+    onDiscoveryBadgeClick,
+}: RenderCommunityListParams): void {
     list.innerHTML = ''
 
     if (ideas.length === 0) {
@@ -122,6 +158,11 @@ export function renderCommunityIdeasList({ list, ideas, activeView, topics, flag
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
                 badgesWrapper.appendChild(flagged)
+            }
+
+            const discoveryBadge = discoveryBadgeByIdeaId?.get(idea.id)
+            if (discoveryBadge) {
+                badgesWrapper.appendChild(createDiscoveryBadgeElement(idea.id, discoveryBadge, onDiscoveryBadgeClick))
             }
             
             if (badgesWrapper.children.length > 0) {

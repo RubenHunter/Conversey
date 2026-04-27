@@ -52,6 +52,12 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
+    public void UpdateYouth(Youth youth)
+    {
+        _dbContext.Youths.Update(youth);
+        _dbContext.SaveChanges();
+    }
+
     public IReadOnlyCollection<Project> ReadAllProjectsFromWorkspaceId(Slug workspaceId)
     {
         return _dbContext.Projects

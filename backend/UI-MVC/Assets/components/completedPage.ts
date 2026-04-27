@@ -1,14 +1,11 @@
-import { getProject } from '../services/projectService'
 import {navigate, ProjectContext, render} from "../main";
 
-function isSurveyCompleted(projectId: number): boolean {
-    return localStorage.getItem(`survey-completed-${projectId}`) === 'true'
+function isSurveyCompleted(projectSlug: string): boolean {
+    return localStorage.getItem(`survey-completed-${projectSlug}`) === 'true'
 }
 
 async function renderCompletedPage(container: HTMLElement, params: ProjectContext): Promise<void> {
-    const project = await getProject(params.organizationSlug, params.projectSlug)
-
-    if (!isSurveyCompleted(project.id)) {
+    if (!isSurveyCompleted(params.projectSlug)) {
         navigate('survey')
         return
     }

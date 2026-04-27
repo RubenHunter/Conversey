@@ -1,3 +1,7 @@
+export interface ApiSlugDto {
+    Text: string
+}
+
 export interface ApiResponseAnswerDto {
     questionId: number
     selectedOptionId?: number
@@ -5,7 +9,7 @@ export interface ApiResponseAnswerDto {
 }
 
 export interface ApiSurveyResponseRequestDto {
-    projectId: number
+    projectId: ApiSlugDto
     youthId: string
     answers: ApiResponseAnswerDto[]
 }

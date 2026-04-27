@@ -6,11 +6,15 @@ using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Ideation;
 using IAiManager = Conversey.BL.Ai.IAiManager;
 using ModerationDecision = Conversey.BL.Ai.ModerationDecision;
+using System.Linq;
 
 namespace Conversey.BL.Ideation;
 
 public class IdeaManager: IIdeaManager
 {
+    private const int DiscoveryCandidateLimit = 30;
+    private const int CategorizationBatchSize = 20;
+    private const int MaxCategoriesPerIdea = 3;
     private readonly IIdeaRepository _repository;
     private readonly IProjectManager _projectManager;
     private readonly IAiManager _aiManager;
@@ -51,6 +55,7 @@ public class IdeaManager: IIdeaManager
         };
         Validate(idea);
         _repository.CreateIdea(idea);
+        AssignSemanticCategoriesToIdea(idea, topicId);
 
         return decision.IsAllowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, decision);
     }
@@ -99,7 +104,109 @@ public class IdeaManager: IIdeaManager
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         _projectManager.GetTopic(project, topicId);
-        return _repository.ReadIdeasByTopicId(topicId);
+
+        var ideas = _repository.ReadIdeasByTopicId(topicId).ToList();
+        EnsureSemanticCategoriesForIdeas(ideas);
+        return ideas;
+    }
+
+    public IEnumerable<Idea> GetIdeaDiscoverySuggestions(
+        Slug workspaceId,
+        Slug projectId,
+        int topicId,
+        Guid youthId,
+        IdeaDiscoveryCategory category,
+        int limit)
+    {
+        string scope = $"workspace={workspaceId}, project={projectId}, topic={topicId}, youth={youthId}, category={category}, limit={limit}";
+        if (limit <= 0)
+        {
+            LogDiscovery(scope, source: "invalid-limit", candidateCount: 0, rankedCount: 0, pickedCount: 0);
+            return Array.Empty<Idea>();
+        }
+
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
+        _projectManager.GetTopic(project, topicId);
+
+        // Feature requirement: suggestions are only available when the user already posted in this topic.
+        IReadOnlyCollection<Idea> ownIdeasInTopic = _repository.ReadIdeasByTopicIdAndYouthId(topicId, youthId);
+        if (ownIdeasInTopic.Count == 0)
+        {
+            LogDiscovery(scope, source: "no-own-idea-in-topic", candidateCount: 0, rankedCount: 0, pickedCount: 0);
+            return Array.Empty<Idea>();
+        }
+
+        var candidates = _repository.ReadIdeasByTopicIdAndStatus(topicId, ModerationStatus.Approved)
+            .Where(idea => idea.Youth?.Id != youthId)
+            .Take(DiscoveryCandidateLimit)
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            LogDiscovery(scope, source: "no-candidates", candidateCount: 0, rankedCount: 0, pickedCount: 0);
+            return Array.Empty<Idea>();
+        }
+
+        int cappedLimit = Math.Min(limit, candidates.Count);
+
+        if (category == IdeaDiscoveryCategory.Random)
+        {
+            var randomPicks = ShuffleIdeas(candidates).Take(cappedLimit).ToList().AsReadOnly();
+            LogDiscovery(scope, source: "random", candidateCount: candidates.Count, rankedCount: 0, pickedCount: randomPicks.Count);
+            return randomPicks;
+        }
+
+        string referenceIdea = ownIdeasInTopic
+            .OrderByDescending(idea => idea.SubmissionDate)
+            .Select(idea => idea.Content)
+            .FirstOrDefault(content => !string.IsNullOrWhiteSpace(content))
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(referenceIdea))
+        {
+            var fallbackPicks = ShuffleIdeas(candidates).Take(cappedLimit).ToList().AsReadOnly();
+            LogDiscovery(scope, source: "fallback-no-reference", candidateCount: candidates.Count, rankedCount: 0, pickedCount: fallbackPicks.Count);
+            return fallbackPicks;
+        }
+
+        IEnumerable<int> rankedIndexes;
+        bool aiCallFailed = false;
+        try
+        {
+            rankedIndexes = _aiManager.RankIdeasByRelation(
+                referenceIdea,
+                candidates.Select(idea => idea.Content).ToList().AsReadOnly(),
+                category == IdeaDiscoveryCategory.Different,
+                cappedLimit).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaDiscovery] AI ranking failed ({scope}): {ex.Message}");
+            aiCallFailed = true;
+            rankedIndexes = Array.Empty<int>();
+        }
+
+        var pickedIdeas = new List<Idea>(cappedLimit);
+        var seenIdeaIds = new HashSet<int>();
+        foreach (int index in rankedIndexes)
+        {
+            if (index < 0 || index >= candidates.Count) continue;
+
+            Idea candidate = candidates[index];
+            if (!seenIdeaIds.Add(candidate.Id)) continue;
+            pickedIdeas.Add(candidate);
+            if (pickedIdeas.Count >= cappedLimit) break;
+        }
+
+        string source = aiCallFailed
+            ? "fallback-ai-error"
+            : (rankedIndexes.Count() > 0 && pickedIdeas.Count == rankedIndexes.Count()
+                ? "ai-ranked"
+                : (rankedIndexes.Count() > 0 ? "ai-ranked+fallback-fill" : "fallback-empty-ai-ranking"));
+
+        LogDiscovery(scope, source, candidates.Count, rankedIndexes.Count(), pickedIdeas.Count);
+
+        return pickedIdeas.AsReadOnly();
     }
 
     public Idea ChangeIdea(Slug workspaceId, Slug projectId, int topicId, int ideaId, ModerationStatus newStatus, string newContent)
@@ -320,6 +427,183 @@ public class IdeaManager: IIdeaManager
     private static string NormalizeEmoji(string emoji)
     {
         return string.IsNullOrWhiteSpace(emoji) ? string.Empty : emoji.Trim();
+    }
+
+    private static IReadOnlyList<Idea> ShuffleIdeas(IReadOnlyList<Idea> ideas)
+    {
+        var shuffled = ideas.ToList();
+        for (int index = shuffled.Count - 1; index > 0; index--)
+        {
+            int swapIndex = Random.Shared.Next(index + 1);
+            (shuffled[index], shuffled[swapIndex]) = (shuffled[swapIndex], shuffled[index]);
+        }
+
+        return shuffled.AsReadOnly();
+    }
+
+    private void AssignSemanticCategoriesToIdea(Idea idea, int topicId)
+    {
+        string[] categories = { "General ideas" };
+
+        try
+        {
+            var existingCategories = LoadTopicSemanticCategories(topicId);
+            var categorization = _aiManager
+                .CategorizeIdeas(
+                    new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
+                    existingCategories,
+                    MaxCategoriesPerIdea)
+                .GetAwaiter()
+                .GetResult();
+
+            var rawCategories = categorization.TryGetValue(0, out var assigned)
+                ? assigned
+                : Array.Empty<string>();
+
+            var canonical = CanonicalizeSemanticCategories(rawCategories, existingCategories)
+                .Take(MaxCategoriesPerIdea)
+                .ToArray();
+
+            if (canonical.Length > 0)
+            {
+                categories = canonical;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaDiscovery] Semantic categorization failed for idea {idea.Id}: {ex.Message}");
+        }
+
+        idea.SemanticCategories = categories;
+
+        _repository.UpdateIdea(idea);
+    }
+
+    private void EnsureSemanticCategoriesForIdeas(IReadOnlyList<Idea> ideas)
+    {
+        var knownCategories = LoadKnownSemanticCategories(ideas);
+        var uncategorized = ideas
+            .Where(idea => idea.SemanticCategories == null || idea.SemanticCategories.Length == 0)
+            .ToList();
+
+        if (uncategorized.Count == 0)
+        {
+            return;
+        }
+
+        for (int batchStart = 0; batchStart < uncategorized.Count; batchStart += CategorizationBatchSize)
+        {
+            var batch = uncategorized.Skip(batchStart).Take(CategorizationBatchSize).ToList();
+            var batchTexts = batch.Select(idea => idea.Content ?? string.Empty).ToList().AsReadOnly();
+
+            IReadOnlyDictionary<int, IReadOnlyList<string>> categorizedByIndex;
+            try
+            {
+                categorizedByIndex = _aiManager
+                    .CategorizeIdeas(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[IdeaDiscovery] Semantic categorization fallback used: {ex.Message}");
+                categorizedByIndex = new Dictionary<int, IReadOnlyList<string>>();
+            }
+
+            for (int index = 0; index < batch.Count; index++)
+            {
+                var categories = categorizedByIndex.TryGetValue(index, out var assigned)
+                    ? assigned
+                    : Array.Empty<string>();
+
+                var normalized = CanonicalizeSemanticCategories(categories, knownCategories)
+                    .Take(MaxCategoriesPerIdea)
+                    .ToArray();
+
+                batch[index].SemanticCategories = normalized.Length > 0
+                    ? normalized
+                    : CanonicalizeSemanticCategories(new[] { "General ideas" }, knownCategories).ToArray();
+
+                RegisterSemanticCategories(knownCategories, batch[index].SemanticCategories);
+
+                _repository.UpdateIdea(batch[index]);
+            }
+        }
+    }
+
+    private static List<string> LoadKnownSemanticCategories(IEnumerable<Idea> ideas)
+    {
+        var categories = new List<string>();
+        RegisterSemanticCategories(categories, ideas.SelectMany(idea => idea.SemanticCategories ?? Array.Empty<string>()));
+        return categories;
+    }
+
+    private IReadOnlyList<string> LoadTopicSemanticCategories(int topicId)
+    {
+        var ideas = _repository.ReadIdeasByTopicId(topicId);
+        return LoadKnownSemanticCategories(ideas);
+    }
+
+    private static IReadOnlyList<string> CanonicalizeSemanticCategories(IEnumerable<string> categories, IReadOnlyList<string> knownCategories)
+    {
+        var canonical = new List<string>();
+        var knownByKey = knownCategories
+            .Select(category => (category ?? string.Empty).Trim())
+            .Where(category => category.Length > 0)
+            .GroupBy(NormalizeCategoryKey)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var raw in categories)
+        {
+            var trimmed = (raw ?? string.Empty).Trim();
+            if (trimmed.Length == 0) continue;
+
+            var key = NormalizeCategoryKey(trimmed);
+            var resolved = knownByKey.TryGetValue(key, out var existing) ? existing : trimmed;
+
+            if (canonical.Any(category => NormalizeCategoryKey(category) == key))
+            {
+                continue;
+            }
+
+            canonical.Add(resolved);
+            if (!knownByKey.ContainsKey(key))
+            {
+                knownByKey[key] = resolved;
+            }
+        }
+
+        return canonical;
+    }
+
+    private static void RegisterSemanticCategories(ICollection<string> knownCategories, IEnumerable<string> categories)
+    {
+        foreach (var category in categories)
+        {
+            var trimmed = (category ?? string.Empty).Trim();
+            if (trimmed.Length == 0) continue;
+
+            if (knownCategories.Any(existing => NormalizeCategoryKey(existing) == NormalizeCategoryKey(trimmed)))
+            {
+                continue;
+            }
+
+            knownCategories.Add(trimmed);
+        }
+    }
+
+    private static string NormalizeCategoryKey(string value)
+    {
+        return new string((value ?? string.Empty)
+            .ToLowerInvariant()
+            .Where(char.IsLetterOrDigit)
+            .ToArray());
+    }
+
+    private static void LogDiscovery(string scope, string source, int candidateCount, int rankedCount, int pickedCount)
+    {
+        Console.WriteLine(
+            $"[IdeaDiscovery] source={source}; candidates={candidateCount}; ranked={rankedCount}; picked={pickedCount}; {scope}");
     }
 
     private ModerationDecision EvaluateIdeaModeration(string content)

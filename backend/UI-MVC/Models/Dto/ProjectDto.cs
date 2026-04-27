@@ -50,6 +50,7 @@ public class ProjectTopicDto
     public int Id { get; set; }
     public string Name { get; set; }
     public string Context { get; set; }
+    public int MaxBroadSelectionLoads { get; set; }
 
     public static ProjectTopicDto From(Topic topic)
     {
@@ -57,7 +58,8 @@ public class ProjectTopicDto
         {
             Id = topic.Id,
             Name = topic.Name,
-            Context = topic.Context ?? string.Empty
+            Context = topic.Context ?? string.Empty,
+            MaxBroadSelectionLoads = topic.MaxBroadSelectionLoads
         };
     }
 }

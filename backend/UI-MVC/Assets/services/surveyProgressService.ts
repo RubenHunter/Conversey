@@ -16,7 +16,7 @@ export interface LoadedSurveyProgress {
     answersByQuestionId: Map<number, QuestionAnswer>
 }
 
-function getSurveyProgressKey(projectId: number): string {
+function getSurveyProgressKey(projectId: string): string {
     return `${SURVEY_PROGRESS_KEY_PREFIX}-${projectId}`
 }
 
@@ -24,7 +24,7 @@ function getQuestionSignature(questions: Question[]): string {
     return questions.map((question) => `${question.id}:${question.type}`).join('|')
 }
 
-export function loadSurveyProgress(projectId: number, questions: Question[]): LoadedSurveyProgress | null {
+export function loadSurveyProgress(projectId: string, questions: Question[]): LoadedSurveyProgress | null {
     const raw = localStorage.getItem(getSurveyProgressKey(projectId))
     if (!raw) {
         return null
@@ -60,7 +60,7 @@ export function loadSurveyProgress(projectId: number, questions: Question[]): Lo
 }
 
 export function saveSurveyProgress(
-    projectId: number,
+    projectId: string,
     questions: Question[],
     currentQuestionIndex: number,
     answersByQuestionId: Map<number, QuestionAnswer>,
@@ -80,7 +80,7 @@ export function saveSurveyProgress(
     localStorage.setItem(getSurveyProgressKey(projectId), JSON.stringify(snapshot))
 }
 
-export function clearSurveyProgress(projectId: number): void {
+export function clearSurveyProgress(projectId: string): void {
     localStorage.removeItem(getSurveyProgressKey(projectId))
 }
 
