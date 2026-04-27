@@ -18,7 +18,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - AI__Provider=Mistral
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
-      - ConnectionStrings__DefaultConnection=${DB_CONN}
+      - ConnectionStrings__Default=${DB_CONN}
     depends_on:
       - db-proxy
 
