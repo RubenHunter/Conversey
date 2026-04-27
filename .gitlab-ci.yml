@@ -10,5 +10,5 @@ build-and-push:
     DOCKER_TLS_CERTDIR: ""
   script:
     - echo "$GCP_SERVICE_KEY" | docker login -u _json_key --password-stdin https://europe-west1-docker.pkg.dev
-    - docker build -t europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/backend:latest .
+    - docker build -t europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/backend:latest -f backend/Dockerfile backend/
     - docker push europe-west1-docker.pkg.dev/ip1-mvp-project/conversey-repo/backend:latest
