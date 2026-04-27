@@ -35,6 +35,12 @@ public class WorkspaceRepository : IWorkspaceRepository
         _context.Workspaces.Add(workspace);
         _context.SaveChanges();
     }
+
+    public void UpdateWorkspace(Workspace updatedWorkspace)
+    {
+        _context.Workspaces.Update(updatedWorkspace);
+        _context.SaveChanges();
+    }
 }
 
 #region WorkspaceConfig

@@ -20,7 +20,7 @@ public class WorkspaceManager: IWorkspaceManager
         return _workspaceRepository.ReadAllWorkspaces();
     }
 
-    public Workspace CreateWorkspace(string name)
+    public Workspace AddWorkspace(string name)
     {
         var workspace = new Workspace
         {
@@ -38,6 +38,20 @@ public class WorkspaceManager: IWorkspaceManager
     {
         var workspace = _workspaceRepository.ReadWorkspaceById(workspaceId);
         return workspace ?? throw new WorkspaceNotFoundException(workspaceId);
+    }
+
+    public void EditWorkspace(Workspace updatedWorkspace)
+    {
+        Validate(updatedWorkspace);
+        var existing = GetWorkspaceById(updatedWorkspace.Id);
+
+        if (existing == null)
+            throw new WorkspaceNotFoundException(updatedWorkspace.Id);
+
+        existing.Name = updatedWorkspace.Name;
+
+        _workspaceRepository.UpdateWorkspace(existing);
+
     }
 
     private void Validate(object obj)

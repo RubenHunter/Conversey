@@ -9,4 +9,5 @@ public interface IWorkspaceRepository
     Workspace ReadWorkspaceBySlug(Slug slug);
     Workspace ReadWorkspaceById(Slug id);
     void CreateWorkspace(Workspace workspace);
+    void UpdateWorkspace(Workspace updatedWorkspace);
 }
