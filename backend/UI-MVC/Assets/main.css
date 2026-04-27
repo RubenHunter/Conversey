@@ -1,4 +1,7 @@
-@import "tailwindcss" source("..");
+@import "tailwindcss";
+@source "../Views/**/*.cshtml";
+@source "../Areas/**/*.cshtml";
+@source "./**/*.ts";
 @import "./styles/theme.css";
 @import "./styles/shared/shared.css";
 @import "./styles/shared/topbar.css";

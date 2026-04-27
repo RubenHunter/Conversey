@@ -17,57 +17,22 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
-
   </ItemGroup>
-
-
 
   <ItemGroup>
     <Content Remove="package-lock.json" />
     <Content Remove="package.json" />
     <Content Remove="tsconfig.json" />
-
     <None Include="package-lock.json" />
     <None Include="package.json" />
     <None Include="tsconfig.json" />
-    <!--    <Content Include="wwwroot\.vite\manifest.json" />-->
 
-    <!-- Don't remove this line or your manifest.json won't be copied on publish -->
-    <Content Include="wwwroot\.vite\**" />
-    
-    <Content Remove="Assets\*.ico" />
-    <Contenty Remove="Assets\*.svg" />
-    <Content Remove="Assets\*.png" />
-    <Content Remove="Assets\*.jpg" />
-    <Content Remove="Assets\*.gif" />
-    <None Update="Assets\*.ico;Assets\*.svg;Assets\*.png;Assets\*.jpg;Assets\*.gif">
-      <Link>wwwroot\%(Filename)%(Extension)</Link>
-      <TargetPath>wwwroot\%(Filename)%(Extension)</TargetPath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-
+    <!-- Zorg dat de hele wwwroot map wordt meegeleverd -->
+    <Content Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BL\BL.csproj" />
   </ItemGroup>
 
-  <!-- Ensure Node environment on Build -->
-  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
-    <!-- Ensure Node.js is installed -->
-    <Exec Command="node --version" ContinueOnError="true">
-      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
-    </Exec>
-    <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
-    <Message Importance="high" Text="Restoring dependencies using 'pnpm'. This may take several minutes..." />
-    <!-- Install Node packages -->
-    <Exec Command="pnpm install" />
-  </Target>
-
-  <!-- Build the final assets -->
-  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
-    <!-- Build the final assets -->
-    <Exec Command="pnpm run build" />
-  </Target>
 </Project>
