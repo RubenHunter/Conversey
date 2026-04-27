@@ -4,11 +4,13 @@ public class TranscribeRequest
 {
     public string AudioBase64 { get; set; } = string.Empty;
     public string Language { get; set; }
-    public string Prompt { get; set; }
+    public IEnumerable<string> ContextBias { get; set; } = Array.Empty<string>();
+    public bool Stream { get; set; } = false;
 }
 
 public class SynthesizeRequest
 {
-    public string Text { get; set; } = string.Empty;
+    public string Model { get; set; }
+    public string Input { get; set; } = string.Empty;
     public string Language { get; set; }
 }

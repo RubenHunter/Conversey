@@ -14,40 +14,42 @@ public class MistralSpeechManager : IMistralSpeechManager
     private readonly string _apiKey;
     private readonly string _sttModel;
     private readonly string _ttsModel;
-    private readonly string _ttsVoice;
+    private readonly IMistralVoiceManager _voiceManager;
 
-    public MistralSpeechManager(HttpClient httpClient, string apiKey, string sttModel = "voxtral-mini-latest", string ttsModel = "voxtral-mini-tts-latest", string ttsVoice = "en_paul_neutral")
+    public MistralSpeechManager(
+        HttpClient httpClient,
+        string apiKey,
+        IMistralVoiceManager voiceManager,
+        string sttModel = "voxtral-mini-latest",
+        string ttsModel = "voxtral-mini-tts-latest")
     {
         _httpClient = httpClient;
         _apiKey = apiKey;
+        _voiceManager = voiceManager;
         _sttModel = sttModel;
         _ttsModel = ttsModel;
-        _ttsVoice = ttsVoice;
     }
 
-    public async Task<string> TranscribeSpeechAsync(Stream audioStream, string language, string prompt)
+    public async Task<string> TranscribeSpeechAsync(Stream audioStream, string language, IEnumerable<string>? contextBias = null)
     {
         try
         {
             using var content = new MultipartFormDataContent();
-            
-            // Add audio file as raw bytes (Mistral expects multipart/form-data)
+
             using var audioMemoryStream = new MemoryStream();
             await audioStream.CopyToAsync(audioMemoryStream);
             var audioBytes = audioMemoryStream.ToArray();
             var audioContent = new ByteArrayContent(audioBytes);
+            audioContent.Headers.ContentType = new MediaTypeHeaderValue("audio/webm");
             content.Add(audioContent, "file", "audio.webm");
-            
-            // Add model
+
             content.Add(new StringContent(_sttModel), "model");
-            
-            // Add language
             content.Add(new StringContent(language), "language");
-            
-            // Add optional prompt
-            if (!string.IsNullOrWhiteSpace(prompt))
+
+            var biasList = contextBias?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+            if (biasList?.Count > 0)
             {
-                content.Add(new StringContent(prompt), "prompt");
+                content.Add(new StringContent(JsonSerializer.Serialize(biasList)), "context_bias");
             }
 
             var request = new HttpRequestMessage(HttpMethod.Post, "audio/transcriptions");
@@ -88,12 +90,13 @@ public class MistralSpeechManager : IMistralSpeechManager
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "audio/speech");
-            
+
+            var voice = _voiceManager.GetVoiceForLanguage(language);
             var payload = new
             {
                 model = _ttsModel,
                 input = text,
-                voice = _ttsVoice,
+                voice,
                 response_format = "mp3"
             };
             
@@ -138,6 +141,7 @@ public class MistralSpeechManager : IMistralSpeechManager
 
     private class MistralTranscriptionResponse
     {
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
         public string Text { get; set; } = string.Empty;
     }
 

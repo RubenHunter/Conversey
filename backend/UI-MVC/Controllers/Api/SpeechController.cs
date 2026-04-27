@@ -31,7 +31,7 @@ public class SpeechController : Controller
             using var audioStream = new MemoryStream(audioBytes);
             
             var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.Prompt);
+            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.ContextBias);
             
             return Ok(new { text = text });
         }
@@ -47,7 +47,7 @@ public class SpeechController : Controller
     [HttpPost("synthesize")]
     public async Task<IActionResult> Synthesize([FromBody] SynthesizeRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Text))
+        if (string.IsNullOrWhiteSpace(request.Input))
         {
             return BadRequest("Text is required.");
         }
@@ -55,7 +55,7 @@ public class SpeechController : Controller
         try
         {
             var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var audioStream = await _speechManager.SynthesizeSpeechAsync(request.Text, language);
+            var audioStream = await _speechManager.SynthesizeSpeechAsync(request.Input, language);
             
             return File(audioStream, "audio/mp3");
         }
