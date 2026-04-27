@@ -1,22 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Gebruik de officiële .NET 10 SDK
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Kopieer ALLES van de backend map naar de container
+# Kopieer alles vanuit de backend map
 COPY . .
 
-# We negeren de .sln file even en gaan direct naar het hoofdproject.
-# De --no-cache dwingt hem om vers te kijken.
+# Nu de SDK matcht met je global.json, zal de restore vlekkeloos verlopen
 RUN dotnet restore "UI-MVC/UI-MVC.csproj"
 
-# We publiceren het project. Dotnet zoekt zelf de afhankelijke projecten (BL, DAL) 
-# in de mappen die we net met 'COPY . .' hebben binnengehaald.
+# Bouw en publiceer
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# Gebruik de .NET 10 ASP.NET runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Zorg dat de map voor statische bestanden bestaat
+# Maak de wwwroot aan
 RUN mkdir -p wwwroot
 
 EXPOSE 8080
