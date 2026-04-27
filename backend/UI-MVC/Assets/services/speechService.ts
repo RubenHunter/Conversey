@@ -26,7 +26,8 @@ const PRIORITY_MIME_TYPES = [
   'audio/mp3',
   'audio/ogg',
   'audio/webm;codecs=opus',
-  'audio/webm'
+  'audio/webm',
+  'audio/mp4'
 ] as const;
 
 export type SpeechState = 'idle' | 'listening' | 'speaking' | 'error' | 'processing';
@@ -96,10 +97,11 @@ function getBestMimeType(): string | undefined {
 
 async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE, contextBias: string[] = []): Promise<string> {
   const audioBase64 = (await toBase64(audio)).split(',')[1];
+  const mimeType = audio.type || 'audio/webm';
   try {
     const response = await apiFetch<TranscribeResponse>('/speech/transcribe', {
       method: 'POST',
-      body: JSON.stringify({ AudioBase64: audioBase64, Language: language, ContextBias: contextBias })
+      body: JSON.stringify({ AudioBase64: audioBase64, Language: language, ContextBias: contextBias, MimeType: mimeType })
     });
     return response.text || '';
   } catch (err) {

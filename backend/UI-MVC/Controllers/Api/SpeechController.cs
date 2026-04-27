@@ -31,15 +31,15 @@ public class SpeechController : Controller
             using var audioStream = new MemoryStream(audioBytes);
             
             var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.ContextBias);
+            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.ContextBias, request.MimeType);
             
             return Ok(new { text = text });
         }
         catch (Exception ex)
         {
             return StatusCode(500, new {
-                Error = "Fout bij het verwerken van spraak. Probeer het later opnieuw.",
-                Details = ex.Message
+                error = "Fout bij het verwerken van spraak. Probeer het later opnieuw.",
+                details = ex.InnerException?.Message ?? ex.Message
             });
         }
     }
