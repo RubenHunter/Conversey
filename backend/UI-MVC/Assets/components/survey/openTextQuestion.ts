@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared.ts'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared.ts'
 import { bindMicButton } from '../../services/speechService'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
@@ -53,6 +53,9 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         </p>
     `
 
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
+
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
     const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
@@ -61,6 +64,13 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     const getLanguage = () => {
         const el = document.querySelector<HTMLElement>('[data-survey-language]')
         return el?.dataset.surveyLanguage || 'nl'
+    }
+
+    const getContextBias = () => {
+        const bias: string[] = []
+        if (question.text?.trim()) bias.push(question.text.trim())
+        if (question.hint?.trim()) bias.push(question.hint.trim())
+        return bias
     }
 
     let unbindMic = () => {}
@@ -75,7 +85,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             answerCallback?.()
             textarea.dispatchEvent(new Event('input', { bubbles: true }))
             textarea.dispatchEvent(new Event('change', { bubbles: true }))
-        })
+        }, getContextBias)
     }
 
 

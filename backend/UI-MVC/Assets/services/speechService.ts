@@ -49,7 +49,7 @@ export interface SpeechCallbacks {
 }
 
 interface TranscribeResponse { text: string; }
-interface SynthesizeRequestBody { Text: string; Language: string; }
+interface SynthesizeRequestBody { Input: string; Language: string; }
 
 // ============================================================================
 // Singletons
@@ -94,12 +94,12 @@ function getBestMimeType(): string | undefined {
 // API Functions
 // ============================================================================
 
-async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): Promise<string> {
+async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE, contextBias: string[] = []): Promise<string> {
   const audioBase64 = (await toBase64(audio)).split(',')[1];
   try {
     const response = await apiFetch<TranscribeResponse>('/speech/transcribe', {
       method: 'POST',
-      body: JSON.stringify({ AudioBase64: audioBase64, Language: language })
+      body: JSON.stringify({ AudioBase64: audioBase64, Language: language, ContextBias: contextBias })
     });
     return response.text || '';
   } catch (err) {
@@ -114,7 +114,7 @@ async function synthesize(text: string, language: string = SPEECH_CONFIG.DEFAULT
     const response = await fetch('/api/speech/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Text: text, Language: language } as SynthesizeRequestBody)
+      body: JSON.stringify({ Input: text, Language: language } as SynthesizeRequestBody)
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -137,6 +137,7 @@ export class STTManager {
   private stream: MediaStream | null = null;
   private chunks: Blob[] = [];
   private language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE;
+  private contextBias: string[] = [];
   private callbacks: SpeechCallbacks = {};
   private textareaRef: HTMLTextAreaElement | HTMLInputElement | null = null;
   private timerTextElement: HTMLElement | null = null;
@@ -166,11 +167,13 @@ export class STTManager {
   async start(
     textarea: HTMLTextAreaElement | HTMLInputElement,
     language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE,
-    onText?: (text: string) => void
+    onText?: (text: string) => void,
+    contextBias: string[] = []
   ): Promise<void> {
     this.stop();
-    
+
     this.language = language;
+    this.contextBias = contextBias;
     this.textareaRef = textarea;
     this.originalText = this.textareaRef?.value || '';
     this.hadExistingText = !!this.originalText.trim();
@@ -332,7 +335,7 @@ export class STTManager {
   private async processFinalTranscription(): Promise<void> {
     if (this.chunks.length > 0) {
       const mimeType = this.recorder?.mimeType || 'audio/webm';
-      const finalText = await transcribe(new Blob(this.chunks, { type: mimeType }), this.language);
+      const finalText = await transcribe(new Blob(this.chunks, { type: mimeType }), this.language, this.contextBias);
       if (finalText?.trim()) {
         this.notifyText(finalText, this.hadExistingText);
       }
@@ -352,7 +355,7 @@ export class STTManager {
     try {
       const blob = new Blob(this.chunks, { type: this.recorder?.mimeType || 'audio/webm' });
       if (blob.size >= SPEECH_CONFIG.MIN_AUDIO_SIZE) {
-        const text = await transcribe(blob, this.language);
+        const text = await transcribe(blob, this.language, this.contextBias);
         if (text?.trim()) this.notifyText(text, false);
       }
     } catch (err) {
@@ -522,7 +525,8 @@ export function bindMicButton(
   btn: HTMLElement,
   textarea: HTMLTextAreaElement | HTMLInputElement,
   getLanguage: () => string,
-  onText: (text: string) => void
+  onText: (text: string) => void,
+  getContextBias?: () => string[]
 ): () => void {
   const stt = getSTTManager();
   let isRecording = false;
@@ -562,7 +566,7 @@ export function bindMicButton(
       });
 
       try {
-        await stt.start(textarea, getLanguage(), onText);
+        await stt.start(textarea, getLanguage(), onText, getContextBias?.() ?? []);
       } catch (err) {
         console.error('[STT] Failed to start:', err);
         isRecording = false;
