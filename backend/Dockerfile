@@ -1,10 +1,10 @@
 FROM node:20-alpine AS client-build
-WORKDIR /src/backend/REST/ClientApp
+WORKDIR /src/backend/UI-MVC
 
-COPY REST/ClientApp/package.json REST/ClientApp/pnpm-lock.yaml ./
+COPY UI-MVC/package.json UI-MVC/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 
-COPY REST/ClientApp/ ./
+COPY UI-MVC/ ./
 RUN pnpm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS publish
@@ -14,14 +14,14 @@ COPY *.sln ./
 COPY BL/*.csproj BL/
 COPY DAL/*.csproj DAL/
 COPY Domain/*.csproj Domain/
-COPY REST/*.csproj REST/
+COPY UI-MVC/*.csproj UI-MVC/
 
-RUN dotnet restore REST/REST.csproj
+RUN dotnet restore UI-MVC/UI-MVC.csproj
 
 COPY . .
-COPY --from=client-build /src/backend/REST/wwwroot /src/backend/REST/wwwroot
+COPY --from=client-build /src/backend/UI-MVC/wwwroot /src/backend/UI-MVC/wwwroot
 
-RUN dotnet publish REST/REST.csproj -c Release -o /app/publish /p:SkipClientBuild=true
+RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClientBuild=true
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
@@ -31,4 +31,4 @@ COPY --from=publish /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Conversey.REST.dll"]
+ENTRYPOINT ["dotnet", "Conversey.UI-MVC.dll"]
