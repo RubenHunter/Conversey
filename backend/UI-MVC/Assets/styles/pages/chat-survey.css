@@ -38,14 +38,16 @@
   flex-direction: column;
 }
 
-/* ===== Survey header (shared with vertical scroll) — override for chat context ===== */
+/* ===== Survey header (shared with vertical scroll) — sticky inside chat scroll area ===== */
 .chat-shell .survey-header {
-  position: relative; /* flex layout keeps it at top; no sticky needed */
+  position: sticky;
+  top: 0;
   width: 100%;
   margin-left: 0;
   box-sizing: border-box;
   flex: 0 0 auto;
-  z-index: 20;
+  z-index: 25;
+  background-color: var(--color-surface);
 }
 
 .chat-shell .survey-header-content {
@@ -712,4 +714,48 @@
 /* Adjust ideas-mode chat message height */
 .chat-shell--ideas .chat-messages {
   padding-bottom: var(--spacing-sm);
+}
+
+/* Final overrides for chat ideation parity with vertical ideas page */
+.chat-shell--ideas > .survey-topbar {
+  flex: 0 0 auto;
+  z-index: 40;
+}
+
+.chat-shell--ideas .chat-ideas-area {
+  flex: 0 0 auto;
+  min-height: 320px;
+  max-height: 58svh;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+}
+
+.chat-shell--ideas .chat-ideas-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.chat-shell--ideas .ideas-community {
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-shell--ideas .ideas-list {
+  height: 100%;
+}
+
+.chat-shell--ideas .ideas-discovery {
+  top: calc(var(--spacing-lg) + 8px);
+  right: var(--spacing-md);
+  z-index: 6;
+}
+
+.chat-shell--ideas .chat-scroll-area {
+  min-height: 0;
 }

@@ -2,7 +2,6 @@ import '../../../styles/pages/chat-survey.css'
 import '../../../styles/pages/ideas.css'
 import type { Project } from '../../../models/project'
 import type { ProjectContext } from '../../../main'
-import { navigate } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
 import { QuestionType } from '../../../models/question'
@@ -16,8 +15,11 @@ import { renderScaleQuestion } from '../scaleQuestion'
 import { renderSurveyHeader, createSurveyHeaderController } from '../surveyHeader'
 import {
     getIdeasContext,
+    getDiscoveredIdeasForTopic,
+    IDEA_DISCOVERY_MAX_RESULTS,
     getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
+    type IdeaDiscoveryCategory,
     updateIdeaAfterSafetyReview,
 } from '../../../services/ideaService'
 import {
@@ -34,9 +36,18 @@ import { createSafetyReviewDialogController } from '../../ideas/safetyReviewDial
 import { createIdeaPanelController } from '../../ideas/ideaPanel'
 import { createIdeasSubmitHandler } from '../../ideas/ideasSubmitHandler'
 import { createFirstIdeaContactDialogController } from '../../ideas/firstIdeaContactDialog'
+import { createTopicModalController } from '../../ideas/topicModal'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import type { ActiveView } from '../../ideas/types'
 import { getSurveyStrings } from '../../../i18n/survey'
+import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers'
+import {
+    AI_AVATAR,
+    CHECKMARK_SVG,
+    IDEATION_MODALS_HTML,
+    SPEAKER_SVG,
+    renderChatShellTemplate,
+} from './chatTemplates'
 
 interface OpenTextState {
     questionIndex: number
@@ -44,172 +55,67 @@ interface OpenTextState {
     floatingConfirmRow: HTMLElement | null
 }
 
-// Matches the speaker icon used in vertical scroll mode
-const SPEAKER_SVG = `<svg class="chat-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
-</svg>`
+type DiscoveryBadgeType = 'similar' | 'different'
+type DiscoveryMode = 'all' | 'similar' | 'different'
 
-const AI_AVATAR = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="18" cy="18" r="18" fill="var(--color-primary)"/>
-  <circle cx="18" cy="14" r="5" fill="white" fill-opacity="0.9"/>
-  <path d="M6 32c0-5.523 5.373-9 12-9s12 3.477 12 9" fill="white" fill-opacity="0.9"/>
-</svg>`
-
-const MAGIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-  <path d="M20 3v4m2-2h-4M4 17v2m1-1H3"/>
-</svg>`
-
-const CHECKMARK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-  <polyline points="20 6 9 17 4 12"/>
-</svg>`
-
-function esc(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
+interface DiscoveryFeed {
+    ideas: Idea[]
+    badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>
 }
 
-function wait(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+function createDiscoveryFeed(ideas: Idea[], badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>): DiscoveryFeed {
+    return {
+        ideas,
+        badgesByIdeaId,
+    }
 }
 
-function hasAnswer(answer: QuestionAnswer): boolean {
-    return Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
-}
+function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
+    const byCategory = new Map<string, Idea[]>()
+    const withoutCategories: Idea[] = []
 
-function formatAnswerForDisplay(q: Question, answer: QuestionAnswer): string {
-    if (answer === null || answer === '') return ''
-    if (typeof answer === 'string') return answer
-    if (typeof answer === 'number') {
-        if (q.type === QuestionType.SingleChoice && q.options) {
-            return q.options.find((o) => o.id === answer)?.text ?? String(answer)
+    topicIdeas.forEach((idea) => {
+        if (idea.semanticCategories.length === 0) {
+            withoutCategories.push(idea)
+            return
         }
-        return String(answer)
+        idea.semanticCategories.forEach((category) => {
+            const bucket = byCategory.get(category) ?? []
+            bucket.push(idea)
+            byCategory.set(category, bucket)
+        })
+    })
+
+    const broad: Idea[] = []
+    const seen = new Set<number>()
+    const categories = [...byCategory.keys()]
+    let added = true
+    while (added) {
+        added = false
+        categories.forEach((category) => {
+            const bucket = byCategory.get(category)
+            if (!bucket || bucket.length === 0) return
+            const nextIdea = bucket.shift()!
+            if (seen.has(nextIdea.id)) return
+            seen.add(nextIdea.id)
+            broad.push(nextIdea)
+            added = true
+        })
     }
-    if (Array.isArray(answer) && q.options) {
-        return answer.map((id) => q.options?.find((o) => o.id === id)?.text ?? String(id)).join(', ')
-    }
-    return ''
+    withoutCategories.forEach((idea) => {
+        if (seen.has(idea.id)) return
+        seen.add(idea.id)
+        broad.push(idea)
+    })
+    topicIdeas.forEach((idea) => {
+        if (seen.has(idea.id)) return
+        seen.add(idea.id)
+        broad.push(idea)
+    })
+
+    return broad
 }
 
-const IDEATION_MODALS_HTML = `
-<div id="idea-panel-backdrop" class="idea-panel-backdrop" hidden aria-hidden="true"></div>
-<div id="idea-panel" class="idea-panel" role="dialog" aria-modal="true" aria-label="Idea detail" hidden>
-    <div class="idea-panel-header">
-        <h3 class="idea-panel-title">Idea</h3>
-        <button id="idea-panel-close" class="idea-panel-close" aria-label="Close">&times;</button>
-    </div>
-    <div class="idea-panel-body">
-        <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
-        <div class="idea-panel-section idea-panel-section--idea">
-            <p class="idea-panel-section-label">Original idea</p>
-            <div id="idea-panel-post" class="idea-panel-post">
-                <div id="idea-panel-badges" class="idea-panel-badges"></div>
-                <p id="idea-panel-text" class="idea-panel-text"></p>
-                <div id="idea-panel-edit-region" hidden>
-                    <textarea id="idea-panel-edit-input" class="idea-panel-input idea-panel-edit-input" rows="4" placeholder="Edit your idea..."></textarea>
-                    <div class="idea-panel-edit-actions">
-                        <button id="idea-panel-edit-cancel" class="idea-panel-send idea-panel-send--secondary" type="button">Cancel</button>
-                        <button id="idea-panel-edit-save" class="idea-panel-send" type="button" disabled>Save changes</button>
-                    </div>
-                </div>
-                <div class="idea-panel-post-actions">
-                    <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
-                        <span aria-hidden="true">+</span><span aria-hidden="true">:)</span>
-                    </button>
-                    <button id="idea-panel-copy" class="idea-panel-copy-btn" type="button" aria-label="Use this idea as a starting point" title="Use this idea as a starting point" hidden>
-                        <svg class="idea-panel-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        <span>Use as starter</span>
-                    </button>
-                    <button id="idea-panel-edit-toggle" class="survey-magic-btn idea-panel-edit-cta" type="button" aria-label="Edit idea before publish" hidden>
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
-                        </svg>
-                        <span class="survey-magic-btn-text">Edit idea before publish</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="idea-panel-section idea-panel-section--responses">
-            <p class="idea-panel-section-label">Responses</p>
-            <div id="idea-panel-comments" class="idea-panel-comments"></div>
-        </div>
-    </div>
-    <div class="idea-panel-footer">
-        <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>
-        <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
-    </div>
-</div>
-<div id="safety-review-backdrop" class="safety-review-backdrop" hidden aria-hidden="true"></div>
-<div id="safety-review-dialog" class="safety-review-dialog" role="dialog" aria-modal="true" aria-label="Content safety review" hidden>
-    <div class="safety-review-header"><h3>Let's keep this space safe</h3></div>
-    <div class="safety-review-body">
-        <p class="safety-review-copy">Our AI flagged your text as potentially offensive. You can use the suggestion, edit it, or continue with your original text.</p>
-        <div class="safety-review-block">
-            <div class="safety-review-block-head">
-                <span class="safety-review-label">Your original message</span>
-                <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response">
-                    <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
-                    </svg>
-                    <span>Edit your response</span>
-                </button>
-            </div>
-            <textarea id="safety-review-original" class="safety-review-original" rows="4" readonly></textarea>
-        </div>
-        <div class="safety-review-block">
-            <div class="safety-review-block-head">
-                <span class="safety-review-label">AI suggestion</span>
-                <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI suggestion">
-                    <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
-                    </svg>
-                    <span>Edit the AI suggestion</span>
-                </button>
-            </div>
-            <textarea id="safety-review-suggestion" class="safety-review-suggestion" rows="4" readonly></textarea>
-        </div>
-    </div>
-    <div class="safety-review-actions">
-        <button id="safety-review-accept-suggestion" class="safety-review-btn safety-review-btn--primary" type="button">Accept suggestion</button>
-        <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
-    </div>
-</div>
-<div id="first-idea-contact-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
-<div id="first-idea-contact-dialog" class="modal first-idea-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-title" hidden>
-    <div class="modal-header">
-        <h3 id="first-idea-contact-title">Stay in touch about your idea</h3>
-    </div>
-    <div class="modal-body first-idea-contact-body">
-        <p class="first-idea-contact-copy">You can leave your email if you want us to contact you about your ideas.</p>
-        <label class="first-idea-contact-field" for="first-idea-contact-email">
-            <span class="first-idea-contact-label">Email address</span>
-            <input id="first-idea-contact-email" class="first-idea-contact-input" type="email" autocomplete="email" placeholder="you@example.com" />
-        </label>
-        <label class="first-idea-contact-check">
-            <input id="first-idea-contact-permission" class="first-idea-contact-checkbox" type="checkbox" />
-            <span>I agree to be contacted about this idea.</span>
-        </label>
-        <a class="first-idea-contact-privacy-link" href="https://treecompany.be/privacyverklaring/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-        <label class="first-idea-contact-check first-idea-contact-check--remember">
-            <input id="first-idea-contact-remember" class="first-idea-contact-checkbox" type="checkbox" />
-            <span>Remember my choice</span>
-        </label>
-    </div>
-    <div class="first-idea-contact-actions">
-        <button id="first-idea-contact-deny" class="safety-review-btn first-idea-contact-deny" type="button">Deny</button>
-        <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>Allow contact</button>
-    </div>
-</div>`
 
 export async function renderChatSurveyPage(
     container: HTMLElement,
@@ -219,72 +125,22 @@ export async function renderChatSurveyPage(
     const t = getSurveyStrings()
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
+    const startInIdeasMode = localStorage.getItem(completedKey) === 'true'
 
-    if (localStorage.getItem(completedKey) === 'true') {
+    if (startInIdeasMode) {
         clearSurveyProgress(projectSlugKey)
-        container.innerHTML = `
-            <div class="survey-redirect-wrap screen-height">
-                <div class="survey-redirect-card">
-                    <div class="survey-redirect-check">✓</div>
-                    <h2>Survey already completed</h2>
-                    <p>Redirecting you to ideas...</p>
-                    <div class="survey-confetti" aria-hidden="true"></div>
-                </div>
-            </div>`
-        const timer = window.setTimeout(() => void navigate('ideas'), 3200)
-        window.addEventListener('app:before-navigate', () => window.clearTimeout(timer), { once: true })
-        return
     }
 
     const questions = await getQuestions(params.organizationSlug, params.projectSlug)
     const orgName = project.organizationName?.trim() || project.organizationSlug
     const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug })
 
-    container.innerHTML = `
-        <div class="chat-shell" id="chat-shell">
-            <div class="survey-header" id="chat-survey-header">
-                <div class="survey-header-content">
-                    <h2 class="survey-title">${esc(project.title)}</h2>
-                    <div class="survey-progress-container">
-                        <div class="survey-progress-bar">
-                            <div class="survey-progress-fill" id="progress-bar"></div>
-                        </div>
-                        <span class="survey-progress-badge" id="progress-badge">0 / ${questions.length}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="chat-scroll-area" id="chat-scroll-area">
-                ${headerHTML}
-                <div class="chat-messages" id="chat-messages"></div>
-            </div>
-            <div class="chat-input-wrap">
-                <div class="chat-input-bar">
-                    <textarea
-                        id="chat-input"
-                        class="chat-input"
-                        placeholder="${esc(t.selectAbove)}"
-                        rows="1"
-                        disabled
-                    ></textarea>
-                    <button id="chat-magic-btn" class="survey-magic-btn chat-magic-btn" type="button" aria-label="${esc(t.magicMode)}" hidden>
-                        ${MAGIC_SVG}
-                        <span class="survey-magic-btn-text">${esc(t.magicMode)}</span>
-                    </button>
-                    <button id="chat-confirm-inline-btn" class="chat-confirm-inline-btn" type="button" aria-label="Confirm answer and continue" hidden>
-                        ${CHECKMARK_SVG}
-                    </button>
-                    <button id="chat-send-btn" class="chat-send-btn" type="button" aria-label="Send" disabled>
-                        <svg class="chat-mic-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
-                        </svg>
-                        <svg class="chat-send-icon chat-icon-hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-        ${IDEATION_MODALS_HTML}`
+    container.innerHTML = renderChatShellTemplate({
+        projectTitle: project.title,
+        questionsCount: questions.length,
+        headerHTML,
+        strings: { selectAbove: t.selectAbove, magicMode: t.magicMode },
+    })
 
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
     const scrollAreaEl = container.querySelector<HTMLDivElement>('#chat-scroll-area')!
@@ -308,6 +164,8 @@ export async function renderChatSurveyPage(
     )
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
+    const openTextDraftsByQuestionId = new Map<number, string[]>()
+    let confirmedUpToIndex = 0
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
     let activeSendHandler: (() => void | Promise<void>) | null = null
@@ -318,11 +176,14 @@ export async function renderChatSurveyPage(
         headerController.updateProgress(count, questions.length)
     }
 
-    function persistProgress(confirmedUpToIndex: number): void {
+    function persistProgress(nextConfirmedUpToIndex: number = confirmedUpToIndex): void {
+        confirmedUpToIndex = nextConfirmedUpToIndex
         const byId = new Map<number, QuestionAnswer>(
             questions.map((q, i) => [q.id, components[i].getAnswer()] as const),
         )
-        saveSurveyProgress(projectSlugKey, questions, confirmedUpToIndex, byId)
+        saveSurveyProgress(projectSlugKey, questions, confirmedUpToIndex, byId, {
+            openTextDraftsByQuestionId,
+        })
     }
 
     // ===== Scroll =====
@@ -486,7 +347,10 @@ export async function renderChatSurveyPage(
         const bundled = openTextState.messages.join('\n\n')
         components[openTextState.questionIndex].setAnswer(bundled)
         answeredState[openTextState.questionIndex] = true
+        const questionId = questions[openTextState.questionIndex].id
+        openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
         updateProgress()
+        persistProgress()
     }
 
     async function confirmOpenText(index: number): Promise<void> {
@@ -504,6 +368,7 @@ export async function renderChatSurveyPage(
 
         const bundled = openTextState.messages.join('\n\n')
         components[index].setAnswer(bundled || null)
+        openTextDraftsByQuestionId.delete(questions[index].id)
 
         openTextState.floatingConfirmRow?.classList.add('chat-confirm-row--confirmed')
         answeredState[index] = bundled.trim().length > 0
@@ -524,7 +389,20 @@ export async function renderChatSurveyPage(
 
     // ===== Input state management =====
     function activateOpenTextInput(questionIndex: number): void {
-        openTextState = { questionIndex, messages: [], floatingConfirmRow: null }
+        const questionId = questions[questionIndex].id
+        const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
+        openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
+
+        if (restoredMessages.length > 0) {
+            restoredMessages.forEach((message) => appendUserBubble(message))
+            const restoredRow = createFloatingConfirmRow(questionIndex)
+            messagesEl.appendChild(restoredRow)
+            openTextState.floatingConfirmRow = restoredRow
+            components[questionIndex].setAnswer(restoredMessages.join('\n\n'))
+            answeredState[questionIndex] = true
+            updateProgress()
+        }
+
         chatInput.disabled = false
         chatInput.placeholder = questions[questionIndex].hint?.trim() || t.typeHere
         chatInput.value = ''
@@ -690,23 +568,35 @@ export async function renderChatSurveyPage(
             btn.disabled = true
             btn.textContent = t.submitting
 
-            const answers: ResponseAnswer[] = questions.flatMap((q, i) => {
+            const answers = questions.reduce<ResponseAnswer[]>((acc, q, i) => {
                 const answer = components[i].getAnswer()
                 if (q.type === QuestionType.SingleChoice) {
                     const id = answer as number
-                    return id == null ? [] : [{ questionId: q.id, selectedOptionId: id, value: id }]
+                    if (id != null) {
+                        acc.push({ questionId: q.id, selectedOptionId: id, value: id })
+                    }
+                    return acc
                 }
                 if (q.type === QuestionType.MultipleChoice) {
                     const ids = Array.isArray(answer) ? answer : []
-                    return ids.map((id) => ({ questionId: q.id, selectedOptionId: id, value: id }))
+                    ids.forEach((id) => {
+                        acc.push({ questionId: q.id, selectedOptionId: id, value: id })
+                    })
+                    return acc
                 }
                 if (q.type === QuestionType.Scale) {
                     const val = answer as number
-                    return val == null ? [] : [{ questionId: q.id, selectedOptionId: val, value: val }]
+                    if (val != null) {
+                        acc.push({ questionId: q.id, selectedOptionId: val, value: val })
+                    }
+                    return acc
                 }
                 const text = answer as string
-                return text?.trim() ? [{ questionId: q.id, openTextValue: text, value: text }] : []
-            })
+                if (text?.trim()) {
+                    acc.push({ questionId: q.id, openTextValue: text, value: text })
+                }
+                return acc
+            }, [])
 
             try {
                 await submitAnswers(params.organizationSlug, params.projectSlug, {
@@ -768,6 +658,12 @@ export async function renderChatSurveyPage(
     async function enterIdeasPhase(): Promise<void> {
         lockSurveyHistory()
 
+        // Keep organization branding anchored at the top of the full page in ideation mode.
+        const topbar = scrollAreaEl.querySelector<HTMLElement>('.survey-topbar')
+        if (topbar && topbar.parentElement !== chatShell) {
+            chatShell.insertBefore(topbar, chatShell.firstChild)
+        }
+
         const ideasContext = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
         const youthToken = getOrCreateProjectScopedYouthId(project.slug)
         const allIdeas: Idea[] = [...ideasContext.ideas]
@@ -782,10 +678,15 @@ export async function renderChatSurveyPage(
         const surveyHeaderEl = container.querySelector<HTMLElement>('#chat-survey-header')!
         surveyHeaderEl.hidden = true
 
-        let currentView: ActiveView = { type: 'topic', topicId: firstTopic.id }
-        let currentDiscoveryLabel = t.broadSelection
-        let currentSemanticCategory: string | null = null
-        let currentDiscoveryMode: 'broad' | 'similar' | 'different' | 'all' = 'broad'
+        let activeView: ActiveView = { type: 'topic', topicId: firstTopic.id }
+        let discoveryMode: DiscoveryMode = 'all'
+        let selectedSemanticCategory: string | null = null
+        let showPostPreviewPair = false
+        let latestSubmittedIdea: Idea | null = null
+        let discoveryRequestToken = 0
+        let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
+        let visibleIdeasCache: Idea[] = []
+        const discoveryCache = new Map<string, DiscoveryFeed>()
 
         const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
         const firstIdeaContactDialog = createFirstIdeaContactDialogController({
@@ -793,77 +694,51 @@ export async function renderChatSurveyPage(
             storageKey: firstIdeaContactStorageKey,
         })
 
-        // ===== Helpers =====
-        function hasOwnIdeaInTopic(topicId: number): boolean {
-            return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
-        }
-
-        function getSemanticCategoriesForTopic(topicId: number): string[] {
-            const cats = new Set<string>()
-            allIdeas
-                .filter((idea) => idea.topicId === topicId)
-                .forEach((idea) => idea.semanticCategories.forEach((c) => { if (c.trim()) cats.add(c) }))
-            return [...cats].sort((a, b) => a.localeCompare(b))
-        }
-
-        // ===== Topic selector =====
-        const topicOptions = topics
-            .map(
-                (topic) =>
-                    `<li class="chat-topic-option${topic.id === firstTopic.id ? ' chat-topic-option--active' : ''}" data-topic-id="${topic.id}" role="option" aria-selected="${topic.id === firstTopic.id}">${esc(topic.title)}</li>`,
-            )
-            .join('')
-
-        const topicSelectorEl = document.createElement('div')
-        topicSelectorEl.className = 'chat-topic-selector'
-        topicSelectorEl.id = 'chat-topic-selector'
-        topicSelectorEl.innerHTML = `
-            <button class="chat-topic-trigger" id="chat-topic-trigger" type="button" aria-expanded="false" aria-haspopup="listbox">
-                <span class="chat-topic-trigger-label">${esc(t.topicLabel)}</span>
-                <span class="chat-topic-trigger-name" id="chat-topic-trigger-name">${esc(firstTopic.title)}</span>
-                <svg class="chat-topic-trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
-            </button>
-            <ul class="chat-topic-dropdown" id="chat-topic-dropdown" role="listbox" hidden>
-                ${topicOptions}
-                <li class="chat-topic-separator" role="separator" aria-hidden="true"></li>
-                <li class="chat-topic-option chat-topic-option--my-ideas" data-view="my-ideas" role="option" aria-selected="false">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    ${esc(t.myIdeas)}
-                </li>
-            </ul>`
-
-        // ===== Ideas area =====
         const ideasArea = document.createElement('div')
         ideasArea.className = 'chat-ideas-area'
         ideasArea.innerHTML = `
-            <div class="chat-ideas-area-header">
-                <span class="chat-ideas-area-title">${esc(t.communityIdeas)}</span>
-                <div class="ideas-discovery chat-discovery-wrap" id="chat-discovery">
-                    <button class="ideas-discovery-trigger" id="chat-discovery-trigger" type="button" aria-expanded="false" aria-haspopup="menu">
-                        <span id="chat-discovery-label">${esc(t.broadSelection)}</span>
+            <div class="chat-ideas-top-row">
+                <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
+                    <span class="ideas-compose-topic-text">
+                        <span class="ideas-compose-topic-kicker">Topic:</span>
+                        <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
+                        <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
+                    </span>
+                </button>
+                <button id="ideas-topic-trigger-floating" class="ideas-compose-topic-button ideas-compose-topic-button--floating" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Switch topic" hidden>
+                    <span class="ideas-compose-topic-text">
+                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
+                        <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
+                    </span>
+                </button>
+            </div>
+            <section class="ideas-community" aria-label="Ideas list">
+                <div id="ideas-discovery" class="ideas-discovery" hidden>
+                    <button id="ideas-discovery-trigger" class="ideas-discovery-trigger" type="button" aria-haspopup="menu" aria-expanded="false">
+                        <span id="ideas-discovery-label">Explore ideas</span>
                         <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                     </button>
-                    <div class="ideas-discovery-menu chat-discovery-menu" id="chat-discovery-menu" role="menu" hidden></div>
+                    <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden></div>
                 </div>
-            </div>
-            <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>`
+                <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>
+            </section>`
 
         chatShell.classList.add('chat-shell--ideas')
-        chatShell.insertBefore(topicSelectorEl, scrollAreaEl)
         chatShell.insertBefore(ideasArea, scrollAreaEl)
 
         const ideasListEl = container.querySelector<HTMLDivElement>('#chat-ideas-list')!
+        const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
+        const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
+        const topicFloatingTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
+        const topicFloatingTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-floating-value')!
+        const discoveryRoot = container.querySelector<HTMLDivElement>('#ideas-discovery')!
+        const discoveryTrigger = container.querySelector<HTMLButtonElement>('#ideas-discovery-trigger')!
+        const discoveryLabel = container.querySelector<HTMLSpanElement>('#ideas-discovery-label')!
+        const discoveryMenu = container.querySelector<HTMLDivElement>('#ideas-discovery-menu')!
         const flaggedIdeaIds = new Set<number>()
 
-        const discoveryEl = ideasArea.querySelector<HTMLElement>('#chat-discovery')!
-        const discoveryTrigger = ideasArea.querySelector<HTMLButtonElement>('#chat-discovery-trigger')!
-        const discoveryLabel = ideasArea.querySelector<HTMLSpanElement>('#chat-discovery-label')!
-        const discoveryMenu = ideasArea.querySelector<HTMLElement>('#chat-discovery-menu')!
-
         const safetyDialog = createSafetyReviewDialogController({ root: container })
-
         const reviewWithSuggestion = async (orig: string, sugg: string) => {
             showOffensiveNotice()
             await wait(1000)
@@ -878,36 +753,15 @@ export async function renderChatSurveyPage(
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
             reviewWithSuggestion,
             updateIdeaAfterSafetyReview: (idea, text, mark) =>
-                updateIdeaAfterSafetyReview(
-                    params.organizationSlug,
-                    params.projectSlug,
-                    idea.topicId,
-                    idea.id,
-                    text,
-                    mark,
-                ),
-            loadResponses: (idea) =>
-                getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
-            submitResponse: (idea, text) =>
-                addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text),
+                updateIdeaAfterSafetyReview(params.organizationSlug, params.projectSlug, idea.topicId, idea.id, text, mark),
+            loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
+            submitResponse: (idea, text) => addIdeaResponse(params.organizationSlug, params.projectSlug, idea, youthToken, text),
             updateResponseAfterSafetyReview: (idea, rid, text, mark) =>
-                updateIdeaResponseAfterSafetyReview(
-                    params.organizationSlug,
-                    params.projectSlug,
-                    idea,
-                    rid,
-                    youthToken,
-                    text,
-                    mark,
-                ),
-            reactToResponse: (idea, rid, emoji) =>
-                addResponseReaction(params.organizationSlug, params.projectSlug, idea, rid, youthToken, emoji),
-            unreactToResponse: (idea, rid, emoji) =>
-                removeResponseReaction(params.organizationSlug, params.projectSlug, idea, rid, youthToken, emoji),
-            reactToIdea: (idea, emoji) =>
-                addIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
-            unreactToIdea: (idea, emoji) =>
-                removeIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+                updateIdeaResponseAfterSafetyReview(params.organizationSlug, params.projectSlug, idea, rid, youthToken, text, mark),
+            reactToResponse: (idea, rid, emoji) => addResponseReaction(params.organizationSlug, params.projectSlug, idea, rid, youthToken, emoji),
+            unreactToResponse: (idea, rid, emoji) => removeResponseReaction(params.organizationSlug, params.projectSlug, idea, rid, youthToken, emoji),
+            reactToIdea: (idea, emoji) => addIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
+            unreactToIdea: (idea, emoji) => removeIdeaReaction(params.organizationSlug, params.projectSlug, idea, youthToken, emoji),
             onCopyIdea: (idea) => {
                 chatInput.value = idea.body
                 chatInput.dispatchEvent(new Event('input', { bubbles: true }))
@@ -920,207 +774,377 @@ export async function renderChatSurveyPage(
             },
         })
 
-        function getCurrentIdeas(): Idea[] {
-            if (currentView.type === 'my-ideas') {
-                return allIdeas.filter((x) => x.authorType === 'self')
-            }
-            const topicId = currentView.topicId
-            const hasOwn = hasOwnIdeaInTopic(topicId)
-            let filtered = allIdeas.filter((x) => x.topicId === topicId)
+        const topicModal = createTopicModalController({
+            root: container,
+            topics,
+            onSelect: (nextView) => {
+                activeView = nextView
+                if (nextView.type === 'topic') {
+                    discoveryMode = 'all'
+                    selectedSemanticCategory = null
+                    showPostPreviewPair = false
+                }
+                closeDiscoveryMenu()
+                void renderIdeasList()
+                topicModal.renderTopics(activeView)
+                updateTopicLabels()
+                if (activeView.type === 'topic') {
+                    const topic = topics.find((item) => item.id === activeView.topicId)
+                    if (topic) {
+                        void appendAiBubble(topic.prompt?.trim() || `What are your thoughts on: "${topic.title}"?`)
+                        activateIdeaInput(t.shareIdea, handleIdeaSubmit)
+                    }
+                } else {
+                    deactivateInput(t.selectTopicToShare)
+                }
+            },
+        })
 
-            if (!hasOwn) {
-                if (currentSemanticCategory) {
-                    filtered = filtered.filter((x) => x.semanticCategories.includes(currentSemanticCategory!))
-                }
-            } else {
-                if (currentDiscoveryMode === 'different') {
-                    filtered = [...filtered].reverse()
-                }
+        function hasOwnIdeaInTopic(topicId: number): boolean {
+            return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+        }
+
+        function getTopicSemanticCategories(topicId: number): string[] {
+            const categories = new Set<string>()
+            allIdeas
+                .filter((idea) => idea.topicId === topicId)
+                .forEach((idea) => {
+                    idea.semanticCategories.forEach((category) => {
+                        if (category.trim().length > 0) categories.add(category)
+                    })
+                })
+            return [...categories].sort((a, b) => a.localeCompare(b))
+        }
+
+        function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
+            const previewIdeas: Idea[] = []
+            const previewBadges = new Map<number, DiscoveryBadgeType>()
+            const seen = new Set<number>()
+
+            const addIdea = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): boolean => {
+                if (!idea || seen.has(idea.id)) return false
+                seen.add(idea.id)
+                previewIdeas.push(idea)
+                if (badge && previewBadges.size < 2) previewBadges.set(idea.id, badge)
+                return true
             }
-            return filtered.slice(0, 20)
+
+            addIdea(similarIdeas[0], 'similar')
+            for (const idea of differentIdeas) {
+                if (addIdea(idea, 'different')) break
+            }
+            addIdea(submittedIdea)
+
+            return createDiscoveryFeed(previewIdeas, previewBadges)
         }
 
         function renderDiscoveryMenuOptions(): void {
-            if (currentView.type !== 'topic') {
+            if (activeView.type !== 'topic') {
                 discoveryMenu.innerHTML = ''
                 return
             }
 
-            const topicId = currentView.topicId
-            const hasOwn = hasOwnIdeaInTopic(topicId)
-
-            if (!hasOwn) {
-                const categories = getSemanticCategoriesForTopic(topicId)
-                const catButtons = categories
-                    .map(
-                        (cat) =>
-                            `<button class="ideas-discovery-option${currentSemanticCategory === cat ? ' selected' : ''}" data-chat-category="${esc(cat)}" role="menuitem" type="button">${esc(cat)}</button>`,
-                    )
+            if (!hasOwnIdeaInTopic(activeView.topicId)) {
+                const categories = getTopicSemanticCategories(activeView.topicId)
+                const semanticButtons = categories
+                    .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
                     .join('')
-                const catSection =
-                    categories.length > 0
-                        ? `<hr class="ideas-discovery-separator" role="separator">
-                           <p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>
-                           ${catButtons}`
-                        : ''
+                const categoriesSection = categories.length > 0
+                    ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">Idea categories</p>${semanticButtons}`
+                    : ''
 
-                discoveryMenu.innerHTML = `
-                    <button class="ideas-discovery-option${!currentSemanticCategory ? ' selected' : ''}" data-chat-sort="broad" role="menuitem" type="button">${esc(t.broadSelection)}</button>
-                    ${catSection}`
-            } else {
-                discoveryMenu.innerHTML = `
-                    <button class="ideas-discovery-option${currentDiscoveryMode === 'similar' || currentDiscoveryMode === 'broad' ? ' selected' : ''}" data-chat-sort="similar" role="menuitem" type="button">${esc(t.similarIdeas)}</button>
-                    <button class="ideas-discovery-option${currentDiscoveryMode === 'different' ? ' selected' : ''}" data-chat-sort="different" role="menuitem" type="button">${esc(t.differingIdeas)}</button>
-                    <button class="ideas-discovery-option${currentDiscoveryMode === 'all' ? ' selected' : ''}" data-chat-sort="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>`
-            }
-        }
-
-        function updateDiscoveryLabel(): void {
-            discoveryLabel.textContent = currentDiscoveryLabel
-        }
-
-        function renderIdeasList(): void {
-            if (listController) {
-                listController.cleanup()
-                listController = null
-            }
-            const displayIdeas = getCurrentIdeas()
-            if (displayIdeas.length === 0) {
-                ideasListEl.innerHTML = `<p class="ideas-empty-state">${esc(t.noIdeas)}</p>`
+                discoveryMenu.innerHTML = `<button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>${categoriesSection}`
                 return
             }
+
+            discoveryMenu.innerHTML = `
+                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
+                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>`
+        }
+
+        function closeDiscoveryMenu(): void {
+            discoveryMenu.hidden = true
+            discoveryTrigger.setAttribute('aria-expanded', 'false')
+        }
+
+        function updateDiscoveryUi(): void {
+            if (activeView.type !== 'topic') {
+                discoveryRoot.hidden = true
+                closeDiscoveryMenu()
+                return
+            }
+
+            discoveryRoot.hidden = false
+            renderDiscoveryMenuOptions()
+            const ownIdeaExists = hasOwnIdeaInTopic(activeView.topicId)
+            const labelMap: Record<DiscoveryMode, string> = { all: 'All ideas', similar: 'Similar ideas', different: 'Differing ideas' }
+            discoveryLabel.textContent = ownIdeaExists ? labelMap[discoveryMode] : (selectedSemanticCategory ?? 'Broad selection')
+
+            discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option').forEach((option) => {
+                const mode = option.dataset.discoveryMode
+                const semanticCategory = option.dataset.semanticCategory
+                const isOwnMode = ownIdeaExists && mode === discoveryMode
+                const isBroadSelection = !ownIdeaExists && !selectedSemanticCategory && mode === 'all'
+                const isSemanticSelection = !ownIdeaExists && !!selectedSemanticCategory && semanticCategory === selectedSemanticCategory
+                option.classList.toggle('selected', isOwnMode || isBroadSelection || isSemanticSelection)
+            })
+        }
+
+        async function getVisibleIdeasForCurrentMode(): Promise<DiscoveryFeed> {
+            if (activeView.type === 'my-ideas') {
+                return createDiscoveryFeed(allIdeas.filter((idea) => idea.authorType === 'self'), new Map())
+            }
+
+            const topicId = activeView.topicId
+            const ownIdeaExists = hasOwnIdeaInTopic(topicId)
+            const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
+            const cacheSuffix = discoveryMode === 'all' && showPostPreviewPair ? 'preview' : 'full'
+            const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
+            const cached = discoveryCache.get(cacheKey)
+            if (cached) return cached
+
+            try {
+                let discovered: DiscoveryFeed
+
+                if (!ownIdeaExists) {
+                    const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
+                    if (!selectedSemanticCategory) {
+                        discovered = createDiscoveryFeed(buildBroadFeed(topicIdeas), new Map())
+                    } else {
+                        const categoryFilter = selectedSemanticCategory.toLowerCase()
+                        const filtered = topicIdeas.filter((idea) =>
+                            idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
+                        )
+                        discovered = createDiscoveryFeed(filtered, new Map())
+                    }
+                } else if (discoveryMode === 'all') {
+                    const [similarIdeas, rawDifferentIdeas] = await Promise.all([
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, 'similar', IDEA_DISCOVERY_MAX_RESULTS),
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, 'different', IDEA_DISCOVERY_MAX_RESULTS),
+                    ])
+                    const similarIds = new Set(similarIdeas.map((idea) => idea.id))
+                    const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
+
+                    const similarCacheKey = `${topicId}:similar:${categorySuffix}:full`
+                    const differentCacheKey = `${topicId}:different:${categorySuffix}:full`
+                    if (!discoveryCache.has(similarCacheKey)) {
+                        discoveryCache.set(similarCacheKey, createDiscoveryFeed(similarIdeas, new Map()))
+                    }
+                    if (!discoveryCache.has(differentCacheKey)) {
+                        discoveryCache.set(differentCacheKey, createDiscoveryFeed(oppositeIdeas, new Map()))
+                    }
+
+                    if (showPostPreviewPair) {
+                        const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                        discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea)
+                    } else {
+                        const pinnedIdeas: Idea[] = []
+                        const pinnedBadges = new Map<number, DiscoveryBadgeType>()
+                        const pinnedIds = new Set<number>()
+
+                        const addPinned = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): void => {
+                            if (!idea || pinnedIds.has(idea.id)) return
+                            pinnedIds.add(idea.id)
+                            pinnedIdeas.push(idea)
+                            if (badge) pinnedBadges.set(idea.id, badge)
+                        }
+
+                        addPinned(similarIdeas[0], 'similar')
+                        for (const idea of oppositeIdeas) {
+                            if (!pinnedIds.has(idea.id)) {
+                                addPinned(idea, 'different')
+                                break
+                            }
+                        }
+                        const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                        addPinned(userIdea)
+                        const broadRemainder = buildBroadFeed(allIdeas.filter((idea) => idea.topicId === topicId)).filter((idea) => !pinnedIds.has(idea.id))
+                        discovered = createDiscoveryFeed([...pinnedIdeas, ...broadRemainder], pinnedBadges)
+                    }
+                } else {
+                    const otherMode: IdeaDiscoveryCategory = discoveryMode === 'similar' ? 'different' : 'similar'
+                    const [modeIdeas, otherIdeas] = await Promise.all([
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, discoveryMode, IDEA_DISCOVERY_MAX_RESULTS),
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, otherMode, IDEA_DISCOVERY_MAX_RESULTS),
+                    ])
+
+                    const similarList = discoveryMode === 'similar' ? modeIdeas : otherIdeas
+                    const rawDifferentList = discoveryMode === 'different' ? modeIdeas : otherIdeas
+                    const simIds = new Set(similarList.map((idea) => idea.id))
+                    const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
+
+                    const otherCacheKey = `${topicId}:${otherMode}:${categorySuffix}:full`
+                    if (!discoveryCache.has(otherCacheKey)) {
+                        discoveryCache.set(otherCacheKey, createDiscoveryFeed(discoveryMode === 'similar' ? deduplicatedDifferent : similarList, new Map()))
+                    }
+
+                    discovered = createDiscoveryFeed(discoveryMode === 'similar' ? similarList : deduplicatedDifferent, new Map())
+                }
+
+                discoveryCache.set(cacheKey, discovered)
+                return discovered
+            } catch (error) {
+                console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
+                return createDiscoveryFeed(allIdeas.filter((idea) => idea.topicId === topicId).slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
+            }
+        }
+
+        function getActiveIdeasLabel(view: ActiveView): string {
+            if (view.type === 'my-ideas') return 'My ideas'
+            const topic = topics.find((item) => item.id === view.topicId)
+            return topic ? topic.title : 'Select a topic'
+        }
+
+        function updateTopicLabels(): void {
+            const label = getActiveIdeasLabel(activeView)
+            topicTriggerValue.textContent = label
+            topicFloatingTriggerValue.textContent = label
+            topicFloatingTrigger.hidden = activeView.type !== 'my-ideas'
+        }
+
+        async function renderIdeasList(): Promise<void> {
+            const renderToken = ++discoveryRequestToken
+            updateTopicLabels()
+            updateDiscoveryUi()
+
+            const discoveryFeed = await getVisibleIdeasForCurrentMode()
+            if (renderToken !== discoveryRequestToken) return
+
+            visibleIdeasCache = discoveryFeed.ideas
+            discoveryBadgeByIdeaId = discoveryFeed.badgesByIdeaId
+
+            if (listController) {
+                listController.cleanup()
+            }
+
+            if (visibleIdeasCache.length === 0) {
+                ideasListEl.innerHTML = `<p class="ideas-empty-state">${esc(t.noIdeas)}</p>`
+                listController = null
+                return
+            }
+
             listController = createIdeasListController({
                 list: ideasListEl,
-                ideas: displayIdeas,
-                activeView: currentView,
+                ideas: visibleIdeasCache,
+                activeView,
                 topics,
                 flaggedIdeaIds,
+                discoveryBadgeByIdeaId,
+                onDiscoveryBadgeClick: (badge) => {
+                    discoveryMode = badge === 'similar' ? 'similar' : 'different'
+                    showPostPreviewPair = false
+                    closeDiscoveryMenu()
+                    void renderIdeasList()
+                },
             })
+            listController.setActive(0, false)
             listController.startRotation()
+            topicModal.renderTopics(activeView)
         }
+
+        const submitHandler = createIdeasSubmitHandler({
+            organizationSlug: params.organizationSlug,
+            projectSlug: params.projectSlug,
+            projectId: project.id,
+            reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
+            reviewWithSuggestion,
+            onIdeaSubmitted: (idea: Idea) => {
+                allIdeas.unshift(idea)
+                latestSubmittedIdea = idea
+                discoveryMode = 'all'
+                selectedSemanticCategory = null
+                showPostPreviewPair = true
+                discoveryCache.clear()
+                void renderIdeasList()
+                void appendAiBubble(t.ideaShared)
+
+                if (!firstIdeaContactDialog.hasStoredDecision()) {
+                    void firstIdeaContactDialog.open().then((choice) => {
+                        if (choice?.permissionGranted && choice.email) {
+                            void saveYouthContactEmail(params.organizationSlug, params.projectSlug, youthToken, choice.email)
+                        }
+                    })
+                }
+            },
+        })
+
+        async function handleIdeaSubmit(): Promise<void> {
+            const text = chatInput.value.trim()
+            if (!text || activeView.type !== 'topic') return
+
+            deactivateInput(t.submitting)
+            appendUserBubble(text)
+
+            try {
+                await submitHandler.submit(text, activeView)
+            } catch {
+                await appendAiBubble(t.somethingWrong)
+            } finally {
+                if (activeView.type === 'topic') {
+                    activateIdeaInput(t.shareAnother, handleIdeaSubmit)
+                }
+            }
+        }
+
+        topicTrigger.addEventListener('click', () => {
+            topicModal.open(topicTrigger)
+        })
+
+        topicFloatingTrigger.addEventListener('click', () => {
+            topicModal.open(topicFloatingTrigger)
+        })
+
+        discoveryTrigger.addEventListener('click', (event) => {
+            event.stopPropagation()
+            if (discoveryRoot.hidden) return
+            if (discoveryMenu.hidden) {
+                discoveryMenu.hidden = false
+                discoveryTrigger.setAttribute('aria-expanded', 'true')
+            } else {
+                closeDiscoveryMenu()
+            }
+        })
+
+        discoveryMenu.addEventListener('click', (event) => {
+            const option = (event.target as HTMLElement).closest<HTMLButtonElement>('.ideas-discovery-option')
+            if (!option || activeView.type !== 'topic') return
+
+            const selectedMode = option.dataset.discoveryMode as DiscoveryMode | undefined
+            const semanticCategory = option.dataset.semanticCategory
+
+            if (hasOwnIdeaInTopic(activeView.topicId)) {
+                if (!selectedMode) return
+                discoveryMode = selectedMode
+                selectedSemanticCategory = null
+            } else {
+                discoveryMode = 'all'
+                selectedSemanticCategory = semanticCategory ?? null
+            }
+
+            showPostPreviewPair = false
+            closeDiscoveryMenu()
+            void renderIdeasList()
+        })
 
         ideasListEl.addEventListener('scroll', () => {
             listController?.updateFromScroll()
         }, { passive: true })
 
-        // Topic selector events
-        const topicTrigger = topicSelectorEl.querySelector<HTMLButtonElement>('#chat-topic-trigger')!
-        const topicDropdown = topicSelectorEl.querySelector<HTMLElement>('#chat-topic-dropdown')!
-        const topicTriggerName = topicSelectorEl.querySelector<HTMLElement>('#chat-topic-trigger-name')!
-
-        topicTrigger.addEventListener('click', (e) => {
-            e.stopPropagation()
-            const opening = topicDropdown.hidden
-            topicDropdown.hidden = !opening
-            topicTrigger.setAttribute('aria-expanded', String(opening))
-        })
-
-        topicDropdown.addEventListener('click', (e) => {
-            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-topic-id], [data-view="my-ideas"]')
-            if (!opt) return
-
-            topicDropdown.hidden = true
-            topicTrigger.setAttribute('aria-expanded', 'false')
-
-            if (opt.getAttribute('data-view') === 'my-ideas') {
-                if (currentView.type === 'my-ideas') return
-                currentView = { type: 'my-ideas' }
-                topicTriggerName.textContent = t.myIdeas
-                topicDropdown.querySelectorAll('[data-topic-id]').forEach((el) => {
-                    el.classList.remove('chat-topic-option--active')
-                    el.setAttribute('aria-selected', 'false')
-                })
-                opt.classList.add('chat-topic-option--active')
-                opt.setAttribute('aria-selected', 'true')
-                renderDiscoveryMenuOptions()
-                renderIdeasList()
-                deactivateInput(t.selectTopicToShare)
-                return
-            }
-
-            const newTopicId = Number(opt.getAttribute('data-topic-id'))
-            const newTopic = topics.find((topic) => topic.id === newTopicId)
-            if (!newTopic) return
-            if (currentView.type === 'topic' && currentView.topicId === newTopicId) return
-
-            currentView = { type: 'topic', topicId: newTopicId }
-            topicTriggerName.textContent = newTopic.title
-            currentSemanticCategory = null
-            currentDiscoveryMode = 'broad'
-            currentDiscoveryLabel = hasOwnIdeaInTopic(newTopicId) ? t.similarIdeas : t.broadSelection
-            updateDiscoveryLabel()
-
-            topicDropdown.querySelectorAll('[data-topic-id], [data-view="my-ideas"]').forEach((el) => {
-                const isActive = el.getAttribute('data-topic-id') === String(newTopicId)
-                el.classList.toggle('chat-topic-option--active', isActive)
-                el.setAttribute('aria-selected', String(isActive))
-            })
-
-            renderDiscoveryMenuOptions()
-            renderIdeasList()
-            void appendAiBubble(newTopic.prompt?.trim() || `What are your thoughts on: "${newTopic.title}"?`)
-            activateIdeaInput(t.shareIdea, handleIdeaSubmit)
-        })
-
-        // Discovery dropdown events
-        discoveryTrigger.addEventListener('click', (e) => {
-            e.stopPropagation()
-            renderDiscoveryMenuOptions()
-            const opening = discoveryMenu.hidden
-            discoveryMenu.hidden = !opening
-            discoveryTrigger.setAttribute('aria-expanded', String(opening))
-        })
-
-        discoveryMenu.addEventListener('click', (e) => {
-            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-chat-sort], [data-chat-category]')
-            if (!opt) return
-
-            const sort = opt.getAttribute('data-chat-sort')
-            const category = opt.getAttribute('data-chat-category')
-
-            if (sort) {
-                currentDiscoveryMode = sort as 'broad' | 'similar' | 'different' | 'all'
-                currentSemanticCategory = null
-                const sortLabels: Record<string, string> = {
-                    broad: t.broadSelection,
-                    similar: t.similarIdeas,
-                    different: t.differingIdeas,
-                    all: t.allIdeas,
-                }
-                currentDiscoveryLabel = sortLabels[sort] ?? t.broadSelection
-            } else if (category) {
-                currentSemanticCategory = category
-                currentDiscoveryLabel = category
-            }
-
-            discoveryMenu.hidden = true
-            discoveryTrigger.setAttribute('aria-expanded', 'false')
-            updateDiscoveryLabel()
-            renderDiscoveryMenuOptions()
-            renderIdeasList()
-        })
-
-        const closeMenusOnOutsideClick = (e: MouseEvent): void => {
-            if (!topicSelectorEl.contains(e.target as Node)) {
-                topicDropdown.hidden = true
-                topicTrigger.setAttribute('aria-expanded', 'false')
-            }
-            if (!discoveryEl.contains(e.target as Node)) {
-                discoveryMenu.hidden = true
-                discoveryTrigger.setAttribute('aria-expanded', 'false')
-            }
-        }
-        document.addEventListener('click', closeMenusOnOutsideClick)
-
-        // Ideas list click → open panel
-        ideasListEl.addEventListener('click', (e) => {
-            const card = (e.target as HTMLElement).closest<HTMLElement>('.ideas-card')
+        ideasListEl.addEventListener('click', (event) => {
+            const card = (event.target as HTMLElement).closest<HTMLElement>('.ideas-card')
             if (!card || !listController) return
             const idx = Number(card.getAttribute('data-original-index'))
-            const displayIdeas = getCurrentIdeas()
-            if (!Number.isFinite(idx) || idx < 0 || idx >= displayIdeas.length) return
+            if (!Number.isFinite(idx) || idx < 0 || idx >= visibleIdeasCache.length) return
             listController.setActive(idx, true)
-            ideaPanel.open(displayIdeas[idx])
+            ideaPanel.open(visibleIdeasCache[idx])
+        })
+
+        document.addEventListener('click', (event) => {
+            if (!(event.target instanceof Node)) return
+            if (!discoveryRoot.contains(event.target)) {
+                closeDiscoveryMenu()
+            }
         })
 
         container.querySelector<HTMLElement>('#idea-panel-backdrop')?.addEventListener('click', () => {
@@ -1134,81 +1158,31 @@ export async function renderChatSurveyPage(
             'app:before-navigate',
             () => {
                 listController?.cleanup()
-                document.removeEventListener('click', closeMenusOnOutsideClick)
             },
             { once: true },
         )
 
-        const submitHandler = createIdeasSubmitHandler({
-            organizationSlug: params.organizationSlug,
-            projectSlug: params.projectSlug,
-            projectId: project.id,
-            reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
-            reviewWithSuggestion,
-            onIdeaSubmitted: (idea: Idea) => {
-                const wasFirstOwnInTopic =
-                    currentView.type === 'topic' && !hasOwnIdeaInTopic(currentView.topicId)
-                allIdeas.unshift(idea)
-                if (wasFirstOwnInTopic) {
-                    currentDiscoveryMode = 'similar'
-                    currentDiscoveryLabel = t.similarIdeas
-                    currentSemanticCategory = null
-                    updateDiscoveryLabel()
-                }
-                renderDiscoveryMenuOptions()
-                renderIdeasList()
-                void appendAiBubble(t.ideaShared)
-
-                if (!firstIdeaContactDialog.hasStoredDecision()) {
-                    void firstIdeaContactDialog.open().then((choice) => {
-                        if (choice?.permissionGranted && choice.email) {
-                            void saveYouthContactEmail(
-                                params.organizationSlug,
-                                params.projectSlug,
-                                youthToken,
-                                choice.email,
-                            )
-                        }
-                    })
-                }
-            },
-        })
-
-        async function handleIdeaSubmit(): Promise<void> {
-            const text = chatInput.value.trim()
-            if (!text) return
-            if (currentView.type !== 'topic') return
-
-            deactivateInput(t.submitting)
-            appendUserBubble(text)
-
-            try {
-                await submitHandler.submit(text, currentView)
-            } catch {
-                await appendAiBubble(t.somethingWrong)
-            } finally {
-                if (currentView.type === 'topic') {
-                    activateIdeaInput(t.shareAnother, handleIdeaSubmit)
-                }
-            }
-        }
-
-        // Initial render
-        renderDiscoveryMenuOptions()
-        renderIdeasList()
-
+        await renderIdeasList()
         await appendAiBubble(t.ideationIntro)
         await wait(200)
         await appendAiBubble(firstTopic.prompt?.trim() || `What are your thoughts on: "${firstTopic.title}"?`)
-
         activateIdeaInput(t.shareIdea, handleIdeaSubmit)
     }
 
     // ===== Start conversation =====
+    if (startInIdeasMode) {
+        await enterIdeasPhase()
+        return
+    }
+
     const savedProgress = loadSurveyProgress(projectSlugKey, questions)
 
     if (savedProgress && savedProgress.currentQuestionIndex > 0 && questions.length > 0) {
         const resumeAt = Math.min(savedProgress.currentQuestionIndex, questions.length)
+        confirmedUpToIndex = resumeAt
+        savedProgress.openTextDraftsByQuestionId.forEach((messages, questionId) => {
+            openTextDraftsByQuestionId.set(questionId, [...messages])
+        })
 
         // Restore answers to components
         for (let i = 0; i < questions.length; i++) {
@@ -1263,6 +1237,13 @@ export async function renderChatSurveyPage(
             await showSubmitSection()
         }
     } else {
+        if (savedProgress) {
+            confirmedUpToIndex = Math.max(0, Math.min(savedProgress.currentQuestionIndex, questions.length))
+            savedProgress.openTextDraftsByQuestionId.forEach((messages, questionId) => {
+                openTextDraftsByQuestionId.set(questionId, [...messages])
+            })
+        }
+
         // Normal start
         await appendAiBubble(project.title, { animated: false, bubbleClass: 'chat-bubble--project-title' })
         await wait(300)
