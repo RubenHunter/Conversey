@@ -22,11 +22,7 @@ WORKDIR /src
 RUN dotnet publish "UI-MVC/UI-MVC.csproj" \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false \
-    /p:PublishStaticWebAssets=true
-
-# Zorg dat wwwroot ook echt in de publish map zit (failsafe)
-RUN cp -r /src/UI-MVC/wwwroot /app/publish/ || true
+    /p:UseAppHost=false
 
 # ==========================================
 # RUNTIME STAGE
