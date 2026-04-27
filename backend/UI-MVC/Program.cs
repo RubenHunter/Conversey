@@ -187,7 +187,7 @@ void InitializeDatabase(bool drop)
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
-        if (created)
+        if (created || !dbCtx.Workspaces.Any())
         {
             DataSeeder.Seed(dbCtx);
         }
