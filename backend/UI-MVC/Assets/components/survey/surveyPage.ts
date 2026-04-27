@@ -99,6 +99,20 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
     const headerController = createSurveyHeaderController({ root: container })
 
+    function hasRequiredQuestionBefore(index: number): boolean {
+        for (let i = index - 1; i >= 0; i--) {
+            if (questions[i].isRequired) return true
+        }
+        return false
+    }
+
+    function hasUnansweredRequiredBefore(index: number): boolean {
+        for (let i = index - 1; i >= 0; i--) {
+            if (questions[i].isRequired && !answeredState[i]) return true
+        }
+        return false
+    }
+
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
@@ -111,8 +125,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
         questionsContainer.appendChild(component.getElement())
 
-        // Lock next questions only if current question is required
-        if (index > 0 && questions[index - 1].isRequired) {
+        // Lock by required-gate: a question is blocked only while the last required question before it is unanswered.
+        if (hasRequiredQuestionBefore(index)) {
             component.lock()
         }
 
@@ -138,9 +152,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 return
             }
 
-            const previousIndex = index - 1
-            const shouldLock = questions[previousIndex].isRequired && !answeredState[previousIndex]
-            if (shouldLock) {
+            const shouldLockByRequiredGate = hasUnansweredRequiredBefore(index)
+            if (shouldLockByRequiredGate) {
                 component.lock()
             } else {
                 component.unlock()
@@ -220,6 +233,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         })
 
         currentQuestionIndex = index
+        syncQuestionLocks()
         scrollNav?.update(currentQuestionIndex, questions.length)
         persistProgress()
 
@@ -310,6 +324,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         // Update only if the index has actually changed to avoid unnecessary updates
         if (currentQuestionIndex !== closestIndex) {
             currentQuestionIndex = closestIndex
+            syncQuestionLocks()
             scrollNav?.update(currentQuestionIndex, questions.length)
             persistProgress()
         }
