@@ -10,37 +10,27 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
 using Conversey.BL.Survey;
 using Conversey.DAL;
-using Conversey.DAL.Administration;
-using Conversey.DAL.Ideation;
-using Conversey.DAL.Subplatform.Ai;
-using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Conversey.DAL.Administration;
+using Conversey.DAL.Ideation;
+using Conversey.DAL.Subplatform.Ai;
+using Conversey.DAL.Survey;
 using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
-// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages()
-    .AddRazorPagesOptions(options =>
-    {
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
-    });
 
 builder.Services.AddViteServices(options =>
 {
 	options.Server.Port = 4173;
     options.Server.AutoRun = true;
-    options.Server.PackageManager = "pnpm";
 });
 
 // Add repositories
@@ -59,18 +49,9 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("Default")
-        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+        ?? "Host=localhost;Port=3000;Database=devdb;Username=devuser;Password=devpass")
 );
 
-<<<<<<< HEAD
-// Speech service
-builder.Services.AddScoped<Conversey.BL.Speech.IMistralSpeechService>(provider =>
-{
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
-    return new Conversey.BL.Speech.MistralSpeechService(httpClient, builder.Configuration["AI:Mistral:ApiKey"] ?? "");
-});
-
-=======
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -97,23 +78,17 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy(viteDevCorsPolicy, policy =>
-//     {
-//         policy.WithOrigins(
-//                 "http://localhost:4173",
-//                 "https://localhost:4173",
-//                 "http://localhost:4180",
-//                 "https://localhost:7093")
-//             .AllowAnyHeader()
-//             .AllowAnyMethod()
-//             .AllowCredentials();
-//     });
-// });
+// Speech service
+builder.Services.AddScoped<Conversey.BL.Speech.IMistralSpeechManager>(provider =>
+{
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    return new Conversey.BL.Speech.MistralSpeechManager(
+        httpClient, 
+        builder.Configuration["AI:Mistral:ApiKey"] ?? "",
+        ttsVoice: "en_paul_neutral"
+    );
+});
 
-
->>>>>>> origin/development
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
@@ -164,7 +139,6 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
-
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
@@ -187,27 +161,20 @@ app.UseHttpsRedirection();
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 
-<<<<<<< HEAD
 app.UseWebSockets();
-
-=======
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseCors(viteDevCorsPolicy);
-// }
-
 app.UseAuthentication();
->>>>>>> origin/development
 app.UseAuthorization();
 
-app.MapRazorPages();
-
 app.MapStaticAssets();
+app.MapRazorPages();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{action=Landing}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Fallback voor root
+app.MapFallbackToController("Index", "Home");
+
 // WebSocket endpoint for real-time speech-to-text — transparent proxy to Mistral.
 app.Map("/ws/speech/transcribe", async context =>
 {
@@ -335,13 +302,10 @@ var useViteDevServer = app.Environment.IsDevelopment() &&
 var viteHealthCheckedAtUtc = DateTime.MinValue;
 var viteIsAvailable = false;
 
-// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
-//app.MapFallbackToController("Index", "Home");
-
 if (app.Environment.IsDevelopment())
 {
     app.UseWebSockets();
-    app.UseViteDevelopmentServer(useMiddleware: false);
+    app.UseViteDevelopmentServer(useMiddleware: true);
 }
 
 app.Run();
@@ -350,86 +314,8 @@ void InitializeDatabase(bool drop)
 {
     using (var scope = app.Services.CreateScope())
     {
-        var services = scope.ServiceProvider;
-        var dbCtx = services.GetRequiredService<ConverseyDbContext>();
-        // Create database schema first (including Identity tables)
-        var created = dbCtx.CreateDatabase(drop);
-        // Then seed Identity and Roles
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        SeedIdentity(userManager, roleManager);
-        if (created)
-        {
-            DataSeeder.Seed(dbCtx);
-        }
-    }
-}
-
-void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
-{
-    // Create roles if they don't exist
-    if (!roleManager.RoleExistsAsync("User").Result)
-    {
-        roleManager.CreateAsync(new IdentityRole("User")).Wait();
-    }
-    if (!roleManager.RoleExistsAsync("Admin").Result)
-    {
-        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
-    }
-
-    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
-    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
-}
-
-void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
-{
-    var normalizedWorkspaceId = Slug.FromName(workspaceId);
-    var user = userManager.FindByEmailAsync(email).Result;
-    if (user == null)
-    {
-        user = new ApplicationUser
-        {
-            Email = email,
-            UserName = email,
-            EmailConfirmed = true,
-            WorkspaceId = normalizedWorkspaceId
-        };
-        userManager.CreateAsync(user, "Test123!").Wait();
-    }
-    else
-    {
-        var changed = false;
-        if (user.UserName != email)
-        {
-            user.UserName = email;
-            changed = true;
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            changed = true;
-        }
-        
-        if (user.WorkspaceId != normalizedWorkspaceId)
-        {
-            user.WorkspaceId = normalizedWorkspaceId;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            userManager.UpdateAsync(user).Wait();
-        }
-
-        if (!userManager.HasPasswordAsync(user).Result)
-        {
-            userManager.AddPasswordAsync(user, "Test123!").Wait();
-        }
-    }
-
-    if (!userManager.IsInRoleAsync(user, "Admin").Result)
-    {
-        userManager.AddToRoleAsync(user, "Admin").Wait();
+        var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
+        if (!dbCtx.CreateDatabase(drop)) return;
+        DataSeeder.Seed(dbCtx);
     }
 }

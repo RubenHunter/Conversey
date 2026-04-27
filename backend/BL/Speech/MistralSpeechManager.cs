@@ -14,13 +14,15 @@ public class MistralSpeechManager : IMistralSpeechManager
     private readonly string _apiKey;
     private readonly string _sttModel;
     private readonly string _ttsModel;
+    private readonly string _ttsVoice;
 
-    public MistralSpeechManager(HttpClient httpClient, string apiKey, string sttModel = "voxtral-mini-latest", string ttsModel = "voxtral-mini-tts-latest")
+    public MistralSpeechManager(HttpClient httpClient, string apiKey, string sttModel = "voxtral-mini-latest", string ttsModel = "voxtral-mini-tts-latest", string ttsVoice = "en_paul_neutral")
     {
         _httpClient = httpClient;
         _apiKey = apiKey;
         _sttModel = sttModel;
         _ttsModel = ttsModel;
+        _ttsVoice = ttsVoice;
     }
 
     public async Task<string> TranscribeSpeechAsync(Stream audioStream, string language, string prompt)
@@ -29,18 +31,20 @@ public class MistralSpeechManager : IMistralSpeechManager
         {
             using var content = new MultipartFormDataContent();
             
-            // Add audio file (let Mistral detect the format from the data)
+            // Add audio file as raw bytes (Mistral expects multipart/form-data)
             using var audioMemoryStream = new MemoryStream();
             await audioStream.CopyToAsync(audioMemoryStream);
-            var audioContent = new ByteArrayContent(audioMemoryStream.ToArray());
-            // Mistral supports: audio/mpeg, audio/wav, audio/ogg, audio/webm, audio/flac, audio/aac, audio/mp4, audio/x-m4a
+            var audioBytes = audioMemoryStream.ToArray();
+            var audioContent = new ByteArrayContent(audioBytes);
             content.Add(audioContent, "file", "audio.webm");
             
             // Add model
             content.Add(new StringContent(_sttModel), "model");
             
-            // Add optional parameters
+            // Add language
             content.Add(new StringContent(language), "language");
+            
+            // Add optional prompt
             if (!string.IsNullOrWhiteSpace(prompt))
             {
                 content.Add(new StringContent(prompt), "prompt");
@@ -50,7 +54,7 @@ public class MistralSpeechManager : IMistralSpeechManager
             request.Content = content;
 
             // Debug: Log audio size
-            Console.WriteLine($"[DEBUG] Audio size: {audioMemoryStream.Length} bytes, Model: {_sttModel}, Language: {language}");
+            Console.WriteLine($"[DEBUG] Audio size: {audioBytes.Length} bytes, Model: {_sttModel}, Language: {language}");
 
             var response = await _httpClient.SendAsync(request);
             
@@ -64,6 +68,7 @@ public class MistralSpeechManager : IMistralSpeechManager
                 throw new HttpRequestException($"Mistral API returned: {response.StatusCode}, Response: {responseContent}");
             }
 
+            // Parse the JSON response (Mistral returns JSON even for multipart requests)
             var result = JsonSerializer.Deserialize<MistralTranscriptionResponse>(responseContent);
             
             return result?.Text ?? string.Empty;
@@ -88,6 +93,7 @@ public class MistralSpeechManager : IMistralSpeechManager
             {
                 model = _ttsModel,
                 input = text,
+                voice = _ttsVoice,
                 response_format = "mp3"
             };
             
@@ -109,9 +115,16 @@ public class MistralSpeechManager : IMistralSpeechManager
                 throw new HttpRequestException($"Mistral TTS API returned: {response.StatusCode}, Response: {responseContentText}");
             }
 
-            // Return the audio stream
-            response.Content.Headers.ContentType = new MediaTypeHeaderValue("audio/mp3");
-            return await response.Content.ReadAsStreamAsync();
+            // Mistral returns JSON with base64 audio_data, not a direct stream
+            var result = JsonSerializer.Deserialize<MistralTtsResponse>(responseContentText);
+            if (string.IsNullOrEmpty(result?.AudioData))
+            {
+                throw new HttpRequestException("No audio_data in response from Mistral TTS API");
+            }
+            
+            // Convert base64 to byte array and return as stream
+            var audioBytes = Convert.FromBase64String(result.AudioData);
+            return new MemoryStream(audioBytes);
         }
         catch (HttpRequestException ex)
         {
@@ -126,5 +139,11 @@ public class MistralSpeechManager : IMistralSpeechManager
     private class MistralTranscriptionResponse
     {
         public string Text { get; set; } = string.Empty;
+    }
+
+    private class MistralTtsResponse
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("audio_data")]
+        public string AudioData { get; set; } = string.Empty;
     }
 }

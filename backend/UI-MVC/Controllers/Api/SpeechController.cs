@@ -4,14 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
+[ApiController]
+[Route("api/speech")]
 public class SpeechController : Controller
 {
-    private readonly IMistralSpeechService _speechService;
+    private readonly IMistralSpeechManager _speechManager;
     private readonly IConfiguration _configuration;
 
-    public SpeechController(IMistralSpeechService speechService, IConfiguration configuration)
+    public SpeechController(IMistralSpeechManager speechManager, IConfiguration configuration)
     {
-        _speechService = speechService;
+        _speechManager = speechManager;
         _configuration = configuration;
     }
 
@@ -29,7 +31,7 @@ public class SpeechController : Controller
             using var audioStream = new MemoryStream(audioBytes);
             
             var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var text = await _speechService.TranscribeSpeechAsync(audioStream, language, request.Prompt);
+            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.Prompt);
             
             return Ok(new { text = text });
         }
@@ -53,7 +55,7 @@ public class SpeechController : Controller
         try
         {
             var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var audioStream = await _speechService.SynthesizeSpeechAsync(request.Text, language);
+            var audioStream = await _speechManager.SynthesizeSpeechAsync(request.Text, language);
             
             return File(audioStream, "audio/mp3");
         }
