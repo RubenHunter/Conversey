@@ -35,7 +35,7 @@ export default defineConfig(async () => {
         ],
         build: {
             emptyOutDir: true,
-            manifest: true,
+            manifest: 'manifest.json',
             outDir: '../wwwroot',
             assetsDir: '',
             rollupOptions: {
