@@ -341,6 +341,24 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
             </div>
         </div>
+        
+        <div id="first-idea-contact-gate-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
+        <div id="first-idea-contact-gate-dialog" class="modal first-idea-contact-gate-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-gate-title" hidden>
+            <div class="modal-header">
+                <h3 id="first-idea-contact-gate-title">Want to stay in touch?</h3>
+            </div>
+            <div class="modal-body">
+                <p class="first-idea-contact-copy">We can let you know if anything happens with your idea.</p>
+                <label class="first-idea-contact-check first-idea-contact-check--remember">
+                    <input id="first-idea-contact-gate-remember" class="first-idea-contact-checkbox" type="checkbox" />
+                    <span>Don't ask me again</span>
+                </label>
+            </div>
+            <div class="first-idea-contact-actions">
+                <button id="first-idea-contact-gate-deny" class="safety-review-btn first-idea-contact-deny" type="button">No thanks</button>
+                <button id="first-idea-contact-gate-accept" class="safety-review-btn safety-review-btn--primary" type="button">Leave my email</button>
+            </div>
+        </div>
 
         <div id="first-idea-contact-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
         <div id="first-idea-contact-dialog" class="modal first-idea-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-title" hidden>

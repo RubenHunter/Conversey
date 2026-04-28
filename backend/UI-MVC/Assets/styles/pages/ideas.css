@@ -309,8 +309,12 @@
 }
 
 .modal-body {
-  padding: var(--spacing-md);
-  overflow-y: auto;
+  padding: var(--spacing-md) var(--spacing-lg); /* top/bottom md, sides lg */
+}
+
+.first-idea-contact-gate-dialog {
+  z-index: 95;
+  width: min(380px, calc(100vw - 2rem));
 }
 
 .first-idea-contact-backdrop {
@@ -329,15 +333,17 @@
 }
 
 .first-idea-contact-copy {
-  margin: 0;
+  margin: 0 0 10px 0;
   color: var(--color-text-secondary);
   line-height: 1.45;
   font-size: var(--font-size-sm);
+  
 }
 
 .first-idea-contact-field {
   display: grid;
   gap: calc(var(--spacing-xs) * 0.75);
+  margin: 0 0 10px 0;
 }
 
 .first-idea-contact-label {

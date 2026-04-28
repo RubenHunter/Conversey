@@ -56,5 +56,6 @@ public struct ProjectStyle
 public enum InteractionType
 {
     Chat,
-    VerticalScroll
+    VerticalScroll,
+    UserDefined
 }
