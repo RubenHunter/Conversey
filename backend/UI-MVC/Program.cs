@@ -48,7 +48,7 @@ builder.Services.AddViteServices(options =>
     options.Server.Port = 4173;
     options.Server.AutoRun = builder.Environment.IsDevelopment();
     options.Server.PackageManager = "pnpm";
-    options.ManifestPath = "manifest.json";
+    options.Manifest = "manifest.json";
 });
 
 // Add repositories
