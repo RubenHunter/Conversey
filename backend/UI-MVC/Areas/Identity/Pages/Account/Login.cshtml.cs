@@ -20,14 +20,14 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly WorkspaceContext _workspaceContext;
         private readonly ILogger<LoginModel> _logger;
 
         public LoginModel(
-            SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager,
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
             WorkspaceContext workspaceContext,
             ILogger<LoginModel> logger)
         {
@@ -109,13 +109,10 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 
             ReturnUrl = returnUrl;
         }
-
+        
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/admin");
-
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(Input.Email);
@@ -125,15 +122,39 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                     return Page();
                 }
 
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
-                if (result.Succeeded)
+                // Check if user is a ConverseyAdmin
+                if (user is ConverseyAdminUser converseyAdmin)
+                {
+                    if (_workspaceContext.CurrentWorkspace == null)
+                    {
+                        var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+                        if (result.Succeeded)
+                        {
+                            await _signInManager.SignInAsync(user, Input.RememberMe);
+                            _logger.LogInformation("ConverseyAdmin logged in.");
+                            return LocalRedirect(Url.Content("~/admin/conversey"));
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Workspace mismatch for login attempt.");
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+                    
+
+                }
+
+                // Check if user is a WorkspaceAdmin
+                if (user is WorkspaceAdminUser workspaceAdmin)
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
-                    if (workspace == null ||
-                        string.IsNullOrWhiteSpace(user.WorkspaceId.Text) ||
-                        user.WorkspaceId != workspace.Id)
+                    
+                    if (workspace == null || 
+                        workspaceAdmin.Workspace == null ||
+                        string.IsNullOrWhiteSpace(workspaceAdmin.Workspace.Id.Text) ||
+                        workspaceAdmin.Workspace.Id != workspace.Id)
                     {
                         _logger.LogWarning("Workspace mismatch for login attempt.");
                         await _signInManager.SignOutAsync();
@@ -141,19 +162,15 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         return Page();
                     }
 
-                    await _signInManager.SignInAsync(user, Input.RememberMe);
-                    _logger.LogInformation("User logged in.");
-                    return LocalRedirect(Url.Content("~/admin"));
+                    var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+                    if (result.Succeeded)
+                    {
+                        await _signInManager.SignInAsync(user, Input.RememberMe);
+                        _logger.LogInformation("WorkspaceAdmin logged in.");
+                        return LocalRedirect(Url.Content("~/admin/workspace"));
+                    }
                 }
-                if (result.RequiresTwoFactor)
-                {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-                }
-                if (result.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    return RedirectToPage("./Lockout");
-                }
+                
                 else
                 {
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");

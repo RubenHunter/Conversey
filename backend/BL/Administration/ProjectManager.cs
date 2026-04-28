@@ -69,7 +69,7 @@ public class ProjectManager: IProjectManager
         return youth;
     }
 
-    public IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId)
+    public IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId)
     {
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }

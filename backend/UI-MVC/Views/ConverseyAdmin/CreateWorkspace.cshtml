@@ -1,0 +1,7 @@
+@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Workspace>
+
+@{
+    ViewData["Title"] = "Create Workspace";
+}
+
+@await Html.PartialAsync("_WorkspaceForm", Model)
