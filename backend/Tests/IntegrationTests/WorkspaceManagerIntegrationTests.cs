@@ -45,7 +45,7 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         using var scope = _fixture.CreateScope();
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
 
-        var act = () => workspaceManager.CreateWorkspace(ManagerSeedData.WorkspaceName);
+        var act = () => workspaceManager.AddWorkspace(ManagerSeedData.WorkspaceName);
 
         Assert.Throws<ValidationException>(act);
     }
@@ -57,7 +57,7 @@ public class WorkspaceManagerIntegrationTests : IClassFixture<ManagerIntegration
         var workspaceManager = scope.ServiceProvider.GetRequiredService<IWorkspaceManager>();
         var name = $"Integration Workspace {Guid.NewGuid():N}";
 
-        var created = workspaceManager.CreateWorkspace(name);
+        var created = workspaceManager.AddWorkspace(name);
 
         Assert.Equal(Slug.FromName(name).Text, created.Id.Text);
         Assert.Equal(name, created.Name);

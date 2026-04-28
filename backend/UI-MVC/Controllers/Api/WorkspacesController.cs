@@ -39,8 +39,8 @@ public class WorkspacesController : ControllerBase
     {
         try
         {
-            var workspace = _manager.CreateWorkspace(dto.Name);
-
+            var workspace = _manager.AddWorkspace(dto.Name);
+    
             return CreatedAtAction(
                 nameof(Create),
                 new { slug = workspace.Id.Text },

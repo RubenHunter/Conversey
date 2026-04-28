@@ -13,3 +13,9 @@ public class YouthNotFoundException(Guid youthId)
     
 public class WorkspaceNotFoundException(Slug workspaceId)
     : NotFoundException($"Workspace {workspaceId}");
+    
+public class WorkspaceAdminNotFoundException(Guid workspaceAdminId)
+    : NotFoundException($"Workspace {workspaceAdminId}");
+    
+public class ConverseyAdminNotFoundException(Guid converseyAdminId)
+    : NotFoundException($"Workspace {converseyAdminId}");

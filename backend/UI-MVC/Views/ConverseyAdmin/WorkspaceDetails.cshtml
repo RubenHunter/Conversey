@@ -1,0 +1,152 @@
+@using Conversey.BL.Domain.Administration
+@using Conversey.DAL
+@using Conversey.UI_MVC.Models.Admin
+@using Microsoft.AspNetCore.Identity
+@model Conversey.UI_MVC.Models.Admin.AdminWorkspaceDetailsViewModel
+@Html.AntiForgeryToken()
+
+@{
+    ViewData["Title"] = "Workspace Details";
+    var users = Model.WorkspaceAdmins ?? [];
+
+    var tableModel = new AdminTableViewModel<WorkspaceAdmin>
+    {
+        SectionTitle = "All workspace admins",
+        TableDescription = $"Manage all admins for workspace {Model.Workspace.Name}",
+        CreateUrl = Url.Action("CreateWorkspaceAdmin", "Admin", new { workspaceId = Model.Workspace.Id.Text}),
+        CreateButtonLabel = "Create new Workspace Admin",
+        EmptyState = $"Workspace Admins for {Model.Workspace} will show up here once they are created",
+        RowId = u => u.Id.ToString(),
+
+        Items = users.ToList(),
+
+        Columns =
+        [
+            new()
+            {
+                Header = "ID",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Id.ToString());
+                    return span;
+                }
+            },
+
+            new()
+            {
+                Header = "Email",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Email.ToString() ?? "-");
+                    return span;
+                }
+            },
+
+            new()
+            {
+                Header = "Actions",
+                Template = u =>
+                {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
+                    // EDIT BUTTON
+                    var edit = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("EditWorkspaceAdmin", "Admin", new { id = u.Id })!
+                        }
+                    };
+                    edit.AddCssClass("text-blue-600 hover:underline");
+                    edit.InnerHtml.Append("Edit");
+
+                    var divider = new TagBuilder("p");
+                    divider.InnerHtml.Append("|");
+
+                    // DELETE BUTTON
+                    var delete = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-delete-id"] = u.Id.ToString(),
+                            ["data-delete-name"] = u.Email ?? "-",
+                            ["data-delete-endpoint"] = $"/admin/workspace-user/delete/{u.Id}"
+                        }
+                    };
+
+                    delete.AddCssClass("text-red-600 hover:underline");
+                    delete.InnerHtml.Append("Delete");
+
+                    container.InnerHtml.AppendHtml(edit);
+                    container.InnerHtml.AppendHtml(divider);
+                    container.InnerHtml.AppendHtml(delete);
+
+                    return container;
+                }
+            }
+
+        ]
+    };
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-4xl">
+
+        <!-- Back -->
+        <div class="mb-6">
+            <a href="@Url.Action("Workspaces", "ConverseyAdmin")"
+               class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                ← Back to workspaces
+            </a>
+        </div>
+
+        <!-- Card -->
+        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">
+                        @Model.Workspace.Name
+                    </h1>
+
+                    <p class="mt-1 text-sm text-gray-500">
+                        Project ID: @Model.Workspace.Id.Text
+                    </p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="px-6 py-6 space-y-6">
+
+                <!-- Workspace Admins -->
+                @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
+
+            </div>
+
+            <!-- Footer actions -->
+            <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+
+                <a href="@Url.Action("EditWorkspace", "ConverseyAdmin", new { id = Model.Workspace.Id.Text })"
+                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    Edit
+                </a>
+
+                <button type="button"
+                        data-delete-id="@Model.Workspace.Id.Text"
+                        data-delete-name="@Model.Workspace.Name"
+                        data-delete-endpoint="/admin/workspace/delete/@Model.Workspace.Id.Text"
+                        class="inline-flex items-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                    Delete
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_DeleteModal")

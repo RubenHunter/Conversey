@@ -8,6 +8,10 @@ public record struct Slug
 {
     public string Text;
 
+    //TODO vraag docent
+    public override string ToString() => Text;
+
+    
     public static Slug FromName(string name)
     {
         return new Slug
@@ -30,5 +34,20 @@ public class SlugTypeConverter : TypeConverter
         }
 
         return base.ConvertFrom(context, culture, value);
+    }
+
+    public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+    {
+        return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
+    }
+
+    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+    {
+        if (value is Slug s)
+        {
+            return s.Text;
+        }
+        
+        return base.ConvertTo(context, culture, value, destinationType);
     }
 }
