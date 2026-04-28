@@ -30,6 +30,7 @@ import { renderIdeasHeader } from './ideasHeader'
 import { createTopicModalController } from './topicModal'
 import { createIdeasListController } from './ideasListController'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler'
+import { createIdeaNudgeDialogController } from './ideaNudgeDialog'
 import {ProjectContext, render} from "../../main";
 
 type DiscoveryBadgeType = 'similar' | 'different'
@@ -341,6 +342,26 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
             </div>
         </div>
+
+        <div id="idea-nudge-backdrop" class="modal-backdrop idea-nudge-backdrop" hidden aria-hidden="true"></div>
+        <div id="idea-nudge-dialog" class="modal idea-nudge-dialog" role="dialog" aria-modal="true" aria-labelledby="idea-nudge-title" hidden>
+            <div class="modal-header">
+                <h3 id="idea-nudge-title">Let's deepen your idea</h3>
+                <button id="idea-nudge-close" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body idea-nudge-body">
+                <p id="idea-nudge-context" class="idea-nudge-context"></p>
+                <p id="idea-nudge-status" class="idea-nudge-status">The AI will ask one question at a time. Close the dialog to post the current version as pending review.</p>
+                <div id="idea-nudge-thread" class="idea-nudge-thread" aria-live="polite"></div>
+                <label class="idea-nudge-input-wrap" for="idea-nudge-input">
+                    <span class="idea-nudge-input-label">Your answer</span>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="Answer the AI's question..."></textarea>
+                </label>
+            </div>
+            <div class="first-idea-contact-actions idea-nudge-actions">
+                <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">Answer &amp; continue</button>
+            </div>
+        </div>
         
         <div id="first-idea-contact-gate-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
         <div id="first-idea-contact-gate-dialog" class="modal first-idea-contact-gate-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-gate-title" hidden>
@@ -428,6 +449,18 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         storageKey: firstIdeaContactStorageKey,
     })
+
+    function getNudgingContext(view: ActiveView) {
+        if (view.type !== 'topic') return null
+        const topic = topics.find((item) => item.id === view.topicId)
+        if (!topic) return null
+        return {
+            projectTitle: project.title,
+            projectDescription: project.description,
+            topicTitle: topic.title,
+            topicPrompt: topic.prompt,
+        }
+    }
 
     function resetIdeasListToTop(): void {
         list.scrollTo({top: 0, behavior: 'auto'})
@@ -725,6 +758,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     // Create controllers
     const safetyReviewDialog = createSafetyReviewDialogController({root: container})
+    const ideaNudgeDialog = createIdeaNudgeDialogController({
+        root: container,
+        workspaceSlug: params.organizationSlug,
+        projectSlug: params.projectSlug,
+        isCurrentView: () => activeView,
+        getContext: getNudgingContext,
+    })
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
@@ -793,6 +833,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         projectId: project.id,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
         reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
+        getNudgingContext,
+        runNudgingFlow: (input, view) => ideaNudgeDialog.run(input, view),
         onIdeaSubmitted: (idea, isFlagged) => {
             allIdeas.unshift(idea)
             latestSubmittedIdea = idea

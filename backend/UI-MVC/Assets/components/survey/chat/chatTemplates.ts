@@ -161,6 +161,27 @@ export const IDEATION_MODALS_HTML = `
     </div>
 </div>`
 
+    + `
+<div id="idea-nudge-backdrop" class="modal-backdrop idea-nudge-backdrop" hidden aria-hidden="true"></div>
+<div id="idea-nudge-dialog" class="modal idea-nudge-dialog" role="dialog" aria-modal="true" aria-labelledby="idea-nudge-title" hidden>
+    <div class="modal-header">
+        <h3 id="idea-nudge-title">Let’s deepen your idea</h3>
+        <button id="idea-nudge-close" class="modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body idea-nudge-body">
+        <p id="idea-nudge-context" class="idea-nudge-context"></p>
+        <p id="idea-nudge-status" class="idea-nudge-status">The AI will ask one question at a time. Close the dialog to post the current version as pending review.</p>
+        <div id="idea-nudge-thread" class="idea-nudge-thread" aria-live="polite"></div>
+        <label class="idea-nudge-input-wrap" for="idea-nudge-input">
+            <span class="idea-nudge-input-label">Your answer</span>
+            <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="Answer the AI’s question..."></textarea>
+        </label>
+    </div>
+    <div class="first-idea-contact-actions idea-nudge-actions">
+        <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">Answer &amp; continue</button>
+    </div>
+</div>`
+
 export interface ChatShellStrings {
     selectAbove: string
     magicMode: string

@@ -16,6 +16,7 @@ public class Idea
     public DateTime SubmissionDate { get; set; }
     public ModerationStatus Status { get; set; }
     public ModerationInfo ModerationInfo { get; set; }
+    public bool QualityNudgeBypassed { get; set; }
 
     public string[] SemanticCategories { get; set; } = Array.Empty<string>();
 

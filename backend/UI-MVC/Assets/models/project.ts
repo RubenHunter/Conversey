@@ -38,6 +38,7 @@ export interface Project {
     startDate?: string
     endDate?: string
     interactionType?: InteractionType
+    nudgingStrength: number
     topic?: ProjectTopic
     topics?: ProjectTopic[]
     style?: ProjectStyle

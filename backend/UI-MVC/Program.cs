@@ -137,14 +137,29 @@ builder.Services.AddScoped<IAiManager>(provider =>
         {
             ApiKey = apiKey,
             CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest"
+            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+            NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
         };
+
+        provider.GetRequiredService<AiManagerConfig>();
 
         var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
         return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
     }
 
     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new AiManagerConfig
+    {
+        ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
+        CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
+        ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+        NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
+    };
 });
 
 builder.Services.AddScoped<WorkspaceContext>();

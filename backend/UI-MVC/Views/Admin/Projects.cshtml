@@ -61,6 +61,16 @@
             },
             new()
             {
+                Header = "AI Nudging",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(p.NudgingStrength.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
                 Header = "Start Date",
                 Template = p =>
                 {

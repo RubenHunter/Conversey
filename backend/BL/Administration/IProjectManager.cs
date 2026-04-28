@@ -15,7 +15,7 @@ public interface IProjectManager
     IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
 
     Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm);
+        DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3);
 
     void EditProject(Project updatedProject);
     void RemoveProject(Slug projectId, Slug workspaceId);

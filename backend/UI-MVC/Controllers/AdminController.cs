@@ -39,7 +39,7 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
         {
             var project = projectFormViewModel.Project;
             projectManager.AddProject(workspaceContext.CurrentWorkspace.Id, project.Name, project.Description,
-                project.Status, project.StartDate, project.EndDate, project.InteractionForm);
+                project.Status, project.StartDate, project.EndDate, project.InteractionForm, project.NudgingStrength);
 
             TempData["Success"] = "Project created successfully.";
             return RedirectToAction("Projects");
@@ -182,4 +182,3 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
         }
     }
 }
-

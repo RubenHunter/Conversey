@@ -27,6 +27,7 @@ import { createSafetyReviewDialogController } from '../../ideas/safetyReviewDial
 import { createIdeaPanelController } from '../../ideas/ideaPanel'
 import { createIdeasSubmitHandler } from '../../ideas/ideasSubmitHandler'
 import { createFirstIdeaContactDialogController } from '../../ideas/firstIdeaContactDialog'
+import { createChatIdeaNudgeFlow } from '../../ideas/chatIdeaNudgeFlow'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import type { ActiveView } from '../../ideas/types'
 import { getSurveyStrings } from '../../../i18n/survey'
@@ -158,6 +159,41 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     const reviewWithSuggestion = async (orig: string, sugg: string) => {
         return safetyDialog.reviewWithSuggestion(orig, sugg)
     }
+
+    const chatNudgeFlow = createChatIdeaNudgeFlow({
+        workspaceSlug: params.organizationSlug,
+        projectSlug: params.projectSlug,
+        getActiveView: () => currentView,
+        getContext: (view) => {
+            if (view.type !== 'topic') return null
+            const topic = topics.find((item) => item.id === view.topicId)
+            if (!topic) return null
+            return {
+                projectTitle: project.title,
+                projectDescription: project.description,
+                topicTitle: topic.title,
+                topicPrompt: topic.prompt,
+            }
+        },
+        appendAssistantBubble: (text) => appendAiBubble(text),
+        appendUserBubble: (text) => {
+            const userBubble = document.createElement('div')
+            userBubble.className = 'chat-row chat-row--user'
+            userBubble.innerHTML = `<div class="chat-bubble chat-bubble--user">${esc(text)}</div>`
+            messagesEl.appendChild(userBubble)
+            scrollToBottom()
+        },
+        setInputDisabled: (disabled) => {
+            chatInput.disabled = disabled
+        },
+        setInputPlaceholder: (text) => {
+            chatInput.placeholder = text
+        },
+        clearInput: () => {
+            chatInput.value = ''
+        },
+        focusInput: () => chatInput.focus(),
+    })
 
     let listController: ReturnType<typeof createIdeasListController> | null = null
 
@@ -520,6 +556,18 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         projectId: project.id,
         reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
         reviewWithSuggestion,
+        getNudgingContext: (view) => {
+            if (view.type !== 'topic') return null
+            const topic = topics.find((item) => item.id === view.topicId)
+            if (!topic) return null
+            return {
+                projectTitle: project.title,
+                projectDescription: project.description,
+                topicTitle: topic.title,
+                topicPrompt: topic.prompt,
+            }
+        },
+        runNudgingFlow: (input, view) => chatNudgeFlow.start(input, view),
         onIdeaSubmitted: (idea: Idea) => {
             const wasFirstOwnInTopic =
                 currentView.type === 'topic' && !hasOwnIdeaInTopic(currentView.topicId)
@@ -554,6 +602,13 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         if (!text) return
         if (currentView.type !== 'topic') return
 
+        if (chatNudgeFlow.isActive()) {
+            chatNudgeFlow.submitAnswer(text)
+            chatInput.value = ''
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+            return
+        }
+
         chatInput.disabled = true
         const userBubble = document.createElement('div')
         userBubble.className = 'chat-row chat-row--user'
@@ -568,6 +623,10 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
             await submitHandler.submit(text, currentView)
         } catch {
             await appendAiBubble(t.somethingWrong)
+        } finally {
+            chatInput.disabled = false
+            chatInput.placeholder = t.shareAnother
+            chatInput.focus()
         }
     }
 
@@ -584,6 +643,5 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     await wait(200)
     await appendAiBubble(firstTopic.prompt?.trim() || `What are your thoughts on: "${firstTopic.title}"?`)
 }
-
 
 

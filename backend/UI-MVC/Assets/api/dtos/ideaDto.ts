@@ -38,6 +38,8 @@ export interface ApiIdeaDto {
     SubmissionDate?: string
     semanticCategories?: string[]
     SemanticCategories?: string[]
+    qualityNudgeBypassed?: boolean
+    QualityNudgeBypassed?: boolean
     reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
     Reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
 }
@@ -45,4 +47,5 @@ export interface ApiIdeaDto {
 export interface ApiSubmitIdeaRequestDto {
     content: string
     youthId: string
+    qualityNudgeBypassed?: boolean
 }

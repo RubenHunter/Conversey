@@ -36,6 +36,7 @@ import { createIdeaPanelController } from '../../ideas/ideaPanel'
 import { createIdeasSubmitHandler } from '../../ideas/ideasSubmitHandler'
 import { createFirstIdeaContactDialogController } from '../../ideas/firstIdeaContactDialog'
 import { createTopicModalController } from '../../ideas/topicModal'
+import { createChatIdeaNudgeFlow } from '../../ideas/chatIdeaNudgeFlow'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import type { ActiveView } from '../../ideas/types'
 import { getSurveyStrings } from '../../../i18n/survey'
@@ -770,12 +771,54 @@ export async function renderChatSurveyPage(
             return safetyDialog.reviewWithSuggestion(orig, sugg)
         }
 
+        const chatNudgeFlow = createChatIdeaNudgeFlow({
+            workspaceSlug: params.organizationSlug,
+            projectSlug: params.projectSlug,
+            getActiveView: () => activeView,
+            getContext: (view) => {
+                if (view.type !== 'topic') return null
+                const topic = topics.find((item) => item.id === view.topicId)
+                if (!topic) return null
+                return {
+                    projectTitle: project.title,
+                    projectDescription: project.description,
+                    topicTitle: topic.title,
+                    topicPrompt: topic.prompt,
+                }
+            },
+            appendAssistantBubble: (text) => appendAiBubble(text),
+            appendUserBubble: (text) => appendUserBubble(text),
+            setInputDisabled: (disabled) => {
+                chatInput.disabled = disabled
+                sendBtn.disabled = disabled
+                updateSendIcon()
+            },
+            setInputPlaceholder: (text) => { chatInput.placeholder = text },
+            clearInput: () => {
+                chatInput.value = ''
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+            },
+            focusInput: () => chatInput.focus(),
+        })
+
         let listController: ReturnType<typeof createIdeasListController> | null = null
 
         const ideaPanel = createIdeaPanelController({
             root: container,
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
             reviewWithSuggestion,
+            getNudgingContext: (view) => {
+                if (view.type !== 'topic') return null
+                const topic = topics.find((item) => item.id === view.topicId)
+                if (!topic) return null
+                return {
+                    projectTitle: project.title,
+                    projectDescription: project.description,
+                    topicTitle: topic.title,
+                    topicPrompt: topic.prompt,
+                }
+            },
+            runNudgingFlow: (input, view) => chatNudgeFlow.start(input, view),
             updateIdeaAfterSafetyReview: (idea, text, mark) =>
                 updateIdeaAfterSafetyReview(params.organizationSlug, params.projectSlug, idea.topicId, idea.id, text, mark),
             loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
@@ -802,6 +845,7 @@ export async function renderChatSurveyPage(
             root: container,
             topics,
             onSelect: (nextView) => {
+                chatNudgeFlow.cancelIfTopicChanged()
                 activeView = nextView
                 if (nextView.type === 'topic') {
                     discoveryMode = 'all'
@@ -1156,6 +1200,18 @@ export async function renderChatSurveyPage(
             projectId: project.id,
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
             reviewWithSuggestion,
+            getNudgingContext: (view) => {
+                if (view.type !== 'topic') return null
+                const topic = topics.find((item) => item.id === view.topicId)
+                if (!topic) return null
+                return {
+                    projectTitle: project.title,
+                    projectDescription: project.description,
+                    topicTitle: topic.title,
+                    topicPrompt: topic.prompt,
+                }
+            },
+            runNudgingFlow: (input, view) => chatNudgeFlow.start(input, view),
             onIdeaSubmitted: (idea: Idea) => {
                 allIdeas.unshift(idea)
                 latestSubmittedIdea = idea
@@ -1181,7 +1237,18 @@ export async function renderChatSurveyPage(
             const text = chatInput.value.trim()
             if (!text || activeView.type !== 'topic') return
 
-            deactivateInput(t.submitting)
+            if (chatNudgeFlow.isActive()) {
+                chatNudgeFlow.submitAnswer(text)
+                chatInput.value = ''
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+                return
+            }
+
+            chatInput.disabled = true
+            sendBtn.disabled = true
+            magicBtn.hidden = true
+            chatInput.placeholder = t.submitting
+            updateSendIcon()
             appendUserBubble(text)
 
             try {

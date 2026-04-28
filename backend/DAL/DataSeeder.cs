@@ -30,6 +30,7 @@ public static class DataSeeder
             Status = Status.Active,
             StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+            NudgingStrength = 3,
             InteractionForm = InteractionType.UserDefined,
             Workspace = hogeschool
         };
@@ -531,6 +532,7 @@ public static class DataSeeder
             Status = Status.Active,
             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            NudgingStrength = 4,
             InteractionForm = InteractionType.UserDefined,
             Workspace = stadLinden
         };
