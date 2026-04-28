@@ -48,6 +48,8 @@ builder.Services.AddViteServices(options =>
     options.Server.Port = 4173;
     options.Server.AutoRun = builder.Environment.IsDevelopment();
     options.Server.PackageManager = "pnpm";
+    // Force the manifest path for production
+    options.Production.ManifestPath = ".vite/manifest.json";
 });
 
 // Add repositories
