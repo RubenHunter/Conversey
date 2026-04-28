@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
@@ -11,10 +12,12 @@ namespace Conversey.UI_MVC.Controllers.Api;
 public class ProjectIdeasController : ControllerBase
 {
     private readonly IIdeaManager _ideaManager;
+    private readonly IProjectManager _projectManager;
 
-    public ProjectIdeasController(IIdeaManager ideaManager)
+    public ProjectIdeasController(IIdeaManager ideaManager, IProjectManager projectManager)
     {
         _ideaManager = ideaManager;
+        _projectManager = projectManager;
     }
 
     [HttpGet("youth/{youthId:guid}/ideas")]
@@ -49,5 +52,28 @@ public class ProjectIdeasController : ControllerBase
     public ActionResult<IReadOnlyCollection<IdeaDto>> GetIdeasByYouthQuery(Slug workspaceId, Slug projectId, [FromQuery] Guid youthId)
     {
         return GetIdeasByYouth(workspaceId, projectId, youthId);
+    }
+
+    [HttpPut("youth/{youthId:guid}")]
+    public ActionResult SaveYouthContactEmail(Slug workspaceId, Slug projectId, Guid youthId, [FromBody] Conversey.UI_MVC.Models.Dto.YouthContactEmailDto dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return BadRequest("Email is required.");
+        }
+
+        try
+        {
+            _projectManager.AddYouth(youthId, dto.Email, projectId);
+            return NoContent();
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (ValidationException e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 }

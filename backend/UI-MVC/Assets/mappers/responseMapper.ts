@@ -3,7 +3,7 @@ import type { SurveyResponse } from '../models/response.ts'
 
 export function mapSurveyResponseToApiResponseDto(response: SurveyResponse, youthId: string): ApiSurveyResponseRequestDto {
     return {
-        projectId: response.projectId,
+        projectId: { Text: response.projectId },
         youthId,
         answers: response.answers.map((answer) => ({
             questionId: answer.questionId,

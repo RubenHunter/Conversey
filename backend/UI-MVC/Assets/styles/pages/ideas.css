@@ -313,6 +313,100 @@
   overflow-y: auto;
 }
 
+.first-idea-contact-backdrop {
+  z-index: 94;
+}
+
+.first-idea-contact-dialog {
+  z-index: 95;
+  width: min(480px, calc(100vw - 2rem));
+  max-height: 88vh;
+}
+
+.first-idea-contact-body {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.first-idea-contact-copy {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  font-size: var(--font-size-sm);
+}
+
+.first-idea-contact-field {
+  display: grid;
+  gap: calc(var(--spacing-xs) * 0.75);
+}
+
+.first-idea-contact-label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.first-idea-contact-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-bg) 45%, white);
+  color: var(--color-text);
+  font-family: var(--font-primary), sans-serif;
+  font-size: var(--font-size-sm);
+  line-height: 1.42;
+  padding: calc(var(--spacing-md) * 0.55) calc(var(--spacing-md) * 0.65);
+}
+
+.first-idea-contact-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.first-idea-contact-check {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.first-idea-contact-check--remember {
+  color: var(--color-text-secondary);
+}
+
+.first-idea-contact-checkbox {
+  margin-top: 0.2rem;
+  flex: 0 0 auto;
+}
+
+.first-idea-contact-privacy-link {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.first-idea-contact-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-md) var(--spacing-md);
+}
+
+.first-idea-contact-deny {
+  color: #8a4d00;
+  background: color-mix(in srgb, #ffd999 40%, white);
+  border-color: color-mix(in srgb, #c97a00 40%, transparent);
+}
+
+.first-idea-contact-accept:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .modal-list {
   display: flex;
   flex-direction: column;
@@ -409,6 +503,131 @@
   flex-direction: column;
   overflow: hidden;
   overscroll-behavior: contain;
+  position: relative;
+}
+
+.ideas-discovery {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-md);
+  margin: 0;
+  z-index: 4;
+}
+
+.ideas-discovery-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: calc(var(--spacing-xs) * 0.82) var(--spacing-md);
+  cursor: pointer;
+}
+
+.ideas-discovery-trigger:focus,
+.ideas-discovery-trigger:hover {
+  outline: none;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, var(--color-surface));
+}
+
+.ideas-discovery-trigger:active,
+.ideas-discovery-trigger[aria-expanded="true"] {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.ideas-discovery-chevron {
+  font-size: var(--font-size-xs);
+  transition: transform var(--transition-base);
+}
+
+.ideas-discovery-trigger[aria-expanded="true"] .ideas-discovery-chevron {
+  transform: rotate(180deg);
+}
+
+.ideas-discovery-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--spacing-xs));
+  min-width: calc(var(--spacing-xl) * 8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+}
+
+.ideas-discovery-option {
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  font-size: var(--font-size-sm);
+  padding: calc(var(--spacing-xs) * 0.92) var(--spacing-sm);
+  cursor: pointer;
+}
+
+.ideas-discovery-option:hover,
+.ideas-discovery-option:focus,
+.ideas-discovery-option.selected {
+  outline: none;
+  background: color-mix(in srgb, var(--color-primary-light) 18%, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.ideas-discovery-separator {
+  margin: var(--spacing-xs) 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.ideas-discovery-section-label {
+  margin: 0;
+  padding: calc(var(--spacing-xs) * 0.5) var(--spacing-sm) calc(var(--spacing-xs) * 0.25);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ideas-discovery-badge {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.14rem 0.45rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ideas-discovery-badge--similar {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 14%, var(--color-surface));
+}
+
+.ideas-discovery-badge--opposite {
+  border-color: color-mix(in srgb, var(--color-secondary) 42%, var(--color-border));
+  color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 12%, var(--color-surface));
+}
+
+.ideas-discovery-badge:hover,
+.ideas-discovery-badge:focus {
+  outline: none;
+  filter: brightness(1.02);
 }
 
 .ideas-list {
@@ -421,6 +640,105 @@
   gap: var(--spacing-xs);
   overscroll-behavior: contain;
   scroll-snap-type: none;
+}
+
+.ideas-list--has-more {
+  padding-bottom: 14rem;
+}
+
+.ideas-load-more {
+  align-self: center;
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  padding: calc(var(--spacing-xs) * 0.9) var(--spacing-lg);
+  cursor: pointer;
+  transition: border-color var(--transition-base), background-color var(--transition-base), color var(--transition-base), transform var(--transition-base), opacity var(--transition-base);
+}
+
+.ideas-load-more:hover,
+.ideas-load-more:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-light) 16%, var(--color-surface));
+}
+
+.ideas-load-more:disabled {
+  cursor: progress;
+  opacity: 0.82;
+}
+
+.ideas-load-more-icon {
+  position: relative;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  flex: 0 0 auto;
+}
+
+.ideas-load-more-arrow {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+  font-size: 1.05rem;
+}
+
+.ideas-load-more-ring {
+  position: absolute;
+  inset: -0.28rem;
+  transform: rotate(-90deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.ideas-load-more-ring-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  stroke-width: 3;
+}
+
+.ideas-load-more-ring-fill {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 3;
+  stroke-dasharray: 87.96;
+  stroke-dashoffset: 87.96;
+  stroke-linecap: round;
+}
+
+.ideas-load-more--loading .ideas-load-more-ring {
+  opacity: 1;
+}
+
+.ideas-load-more--loading .ideas-load-more-ring-fill {
+  animation: ideas-load-more-fill 2s linear forwards;
+}
+
+.ideas-load-more-text {
+  text-align: left;
+}
+
+@keyframes ideas-load-more-fill {
+  from { stroke-dashoffset: 87.96; }
+  to { stroke-dashoffset: 0; }
+}
+
+.ideas-empty-state {
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 /* Re-enable pointer events for interactive cards */

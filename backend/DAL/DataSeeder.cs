@@ -165,118 +165,128 @@ public static class DataSeeder
         context.Answers.AddRange(mentaalAnswers);
 
         var ideas = new List<Idea>
-        {
-            new()
-            {
-                Content = "Plan elke opleidingsweek een vast 'deadlinevrij blok' zodat we minstens 1 avond zonder schoolwerk hebben.",
-                Summary = "Wekelijks deadlinevrij blok",
-                SubmissionDate = now.AddDays(-12),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[0],
-                Youth = students[0]
-            },
-            new()
-            {
-                Content = "Maak een centrale welzijnspagina in Toledo met alle hulpkanalen, openingsuren en wie je waarvoor kan contacteren.",
-                Summary = "Centrale welzijnspagina",
-                SubmissionDate = now.AddDays(-11),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[1],
-                Youth = students[1]
-            },
-            new()
-            {
-                Content = "Start per opleiding met kleine peer-support groepen van 8 studenten die tweewekelijks samenkomen.",
-                Summary = "Peer-support groepen",
-                SubmissionDate = now.AddDays(-10),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[2],
-                Youth = students[2]
-            },
-            new()
-            {
-                Content = "Voorzie tijdens examenweken stille ontspanningsruimtes met water, fruit en korte ademhalingsoefeningen.",
-                Summary = "Stille ontspanningsruimtes",
-                SubmissionDate = now.AddDays(-9),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[2],
-                Youth = students[3]
-            },
-            new()
-            {
-                Content = "Laat studenten een flexibel inhaalmoment kiezen wanneer ze overbelast zijn, zonder extra administratieve drempels.",
-                Summary = "Flexibel inhaalmoment",
-                SubmissionDate = now.AddDays(-8),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[0],
-                Youth = students[4]
-            },
-            new()
-            {
-                Content = "Organiseer elke maand een lunchsessie over stressmanagement met studentenbegeleiding en ervaringsstudenten.",
-                Summary = "Maandelijkse stress-lunch",
-                SubmissionDate = now.AddDays(-7),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[1],
-                Youth = students[5]
-            },
-            new()
-            {
-                Content = "Spreid grote groepsopdrachten beter over het semester zodat piekweken minder zwaar zijn.",
-                Summary = "Betere spreiding groepsopdrachten",
-                SubmissionDate = now.AddDays(-6),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[0],
-                Youth = students[6]
-            },
-            new()
-            {
-                Content = "Bied een stille online studie-room aan met vaste momenten en een moderator, voor wie thuis snel afgeleid is.",
-                Summary = "Online studie-room",
-                SubmissionDate = now.AddDays(-5),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[4],
-                Youth = students[7]
-            },
-            new()
-            {
-                Content = "Voor werkstudenten zou een rooster met minstens drie weken voorspelbaarheid veel mentale rust geven.",
-                Summary = "Voorspelbaar rooster",
-                SubmissionDate = now.AddDays(-4),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[3],
-                Youth = students[1]
-            },
-            new()
-            {
-                Content = "Publiceer per vak een duidelijke weekplanning met geschatte studietijd, zodat we beter kunnen inschatten wat haalbaar is.",
-                Summary = "Weekplanning met studietijd",
-                SubmissionDate = now.AddDays(-3),
-                Status = ModerationStatus.Approved,
-                ModerationInfo = new ModerationInfo(),
-                Project = mentaalWelzijnActieplan,
-                Topic = topics[0],
-                Youth = students[2]
-            }
-        };
+{
+    new()
+    {
+        Content = "Plan elke opleidingsweek een vast 'deadlinevrij blok' zodat we minstens 1 avond zonder schoolwerk hebben.",
+        Summary = "Wekelijks deadlinevrij blok",
+        SubmissionDate = now.AddDays(-12),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[0],
+        SemanticCategories = new[] { "study-load", "work-life-balance", "stress-reduction" }
+    },
+    new()
+    {
+        Content = "Maak een centrale welzijnspagina in Toledo met alle hulpkanalen, openingsuren en wie je waarvoor kan contacteren.",
+        Summary = "Centrale welzijnspagina",
+        SubmissionDate = now.AddDays(-11),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[1],
+        Youth = students[1],
+        SemanticCategories = new[] { "support-services", "campus-community", "digital-learning" }
+    },
+    new()
+    {
+        Content = "Start per opleiding met kleine peer-support groepen van 8 studenten die tweewekelijks samenkomen.",
+        Summary = "Peer-support groepen",
+        SubmissionDate = now.AddDays(-10),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[2],
+        Youth = students[2],
+        SemanticCategories = new[] { "campus-community", "mental-health", "support-services" }
+    },
+    new()
+    {
+        Content = "Voorzie tijdens examenweken stille ontspanningsruimtes met water, fruit en korte ademhalingsoefeningen.",
+        Summary = "Stille ontspanningsruimtes",
+        SubmissionDate = now.AddDays(-9),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[2],
+        Youth = students[3],
+        SemanticCategories = new[] { "mental-health", "stress-reduction", "campus-community" }
+    },
+    new()
+    {
+        Content = "Laat studenten een flexibel inhaalmoment kiezen wanneer ze overbelast zijn, zonder extra administratieve drempels.",
+        Summary = "Flexibel inhaalmoment",
+        SubmissionDate = now.AddDays(-8),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[4],
+        SemanticCategories = new[] { "flexible-learning", "study-load", "work-life-balance" }
+    },
+    new()
+    {
+        Content = "Organiseer elke maand een lunchsessie over stressmanagement met studentenbegeleiding en ervaringsstudenten.",
+        Summary = "Maandelijkse stress-lunch",
+        SubmissionDate = now.AddDays(-7),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[1],
+        Youth = students[5],
+        SemanticCategories = new[] { "mental-health", "support-services", "campus-community" }
+    },
+    new()
+    {
+        Content = "Spreid grote groepsopdrachten beter over het semester zodat piekweken minder zwaar zijn.",
+        Summary = "Betere spreiding groepsopdrachten",
+        SubmissionDate = now.AddDays(-6),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[6],
+        SemanticCategories = new[] { "study-load", "curriculum-design" }
+    },
+    new()
+    {
+        Content = "Bied een stille online studie-room aan met vaste momenten en een moderator, voor wie thuis snel afgeleid is.",
+        Summary = "Online studie-room",
+        SubmissionDate = now.AddDays(-5),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[4],
+        Youth = students[7],
+        SemanticCategories = new[] { "digital-learning", "focus-productivity", "campus-community" }
+    },
+    new()
+    {
+        Content = "Voor werkstudenten zou een rooster met minstens drie weken voorspelbaarheid veel mentale rust geven.",
+        Summary = "Voorspelbaar rooster",
+        SubmissionDate = now.AddDays(-4),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[3],
+        Youth = students[1],
+        SemanticCategories = new[] { "work-life-balance", "study-load" }
+    },
+    new()
+    {
+        Content = "Publiceer per vak een duidelijke weekplanning met geschatte studietijd, zodat we beter kunnen inschatten wat haalbaar is.",
+        Summary = "Weekplanning met studietijd",
+        SubmissionDate = now.AddDays(-3),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[2],
+        SemanticCategories = new[] { "curriculum-design", "study-load", "transparency" }
+    }
+};
 
         context.Ideas.AddRange(ideas);
 
@@ -558,7 +568,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[0],
-                Youth = cityYouths[0]
+                Youth = cityYouths[0],
+                SemanticCategories = new[] { "urban-greenery", "public-space", "climate-action" }
             },
             new()
             {
@@ -569,7 +580,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[1],
-                Youth = cityYouths[1]
+                Youth = cityYouths[1],
+                SemanticCategories = new[] { "public-space", "recreation", "youth-participation" }
             },
             new()
             {
@@ -580,7 +592,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[2],
-                Youth = cityYouths[2]
+                Youth = cityYouths[2],
+                SemanticCategories = new[] { "mobility-safety", "climate-action", "public-space" }
             },
             new()
             {
@@ -591,7 +604,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[3],
-                Youth = cityYouths[3]
+                Youth = cityYouths[3],
+                SemanticCategories = new[] { "youth-participation", "governance", "climate-action" }
             },
             new()
             {
@@ -602,7 +616,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[4],
-                Youth = cityYouths[4]
+                Youth = cityYouths[4],
+                SemanticCategories = new[] { "urban-greenery", "climate-action", "youth-participation" }
             },
             new()
             {
@@ -613,7 +628,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[1],
-                Youth = cityYouths[5]
+                Youth = cityYouths[5],
+                SemanticCategories = new[] { "recreation", "public-space", "urban-greenery" }
             },
             new()
             {
@@ -624,7 +640,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[3],
-                Youth = cityYouths[6]
+                Youth = cityYouths[6],
+                SemanticCategories = new[] { "digital-tools", "mobility-safety", "youth-participation" }
             },
             new()
             {
@@ -635,7 +652,8 @@ public static class DataSeeder
                 ModerationInfo = new ModerationInfo(),
                 Project = vergroeningEnRecreatiePlan,
                 Topic = cityTopics[2],
-                Youth = cityYouths[7]
+                Youth = cityYouths[7],
+                SemanticCategories = new[] { "mobility-safety", "urban-greenery", "public-space" }
             }
         };
 

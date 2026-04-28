@@ -1,4 +1,4 @@
-import { getOrganizationBranding } from '../organizationBranding.ts'
+import { getOrganizationBranding } from '../organizationBranding'
 
 interface RenderSurveyHeaderParams {
     organizationName: string

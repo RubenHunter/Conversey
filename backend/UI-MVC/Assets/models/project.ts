@@ -17,6 +17,7 @@ export interface ProjectTopic {
     id: number
     name: string
     context: string
+    maxBroadSelectionLoads: number
 }
 
 export interface ProjectStyle {
@@ -25,7 +26,7 @@ export interface ProjectStyle {
 }
 
 export interface Project {
-    id: number
+    id: string
     slug: string
     organizationSlug: string
     organizationName?: string

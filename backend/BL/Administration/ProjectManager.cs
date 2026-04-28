@@ -45,10 +45,23 @@ public class ProjectManager: IProjectManager
         var project = _projectRepository.ReadProjectByIdWithWorkspaceAndTopicsAndYouthAndQuestions(projectId);
         if (project == null) throw new ProjectNotFoundException(projectId);
 
+        var normalizedEmail = email?.Trim() ?? string.Empty;
+        var existingYouth = _projectRepository.ReadYouthByIdAndProjectId(token, projectId);
+        if (existingYouth != null)
+        {
+            if (ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
+            {
+                existingYouth.Email = normalizedEmail;
+                _projectRepository.UpdateYouth(existingYouth);
+            }
+
+            return existingYouth;
+        }
+
         var youth = new Youth
         {
             Id = token,
-            Email = email,
+            Email = normalizedEmail,
             Project = project
         };
         Validate(youth);
@@ -120,6 +133,23 @@ public class ProjectManager: IProjectManager
     public void RemoveProject(Slug projectId, Slug workspaceId)
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
+    }
+
+    private static bool ShouldReplaceEmail(string currentEmail, string newEmail)
+    {
+        if (IsPlaceholderEmail(newEmail)) return false;
+
+        var normalizedCurrent = currentEmail?.Trim() ?? string.Empty;
+        if (normalizedCurrent.Length == 0) return true;
+
+        return normalizedCurrent.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase) ||
+               !string.Equals(normalizedCurrent, newEmail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPlaceholderEmail(string email)
+    {
+        var normalized = email?.Trim() ?? string.Empty;
+        return normalized.Length == 0 || normalized.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase);
     }
 
 

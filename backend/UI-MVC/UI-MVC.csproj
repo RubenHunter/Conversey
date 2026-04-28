@@ -19,8 +19,8 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
 
   </ItemGroup>
-  
-  
+
+
 
   <ItemGroup>
     <Content Remove="package-lock.json" />
@@ -30,12 +30,11 @@
     <None Include="package-lock.json" />
     <None Include="package.json" />
     <None Include="tsconfig.json" />
-<!--    <Content Include="wwwroot\.vite\manifest.json" />-->
+    <!--    <Content Include="wwwroot\.vite\manifest.json" />-->
 
     <!-- Don't remove this line or your manifest.json won't be copied on publish -->
     <Content Include="wwwroot\.vite\**" />
-
-
+    
     <Content Remove="Assets\*.ico" />
     <Contenty Remove="Assets\*.svg" />
     <Content Remove="Assets\*.png" />
@@ -47,7 +46,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
-		
+
   </ItemGroup>
 
   <ItemGroup>
