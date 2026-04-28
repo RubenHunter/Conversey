@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+Console.WriteLine("DEBUG: Starting Conversey UI-MVC - VERSION 2.1 (Manifest Fix)");
 
 // Configure Forwarded Headers for Nginx
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -44,8 +45,8 @@ builder.Services.AddRazorPages()
 
 builder.Services.AddViteServices(options =>
 {
-	options.Server.Port = 4173;
-    options.Server.AutoRun = true;
+    options.Server.Port = 4173;
+    options.Server.AutoRun = builder.Environment.IsDevelopment();
     options.Server.PackageManager = "pnpm";
 });
 
