@@ -9,7 +9,7 @@ public class ProjectDto
     public Slug Id { get; set; }
     public Slug OrganizationId { get; set; }
     public string OrganizationName { get; set; }
-    public string Title { get; set; }
+    public string Name { get; set; }
     public string Description { get; set; }
     public string ImageUrl { get; set; }
     public string Status { get; set; }
@@ -33,7 +33,7 @@ public class ProjectDto
             Id = project.Id,
             OrganizationId = project.Workspace.Id,
             OrganizationName = project.Workspace.Name,
-            Title = project.Name,
+            Name = project.Name,
             Description = project.Description ?? string.Empty,
             ImageUrl = project.ImageUrl ?? string.Empty,
             Status = project.Status.ToString(),
