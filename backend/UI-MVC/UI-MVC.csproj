@@ -27,9 +27,6 @@
     <None Include="package.json" />
     <None Include="tsconfig.json" />
 
-    <!-- Zorg dat de hele wwwroot map wordt meegeleverd -->
-    <Content Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="wwwroot\.vite\**" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
