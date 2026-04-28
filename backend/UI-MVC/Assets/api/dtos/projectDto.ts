@@ -46,6 +46,8 @@ export interface ApiProjectDto {
     InteractionType?: ApiInteractionTypeDto
     interactionForm?: ApiInteractionTypeDto
     InteractionForm?: ApiInteractionTypeDto
+    language?: string
+    Language?: string
     topic?: ApiTopicDto
     Topic?: ApiTopicDto
     topics?: ApiTopicDto[]

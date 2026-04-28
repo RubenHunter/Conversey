@@ -16,6 +16,7 @@ public class ProjectDto
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string InteractionForm { get; set; }
+    public string Language { get; set; }
     public ProjectTopicDto Topic { get; set; }
     public IEnumerable<ProjectTopicDto> Topics { get; set; } = Array.Empty<ProjectTopicDto>();
 
@@ -39,6 +40,7 @@ public class ProjectDto
             StartDate = project.StartDate == default ? null : project.StartDate,
             EndDate = project.EndDate == default ? null : project.EndDate,
             InteractionForm = project.InteractionForm.ToString(),
+            Language = project.Language ?? "nl",
             Topic = firstTopic is null ? null : ProjectTopicDto.From(firstTopic),
             Topics = topics
         };

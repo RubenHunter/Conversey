@@ -1,5 +1,8 @@
 using System.ComponentModel;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ai;
@@ -7,31 +10,29 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
 using Conversey.BL.Survey;
 using Conversey.DAL;
-using Conversey.DAL.Administration;
-using Conversey.DAL.Ideation;
-using Conversey.DAL.Subplatform.Ai;
-using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Conversey.DAL.Administration;
+using Conversey.DAL.Ideation;
+using Conversey.DAL.Subplatform.Ai;
+using Conversey.DAL.Survey;
 using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
-// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages()
-    .AddRazorPagesOptions(options =>
-    {
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
-    });
+builder.Services.AddRazorPages().AddRazorPagesOptions(options =>
+{
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
+});
 
 builder.Services.AddViteServices(options =>
 {
@@ -56,7 +57,7 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("Default")
-        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+        ?? "Host=localhost;Port=3000;Database=devdb;Username=devuser;Password=devpass")
 );
 
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
@@ -85,21 +86,18 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy(viteDevCorsPolicy, policy =>
-//     {
-//         policy.WithOrigins(
-//                 "http://localhost:4173",
-//                 "https://localhost:4173",
-//                 "http://localhost:4180",
-//                 "https://localhost:7093")
-//             .AllowAnyHeader()
-//             .AllowAnyMethod()
-//             .AllowCredentials();
-//     });
-// });
-
+// Speech service
+builder.Services.AddSingleton<Conversey.BL.Speech.IMistralVoiceManager, Conversey.BL.Speech.MistralVoiceManager>();
+builder.Services.AddScoped<Conversey.BL.Speech.IMistralSpeechManager>(provider =>
+{
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    var voiceManager = provider.GetRequiredService<Conversey.BL.Speech.IMistralVoiceManager>();
+    return new Conversey.BL.Speech.MistralSpeechManager(
+        httpClient,
+        builder.Configuration["AI:Mistral:ApiKey"] ?? "",
+        voiceManager
+    );
+});
 
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
@@ -151,7 +149,6 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
-
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
@@ -174,34 +171,143 @@ app.UseHttpsRedirection();
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseCors(viteDevCorsPolicy);
-// }
-
+app.UseWebSockets();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
-
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{action=Landing}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Project}/{action=Survey}/{id?}");
 
-// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
-//app.MapFallbackToController("Index", "Home");
+// WebSocket endpoint for real-time speech-to-text — transparent proxy to Mistral.
+app.Map("/ws/speech/transcribe", async context =>
+{
+    if (!context.WebSockets.IsWebSocketRequest)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
+
+    var apiKey = app.Configuration["AI:Mistral:ApiKey"];
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsync("API key not configured");
+        return;
+    }
+
+    try
+    {
+        var model = context.Request.Query["model"].FirstOrDefault() ?? "voxtral-mini-transcribe-realtime-2602";
+        var language = context.Request.Query["language"].FirstOrDefault() ?? "nl";
+        
+        using var clientWs = await context.WebSockets.AcceptWebSocketAsync();
+        app.Logger.LogInformation("[STT] Client WebSocket connected");
+
+        using var mistralWs = new ClientWebSocket();
+        // ClientWebSocket.Options.SetRequestHeader sends the header during the HTTP upgrade handshake
+        mistralWs.Options.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+
+        var mistralWsUrl = $"wss://api.mistral.ai/v1/audio/transcriptions?model={Uri.EscapeDataString(model)}&language={Uri.EscapeDataString(language)}";
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            await mistralWs.ConnectAsync(new Uri(mistralWsUrl), cts.Token);
+            app.Logger.LogInformation("[STT] Connected to Mistral WebSocket");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "[STT] Failed to connect to Mistral WebSocket");
+            await clientWs.CloseAsync(WebSocketCloseStatus.InternalServerError, "Mistral connection failed", CancellationToken.None);
+            return;
+        }
+        
+        // Send start message
+        var startMessage = new { type = "start", model = model, language = language };
+        var startBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(startMessage));
+        await mistralWs.SendAsync(new ArraySegment<byte>(startBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+        app.Logger.LogInformation("Sent start message to Mistral");
+        
+        // Forward messages bidirectionally, collecting full frames before forwarding
+        var clientToMistral = Task.Run(async () =>
+        {
+            var buffer = new byte[65536];
+            try
+            {
+                while (clientWs.State == WebSocketState.Open && mistralWs.State == WebSocketState.Open)
+                {
+                    using var ms = new MemoryStream();
+                    WebSocketReceiveResult result;
+                    do
+                    {
+                        result = await clientWs.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                        if (result.Count > 0) ms.Write(buffer, 0, result.Count);
+                    } while (!result.EndOfMessage);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await mistralWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client closed", CancellationToken.None);
+                        break;
+                    }
+                    await mistralWs.SendAsync(ms.ToArray(), result.MessageType, true, CancellationToken.None);
+                }
+            }
+            catch
+            {
+                if (mistralWs.State == WebSocketState.Open)
+                    await mistralWs.CloseAsync(WebSocketCloseStatus.InternalServerError, "Error", CancellationToken.None);
+            }
+        });
+
+        var mistralToClient = Task.Run(async () =>
+        {
+            var buffer = new byte[65536];
+            try
+            {
+                while (clientWs.State == WebSocketState.Open && mistralWs.State == WebSocketState.Open)
+                {
+                    using var ms = new MemoryStream();
+                    WebSocketReceiveResult result;
+                    do
+                    {
+                        result = await mistralWs.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                        if (result.Count > 0) ms.Write(buffer, 0, result.Count);
+                    } while (!result.EndOfMessage);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await clientWs.CloseAsync(WebSocketCloseStatus.NormalClosure, "Mistral closed", CancellationToken.None);
+                        break;
+                    }
+                    await clientWs.SendAsync(ms.ToArray(), result.MessageType, true, CancellationToken.None);
+                }
+            }
+            catch
+            {
+                if (clientWs.State == WebSocketState.Open)
+                    await clientWs.CloseAsync(WebSocketCloseStatus.InternalServerError, "Error", CancellationToken.None);
+            }
+        });
+
+        await Task.WhenAll(clientToMistral, mistralToClient);
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsync("Error: " + ex.Message);
+    }
+});
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebSockets();
     app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
 app.Run();
-
 void InitializeDatabase(bool drop)
 {
     using (var scope = app.Services.CreateScope())
@@ -266,7 +372,7 @@ void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, stri
             user.EmailConfirmed = true;
             changed = true;
         }
-        
+
         if (user.WorkspaceId != normalizedWorkspaceId)
         {
             user.WorkspaceId = normalizedWorkspaceId;

@@ -490,3 +490,13 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# AI prompt documentation — local only, not for version control
+generation documentation/
+Magic mode documentation/
+STT_TTS_FIX.md
+STT_TTS_FIX_COMPLETE.md
+STT_EXTRA_FIX.md
+TTS-refix.md
+test_speech.cs
+UI-MVC-realtime-test/

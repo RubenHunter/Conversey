@@ -1,6 +1,7 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared'
+import { bindMicButton } from '../../services/speechService'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     let textValue = ''
@@ -35,7 +36,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                     </button>
                     <button
                         class="survey-mic-btn"
-                        title="Voice input (coming soon)"
+                        title="Voice input - Speak now"
                         id="mic-btn-${question.id}"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,9 +53,41 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         </p>
     `
 
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
+
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
     const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
+    const micBtn = wrapper.querySelector<HTMLElement>(`#mic-btn-${question.id}`)
+
+    const getLanguage = () => {
+        const el = document.querySelector<HTMLElement>('[data-survey-language]')
+        return el?.dataset.surveyLanguage || 'nl'
+    }
+
+    const getContextBias = () => {
+        const bias: string[] = []
+        if (question.text?.trim()) bias.push(question.text.trim())
+        if (question.hint?.trim()) bias.push(question.hint.trim())
+        return bias
+    }
+
+    let unbindMic = () => {}
+    if (micBtn) {
+        unbindMic = bindMicButton(micBtn, textarea, getLanguage, (text) => {
+            textarea.value = text
+            textValue = text.trim()
+
+            const errorEl = wrapper.querySelector(`#error-${question.id}`)
+            if (textValue.length > 0) errorEl?.classList.remove('show')
+
+            answerCallback?.()
+            textarea.dispatchEvent(new Event('input', { bubbles: true }))
+            textarea.dispatchEvent(new Event('change', { bubbles: true }))
+        }, getContextBias)
+    }
+
 
     function applyTextValue(nextValue: string): void {
         textValue = nextValue
@@ -112,6 +145,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             applyTextValue(typeof answer === 'string' ? answer : '')
         },
         getElement: () => wrapper,
+        destroy: () => { unbindMic() }
     }
 }
 

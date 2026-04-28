@@ -1,6 +1,6 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from './shared'
 
 export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
     let selectedOptionIds: number[] = []
@@ -35,6 +35,9 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             Please select an option to continue.
         </p>
     `
+
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
 
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')

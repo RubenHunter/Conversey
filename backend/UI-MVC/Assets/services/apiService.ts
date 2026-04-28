@@ -12,7 +12,13 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     })
 
     if (!response.ok) {
-        throw new Error(`API error ${response.status}: ${response.statusText} at ${url}`)
+        let errorBody = ''
+        try {
+            errorBody = await response.clone().text()
+        } catch {
+            // Ignore errors reading response body
+        }
+        throw new Error(`API error ${response.status}: ${response.statusText} at ${url}. Body: ${errorBody.slice(0, 200)}`)
     }
 
     if (response.status === 204) {

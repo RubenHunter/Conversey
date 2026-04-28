@@ -1,0 +1,29 @@
+@model ContactViewModel
+
+@{
+    ViewBag.Title = "Contact";
+    Layout = "_Layout";
+}
+
+@section Scripts
+{
+    @* <script type="module" vite-src="~/validation.ts"></script> *@
+}
+
+<h1>@ViewBag.Title</h1>
+
+<form asp-controller="Home" asp-action="Contact">
+    <div class="mb-3 flex flex-col">
+        <label asp-for="Subject" class="label"></label>
+        <input asp-for="Subject" class="input my-1 w-auto"/>
+        <span asp-validation-for="Subject" class="text-sm text-error"></span>
+    </div>
+
+    <div class="mb-3 flex flex-col">
+        <label asp-for="Message" class="label"></label>
+        <textarea asp-for="Message" class="textarea my-1 "></textarea>
+        <span asp-validation-for="Message" class="text-sm text-error"></span>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+</form>

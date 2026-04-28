@@ -31,6 +31,7 @@ public static class DataSeeder
             StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
             InteractionForm = InteractionType.Chat,
+            Language = "nl",
             Workspace = hogeschool
         };
         mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);

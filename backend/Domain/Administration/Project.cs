@@ -24,7 +24,10 @@ public class Project
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }
-    
+
+    [StringLength(5)]
+    public string Language { get; set; } = "nl";
+
     public IEnumerable<Topic> Topic { get; set; }
     [NotMapped]
     public ProjectStyle Style { get; set; }
