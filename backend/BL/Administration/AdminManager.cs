@@ -42,14 +42,28 @@ public class AdminManager : IAdminManager
 
     public async Task EditWorkspaceAdmin(WorkspaceAdmin workspaceAdmin)
     {
-        workspaceAdmin.Workspace = _workspaceManager.GetWorkspaceById(workspaceAdmin.Workspace.Id);
-        Validate(workspaceAdmin);
-        await _adminRepository.UpdateWorkspaceAdmin(workspaceAdmin);
+        try
+        {
+            workspaceAdmin.Workspace = _workspaceManager.GetWorkspaceById(workspaceAdmin.Workspace.Id);
+            Validate(workspaceAdmin);
+            await _adminRepository.UpdateWorkspaceAdmin(workspaceAdmin);
+        }
+        catch (KeyNotFoundException e)
+        {
+            throw new WorkspaceAdminNotFoundException(workspaceAdmin.Id);
+        }
     }
 
     public async Task RemoveWorkspaceAdmin(Guid workspaceAdminId)
     {
-        await _adminRepository.DeleteWorkspaceAdmin(workspaceAdminId);
+        try
+        {
+            await _adminRepository.DeleteWorkspaceAdmin(workspaceAdminId);
+        }
+        catch (KeyNotFoundException e)
+        {
+            throw new WorkspaceAdminNotFoundException(workspaceAdminId);
+        }
     }
     
     

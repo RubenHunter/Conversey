@@ -41,9 +41,7 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
         catch (NotFoundException e)
         {
-            //TODO 404 Page
-            Console.WriteLine(e);
-            throw;
+            return BadRequest(e);
         }
     }
 

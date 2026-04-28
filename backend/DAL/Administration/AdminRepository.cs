@@ -94,6 +94,10 @@ public class AdminRepository : IAdminRepository
     public async Task DeleteWorkspaceAdmin(Guid workspaceAdminId)
     {
         var workspaceAdmin = await _dbContext.WorkspaceAdmins.FirstOrDefaultAsync(wau => wau.Id == workspaceAdminId.ToString());
+        if (workspaceAdmin == null)
+            throw new KeyNotFoundException();
+        
+
         var result = await _userManager.DeleteAsync(workspaceAdmin);
         if (!result.Succeeded)
         {

@@ -42,7 +42,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     }
 
     [HttpGet("/admin/workspaces/{id}")]
-    public async Task<IActionResult> WorkspaceDetails(Slug id)
+    public IActionResult WorkspaceDetails(Slug id)
     {
         try
         {
@@ -74,9 +74,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         }
         catch (NotFoundException e)
         {
-            //TODO 404 Page
-            Console.WriteLine(e);
-            throw;
+            return BadRequest(e);
         }
     }
     
