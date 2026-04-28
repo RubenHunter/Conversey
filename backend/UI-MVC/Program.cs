@@ -155,21 +155,6 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// DEBUG: Print wwwroot contents
-var wwwroot = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
-Console.WriteLine($"DEBUG: Checking wwwroot at {wwwroot}");
-if (Directory.Exists(wwwroot))
-{
-    foreach (var file in Directory.GetFiles(wwwroot, "*.*", SearchOption.AllDirectories))
-    {
-        Console.WriteLine($"DEBUG: Found file: {file.Replace(wwwroot, "")}");
-    }
-}
-else
-{
-    Console.WriteLine("DEBUG: wwwroot directory NOT FOUND!");
-}
-
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
