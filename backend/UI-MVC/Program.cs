@@ -26,11 +26,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages().AddRazorPagesOptions(options =>
+{
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
+    options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
+});
 
 builder.Services.AddViteServices(options =>
 {
 	options.Server.Port = 4173;
     options.Server.AutoRun = true;
+    options.Server.PackageManager = "pnpm";
 });
 
 // Add repositories
@@ -167,15 +175,12 @@ app.UseWebSockets();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
 app.MapRazorPages();
+app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-// Fallback voor root
-app.MapFallbackToController("Index", "Home");
+    pattern: "{controller=Project}/{action=Survey}/{id?}");
 
 // WebSocket endpoint for real-time speech-to-text — transparent proxy to Mistral.
 app.Map("/ws/speech/transcribe", async context =>
@@ -297,27 +302,96 @@ app.Map("/ws/speech/transcribe", async context =>
     }
 });
 
-var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-var spaIndexFile = Path.Combine(webRootPath, "index.html");
-var useViteDevServer = app.Environment.IsDevelopment() &&
-                       builder.Configuration.GetValue("Frontend:UseViteDevServer", true);
-var viteHealthCheckedAtUtc = DateTime.MinValue;
-var viteIsAvailable = false;
-
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebSockets();
-    app.UseViteDevelopmentServer(useMiddleware: true);
+    app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
 app.Run();
-
 void InitializeDatabase(bool drop)
 {
     using (var scope = app.Services.CreateScope())
     {
-        var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
-        if (!dbCtx.CreateDatabase(drop)) return;
-        DataSeeder.Seed(dbCtx);
+        var services = scope.ServiceProvider;
+        var dbCtx = services.GetRequiredService<ConverseyDbContext>();
+        // Create database schema first (including Identity tables)
+        var created = dbCtx.CreateDatabase(drop);
+        // Then seed Identity and Roles
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        SeedIdentity(userManager, roleManager);
+        if (created)
+        {
+            DataSeeder.Seed(dbCtx);
+        }
+    }
+}
+
+void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+{
+    // Create roles if they don't exist
+    if (!roleManager.RoleExistsAsync("User").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("User")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("Admin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+    }
+
+    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
+    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
+}
+
+void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
+{
+    var normalizedWorkspaceId = Slug.FromName(workspaceId);
+    var user = userManager.FindByEmailAsync(email).Result;
+    if (user == null)
+    {
+        user = new ApplicationUser
+        {
+            Email = email,
+            UserName = email,
+            EmailConfirmed = true,
+            WorkspaceId = normalizedWorkspaceId
+        };
+        userManager.CreateAsync(user, "Test123!").Wait();
+    }
+    else
+    {
+        var changed = false;
+        if (user.UserName != email)
+        {
+            user.UserName = email;
+            changed = true;
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            changed = true;
+        }
+
+        if (user.WorkspaceId != normalizedWorkspaceId)
+        {
+            user.WorkspaceId = normalizedWorkspaceId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            userManager.UpdateAsync(user).Wait();
+        }
+
+        if (!userManager.HasPasswordAsync(user).Result)
+        {
+            userManager.AddPasswordAsync(user, "Test123!").Wait();
+        }
+    }
+
+    if (!userManager.IsInRoleAsync(user, "Admin").Result)
+    {
+        userManager.AddToRoleAsync(user, "Admin").Wait();
     }
 }
