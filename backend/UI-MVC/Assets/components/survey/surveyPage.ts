@@ -11,11 +11,9 @@ import type {ScrollNav} from '../scrollNav'
 import {renderScrollNav} from '../scrollNav'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
-import {navigate, ProjectContext, render} from "../../main";
 import {InteractionType} from '../../models/project'
 import {showLayoutPicker} from './layoutPicker'
-import { navigate, render } from "../../shared";
-import type { ProjectContext } from "../../shared";
+import {navigate, ProjectContext, render} from "../../main";
 
 const SUPPORTED_LANGUAGES = ['en', 'fr', 'nl'] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
