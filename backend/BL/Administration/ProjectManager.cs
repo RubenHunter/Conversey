@@ -69,13 +69,13 @@ public class ProjectManager: IProjectManager
         return youth;
     }
 
-    public IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId)
+    public IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId)
     {
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }
 
     public Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm)
+        DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
         
@@ -100,6 +100,7 @@ public class ProjectManager: IProjectManager
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
             InteractionForm = interactionForm,
+            NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
 
             Workspace = workspace
         };
@@ -124,6 +125,7 @@ public class ProjectManager: IProjectManager
         existing.StartDate = updatedProject.StartDate;
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
+        existing.NudgingStrength = Math.Clamp(updatedProject.NudgingStrength, 1, 5);
         existing.Workspace = updatedProject.Workspace;
         
         

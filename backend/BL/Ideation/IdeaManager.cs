@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
+using Conversey.BL.Ai;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Ideation;
-using IAiManager = Conversey.BL.Ai.IAiManager;
-using ModerationDecision = Conversey.BL.Ai.ModerationDecision;
 using System.Linq;
 
 namespace Conversey.BL.Ideation;
@@ -26,7 +26,7 @@ public class IdeaManager: IIdeaManager
         _projectManager = projectManager;
     }
 
-    public SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent)
+    public SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
@@ -43,12 +43,17 @@ public class IdeaManager: IIdeaManager
         ModerationDecision decision = EvaluateIdeaModeration(ideaContent);
 
         ModerationStatus status = decision.IsAllowed ? ModerationStatus.Approved : ModerationStatus.Pending;
+        if (qualityNudgeBypassed)
+        {
+            status = ModerationStatus.Pending;
+        }
 
         var idea = new Idea
         {
             Content = ideaContent.Trim(),
             Project = project,
             Status = status,
+            QualityNudgeBypassed = qualityNudgeBypassed,
             SubmissionDate = DateTime.UtcNow,
             Topic = topic,
             Youth = author
@@ -57,7 +62,82 @@ public class IdeaManager: IIdeaManager
         _repository.CreateIdea(idea);
         AssignSemanticCategoriesToIdea(idea, topicId);
 
-        return decision.IsAllowed ? new SubmissionResponse.Approved(idea) : new SubmissionResponse.Pending(idea, decision);
+        return decision.IsAllowed && !qualityNudgeBypassed
+            ? new SubmissionResponse.Approved(idea)
+            : new SubmissionResponse.Pending(idea, decision);
+    }
+
+    public IdeaNudgeDecision AssessIdeaNudge(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation)
+    {
+        Project project = _projectManager.GetProjectById(workspaceId, projectId);
+        Topic topic = _projectManager.GetTopic(project, topicId);
+        var nudgingStrength = Math.Clamp(project.NudgingStrength, 1, 5);
+        var maxRounds = GetMaxNudgingRounds(nudgingStrength);
+        var roundCount = conversation?.Count ?? 0;
+
+        // Guardrail against endless follow-up loops.
+        if (roundCount >= maxRounds)
+        {
+            return new IdeaNudgeDecision { IsApproved = true };
+        }
+
+        try
+        {
+            var request = new IdeaNudgeAssessmentRequest
+            {
+                ProjectTitle = project.Name,
+                ProjectDescription = project.Description,
+                TopicTitle = topic.Name,
+                TopicPrompt = topic.Context,
+                IdeaText = ideaContent,
+                Conversation = conversation ?? Array.Empty<IdeaNudgeTurn>(),
+                NudgingMode = MapStrengthToNudgingMode(nudgingStrength),
+            };
+
+            var decision = _aiManager.AssessIdeaNudge(request).GetAwaiter().GetResult();
+            if (decision == null)
+            {
+                return new IdeaNudgeDecision { IsApproved = true };
+            }
+
+            if (!decision.IsApproved && string.IsNullOrWhiteSpace(decision.Question))
+            {
+                decision.Question = "Could you make this idea a bit more specific for this topic?";
+            }
+
+            return decision;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IdeaManager] Idea nudging failed, allowing by default: {ex.Message}");
+            return new IdeaNudgeDecision { IsApproved = true };
+        }
+    }
+
+    private static int GetMaxNudgingRounds(int nudgingStrength)
+    {
+        return nudgingStrength switch
+        {
+            1 => 1,
+            2 => 1,
+            3 => 2,
+            4 => 3,
+            5 => 4,
+            _ => 2
+        };
+    }
+
+    private static string MapStrengthToNudgingMode(int nudgingStrength)
+    {
+        return nudgingStrength switch
+        {
+            1 => "Minimal",
+            2 => "Light",
+            3 => "Medium",
+            4 => "Strong",
+            5 => "Deep",
+            _ => "Medium"
+        };
     }
 
     public Idea GetIdea(Topic topic, int ideaId)

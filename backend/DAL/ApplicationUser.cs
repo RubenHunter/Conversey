@@ -1,9 +1,15 @@
+using Conversey.BL.Domain.Administration;
 using Microsoft.AspNetCore.Identity;
 using Conversey.BL.Domain.Common;
 
 namespace Conversey.DAL;
 
-public class ApplicationUser : IdentityUser
+public class ConverseyAdminUser : IdentityUser
 {
-    public Slug WorkspaceId { get; set; }
+    // Conversey-specific properties
+}
+
+public class WorkspaceAdminUser : IdentityUser
+{
+    public Workspace Workspace { get; set; }
 }

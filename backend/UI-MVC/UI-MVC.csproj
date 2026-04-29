@@ -33,13 +33,11 @@
     <Content Include="wwwroot\.vite\**" />
     
     <Content Remove="Assets\*.ico" />
-    <Contenty Remove="Assets\*.svg" />
+    <Content Remove="Assets\*.svg" />
     <Content Remove="Assets\*.png" />
     <Content Remove="Assets\*.jpg" />
     <Content Remove="Assets\*.gif" />
     <None Update="Assets\*.ico;Assets\*.svg;Assets\*.png;Assets\*.jpg;Assets\*.gif">
-      <Link>wwwroot\%(Filename)%(Extension)</Link>
-      <TargetPath>wwwroot\%(Filename)%(Extension)</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
@@ -49,6 +47,20 @@
   <ItemGroup>
     <ProjectReference Include="..\BL\BL.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Survey\SurveyView.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Contact.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Privacy.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Home\Test.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Views\WorkspaceAdmin\Index.cshtml" />
+  </ItemGroup>
+
+
 
   <!-- Ensure Node environment on Build -->
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">

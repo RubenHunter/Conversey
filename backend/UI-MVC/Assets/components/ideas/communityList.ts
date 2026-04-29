@@ -123,7 +123,7 @@ export function renderCommunityIdeasList({
             badgesWrapper.style.gap = '0.25rem'
             badgesWrapper.style.alignItems = 'center'
             
-            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || idea.qualityNudgeBypassed || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
@@ -153,7 +153,7 @@ export function renderCommunityIdeasList({
                 badgesWrapper.appendChild(yoursBadge)
             }
 
-            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || idea.qualityNudgeBypassed || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'

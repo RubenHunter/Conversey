@@ -54,10 +54,12 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
     if (typeof rawType === 'number') {
         if (rawType === 0) return InteractionType.Chat
         if (rawType === 1) return InteractionType.VerticalScroll
+        if (rawType === 2) return InteractionType.UserDefined
         return undefined
     }
 
     if (rawType === InteractionType.Chat || rawType.toLowerCase() === 'chat') return InteractionType.Chat
+    if (rawType === InteractionType.UserDefined || rawType.toLowerCase() === 'userdefined') return InteractionType.UserDefined
 
     const normalized = rawType.replace(/\s|-/g, '_').toLowerCase()
     if (normalized === 'vertical_scroll' || normalized === 'verticalscroll') {
@@ -90,6 +92,11 @@ function mapTopics(topicDtos: ApiTopicDto[] | undefined): ProjectTopic[] | undef
     return topics.length > 0 ? topics : undefined
 }
 
+function mapNudgingStrength(rawValue: number | undefined): number {
+    if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) return 3
+    return Math.min(5, Math.max(1, Math.trunc(rawValue)))
+}
+
 function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | undefined {
     if (!styleDto) return undefined
 
@@ -120,6 +127,7 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         startDate: pickString(dto.startDate, dto.StartDate),
         endDate: pickString(dto.endDate, dto.EndDate),
         interactionType: mapInteractionType(dto.interactionType ?? dto.InteractionType ?? dto.interactionForm ?? dto.InteractionForm),
+        nudgingStrength: mapNudgingStrength(dto.nudgingStrength ?? dto.NudgingStrength),
         language: pickString(dto.language, dto.Language),
         topic: mapTopic(dto.topic ?? dto.Topic) ?? topics?.[0],
         topics,

@@ -53,6 +53,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IQuestionManager, QuestionManager>();
 
+        services.AddSingleton(new AiManagerConfig());
         services.AddSingleton(_aiConfig);
         services.AddScoped<IAiManager>(_ => new TestAiManager(_aiConfig));
 
@@ -200,6 +201,11 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         public Task<ModerationDecision> ModerateContent(string content)
         {
             return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
+        }
+
+        public Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+        {
+            return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
         }
 
         public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
