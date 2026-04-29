@@ -13,10 +13,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
+public class ConverseyDbContext : IdentityDbContext
 {
     public DbSet<Workspace> Workspaces { get; set; }
-    public DbSet<WorkspaceAdmin> WorkspaceAdmins { get; set; }
+    public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
+    public DbSet<WorkspaceAdminUser> WorkspaceAdmins { get; set; }
     public DbSet<Project> Projects { get; set; }
     public DbSet<Topic> Topics { get; set; }
     public DbSet<Youth> Youths { get; set; }
@@ -68,18 +69,21 @@ public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
         
 
         // WorkspaceAdmin
-        modelBuilder.Entity<WorkspaceAdmin>()
-            .HasKey(wa => wa.Id);
+        // modelBuilder.Entity<WorkspaceAdmin>()
+        //     .HasKey(wa => wa.Id);
+        //
+        // modelBuilder.Entity<WorkspaceAdmin>()
+        //     .HasOne(wa => wa.Workspace);
 
-        modelBuilder.Entity<WorkspaceAdmin>()
-            .HasOne(wa => wa.Workspace);
+        modelBuilder.Entity<WorkspaceAdminUser>()
+            .HasOne(wa => wa.Workspace)
+            .WithMany()
+            .HasForeignKey("WorkspaceId")
+            .IsRequired();
 
-        modelBuilder.Entity<ApplicationUser>()
-            .Property(user => user.WorkspaceId)
-            .HasConversion(
-                workspaceId => workspaceId.Text,
-                value => Slug.FromName(value ?? string.Empty))
-            .HasMaxLength(128);
+        
+   
+
     }
 
     public bool CreateDatabase(bool resetDatabase)

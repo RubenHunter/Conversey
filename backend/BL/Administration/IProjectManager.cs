@@ -11,4 +11,12 @@ public interface IProjectManager
     Youth GetYouth(Project project, Guid youthId);
 
     Youth AddYouth(Guid token, string email, Slug projectId);
+    
+    IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
+
+    Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm);
+
+    void EditProject(Project updatedProject);
+    void RemoveProject(Slug projectId, Slug workspaceId);
 }

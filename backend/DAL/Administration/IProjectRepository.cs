@@ -11,4 +11,11 @@ public interface IProjectRepository
     Topic ReadTopicByIdAndProjectId(int topicId, Slug projectId);
     void CreateYouth(Youth youth);
     void UpdateYouth(Youth youth);
+    
+    IReadOnlyCollection<Project> ReadAllProjectsFromWorkspaceId(Slug workspaceId);
+    
+    void CreateProject(Project project);
+    void UpdateProject(Project project);
+    void DeleteProject(Slug projectId, Slug workspaceId);
+    void DeleteAllProjectsFromWorkspaceId(Slug workspaceId);
 }

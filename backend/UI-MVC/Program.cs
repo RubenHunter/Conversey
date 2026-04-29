@@ -19,18 +19,8 @@ using Microsoft.EntityFrameworkCore;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
-using Microsoft.AspNetCore.HttpOverrides;
-
 var builder = WebApplication.CreateBuilder(args);
-Console.WriteLine("DEBUG: Starting Conversey UI-MVC - VERSION 2.1 (Manifest Fix)");
-
-// Configure Forwarded Headers for Nginx
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -45,10 +35,9 @@ builder.Services.AddRazorPages()
 
 builder.Services.AddViteServices(options =>
 {
-    options.Server.Port = 4173;
-    options.Server.AutoRun = builder.Environment.IsDevelopment();
+	options.Server.Port = 4173;
+    options.Server.AutoRun = true;
     options.Server.PackageManager = "pnpm";
-    options.Manifest = "manifest.json";
 });
 
 // Add repositories
@@ -95,6 +84,22 @@ builder.Services.AddAuthorization(options =>
         policy.AddRequirements(new WorkspaceAdminRequirement());
     });
 });
+
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(viteDevCorsPolicy, policy =>
+//     {
+//         policy.WithOrigins(
+//                 "http://localhost:4173",
+//                 "https://localhost:4173",
+//                 "http://localhost:4180",
+//                 "https://localhost:7093")
+//             .AllowAnyHeader()
+//             .AllowAnyMethod()
+//             .AllowCredentials();
+//     });
+// });
+
 
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
@@ -146,14 +151,13 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
+
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
 );
 
 var app = builder.Build();
-
-app.UseForwardedHeaders();
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
@@ -162,27 +166,33 @@ InitializeDatabase(resetDatabaseOnStart);
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-else
-{
-app.UseHttpsRedirection();
-}
 
-app.UseStaticFiles();
+app.UseHttpsRedirection();
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
+
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseCors(viteDevCorsPolicy);
+// }
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{action=Survey}/{id?}")
+    pattern: "{controller=Project}/{action=Landing}/{id?}")
     .WithStaticAssets();
+
+// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
+//app.MapFallbackToController("Index", "Home");
 
 if (app.Environment.IsDevelopment())
 {
@@ -198,24 +208,22 @@ void InitializeDatabase(bool drop)
     {
         var services = scope.ServiceProvider;
         var dbCtx = services.GetRequiredService<ConverseyDbContext>();
+        // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
+        // Then seed Identity and Roles
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
-        if (created || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")) || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("stad-linden")))
+        if (created)
         {
-            Console.WriteLine("DEBUG: Seeding database because one of the default workspaces was not found...");
             DataSeeder.Seed(dbCtx);
-        }
-        else 
-        {
-            Console.WriteLine("DEBUG: Database already contains both default workspaces, skipping seed.");
         }
     }
 }
 
 void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
 {
+    // Create roles if they don't exist
     if (!roleManager.RoleExistsAsync("User").Result)
     {
         roleManager.CreateAsync(new IdentityRole("User")).Wait();
@@ -247,11 +255,33 @@ void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, stri
     else
     {
         var changed = false;
-        if (user.UserName != email) { user.UserName = email; changed = true; }
-        if (!user.EmailConfirmed) { user.EmailConfirmed = true; changed = true; }
-        if (user.WorkspaceId != normalizedWorkspaceId) { user.WorkspaceId = normalizedWorkspaceId; changed = true; }
-        if (changed) { userManager.UpdateAsync(user).Wait(); }
-        if (!userManager.HasPasswordAsync(user).Result) { userManager.AddPasswordAsync(user, "Test123!").Wait(); }
+        if (user.UserName != email)
+        {
+            user.UserName = email;
+            changed = true;
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            changed = true;
+        }
+        
+        if (user.WorkspaceId != normalizedWorkspaceId)
+        {
+            user.WorkspaceId = normalizedWorkspaceId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            userManager.UpdateAsync(user).Wait();
+        }
+
+        if (!userManager.HasPasswordAsync(user).Result)
+        {
+            userManager.AddPasswordAsync(user, "Test123!").Wait();
+        }
     }
 
     if (!userManager.IsInRoleAsync(user, "Admin").Result)

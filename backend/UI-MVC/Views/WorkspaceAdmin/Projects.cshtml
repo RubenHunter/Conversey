@@ -1,0 +1,153 @@
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models.Admin
+@using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model IEnumerable<Conversey.BL.Domain.Administration.Project>
+@Html.AntiForgeryToken()
+
+@{
+    ViewData["Title"] = "Projects";
+    var projects = Model ?? Array.Empty<Project>();
+
+    var tableModel = new AdminTableViewModel<Project>
+    {
+        SectionTitle = "All Projects",
+        TableDescription = "Manage all projects from one place.",
+        CreateUrl = Url.Action("CreateProject", "WorkspaceAdmin") ?? "#",
+        CreateButtonLabel = "Create new project",
+        EmptyState = "Projects will show up here once they are created.",
+        RowId = p => p.Id.Text,
+        
+        Items = projects.ToList(),
+
+        Columns =
+        [
+            new()
+            {
+                Header = "Name",
+                Template = p =>
+                {
+                    var link = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("ProjectDetails", "WorkspaceAdmin", new { id = p.Id.Text })!
+                        }
+                    };
+                    link.AddCssClass("text-indigo-600 hover:underline");
+                    link.InnerHtml.Append(p.Name ?? "-");
+                    return link;
+                }
+            },
+            new()
+            {
+                Header = "Status",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(p.Status.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Interaction Form",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(p.InteractionForm.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Start Date",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+
+                    var text = p.StartDate == default
+                        ? "-"
+                        : p.StartDate.ToString("yyyy-MM-dd");
+
+                    span.InnerHtml.Append(text);
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "End Date",
+                Template = p =>
+                {
+                    var span = new TagBuilder("span");
+
+                    var text = p.StartDate == default
+                        ? "-"
+                        : p.EndDate.ToString("yyyy-MM-dd");
+
+                    span.InnerHtml.Append(text);
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Actions",
+                Template = p =>
+                {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
+                    // EDIT BUTTON
+                    var edit = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("EditProject", "WorkspaceAdmin", new { id = p.Id.Text })!
+                        }
+                    };
+                    edit.AddCssClass("text-blue-600 hover:underline");
+                    edit.InnerHtml.Append("Edit");
+
+                    var divider = new TagBuilder("p");
+                    divider.InnerHtml.Append("|");
+                    
+                    // DELETE BUTTON
+                    var delete = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-delete-id"] = p.Id.Text,
+                            ["data-delete-name"] = p.Name ?? "-",
+                            ["data-delete-endpoint"] = $"/admin/project/delete/{p.Id.Text}"
+                        }
+                    };
+
+                    delete.AddCssClass("text-red-600 hover:underline");
+                    delete.InnerHtml.Append("Delete");
+
+                    container.InnerHtml.AppendHtml(edit);
+                    container.InnerHtml.AppendHtml(divider);
+                    container.InnerHtml.AppendHtml(delete);
+
+                    return container;
+                }
+            }
+        ]
+    };
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="mb-6">
+            <a
+                href="@Url.Action("Index", "WorkspaceAdmin")"
+                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                ← Back to admin panel
+            </a>
+        </div>
+        @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
+    </div>
+</div>
+
+@await Html.PartialAsync("_DeleteModal")
