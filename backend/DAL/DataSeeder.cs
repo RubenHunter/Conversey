@@ -16,11 +16,13 @@ public static class DataSeeder
         // =====================================================
         // Case 1: Hogeschool Nova / Actieplan Mentaal Welzijn
         // =====================================================
-        var hogeschool = new Workspace
+        if (!context.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")))
         {
-            Name = "Hogeschool Nova"
-        };
-        hogeschool.Id = Slug.FromName(hogeschool.Name);
+            var hogeschool = new Workspace
+            {
+                Name = "Hogeschool Nova"
+            };
+            hogeschool.Id = Slug.FromName(hogeschool.Name);
 
         var mentaalWelzijnActieplan = new Project
         {
@@ -405,15 +407,18 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(reactions);
+        }
 
         // =====================================================
         // Case 2: Stad Linden / Jong in een Groene Stad
         // =====================================================
-        var stadLinden = new Workspace
+        if (!context.Workspaces.Any(w => w.Id == Slug.FromName("stad-linden")))
         {
-            Name = "Stad Linden"
-        };
-        stadLinden.Id = Slug.FromName(stadLinden.Name);
+            var stadLinden = new Workspace
+            {
+                Name = "Stad Linden"
+            };
+            stadLinden.Id = Slug.FromName(stadLinden.Name);
 
         var vergroeningEnRecreatiePlan = new Project
         {
@@ -752,6 +757,7 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(cityReactions);
+        }
 
         context.SaveChanges();
     }

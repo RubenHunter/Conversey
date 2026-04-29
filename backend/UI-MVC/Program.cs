@@ -201,14 +201,14 @@ void InitializeDatabase(bool drop)
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
-        if (created || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")))
+        if (created || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")) || !dbCtx.Workspaces.Any(w => w.Id == Slug.FromName("stad-linden")))
         {
-            Console.WriteLine("DEBUG: Seeding database because hogeschool-nova was not found...");
+            Console.WriteLine("DEBUG: Seeding database because one of the default workspaces was not found...");
             DataSeeder.Seed(dbCtx);
         }
         else 
         {
-            Console.WriteLine("DEBUG: Database already contains hogeschool-nova, skipping seed.");
+            Console.WriteLine("DEBUG: Database already contains both default workspaces, skipping seed.");
         }
     }
 }
