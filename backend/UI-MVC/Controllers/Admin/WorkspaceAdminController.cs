@@ -4,16 +4,15 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Conversey.UI_MVC.Security;
 
-namespace Conversey.UI_MVC.Controllers;
-
+namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class AdminController(WorkspaceContext workspaceContext, IProjectManager projectManager) : Controller
+public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager) : Controller
 {
-    [HttpGet("/admin")]
+    [HttpGet("/admin/workspace")]
     public IActionResult Index()
     {
         return View();
@@ -29,19 +28,18 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     [HttpGet("/admin/projects/new")]
     public IActionResult CreateProject()
     {
-        return View(CreateVm(new Project{StartDate = DateTime.Today, EndDate = DateTime.Today}));
+        return View(CreateFormVm(new Project{StartDate = DateTime.Today, EndDate = DateTime.Today}));
     }
 
     [HttpPost("/admin/projects/new")]
-    public IActionResult CreateProject(ProjectFormViewModel projectFormViewModel)
+    public IActionResult CreateProject(AdminFormViewModel<Project> projectFormViewModel)
     {
         try
         {
-            var project = projectFormViewModel.Project;
+            var project = projectFormViewModel.FormItem;
             projectManager.AddProject(workspaceContext.CurrentWorkspace.Id, project.Name, project.Description,
                 project.Status, project.StartDate, project.EndDate, project.InteractionForm, project.NudgingStrength);
 
-            TempData["Success"] = "Project created successfully.";
             return RedirectToAction("Projects");
         }
         catch (NotFoundException notFoundException)
@@ -54,7 +52,7 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
             ApplyValidationExceptionToModelState(ex);
         }
 
-        return View(CreateVm(projectFormViewModel.Project));
+        return View(CreateFormVm(projectFormViewModel.FormItem));
     }
 
     [HttpGet("/admin/projects/{id}")]
@@ -65,7 +63,7 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
             var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
             return View(project);
         }
-        catch (Exception e)
+        catch (NotFoundException e)
         {
             //TODO 404 Page
             Console.WriteLine(e);
@@ -80,7 +78,7 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
         {
             var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
             
-            return View(EditVm(project));
+            return View(EditFormVm(project));
         }
         catch (NotFoundException e)
         {
@@ -91,18 +89,17 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     }
     
     [HttpPost("/admin/project/{id}")]
-    public IActionResult EditProject(Slug id, ProjectFormViewModel projectFormViewModel)
+    public IActionResult EditProject(Slug id, AdminFormViewModel<Project> projectFormViewModel)
     {
         try
         {
-            var project = projectFormViewModel.Project;
+            var project = projectFormViewModel.FormItem;
             project.Id = id;
             project.Workspace = workspaceContext.CurrentWorkspace;
             project.StartDate = project.StartDate.ToUniversalTime();
             project.EndDate = project.EndDate.ToUniversalTime();
             projectManager.EditProject(project);
 
-            TempData["Success"] = "Project edited successfully.";
             return RedirectToAction("Projects");
         }
         catch (NotFoundException notFoundException)
@@ -114,7 +111,7 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
             ApplyValidationExceptionToModelState(ex);
         }
 
-        return View(EditVm(projectFormViewModel.Project));
+        return View(EditFormVm(projectFormViewModel.FormItem));
     }
 
     [HttpPost("/admin/project/delete/{id}")]
@@ -133,25 +130,23 @@ public class AdminController(WorkspaceContext workspaceContext, IProjectManager 
     }
 
 
-    private ProjectFormViewModel CreateVm(Project project)
+    private AdminFormViewModel<Project> CreateFormVm(Project project)
     {
-        return new ProjectFormViewModel
+        return new AdminFormViewModel<Project>
         {
-            Project = project,
+            FormItem = project,
             FormAction = "CreateProject",
             SubmitLabel = "Create Project",
-            IsEdit = false
         };
     }
     
-    private ProjectFormViewModel EditVm(Project project)
+    private AdminFormViewModel<Project> EditFormVm(Project project)
     {
-        return new ProjectFormViewModel
+        return new AdminFormViewModel<Project>
         {
-            Project = project,
+            FormItem = project,
             FormAction = "EditProject",
             SubmitLabel = "Edit Project",
-            IsEdit = false
         };
     }
     

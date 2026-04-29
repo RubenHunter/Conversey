@@ -1,5 +1,6 @@
 @using Conversey.DAL
-@inject SignInManager<ApplicationUser> SignInManager
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
 }

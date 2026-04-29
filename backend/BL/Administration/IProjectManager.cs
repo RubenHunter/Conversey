@@ -12,7 +12,7 @@ public interface IProjectManager
 
     Youth AddYouth(Guid token, string email, Slug projectId);
     
-    IReadOnlyCollection<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
+    IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
 
     Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
         DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3);

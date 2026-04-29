@@ -1,0 +1,24 @@
+@{
+    ViewData["Title"] = "Admin Panel";
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
+        <p class="mt-2 text-gray-600">You are logged in as an admin.</p>
+
+        <div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold text-gray-900">Welcome</h2>
+            <p class="mt-2 text-gray-700">
+                This is the admin dashboard entry point.
+            </p>
+            <div class="mt-6 flex items-center justify-end">
+                <a
+                    href="@Url.Action("Projects", "WorkspaceAdmin")"
+                    class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Manage projects
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

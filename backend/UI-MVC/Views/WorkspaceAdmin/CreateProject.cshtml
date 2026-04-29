@@ -1,0 +1,7 @@
+@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+
+@{
+    ViewData["Title"] = "Create Project";
+}
+
+@await Html.PartialAsync("_ProjectForm", Model)
