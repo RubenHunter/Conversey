@@ -21,8 +21,8 @@ export default defineConfig(async () => {
         )
         .reduce((acc, file) => {
             const relativePath = path.relative('./Assets', file);
-            const fileName = relativePath.replace(/\\/g, '/').replace(/\.ts$/, '');
-            acc[fileName] = path.join('./Assets', relativePath);
+            const entryName = relativePath.replace(/\\/g, '/');
+            acc[entryName] = path.join('./Assets', relativePath);
             return acc;
         }, {} as Record<string, string>);
 

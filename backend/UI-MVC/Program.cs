@@ -166,9 +166,10 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 }
 
+app.UseStaticFiles();
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 
