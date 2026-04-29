@@ -13,3 +13,8 @@ public class WorkspaceAdminUser : IdentityUser
 {
     public Workspace Workspace { get; set; }
 }
+
+public class ApplicationUser : IdentityUser
+{
+    public Slug WorkspaceId { get; set; }
+}
