@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-public class ConverseyDbContext : IdentityDbContext
+public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
 {
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
