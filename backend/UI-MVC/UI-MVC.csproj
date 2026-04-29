@@ -36,7 +36,7 @@
     <Content Include="wwwroot\.vite\**" />
     
     <Content Remove="Assets\*.ico" />
-    <Contenty Remove="Assets\*.svg" />
+    <Content Remove="Assets\*.svg" />
     <Content Remove="Assets\*.png" />
     <Content Remove="Assets\*.jpg" />
     <Content Remove="Assets\*.gif" />
@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <!-- Ensure Node environment on Build -->
-  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
+  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') AND '$(SkipClientBuild)' != 'true' ">
     <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
@@ -66,7 +66,7 @@
   </Target>
 
   <!-- Build the final assets -->
-  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
+  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' AND '$(SkipClientBuild)' != 'true' ">
     <!-- Build the final assets -->
     <Exec Command="pnpm run build" />
   </Target>
