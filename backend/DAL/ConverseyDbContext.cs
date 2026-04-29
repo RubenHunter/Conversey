@@ -69,20 +69,19 @@ public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
         
 
         // WorkspaceAdmin
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasKey(wa => wa.Id);
-        //
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasOne(wa => wa.Workspace);
-
         modelBuilder.Entity<WorkspaceAdminUser>()
             .HasOne(wa => wa.Workspace)
             .WithMany()
             .HasForeignKey("WorkspaceId")
             .IsRequired();
 
-        
-   
+        // ApplicationUser
+        modelBuilder.Entity<ApplicationUser>()
+            .Property(u => u.WorkspaceId)
+            .HasConversion(
+                slug => slug.Text,
+                str => new Slug { Text = str }
+            );
 
     }
 
