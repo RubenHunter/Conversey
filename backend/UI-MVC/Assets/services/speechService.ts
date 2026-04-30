@@ -539,7 +539,7 @@ export function createSpeakerButton(
 
   function cleanup(): void {
     if (audioUrl) { URL.revokeObjectURL(audioUrl); audioUrl = null; }
-    if (player) { player.onended = null; player.onerror = null; player.pause(); player = null; }
+    if (player) { player.pause(); player = null; }
     btn.classList.remove('active');
     playing = false;
   }
@@ -556,8 +556,8 @@ export function createSpeakerButton(
       const blob = await tts.synthesizeSpeech(text, getLanguage());
       audioUrl = URL.createObjectURL(blob);
       player = new Audio(audioUrl);
-      player.onended = () => cleanup();
-      player.onerror = () => cleanup();
+      player.addEventListener('ended', cleanup, { once: true });
+      player.addEventListener('error', cleanup, { once: true });
       await player.play();
     } catch { cleanup(); }
   }
