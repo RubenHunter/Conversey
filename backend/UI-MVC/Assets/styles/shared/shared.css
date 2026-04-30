@@ -279,8 +279,8 @@ textarea.speech-processing::placeholder {
 }
 
 /* Ensure textarea remains visible when disabled/readonly */
-textarea:readonly.speech-listening,
-textarea:readonly.speech-processing {
+textarea:read-only.speech-listening,
+textarea:read-only.speech-processing {
   opacity: 1;
   background-color: transparent;
 }
