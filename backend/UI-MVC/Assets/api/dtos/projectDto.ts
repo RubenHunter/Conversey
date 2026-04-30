@@ -46,6 +46,8 @@ export interface ApiProjectDto {
     InteractionType?: ApiInteractionTypeDto
     interactionForm?: ApiInteractionTypeDto
     InteractionForm?: ApiInteractionTypeDto
+    nudgingStrength?: number
+    NudgingStrength?: number
     topic?: ApiTopicDto
     Topic?: ApiTopicDto
     topics?: ApiTopicDto[]

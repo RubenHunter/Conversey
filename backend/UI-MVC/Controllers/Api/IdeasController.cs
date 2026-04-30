@@ -1,5 +1,6 @@
 ﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Ai;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -22,12 +23,40 @@ public class IdeasController : ControllerBase
     {
         try
         {
-            SubmissionResponse response = _manager.SubmitIdea(workspaceId, projectId, topicId, idea.YouthId, idea.Content);
+            SubmissionResponse response = _manager.SubmitIdea(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(IdeaDto.From(approved.Idea)),
                 SubmissionResponse.Pending pending => new SubmissionResponseDto.Pending(IdeaDto.From(pending.Idea), pending.Decision),
                 _ => throw new InvalidOperationException("Unknown submission response type")
+            });
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpPost("nudge")]
+    public ActionResult<IdeaNudgeResponseDto> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
+    {
+        try
+        {
+            var decision = _manager.AssessIdeaNudge(
+                workspaceId,
+                projectId,
+                topicId,
+                request.IdeaText,
+                request.Conversation.Select(turn => new IdeaNudgeTurn
+                {
+                    Question = turn.Question,
+                    Answer = turn.Answer,
+                }).ToList());
+
+            return Ok(new IdeaNudgeResponseDto
+            {
+                IsApproved = decision.IsApproved,
+                Question = decision.Question,
             });
         }
         catch (NotFoundException e)

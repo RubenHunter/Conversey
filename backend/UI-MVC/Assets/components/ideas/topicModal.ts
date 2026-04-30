@@ -19,12 +19,22 @@ export function createTopicModalController({
     topics,
     onSelect,
 }: CreateTopicModalParams): TopicModalController {
-    const modal = root.querySelector<HTMLDivElement>('#topic-modal')!
-    const backdrop = root.querySelector<HTMLDivElement>('#topic-modal-backdrop')!
-    const list = root.querySelector<HTMLDivElement>('#topic-modal-list')!
-    const closeBtn = root.querySelector<HTMLButtonElement>('#topic-modal-close')!
-    const topicTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
-    const topicFloatingTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
+    const modal = root.querySelector<HTMLDivElement>('#topic-modal')
+    const backdrop = root.querySelector<HTMLDivElement>('#topic-modal-backdrop')
+    const list = root.querySelector<HTMLDivElement>('#topic-modal-list')
+    const closeBtn = root.querySelector<HTMLButtonElement>('#topic-modal-close')
+    const topicTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger')
+    const topicFloatingTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')
+
+    if (!modal || !backdrop || !list || !closeBtn || !topicTrigger || !topicFloatingTrigger) {
+        console.warn('[topicModal] Required modal elements are missing. Topic modal is disabled for this view.')
+        return {
+            open: () => {},
+            close: () => {},
+            isOpen: () => false,
+            renderTopics: () => {},
+        }
+    }
 
     let isOpen = false
     let currentInvoker: HTMLButtonElement = topicTrigger

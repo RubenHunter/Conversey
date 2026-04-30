@@ -38,7 +38,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         {
             var project = projectFormViewModel.FormItem;
             projectManager.AddProject(workspaceContext.CurrentWorkspace.Id, project.Name, project.Description,
-                project.Status, project.StartDate, project.EndDate, project.InteractionForm);
+                project.Status, project.StartDate, project.EndDate, project.InteractionForm, project.NudgingStrength);
 
             return RedirectToAction("Projects");
         }
@@ -177,4 +177,3 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 }
-

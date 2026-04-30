@@ -2,6 +2,13 @@ import { submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaServ
 import type { Idea } from '../../models/idea.ts'
 import type { ActiveView } from './types.ts'
 import type { PostSafetyDecision } from './safetyReviewDialog.ts'
+import type { IdeaNudgingContext } from '../../services/ideaService.ts'
+
+interface IdeaNudgingResult {
+    proceed: boolean
+    finalText: string
+    bypassQualityNudging: boolean
+}
 
 interface CreateIdeasSubmitHandlerParams {
     organizationSlug: string
@@ -9,6 +16,8 @@ interface CreateIdeasSubmitHandlerParams {
     projectId: string | number
     reviewBeforePost: (text: string) => Promise<PostSafetyDecision>
     reviewWithSuggestion: (original: string, suggestion: string) => Promise<PostSafetyDecision>
+    getNudgingContext?: (activeView: ActiveView) => IdeaNudgingContext | null
+    runNudgingFlow?: (input: string, activeView: ActiveView, context: IdeaNudgingContext) => Promise<IdeaNudgingResult>
     onIdeaSubmitted: (idea: Idea, flagged: boolean) => void
 }
 
@@ -22,6 +31,8 @@ export function createIdeasSubmitHandler({
     projectId,
     reviewBeforePost,
     reviewWithSuggestion,
+    getNudgingContext,
+    runNudgingFlow,
     onIdeaSubmitted,
 }: CreateIdeasSubmitHandlerParams): IdeasSubmitHandler {
     async function submit(body: string, activeView: ActiveView): Promise<boolean> {
@@ -35,6 +46,26 @@ export function createIdeasSubmitHandler({
             return false
         }
 
+        let finalBody = trimmedBody
+        let bypassQualityNudging = false
+
+        const nudgingContext = getNudgingContext?.(activeView) ?? null
+        if (nudgingContext && runNudgingFlow) {
+            try {
+                const nudgeResult = await runNudgingFlow(trimmedBody, activeView, nudgingContext)
+                if (!nudgeResult.proceed) {
+                    return false
+                }
+
+                finalBody = nudgeResult.finalText.trim()
+                bypassQualityNudging = nudgeResult.bypassQualityNudging
+            } catch (error) {
+                console.error('[ideas] nudging flow failed, continuing without nudging', error)
+            }
+        }
+
+        if (finalBody.length === 0) return false
+
         console.log('[ideas] submitting idea, waiting for AI moderation...')
 
         try {
@@ -42,15 +73,16 @@ export function createIdeasSubmitHandler({
             const result = await submitIdea(organizationSlug, projectSlug, {
                 projectId,
                 topicId: activeView.topicId,
-                body: trimmedBody,
+                body: finalBody,
                 authorType: 'self',
+                qualityNudgeBypassed: bypassQualityNudging,
             })
 
             if (result.requiresSafetyReview) {
                 // Backend flagged it — show dialog with real AI suggestion
                 console.log('[ideas] showing safety review dialog to user')
                 const suggestion = result.aiSuggestion ?? 'Please rephrase your idea in a respectful and constructive way.'
-                const reviewDecision = await reviewWithSuggestion(trimmedBody, suggestion)
+                const reviewDecision = await reviewWithSuggestion(finalBody, suggestion)
 
                 if (!reviewDecision.proceed) {
                     console.log('[ideas] user dismissed safety dialog — idea stays Pending in DB')
@@ -118,4 +150,3 @@ export function createIdeasSubmitHandler({
 
     return { submit }
 }
-

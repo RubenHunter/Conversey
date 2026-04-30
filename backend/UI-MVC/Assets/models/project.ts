@@ -9,6 +9,7 @@ export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
 export const InteractionType = {
     Chat: 'Chat',
     VerticalScroll: 'Vertical_Scroll',
+    UserDefined: 'UserDefined',
 } as const
 
 export type InteractionType = (typeof InteractionType)[keyof typeof InteractionType]
@@ -37,6 +38,7 @@ export interface Project {
     startDate?: string
     endDate?: string
     interactionType?: InteractionType
+    nudgingStrength: number
     topic?: ProjectTopic
     topics?: ProjectTopic[]
     style?: ProjectStyle

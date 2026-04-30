@@ -7,7 +7,6 @@ namespace Conversey.UI_MVC.Controllers;
 public class ProjectController : Controller
 {
     [HttpGet]
-    [HttpGet("survey")]
     public IActionResult Survey(Slug projectId)
     {
         return View();

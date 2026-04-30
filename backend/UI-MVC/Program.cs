@@ -17,6 +17,7 @@ using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -142,14 +143,40 @@ builder.Services.AddScoped<IAiManager>(provider =>
         {
             ApiKey = apiKey,
             CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest"
+            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+            NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
         };
+
+        provider.GetRequiredService<AiManagerConfig>();
 
         var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
         return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
     }
 
     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
+});
+
+builder.Services.AddSingleton<Conversey.BL.Ai.Speech.IMistralVoiceManager, Conversey.BL.Ai.Speech.MistralVoiceManager>();
+builder.Services.AddScoped<Conversey.BL.Ai.Speech.IMistralSpeechManager>(provider =>
+{
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    var voiceManager = provider.GetRequiredService<Conversey.BL.Ai.Speech.IMistralVoiceManager>();
+    return new Conversey.BL.Ai.Speech.MistralSpeechManager(
+        httpClient,
+        voiceManager
+    );
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new AiManagerConfig
+    {
+        ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
+        CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
+        ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+        NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
+    };
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
@@ -178,6 +205,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
+    RequestPath = "/Assets"
+});
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
 

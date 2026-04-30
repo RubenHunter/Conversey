@@ -23,6 +23,7 @@ export interface Idea {
     createdAt: string
     reactions: IdeaReactionSummary[]
     pendingReview: boolean
+    qualityNudgeBypassed: boolean
     semanticCategories: string[]
 }
 
@@ -31,4 +32,5 @@ export interface SubmitIdeaRequest {
     topicId: number
     body: string
     authorType: IdeaAuthorType
+    qualityNudgeBypassed?: boolean
 }

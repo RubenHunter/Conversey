@@ -25,6 +25,9 @@ public class Project
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }
     
+    [Range(1, 5)]
+    public int NudgingStrength { get; set; } = 3;
+    
     public IEnumerable<Topic> Topic { get; set; }
     [NotMapped]
     public ProjectStyle Style { get; set; }
@@ -56,5 +59,6 @@ public struct ProjectStyle
 public enum InteractionType
 {
     Chat,
-    VerticalScroll
+    VerticalScroll,
+    UserDefined
 }

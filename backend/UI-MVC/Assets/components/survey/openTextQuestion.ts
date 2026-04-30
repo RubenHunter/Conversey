@@ -1,6 +1,7 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared'
+import {generateQuestionHeader, initQuestionSpeakerForWrapper} from './shared'
+import { bindMicButton, getSpeechLanguage } from '../../services/speechService'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     let textValue = ''
@@ -33,11 +34,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                         </svg>
                         <span class="survey-magic-btn-text">Magic Mode</span>
                     </button>
-                    <button
-                        class="survey-mic-btn"
-                        title="Voice input (coming soon)"
-                        id="mic-btn-${question.id}"
-                    >
+                    <button class="survey-mic-btn" title="Voice input - Speak now" id="mic-btn-${question.id}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z"/>
@@ -56,6 +53,29 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
 
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
+
+    const micBtn = wrapper.querySelector<HTMLElement>(`#mic-btn-${question.id}`)
+
+    const getContextBias = () => {
+        const bias: string[] = []
+        if (question.text?.trim()) bias.push(question.text.trim())
+        if (question.hint?.trim()) bias.push(question.hint.trim())
+        return bias
+    }
+    
+    let unbindMic = () => {}
+    if (micBtn) {
+        unbindMic = bindMicButton(micBtn, textarea, getSpeechLanguage, (text) => {
+            textarea.value = text
+            textValue = text.trim()
+            answerCallback?.()
+            textarea.dispatchEvent(new Event('input', { bubbles: true }))
+            textarea.dispatchEvent(new Event('change', { bubbles: true }))
+        }, getContextBias)
+    }
+    
     function applyTextValue(nextValue: string): void {
         textValue = nextValue
         textarea.value = textValue
@@ -112,6 +132,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             applyTextValue(typeof answer === 'string' ? answer : '')
         },
         getElement: () => wrapper,
+        destroy: () => { unbindMic() }
     }
 }
 
