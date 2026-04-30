@@ -167,14 +167,28 @@
   border: none;
   background: transparent;
   color: var(--color-text-muted);
-  opacity: 0.6;
-  cursor: not-allowed;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2px;
   align-self: flex-end;
   margin-bottom: 2px;
+  transition: color var(--transition-base), background-color var(--transition-base);
+}
+
+.chat-speaker-btn:hover:not(:disabled) {
+  color: var(--color-text);
+  background-color: var(--color-disabled-bg);
+}
+
+.chat-speaker-btn.active {
+  color: var(--color-primary);
+}
+
+.chat-speaker-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .chat-speaker-icon {
@@ -526,6 +540,16 @@
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
+}
+
+.chat-send-btn.recording {
+  background-color: #ef4444;
+  animation: chatSendBtnPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes chatSendBtnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
 .chat-send-btn svg {
