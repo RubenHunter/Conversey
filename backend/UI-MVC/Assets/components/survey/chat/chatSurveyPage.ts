@@ -48,6 +48,7 @@ import {
     SPEAKER_SVG,
     renderChatShellTemplate,
 } from './chatTemplates'
+import { getSTTManager, createSpeakerButton, type SpeakerButtonController } from '../../../services/speechService'
 
 interface OpenTextState {
     questionIndex: number
@@ -172,6 +173,8 @@ export async function renderChatSurveyPage(
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
     let activeSendHandler: (() => void | Promise<void>) | null = null
+    const bubbleSpeakerControllers: SpeakerButtonController[] = []
+    let isChatRecording = false
 
     // ===== Progress =====
     function updateProgress(): void {
@@ -253,9 +256,14 @@ export async function renderChatSurveyPage(
         const speakerBtn = document.createElement('button')
         speakerBtn.className = 'chat-speaker-btn'
         speakerBtn.type = 'button'
-        speakerBtn.disabled = true
         speakerBtn.setAttribute('aria-label', t.readAloud)
         speakerBtn.innerHTML = SPEAKER_SVG
+        const speakerController = createSpeakerButton(
+            speakerBtn,
+            () => text,
+            () => document.querySelector<HTMLElement>('[data-survey-language]')?.dataset.surveyLanguage ?? 'nl',
+        )
+        bubbleSpeakerControllers.push(speakerController)
 
         let bubbleOrWrapper: HTMLElement = bubbleEl
 
@@ -432,6 +440,7 @@ export async function renderChatSurveyPage(
     }
 
     function deactivateInput(placeholder = ''): void {
+        stopChatRecording()
         activeSendHandler = null
         chatInput.disabled = true
         chatInput.value = ''
@@ -442,6 +451,34 @@ export async function renderChatSurveyPage(
         updateSendIcon()
     }
 
+    function startChatRecording(): void {
+        if (isChatRecording) return
+        isChatRecording = true
+        sendBtn.classList.add('recording')
+        const stt = getSTTManager()
+        const language = document.querySelector<HTMLElement>('[data-survey-language]')?.dataset.surveyLanguage ?? 'nl'
+        stt.setupCallbacks({
+            onStateChange: (state) => {
+                if (state === 'idle' || state === 'error') {
+                    isChatRecording = false
+                    sendBtn.classList.remove('recording')
+                    updateSendIcon()
+                }
+            },
+        })
+        stt.start(chatInput, language, () => { updateSendIcon() }).catch(() => {
+            isChatRecording = false
+            sendBtn.classList.remove('recording')
+        })
+    }
+
+    function stopChatRecording(): void {
+        if (!isChatRecording) return
+        isChatRecording = false
+        sendBtn.classList.remove('recording')
+        getSTTManager().stop()
+    }
+
     chatInput.addEventListener('input', () => {
         updateSendIcon()
         chatInput.style.height = 'auto'
@@ -449,7 +486,15 @@ export async function renderChatSurveyPage(
     })
 
     sendBtn.addEventListener('click', () => {
-        void activeSendHandler?.()
+        if (isChatRecording) {
+            stopChatRecording()
+            return
+        }
+        if (chatInput.value.trim().length > 0) {
+            void activeSendHandler?.()
+            return
+        }
+        startChatRecording()
     })
 
     chatInput.addEventListener('keydown', (e) => {
@@ -1360,6 +1405,11 @@ export async function renderChatSurveyPage(
         await appendAiBubble(firstTopic.prompt?.trim() || `What are your thoughts on: "${firstTopic.title}"?`)
         activateIdeaInput(t.shareIdea, handleIdeaSubmit)
     }
+
+    window.addEventListener('app:before-navigate', () => {
+        stopChatRecording()
+        bubbleSpeakerControllers.forEach(c => c.stop())
+    }, { once: true })
 
     // ===== Start conversation =====
     if (startInIdeasMode) {
