@@ -1,5 +1,5 @@
 import { QuestionType, type Question } from '../../models/question'
-import { getTTSManager } from '../../services/speechService'
+import { createSpeakerButton } from '../../services/speechService'
 
 function escapeHtml(value: string): string {
     return value
@@ -64,93 +64,14 @@ export function initQuestionSpeakerForWrapper(wrapper: HTMLElement): void {
     const speakerBtn = wrapper.querySelector<HTMLButtonElement>('.survey-speaker-btn');
     if (!speakerBtn) return;
 
+    const questionText = speakerBtn.dataset.questionText || '';
+    const questionId = speakerBtn.dataset.questionId || '';
+    if (!questionText || !questionId) return;
+
     const getLanguage = () => {
         const el = document.querySelector<HTMLElement>('[data-survey-language]');
         return el?.dataset.surveyLanguage || 'nl';
     };
 
-    const questionText = speakerBtn.dataset.questionText || '';
-    const questionId = speakerBtn.dataset.questionId || '';
-
-    if (!questionText || !questionId) return;
-
-    initQuestionSpeaker(speakerBtn, questionText, questionId, getLanguage());
-}
-
-function initQuestionSpeaker(speakerButtonHtml: HTMLButtonElement, text: string, questionId: string, language: string = 'nl'): void {
-    const tts = getTTSManager();
-    let modelIsSpeaking = false;
-    let player: HTMLAudioElement | null = null;
-    let audioUrl: string | null = null;
-
-    function cleanupAudio(): void {
-        if (audioUrl) {
-            URL.revokeObjectURL(audioUrl);
-            audioUrl = null;
-        }
-        if (player) {
-            player.onended = null;
-            player.onerror = null;
-            player.pause();
-            player = null;
-        }
-    }
-
-    speakerButtonHtml.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const modelWasSpeaking = modelIsSpeaking;
-        modelIsSpeaking = !modelIsSpeaking;
-
-        if (!modelWasSpeaking) {
-            // Show active state on button only (no text status)
-            speakerButtonHtml.classList.add('active');
-
-            try {
-                // Fetch audio inside click handler to maintain user gesture context
-                cleanupAudio();
-                const audioBlob = await tts.synthesizeSpeech(text, language);
-                player = new Audio();
-                audioUrl = URL.createObjectURL(audioBlob);
-                player.src = audioUrl;
-
-                player.onended = () => {
-                    cleanupAudio();
-                    speakerButtonHtml.classList.remove('active');
-                    modelIsSpeaking = false;
-                };
-                player.onerror = () => {
-                    cleanupAudio();
-                    speakerButtonHtml.classList.remove('active');
-                    modelIsSpeaking = false;
-                };
-
-                // Play must happen in direct response to user gesture
-                const playPromise = player.play();
-
-                if (playPromise !== undefined) {
-                    await playPromise.catch(() => {
-                        cleanupAudio();
-                        speakerButtonHtml.classList.remove('active');
-                        modelIsSpeaking = false;
-                    });
-                }
-
-                // Fallback cleanup
-                setTimeout(() => {
-                    if (player && !player.ended) {
-                        cleanupAudio();
-                        speakerButtonHtml.classList.remove('active');
-                        modelIsSpeaking = false;
-                    }
-                }, text.length * 200);
-            } catch (err) {
-                cleanupAudio();
-                speakerButtonHtml.classList.remove('active');
-                modelIsSpeaking = false;
-            }
-        } else {
-            cleanupAudio();
-            speakerButtonHtml.classList.remove('active');
-        }
-    });
+    createSpeakerButton(speakerBtn, () => questionText, getLanguage);
 }
