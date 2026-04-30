@@ -519,6 +519,58 @@ export class TTSManager {
 }
 
 // ============================================================================
+// Speaker Button
+// ============================================================================
+
+export interface SpeakerButtonController {
+  stop(): void
+  setDisabled(disabled: boolean): void
+}
+
+export function createSpeakerButton(
+  btn: HTMLButtonElement,
+  getText: () => string,
+  getLanguage: () => string = () => SPEECH_CONFIG.DEFAULT_LANGUAGE
+): SpeakerButtonController {
+  const tts = getTTSManager();
+  let playing = false;
+  let player: HTMLAudioElement | null = null;
+  let audioUrl: string | null = null;
+
+  function cleanup(): void {
+    if (audioUrl) { URL.revokeObjectURL(audioUrl); audioUrl = null; }
+    if (player) { player.onended = null; player.onerror = null; player.pause(); player = null; }
+    btn.classList.remove('active');
+    playing = false;
+  }
+
+  async function handleClick(e: Event): Promise<void> {
+    e.preventDefault();
+    if (playing) { cleanup(); return; }
+    const text = getText().trim();
+    if (!text) return;
+
+    btn.classList.add('active');
+    playing = true;
+    try {
+      const blob = await tts.synthesizeSpeech(text, getLanguage());
+      audioUrl = URL.createObjectURL(blob);
+      player = new Audio(audioUrl);
+      player.onended = () => cleanup();
+      player.onerror = () => cleanup();
+      await player.play();
+    } catch { cleanup(); }
+  }
+
+  btn.addEventListener('click', handleClick);
+
+  return {
+    stop: cleanup,
+    setDisabled: (disabled: boolean) => { btn.disabled = disabled; },
+  };
+}
+
+// ============================================================================
 // Bind Mic Button
 // ============================================================================
 
