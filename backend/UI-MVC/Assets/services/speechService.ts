@@ -10,9 +10,6 @@ const SPEECH_CONFIG = {
   TRANSCRIBE_INTERVAL_MS: 2000,
   MIN_AUDIO_SIZE: 60000,
   DOT_ANIMATION_INTERVAL_MS: 500,
-  TRANSCRIBE_MODEL: 'voxtral-mini-latest',
-  TTS_MODEL: 'voxtral-mini-tts-latest',
-  DEFAULT_LANGUAGE: 'nl',
   AUDIO_TIMEOUT_MS: 200,
   MIN_INITIAL_DURATION_MS: 5000,
   MIN_CONTINUE_DURATION_MS: 2000,
@@ -102,7 +99,7 @@ function getBestMimeType(): string | undefined {
 // API Functions
 // ============================================================================
 
-async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE, contextBias: string[] = []): Promise<string> {
+async function transcribe(audio: Blob, language: string, contextBias: string[] = []): Promise<string> {
   const audioBase64 = (await toBase64(audio)).split(',')[1];
   const mimeType = audio.type || 'audio/webm';
   try {
@@ -117,7 +114,7 @@ async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_
   }
 }
 
-async function synthesize(text: string, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): Promise<Blob> {
+async function synthesize(text: string, language: string): Promise<Blob> {
   try {
     const response = await fetch('/api/speech/synthesize', {
       method: 'POST',
@@ -144,12 +141,12 @@ export class STTManager {
   private recorder: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
   private chunks: Blob[] = [];
-  private language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE;
+  private language: string = getSpeechLanguage();
   private contextBias: string[] = [];
   private callbacks: SpeechCallbacks = {};
   private textareaRef: HTMLTextAreaElement | HTMLInputElement | null = null;
   private timerTextElement: HTMLElement | null = null;
-  
+
   private isStopping = false;
   private isTranscribing = false;
   private hasFirstTranscription = false;
@@ -157,7 +154,7 @@ export class STTManager {
   private startTimeMs: number | null = null;
   private hadExistingText = false;
   private originalText = '';
-  
+
   private dotCount = 0;
   private lastDotUpdate = 0;
   private transcribeInterval: number | null = null;
@@ -174,7 +171,7 @@ export class STTManager {
 
   async start(
     textarea: HTMLTextAreaElement | HTMLInputElement,
-    language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE,
+    language: string = getSpeechLanguage(),
     onText?: (text: string) => void,
     contextBias: string[] = []
   ): Promise<void> {
@@ -189,14 +186,9 @@ export class STTManager {
     this.hasFirstTranscription = false;
     this.dotCount = 0;
     this.lastDotUpdate = 0;
-    
+
     if (onText) this.callbacks.onText = onText;
-    
-    if (!this.timerTextElement && this.textareaRef?.parentElement) {
-      const timerEl = this.textareaRef.parentElement.querySelector('.survey-mic-btn .timer-text');
-      if (timerEl) this.timerTextElement = timerEl as HTMLElement;
-    }
-    
+
     this.setState('listening');
     this.chunks = [];
     this.isStopping = false;
@@ -262,16 +254,10 @@ export class STTManager {
     }
     if (this.recorder?.state === 'recording') {
       this.recorder.requestData();
-      // Small delay to ensure final chunk is processed
       setTimeout(() => this.recorder?.stop(), 300);
     } else {
       this.recorder?.stop();
     }
-  }
-
-  toggle(textarea: HTMLTextAreaElement | HTMLInputElement, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): void {
-    if (this.recorder?.state !== 'inactive') this.stop();
-    else this.start(textarea, language);
   }
 
   destroy(): void {
@@ -282,6 +268,7 @@ export class STTManager {
   // --------------------------------------------------------------------------
   // Private Methods
   // --------------------------------------------------------------------------
+
   private blockTextarea(): void {
     if (!this.textareaRef) return;
     (this.textareaRef as HTMLTextAreaElement).readOnly = true;
@@ -306,7 +293,7 @@ export class STTManager {
         : text;
     this.textareaRef.dispatchEvent(new Event('change', { bubbles: true }));
     this.textareaRef.dispatchEvent(new Event('input', { bubbles: true }));
-    
+
     if (this.callbacks.onText) {
       this.callbacks.onText(this.textareaRef.value);
     }
@@ -318,9 +305,26 @@ export class STTManager {
       : SPEECH_CONFIG.MIN_INITIAL_DURATION_MS;
   }
 
+  private getListeningPlaceholder(): string {
+    const dots = '.'.repeat(this.dotCount)
+    switch (this.language) {
+      case 'fr': return `J'écoute${dots}`
+      case 'en': return `Listening${dots}`
+      default:   return `Luister${dots}`
+    }
+  }
+
+  private getProcessingPlaceholder(): string {
+    switch (this.language) {
+      case 'fr': return 'Traitement...'
+      case 'en': return 'Processing...'
+      default:   return 'Verwerken...'
+    }
+  }
+
   private updateTextareaFeedback(): void {
     if (!this.textareaRef) return;
-    
+
     const requiredMs = this.getRequiredDurationMs();
     const seconds = Math.floor(this.totalRecordedMs / 1000);
     const now = Date.now();
@@ -330,11 +334,11 @@ export class STTManager {
         this.dotCount = (this.dotCount + 1) % 4;
         this.lastDotUpdate = now;
       }
-      this.textareaRef.placeholder = `I listen${'.'.repeat(this.dotCount)}`;
+      this.textareaRef.placeholder = this.getListeningPlaceholder();
       this.textareaRef.classList.add('speech-listening');
       this.textareaRef.classList.remove('speech-processing');
     } else {
-      this.textareaRef.placeholder = 'Verwerken...';
+      this.textareaRef.placeholder = this.getProcessingPlaceholder();
       this.textareaRef.classList.remove('speech-listening');
       this.textareaRef.classList.add('speech-processing');
     }
@@ -352,7 +356,7 @@ export class STTManager {
 
   private async transcribeWindow(): Promise<void> {
     if (this.isTranscribing || this.isStopping || this.chunks.length === 0 || !this.textareaRef) return;
-    
+
     const requiredMs = this.getRequiredDurationMs();
     if (this.totalRecordedMs < requiredMs) return;
 
@@ -377,12 +381,12 @@ export class STTManager {
     this.transcribeInterval && clearInterval(this.transcribeInterval);
     this.progressInterval && clearInterval(this.progressInterval);
     this.timerInterval && clearInterval(this.timerInterval);
-    
+
     this.stream?.getTracks().forEach(t => t.stop());
     this.stream = null;
     this.recorder?.stop();
     this.recorder = null;
-    
+
     this.chunks = [];
     this.totalRecordedMs = 0;
     this.isStopping = false;
@@ -392,13 +396,13 @@ export class STTManager {
     this.originalText = '';
     this.dotCount = 0;
     this.lastDotUpdate = 0;
-    
+
     if (this.timerTextElement) {
       this.timerTextElement.textContent = '';
       this.timerTextElement.classList.remove('timer-blink');
       this.timerTextElement = null;
     }
-    
+
     this.unblockTextarea();
   }
 
@@ -412,14 +416,14 @@ export class STTManager {
 
   private updateTimerText(): void {
     if (!this.startTimeMs || !this.timerTextElement) return;
-    
+
     const elapsedMs = Date.now() - this.startTimeMs;
     const remainingMs = Math.max(0, SPEECH_CONFIG.MAX_RECORDING_DURATION_MS - elapsedMs);
     const seconds = Math.ceil(remainingMs / 1000);
-    
+
     this.timerTextElement.textContent = `${seconds}s`;
     this.timerTextElement.classList.toggle('timer-blink', seconds <= 10);
-    
+
     if (remainingMs <= 0 && !this.isStopping) this.stop();
   }
 }
@@ -433,7 +437,7 @@ export class TTSManager {
   private audioUrl: string | null = null;
   private callbacks: SpeechCallbacks = {};
 
-  async start(text: string, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): Promise<void> {
+  async start(text: string, language: string = getSpeechLanguage()): Promise<void> {
     this.stop();
     this.setState('speaking');
 
@@ -459,7 +463,7 @@ export class TTSManager {
     this.callbacks = {};
   }
 
-  synthesizeSpeech(text: string, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): Promise<Blob> {
+  synthesizeSpeech(text: string, language: string = getSpeechLanguage()): Promise<Blob> {
     return synthesize(text, language);
   }
 
