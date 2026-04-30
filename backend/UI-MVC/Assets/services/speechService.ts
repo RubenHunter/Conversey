@@ -112,7 +112,6 @@ async function transcribe(audio: Blob, language: string = SPEECH_CONFIG.DEFAULT_
 
 async function synthesize(text: string, language: string = SPEECH_CONFIG.DEFAULT_LANGUAGE): Promise<Blob> {
   try {
-    // Use apiFetch to ensure consistent base URL (/api prefix)
     const response = await fetch('/api/speech/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
