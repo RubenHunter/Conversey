@@ -25,6 +25,7 @@ import { createIdeaPanelController } from './ideaPanel'
 import { createSafetyReviewDialogController } from './safetyReviewDialog'
 import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
 import { renderIdeasComposer } from './composer'
+import { bindMicButton, createSpeakerButton, type SpeakerButtonController } from '../../services/speechService'
 import type { ActiveView } from './types.ts'
 import { renderIdeasHeader } from './ideasHeader'
 import { createTopicModalController } from './topicModal'
@@ -185,6 +186,12 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </button>
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
+                                <button id="ideas-prompt-speaker" class="survey-speaker-btn"
+                                        title="Lees voor" aria-label="Lees vraag voor" disabled>
+                                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
@@ -424,6 +431,18 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
     const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
+    const promptSpeakerBtn = container.querySelector<HTMLButtonElement>('#ideas-prompt-speaker')!
+    const getLanguage = () => 'nl'
+    const unbindMic = bindMicButton(speakBtn, textarea, getLanguage, (text) => {
+        textarea.value = text
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+        submitBtn.disabled = textarea.value.trim().length === 0
+    })
+    const promptSpeaker: SpeakerButtonController = createSpeakerButton(
+        promptSpeakerBtn,
+        () => prompt.textContent ?? '',
+        getLanguage
+    )
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const ideasShell = container.querySelector<HTMLDivElement>('.ideas-shell')!
@@ -813,6 +832,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         topics,
         onSelect: (nextView) => {
+            promptSpeaker.stop()
             activeView = nextView
             if (nextView.type === 'topic') {
                 discoveryMode = 'all'
@@ -933,6 +953,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             ideasCompose,
             composeTopic: topicTriggerValue,
             prompt,
+            promptSpeakerBtn,
             textarea,
             submitBtn,
             magicBtn,
@@ -1138,6 +1159,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     // Cleanup on navigation
     window.addEventListener('app:before-navigate', () => {
+        unbindMic()
+        promptSpeaker.stop()
         listController?.cleanup()
         resizeObserver.disconnect()
         discoveryRequestToken += 1
