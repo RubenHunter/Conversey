@@ -156,6 +156,17 @@ builder.Services.AddScoped<IAiManager>(provider =>
     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
 });
 
+builder.Services.AddSingleton<Conversey.BL.Ai.Speech.IMistralVoiceManager, Conversey.BL.Ai.Speech.MistralVoiceManager>();
+builder.Services.AddScoped<Conversey.BL.Ai.Speech.IMistralSpeechManager>(provider =>
+{
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
+    var voiceManager = provider.GetRequiredService<Conversey.BL.Ai.Speech.IMistralVoiceManager>();
+    return new Conversey.BL.Ai.Speech.MistralSpeechManager(
+        httpClient,
+        voiceManager
+    );
+});
+
 builder.Services.AddSingleton(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
