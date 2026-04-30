@@ -1,7 +1,7 @@
 import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
 import {generateQuestionHeader, initQuestionSpeakerForWrapper} from './shared'
-import { bindMicButton } from '../../services/speechService'
+import { bindMicButton, getSpeechLanguage } from '../../services/speechService'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     let textValue = ''
@@ -58,11 +58,6 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const micBtn = wrapper.querySelector<HTMLElement>(`#mic-btn-${question.id}`)
 
-    const getLanguage = () => {
-        const el = document.querySelector<HTMLElement>('[data-survey-language]')
-        return el?.dataset.surveyLanguage || 'nl'
-    }
-    
     const getContextBias = () => {
         const bias: string[] = []
         if (question.text?.trim()) bias.push(question.text.trim())
@@ -72,7 +67,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     
     let unbindMic = () => {}
     if (micBtn) {
-        unbindMic = bindMicButton(micBtn, textarea, getLanguage, (text) => {
+        unbindMic = bindMicButton(micBtn, textarea, getSpeechLanguage, (text) => {
             textarea.value = text
             textValue = text.trim()
             answerCallback?.()

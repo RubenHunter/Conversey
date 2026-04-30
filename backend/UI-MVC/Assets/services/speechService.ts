@@ -20,6 +20,13 @@ const SPEECH_CONFIG = {
   TIMER_UPDATE_INTERVAL_MS: 100,
 } as const;
 
+export function getSpeechLanguage(): string {
+  const lang = navigator.language.toLowerCase()
+  if (lang.startsWith('en')) return 'en'
+  if (lang.startsWith('fr')) return 'fr'
+  return 'nl'
+}
+
 const PRIORITY_MIME_TYPES = [
   'audio/wav',
   'audio/wav;codecs=pcm',
@@ -530,7 +537,7 @@ export interface SpeakerButtonController {
 export function createSpeakerButton(
   btn: HTMLButtonElement,
   getText: () => string,
-  getLanguage: () => string = () => SPEECH_CONFIG.DEFAULT_LANGUAGE
+  getLanguage: () => string = getSpeechLanguage
 ): SpeakerButtonController {
   const tts = getTTSManager();
   let playing = false;

@@ -48,7 +48,7 @@ import {
     SPEAKER_SVG,
     renderChatShellTemplate,
 } from './chatTemplates'
-import { getSTTManager, createSpeakerButton, type SpeakerButtonController } from '../../../services/speechService'
+import { getSTTManager, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../../services/speechService'
 
 interface OpenTextState {
     questionIndex: number
@@ -258,11 +258,7 @@ export async function renderChatSurveyPage(
         speakerBtn.type = 'button'
         speakerBtn.setAttribute('aria-label', t.readAloud)
         speakerBtn.innerHTML = SPEAKER_SVG
-        const speakerController = createSpeakerButton(
-            speakerBtn,
-            () => text,
-            () => document.querySelector<HTMLElement>('[data-survey-language]')?.dataset.surveyLanguage ?? 'nl',
-        )
+        const speakerController = createSpeakerButton(speakerBtn, () => text, getSpeechLanguage)
         bubbleSpeakerControllers.push(speakerController)
 
         let bubbleOrWrapper: HTMLElement = bubbleEl
@@ -456,7 +452,7 @@ export async function renderChatSurveyPage(
         isChatRecording = true
         sendBtn.classList.add('recording')
         const stt = getSTTManager()
-        const language = document.querySelector<HTMLElement>('[data-survey-language]')?.dataset.surveyLanguage ?? 'nl'
+        const language = getSpeechLanguage()
         stt.setupCallbacks({
             onStateChange: (state) => {
                 if (state === 'idle' || state === 'error') {

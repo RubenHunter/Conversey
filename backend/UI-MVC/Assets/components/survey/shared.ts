@@ -1,5 +1,5 @@
 import { QuestionType, type Question } from '../../models/question'
-import { createSpeakerButton } from '../../services/speechService'
+import { createSpeakerButton, getSpeechLanguage } from '../../services/speechService'
 
 function escapeHtml(value: string): string {
     return value
@@ -68,10 +68,5 @@ export function initQuestionSpeakerForWrapper(wrapper: HTMLElement): void {
     const questionId = speakerBtn.dataset.questionId || '';
     if (!questionText || !questionId) return;
 
-    const getLanguage = () => {
-        const el = document.querySelector<HTMLElement>('[data-survey-language]');
-        return el?.dataset.surveyLanguage || 'nl';
-    };
-
-    createSpeakerButton(speakerBtn, () => questionText, getLanguage);
+    createSpeakerButton(speakerBtn, () => questionText, getSpeechLanguage);
 }

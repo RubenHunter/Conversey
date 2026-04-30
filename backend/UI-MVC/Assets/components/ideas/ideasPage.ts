@@ -25,7 +25,7 @@ import { createIdeaPanelController } from './ideaPanel'
 import { createSafetyReviewDialogController } from './safetyReviewDialog'
 import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
 import { renderIdeasComposer } from './composer'
-import { bindMicButton, createSpeakerButton, type SpeakerButtonController } from '../../services/speechService'
+import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../services/speechService'
 import type { ActiveView } from './types.ts'
 import { renderIdeasHeader } from './ideasHeader'
 import { createTopicModalController } from './topicModal'
@@ -432,8 +432,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
     const promptSpeakerBtn = container.querySelector<HTMLButtonElement>('#ideas-prompt-speaker')!
-    const getLanguage = () => 'nl'
-    const unbindMic = bindMicButton(speakBtn, textarea, getLanguage, (text) => {
+    const unbindMic = bindMicButton(speakBtn, textarea, getSpeechLanguage, (text) => {
         textarea.value = text
         textarea.dispatchEvent(new Event('input', { bubbles: true }))
         submitBtn.disabled = textarea.value.trim().length === 0
@@ -441,7 +440,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const promptSpeaker: SpeakerButtonController = createSpeakerButton(
         promptSpeakerBtn,
         () => prompt.textContent ?? '',
-        getLanguage
+        getSpeechLanguage
     )
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
