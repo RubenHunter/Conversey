@@ -192,5 +192,13 @@ public sealed class NoopAiManager : IAiManager
             .Where(char.IsLetterOrDigit)
             .ToArray());
     }
+
+    public Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+        => Task.FromResult<IReadOnlyList<string>>(new[] { "noop phrase 1", "noop phrase 2", "noop phrase 3" });
 }
 

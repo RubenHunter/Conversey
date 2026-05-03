@@ -77,4 +77,27 @@ public class MockAiManager : IAiManager
 
         return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
     }
+
+    public Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+
+        var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+        var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+
+        var sentences = transcript
+            .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
+            .Take(maxPhrases)
+            .ToList()
+            .AsReadOnly();
+        return Task.FromResult<IReadOnlyList<string>>(sentences);
+    }
 }

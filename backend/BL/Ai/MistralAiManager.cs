@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Ideation;
@@ -11,12 +12,14 @@ public sealed class MistralAiManager : IAiManager
     private readonly HttpClient _httpClient;
     private readonly string _completionsModel;
     private readonly string _moderationModel;
+    private readonly string _keyPhraseModel;
 
     public MistralAiManager(HttpClient httpClient, AiManagerConfig config)
     {
         _httpClient = httpClient;
         _completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
         _moderationModel = string.IsNullOrWhiteSpace(config.ModerationModel) ? "mistral-moderation-latest" : config.ModerationModel;
+        _keyPhraseModel = string.IsNullOrWhiteSpace(config.KeyPhraseModel) ? "mistral-small-latest" : config.KeyPhraseModel;
     }
 
     public void Dispose()
@@ -537,5 +540,201 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
                info.DangerousAndCriminalContent ||
                info.SelfHarm ||
                info.Pii;
+    }
+
+    public async Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+            return Array.Empty<string>();
+
+        // Build user prompt using StringBuilder to avoid raw string literal issues
+        var userPrompt = new StringBuilder();
+        userPrompt.AppendLine($"From the following {language} speech transcript, extract EXACTLY up to {maxPhrases} unique, meaningful key phrases.");
+        userPrompt.AppendLine();
+        
+        userPrompt.AppendLine("### CONTEXT:");
+        userPrompt.AppendLine($"Existing concepts (do NOT repeat or paraphrase): {JsonSerializer.Serialize(existingPhrases ?? new List<string>())}");
+        userPrompt.AppendLine($"Rejected concepts (NEVER suggest, even as synonyms): {JsonSerializer.Serialize(rejectedPhrases ?? new List<string>())}");
+        userPrompt.AppendLine();
+        
+        userPrompt.AppendLine("### STRICT RULES:");
+        userPrompt.AppendLine("1. **Role**: Act as a meeting note-taker. Convert spoken words into brief, meaningful notes.");
+        userPrompt.AppendLine("2. **Content**: ONLY extract substantive opinions, observations, or actionable points. Skip:");
+        userPrompt.AppendLine("   - All greetings: \"hallo\", \"hi\", \"hey\", \"hoi\"");
+        userPrompt.AppendLine("   - All filler: \"oke\", \"dus\", \"eigenlijk\", \"ik vind dat\", \"ik bedoel\", \"kijk\", \"ja\", \"nee\", \"wel\", \"even\"");
+        userPrompt.AppendLine("   - All conversation starters: \"Wanneer ik...\", \"Als ik...\", \"Wat als...\"");
+        userPrompt.AppendLine("   - All acknowledgments: \"keigoed\", \"goed\", \"fijn\", \"mooi\", \"leuk\"");
+        userPrompt.AppendLine("   - All speech artifacts: \"eh\", \"hmm\", \"oh\", \"ah\", \"tja\"");
+        userPrompt.AppendLine("3. **Length**: Each phrase MUST be 2-5 words (inclusive). No exceptions.");
+        userPrompt.AppendLine("4. **Uniqueness**: Remove ALL duplicate or near-duplicate phrases (case-insensitive).");
+        userPrompt.AppendLine("5. **Semantic Check**: If a phrase means the same as an existing or rejected concept (even with different wording), SKIP it.");
+        userPrompt.AppendLine($"6. **Language**: Maintain the original {language} language in all phrases.");
+        userPrompt.AppendLine("7. **New Only**: Only extract concepts NOT already in existing or rejected lists.");
+        userPrompt.AppendLine("8. **Format**: Return ONLY a JSON object with format: {\"phrases\": [\"phrase 1\", \"phrase 2\"]}");
+        userPrompt.AppendLine("   - No markdown, no explanations, no additional fields");
+        userPrompt.AppendLine("   - Empty array if no valid new concepts: {\"phrases\": []}");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### EXAMPLES:");
+        userPrompt.AppendLine("Example 1 (Dutch):");
+        userPrompt.AppendLine("Transcript: \"Ik vind dat de toegang tot mental health zorg echt verbeterd moet worden. Ook de wachtlijsten zijn veel te lang.\"");
+        userPrompt.AppendLine("Output: {\"phrases\": [\"Improve mental health access\", \"Reduce waiting lists\"]}");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("Example 2 (Dutch):");
+        userPrompt.AppendLine("Transcript: \"Hallo, hoe gaat het? Ik ben het helemaal eens met het vorige punt.\"");
+        userPrompt.AppendLine("Output: {\"phrases\": []}");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("Example 3 (English):");
+        userPrompt.AppendLine("Transcript: \"The system should support real-time collaboration. Users need to see each other's cursors.\"");
+        userPrompt.AppendLine("Output: {\"phrases\": [\"Support real-time collaboration\", \"Show user cursors\"]}");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### TRANSCRIPT:");
+        userPrompt.Append(transcript);
+
+        var payload = new
+        {
+            model = _keyPhraseModel,
+            temperature = 0.1,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new {
+                    role = "system",
+                    content = "You are a professional note-taking assistant. You ALWAYS return valid JSON. " +
+                             "Extract concise, meaningful key phrases from spoken language as if taking meeting notes. " +
+                             "Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings."
+                },
+                new {
+                    role = "user",
+                    content = userPrompt.ToString()
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral key phrase extraction failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+
+        if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        // Extract content - handle both string and direct JSON object responses
+        JsonElement contentElement;
+        try
+        {
+            var message = choices[0].GetProperty("message");
+            contentElement = message.GetProperty("content");
+        }
+        catch (Exception)
+        {
+            return Array.Empty<string>();
+        }
+
+        // Handle JSON mode response (may already be parsed as object with phrases array)
+        if (contentElement.ValueKind == JsonValueKind.Object &&
+            contentElement.TryGetProperty("phrases", out var phrasesArray) &&
+            phrasesArray.ValueKind == JsonValueKind.Array)
+        {
+            return ParseAndCleanPhrases(phrasesArray, existingPhrases, rejectedPhrases, maxPhrases);
+        }
+
+        // Handle string response (fallback for non-JSON mode or older Mistral versions)
+        var contentString = contentElement.GetString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(contentString))
+        {
+            return Array.Empty<string>();
+        }
+
+        // Strip markdown code fences if present
+        var raw = contentString.Trim();
+        if (raw.StartsWith("```json") || raw.StartsWith("```"))
+        {
+            var lines = raw.Split('\n');
+            raw = string.Join("\n", lines.Skip(1).Take(lines.Length - 2)).Trim();
+        }
+
+        // Try to parse as JSON with phrases array
+        try
+        {
+            using var innerDoc = JsonDocument.Parse(raw);
+            if (innerDoc.RootElement.ValueKind == JsonValueKind.Object &&
+                innerDoc.RootElement.TryGetProperty("phrases", out var phrasesProp) &&
+                phrasesProp.ValueKind == JsonValueKind.Array)
+            {
+                return ParseAndCleanPhrases(phrasesProp, existingPhrases, rejectedPhrases, maxPhrases);
+            }
+            // Direct array format fallback
+            if (innerDoc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                return ParseAndCleanPhrases(innerDoc.RootElement, existingPhrases, rejectedPhrases, maxPhrases);
+            }
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<string>();
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private IReadOnlyList<string> ParseAndCleanPhrases(
+        JsonElement phrasesArray,
+        IReadOnlyList<string> existingPhrases,
+        IReadOnlyList<string> rejectedPhrases,
+        int maxPhrases)
+    {
+        var phrases = new List<string>();
+
+        foreach (var element in phrasesArray.EnumerateArray())
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                var phrase = element.GetString()?.Trim() ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(phrase))
+                {
+                    phrases.Add(phrase);
+                }
+            }
+        }
+
+        // Post-processing for quality and constraints
+        // 1. Filter by word count (2-5 words)
+        var cleaned = phrases
+            .Where(p => p.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length is >= 2 and <= 5)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // 2. Filter out existing and rejected phrases
+        if (existingPhrases?.Count > 0)
+        {
+            cleaned = cleaned
+                .Where(p => !existingPhrases.Any(ep => string.Equals(p, ep, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+        if (rejectedPhrases?.Count > 0)
+        {
+            cleaned = cleaned
+                .Where(p => !rejectedPhrases.Any(rp => string.Equals(p, rp, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+        return cleaned
+            .Take(maxPhrases)
+            .ToList()
+            .AsReadOnly();
     }
 }

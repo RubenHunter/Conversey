@@ -12,4 +12,11 @@ public interface IAiManager : IChatClient
         IReadOnlyList<string> ideas,
         IReadOnlyList<string> existingCategories,
         int maxCategoriesPerIdea);
+
+    Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null);
 }

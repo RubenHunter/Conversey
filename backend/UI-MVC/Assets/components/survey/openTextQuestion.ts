@@ -2,6 +2,7 @@ import type { Question } from '../../models/question.ts'
 import type { QuestionComponent } from './singleChoiceQuestion.ts'
 import {generateQuestionHeader, initQuestionSpeakerForWrapper} from './shared'
 import { bindMicButton, getSpeechLanguage } from '../../services/speechService'
+import { createMagicModeModal } from './magicMode'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     let textValue = ''
@@ -27,7 +28,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                 ></textarea>
 
                 <div class="survey-textarea-actions">
-                    <button class="survey-magic-btn" title="Answer in Magic Mode (coming soon)">
+                    <button class="survey-magic-btn" title="Answer in Magic Mode">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
@@ -57,6 +58,26 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     initQuestionSpeakerForWrapper(wrapper)
 
     const micBtn = wrapper.querySelector<HTMLElement>(`#mic-btn-${question.id}`)
+
+    const modal = createMagicModeModal()
+
+    if (magicBtn) {
+        magicBtn.title = 'Answer in Magic Mode'
+        magicBtn.removeAttribute('disabled')
+
+        magicBtn.addEventListener('click', () => {
+            const questionText = wrapper.querySelector<HTMLElement>('.survey-question-text')?.textContent ?? ''
+            modal.open(questionText, (finalText) => {
+                if (finalText.trim()) {
+                    applyTextValue(finalText)
+                    answerCallback?.()
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }))
+                }
+            })
+        })
+    }
+
+    window.addEventListener('app:before-navigate', () => { modal.destroy() }, { once: true })
 
     const getContextBias = () => {
         const bias: string[] = []
@@ -132,7 +153,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             applyTextValue(typeof answer === 'string' ? answer : '')
         },
         getElement: () => wrapper,
-        destroy: () => { unbindMic() }
+        destroy: () => { unbindMic(); modal.destroy() }
     }
 }
 
