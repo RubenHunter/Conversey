@@ -144,6 +144,7 @@ builder.Services.AddScoped<IAiManager>(provider =>
             ApiKey = apiKey,
             CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
             ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+            KeyPhraseModel = config["AI:Mistral:KeyPhraseModel"] ?? "mistral-small-latest",
             NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
         };
 
@@ -175,6 +176,7 @@ builder.Services.AddSingleton(sp =>
         ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
         CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
         ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+        KeyPhraseModel = config["AI:Mistral:KeyPhraseModel"] ?? "mistral-small-latest",
         NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
     };
 });

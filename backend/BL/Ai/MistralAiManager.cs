@@ -11,12 +11,14 @@ public sealed class MistralAiManager : IAiManager
     private readonly HttpClient _httpClient;
     private readonly string _completionsModel;
     private readonly string _moderationModel;
+    private readonly string _keyPhraseModel;
 
     public MistralAiManager(HttpClient httpClient, AiManagerConfig config)
     {
         _httpClient = httpClient;
         _completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
         _moderationModel = string.IsNullOrWhiteSpace(config.ModerationModel) ? "mistral-moderation-latest" : config.ModerationModel;
+        _keyPhraseModel = string.IsNullOrWhiteSpace(config.KeyPhraseModel) ? "mistral-small-latest" : config.KeyPhraseModel;
     }
 
     public void Dispose()
@@ -537,5 +539,99 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
                info.DangerousAndCriminalContent ||
                info.SelfHarm ||
                info.Pii;
+    }
+
+    public async Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+            return Array.Empty<string>();
+
+        var existingLine = existingPhrases?.Count > 0
+            ? $"Concepts already captured (do not repeat or paraphrase): {JsonSerializer.Serialize(existingPhrases)}"
+            : "Concepts already captured: none";
+
+        var rejectedLine = rejectedPhrases?.Count > 0
+            ? $"Concepts dismissed by user (never suggest, even rephrased): {JsonSerializer.Serialize(rejectedPhrases)}"
+            : "Concepts dismissed: none";
+
+        var prompt = $"""
+            You extract distinct opinion concepts from a survey speech transcript.
+
+            {existingLine}
+            {rejectedLine}
+
+            Extract up to {maxPhrases} genuinely NEW concepts not already covered above.
+
+            Rules:
+            - Only extract substantive opinions or observations — things the speaker actually believes or notices.
+            - Skip filler words, conversation starters, and speech artifacts (e.g. "oké", "dus", "ik vind eigenlijk dat", "eigenlijk", "hmm", "ja dus").
+            - Skip incomplete or cut-off phrases that don't form a meaningful concept on their own.
+            - Semantic coverage: if a candidate means the same thing as an already-captured concept — even with different wording — it is NOT new. Skip it.
+            - Dismissed concepts: never suggest again, not even as synonyms or paraphrases.
+            - Each phrase: 2–5 words, concise and specific.
+            - Return ONLY a JSON array: ["phrase one","phrase two"]
+            - Return [] if no substantive new concept exists.
+
+            Language: {language}
+            Transcript: {transcript}
+            """;
+
+        var payload = new
+        {
+            model = _keyPhraseModel,
+            temperature = 0.1,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "user",
+                    content = prompt
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral key phrase extraction failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+
+        if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<string>();
+        }
+
+        // Strip markdown code fences if present
+        var raw = content.Trim();
+        if (raw.StartsWith("```"))
+        {
+            var lines = raw.Split('\n');
+            raw = string.Join("\n", lines.Skip(1).Take(lines.Length - 2));
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<string[]>(raw) ?? Array.Empty<string>();
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<string>();
+        }
     }
 }

@@ -170,7 +170,7 @@ export class STTManager {
   }
 
   async start(
-    textarea: HTMLTextAreaElement | HTMLInputElement,
+    textarea: HTMLTextAreaElement | HTMLInputElement | null,
     language: string = getSpeechLanguage(),
     onText?: (text: string) => void,
     contextBias: string[] = []
@@ -286,16 +286,15 @@ export class STTManager {
   }
 
   private notifyText(text: string, isFinal: boolean = false): void {
-    if (!this.textareaRef) return;
-
-    this.textareaRef.value = isFinal && this.hadExistingText
-        ? this.originalText + ' ' + text
-        : text;
-    this.textareaRef.dispatchEvent(new Event('change', { bubbles: true }));
-    this.textareaRef.dispatchEvent(new Event('input', { bubbles: true }));
-
-    if (this.callbacks.onText) {
-      this.callbacks.onText(this.textareaRef.value);
+    if (this.textareaRef) {
+      this.textareaRef.value = isFinal && this.hadExistingText
+          ? this.originalText + ' ' + text
+          : text;
+      this.textareaRef.dispatchEvent(new Event('change', { bubbles: true }));
+      this.textareaRef.dispatchEvent(new Event('input', { bubbles: true }));
+      this.callbacks.onText?.(this.textareaRef.value);
+    } else {
+      this.callbacks.onText?.(text);
     }
   }
 
@@ -355,7 +354,7 @@ export class STTManager {
   }
 
   private async transcribeWindow(): Promise<void> {
-    if (this.isTranscribing || this.isStopping || this.chunks.length === 0 || !this.textareaRef) return;
+    if (this.isTranscribing || this.isStopping || this.chunks.length === 0) return;
 
     const requiredMs = this.getRequiredDurationMs();
     if (this.totalRecordedMs < requiredMs) return;

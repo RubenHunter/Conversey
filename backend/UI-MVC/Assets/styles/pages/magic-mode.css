@@ -1,0 +1,96 @@
+.magic-mode-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 96;
+    background: var(--backdrop-bg);
+    backdrop-filter: blur(var(--backdrop-blur));
+    animation: magic-mode-backdrop-in 0.2s ease-out forwards;
+}
+
+.magic-mode-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 97;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    animation: magic-mode-dialog-in 0.22s ease-out forwards;
+}
+
+@media (min-width: 640px) {
+    .magic-mode-dialog {
+        inset: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(640px, calc(100vw - 2rem));
+        max-height: min(88svh, 88vh);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-lg);
+    }
+}
+
+.magic-mode-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.magic-mode-dialog-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.magic-mode-dialog-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.magic-mode-bubble-area {
+    flex: 1;
+    min-height: 8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow-y: auto;
+}
+
+@layer components {
+    .magic-mode-badge-enter {
+        animation: magic-mode-fade-in 0.2s ease-out;
+    }
+}
+
+@keyframes magic-mode-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes magic-mode-dialog-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 640px) {
+    @keyframes magic-mode-dialog-in {
+        from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
+        to   { opacity: 1; transform: translate(-50%, -50%); }
+    }
+}
+
+@keyframes magic-mode-fade-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+}
