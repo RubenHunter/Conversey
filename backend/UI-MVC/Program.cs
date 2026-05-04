@@ -59,6 +59,9 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
+// Add health checks for Docker
+builder.Services.AddHealthChecks();
+
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -183,6 +186,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+app.MapHealthChecks("/health");
 
 app.MapStaticAssets();
 
