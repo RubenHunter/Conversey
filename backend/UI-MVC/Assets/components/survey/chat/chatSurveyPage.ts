@@ -717,8 +717,16 @@ export async function renderChatSurveyPage(
                     projectId: params.projectSlug,
                     answers,
                 })
-                localStorage.setItem(completedKey, 'true')
-                clearSurveyProgress(projectSlugKey)
+                 localStorage.setItem(completedKey, 'true')
+                 clearSurveyProgress(projectSlugKey)
+                 
+                 // Lock all survey answers to prevent further editing
+                 for (let i = 0; i <= confirmedUpToIndex && i < components.length; i++) {
+                     components[i].lock()
+                 }
+                 lockSurveyHistory()
+                 deactivateInput()
+                
                 submitRow.remove()
 
                 const successRow = document.createElement('div')
@@ -752,6 +760,19 @@ export async function renderChatSurveyPage(
                 if (control instanceof HTMLButtonElement || control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) {
                     control.disabled = true
                 }
+            })
+            
+            // Explicitly force contenteditable to false on bubbles
+            el.querySelectorAll<HTMLElement>('[contenteditable="true"]').forEach((bubble) => {
+                bubble.contentEditable = 'false'
+                bubble.removeAttribute('contenteditable')
+            })
+            
+            // Remove click handlers from editable bubbles to prevent editing
+            el.querySelectorAll<HTMLElement>('.chat-bubble--editable').forEach((bubble) => {
+                // Clone and replace to remove all event listeners
+                const newBubble = bubble.cloneNode(true) as HTMLElement
+                bubble.parentNode?.replaceChild(newBubble, bubble)
             })
         })
     }
@@ -1508,56 +1529,56 @@ export async function renderChatSurveyPage(
             await appendAiBubble(project.description, { animated: false })
         }
 
-        // Quick replay of answered questions (no animation)
-        for (let i = 0; i < resumeAt && i < questions.length; i++) {
-            const q = questions[i]
-            await appendAiBubble(q.text, {
-                animated: false,
-                bubbleClass: 'chat-bubble--question-title',
-                questionNum: i + 1,
-                required: q.isRequired,
-            })
+         // Quick replay of answered questions (no animation)
+         for (let i = 0; i < resumeAt && i < questions.length; i++) {
+             const q = questions[i]
+             await appendAiBubble(q.text, {
+                 animated: false,
+                 bubbleClass: 'chat-bubble--question-title',
+                 questionNum: i + 1,
+                 required: q.isRequired,
+             })
 
-            // For open text questions, show as clickable editable bubble
-            if (q.type === QuestionType.OpenText) {
-                const answer = components[i].getAnswer()
-                const displayText = formatAnswerForDisplay(q, answer)
-                
-                // Always show a bubble for open text (filled or empty) so it can be edited
-                const row = document.createElement('div')
-                row.className = 'chat-row chat-row--user'
-                const bubble = document.createElement('div')
-                bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                bubble.textContent = displayText || '\u200B' // Use zero-width space if empty to maintain bubble height
-                row.appendChild(bubble)
-                bubble.addEventListener('click', createEditHandler(i, bubble))
-                messagesEl.appendChild(row)
-            } else {
-                // For other question types, show the actual question component with answer pre-selected
-                const block = document.createElement('div')
-                block.className = 'chat-question-block'
-                block.setAttribute('data-question-index', String(i))
+             // For open text questions, show as clickable editable bubble
+             if (q.type === QuestionType.OpenText) {
+                 const answer = components[i].getAnswer()
+                 const displayText = formatAnswerForDisplay(q, answer)
+                 
+                 // Always show a bubble for open text (filled or empty) so it can be edited
+                 const row = document.createElement('div')
+                 row.className = 'chat-row chat-row--user'
+                 const bubble = document.createElement('div')
+                 bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                 bubble.textContent = displayText || '\u200B' // Use zero-width space if empty to maintain bubble height
+                 row.appendChild(bubble)
+                 bubble.addEventListener('click', createEditHandler(i, bubble))
+                 messagesEl.appendChild(row)
+             } else {
+                 // For other question types, show the actual question component with answer pre-selected
+                 const block = document.createElement('div')
+                 block.className = 'chat-question-block'
+                 block.setAttribute('data-question-index', String(i))
 
-                const answerRegion = document.createElement('div')
-                answerRegion.className = 'chat-answer-region'
+                 const answerRegion = document.createElement('div')
+                 answerRegion.className = 'chat-answer-region'
 
-                const el = components[i].getElement()
-                el.classList.add('chat-question-component')
-                answerRegion.appendChild(el)
+                 const el = components[i].getElement()
+                 el.classList.add('chat-question-component')
+                 answerRegion.appendChild(el)
 
-                const confirmRow = document.createElement('div')
-                confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                confirmRow.setAttribute('data-confirm-for', String(i))
-                confirmRow.innerHTML = `
-                    <div class="chat-confirm-line"></div>
-                    <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
-                    <div class="chat-confirm-line"></div>`
+                 const confirmRow = document.createElement('div')
+                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                 confirmRow.setAttribute('data-confirm-for', String(i))
+                 confirmRow.innerHTML = `
+                     <div class="chat-confirm-line"></div>
+                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                     <div class="chat-confirm-line"></div>`
 
-                block.appendChild(answerRegion)
-                block.appendChild(confirmRow)
-                messagesEl.appendChild(block)
-            }
-        }
+                 block.appendChild(answerRegion)
+                 block.appendChild(confirmRow)
+                 messagesEl.appendChild(block)
+             }
+         }
 
         scrollToBottom()
 
