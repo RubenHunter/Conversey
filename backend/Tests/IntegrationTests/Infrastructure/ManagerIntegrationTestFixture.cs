@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
+using Conversey.BL.Domain.Ai;
 
 namespace Tests.IntegrationTests.Infrastructure;
 

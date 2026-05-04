@@ -172,6 +172,39 @@ export async function renderChatSurveyPage(
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
     let activeSendHandler: (() => void | Promise<void>) | null = null
+    let editingBubble: HTMLElement | null = null
+
+    // ===== Edit handler (must be defined early for use in sendOpenTextMessage) =====
+    const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
+        const q = questions[questionIndex]
+        
+        // Make the bubble contenteditable
+        bubbleElement.contentEditable = 'true'
+        bubbleElement.classList.add('chat-bubble--editing')
+        bubbleElement.focus()
+        
+        // Select all text for easy replacement
+        const range = document.createRange()
+        range.selectNodeContents(bubbleElement)
+        const sel = window.getSelection()
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+        
+        // Mark this bubble as being edited
+        editingBubble = bubbleElement
+        
+        // Setup the open text state for this edit session
+        openTextState = { questionIndex, messages: [], floatingConfirmRow: null }
+        
+        // Ensure confirm row is not in confirmed state
+        const confirmRow = messagesEl.querySelector<HTMLElement>(`[data-confirm-for="${questionIndex}"]`)
+        if (confirmRow) {
+            confirmRow.classList.remove('chat-confirm-row--confirmed')
+        }
+        
+        // Show the checkmark button
+        showInlineConfirm(questionIndex)
+    }
 
     // ===== Progress =====
     function updateProgress(): void {
@@ -330,35 +363,79 @@ export async function renderChatSurveyPage(
     }
 
     function sendOpenTextMessage(): void {
-        if (!openTextState) return
-        const text = chatInput.value.trim()
-        if (!text) return
-
-        openTextState.messages.push(text)
-        chatInput.value = ''
-        chatInput.style.height = 'auto'
-        updateSendIcon()
-
-        appendUserBubble(text)
-
-        openTextState.floatingConfirmRow?.remove()
-        const newRow = createFloatingConfirmRow(openTextState.questionIndex)
-        messagesEl.appendChild(newRow)
-        openTextState.floatingConfirmRow = newRow
-        scrollToBottom()
-
-        const bundled = openTextState.messages.join('\n\n')
-        components[openTextState.questionIndex].setAnswer(bundled)
-        answeredState[openTextState.questionIndex] = true
-        const questionId = questions[openTextState.questionIndex].id
-        openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
-        updateProgress()
-        persistProgress()
-    }
+         if (!openTextState) return
+         const text = chatInput.value.trim()
+         if (!text) return
+ 
+         openTextState.messages.push(text)
+         chatInput.value = ''
+         chatInput.style.height = 'auto'
+         updateSendIcon()
+ 
+         // Append bubble with click handler to allow editing
+         const row = document.createElement('div')
+         row.className = 'chat-row chat-row--user'
+         const bubble = document.createElement('div')
+         bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+         bubble.textContent = text
+         
+         // Add click handler for inline editing
+         bubble.addEventListener('click', createEditHandler(openTextState.questionIndex, bubble))
+         
+         row.appendChild(bubble)
+         messagesEl.appendChild(row)
+ 
+         openTextState.floatingConfirmRow?.remove()
+         const newRow = createFloatingConfirmRow(openTextState.questionIndex)
+         messagesEl.appendChild(newRow)
+         openTextState.floatingConfirmRow = newRow
+         scrollToBottom()
+ 
+         const bundled = openTextState.messages.join('\n\n')
+         components[openTextState.questionIndex].setAnswer(bundled)
+         answeredState[openTextState.questionIndex] = true
+         const questionId = questions[openTextState.questionIndex].id
+         openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
+         updateProgress()
+         persistProgress()
+     }
 
     async function confirmOpenText(index: number): Promise<void> {
         if (!openTextState || openTextState.questionIndex !== index) return
 
+        // Handle inline edit mode where bubble is contenteditable
+        if (editingBubble && editingBubble.contentEditable === 'true') {
+            const editedText = editingBubble.textContent?.trim() || ''
+            editingBubble.contentEditable = 'false'
+            editingBubble.classList.remove('chat-bubble--editing')
+            
+            components[index].setAnswer(editedText || null)
+            answeredState[index] = editedText.trim().length > 0
+            const questionId = questions[index].id
+            if (editedText) {
+                openTextDraftsByQuestionId.set(questionId, [editedText])
+            } else {
+                openTextDraftsByQuestionId.delete(questionId)
+            }
+            
+            openTextState.floatingConfirmRow?.classList.add('chat-confirm-row--confirmed')
+            updateProgress()
+            hideInlineConfirm()
+            editingBubble = null
+            openTextState = null
+            deactivateInput()
+            persistProgress(index + 1)
+            
+            await wait(350)
+            if (index < questions.length - 1) {
+                await revealQuestion(index + 1)
+            } else {
+                await showSubmitSection()
+            }
+            return
+        }
+
+        // Original behavior for multi-message open text
         const inputText = chatInput.value.trim()
         if (inputText) {
             sendOpenTextMessage()
@@ -367,6 +444,19 @@ export async function renderChatSurveyPage(
         if (openTextState.messages.length === 0 && questions[index].isRequired) {
             await appendAiBubble(t.pleaseFill, { animated: false })
             return
+        }
+
+        // If no messages but question is not required, show an empty bubble so user can click to edit
+        if (openTextState.messages.length === 0 && !questions[index].isRequired) {
+            const row = document.createElement('div')
+            row.className = 'chat-row chat-row--user'
+            const bubble = document.createElement('div')
+            bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+            bubble.textContent = '\u200B' // Zero-width space to maintain bubble height
+            bubble.addEventListener('click', createEditHandler(index, bubble))
+            row.appendChild(bubble)
+            messagesEl.appendChild(row)
+            scrollToBottom()
         }
 
         const bundled = openTextState.messages.join('\n\n')
@@ -392,31 +482,52 @@ export async function renderChatSurveyPage(
 
     // ===== Input state management =====
     function activateOpenTextInput(questionIndex: number): void {
-        const questionId = questions[questionIndex].id
-        const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
-        openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
-
-        if (restoredMessages.length > 0) {
-            restoredMessages.forEach((message) => appendUserBubble(message))
-            const restoredRow = createFloatingConfirmRow(questionIndex)
-            messagesEl.appendChild(restoredRow)
-            openTextState.floatingConfirmRow = restoredRow
-            components[questionIndex].setAnswer(restoredMessages.join('\n\n'))
-            answeredState[questionIndex] = true
-            updateProgress()
-        }
-
-        chatInput.disabled = false
-        chatInput.placeholder = questions[questionIndex].hint?.trim() || t.typeHere
-        chatInput.value = ''
-        chatInput.style.height = 'auto'
-        sendBtn.disabled = false
-        magicBtn.hidden = false
-        showInlineConfirm(questionIndex)
-        activeSendHandler = sendOpenTextMessage
-        updateSendIcon()
-        setTimeout(() => chatInput.focus(), 50)
-    }
+         const questionId = questions[questionIndex].id
+         const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
+         openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
+ 
+         if (restoredMessages.length > 0) {
+             // Append restored bubbles with click handlers to allow re-editing
+             restoredMessages.forEach((message) => {
+                 const row = document.createElement('div')
+                 row.className = 'chat-row chat-row--user'
+                 const bubble = document.createElement('div')
+                 bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                 bubble.textContent = message
+                 
+                 // Add click handler for inline editing
+                 bubble.addEventListener('click', createEditHandler(questionIndex, bubble))
+                 
+                 row.appendChild(bubble)
+                 messagesEl.appendChild(row)
+             })
+             
+             const restoredRow = createFloatingConfirmRow(questionIndex)
+             messagesEl.appendChild(restoredRow)
+             openTextState.floatingConfirmRow = restoredRow
+             components[questionIndex].setAnswer(restoredMessages.join('\n\n'))
+             answeredState[questionIndex] = true
+             updateProgress()
+             scrollToBottom()
+         } else {
+             // Show floating confirm row even when empty, for non-required questions
+             const emptyRow = createFloatingConfirmRow(questionIndex)
+             messagesEl.appendChild(emptyRow)
+             openTextState.floatingConfirmRow = emptyRow
+             scrollToBottom()
+         }
+ 
+         chatInput.disabled = false
+         chatInput.placeholder = questions[questionIndex].hint?.trim() || t.typeHere
+         chatInput.value = ''
+         chatInput.style.height = 'auto'
+         sendBtn.disabled = false
+         magicBtn.hidden = false
+         showInlineConfirm(questionIndex)
+         activeSendHandler = sendOpenTextMessage
+         updateSendIcon()
+         setTimeout(() => chatInput.focus(), 50)
+     }
 
     function activateIdeaInput(placeholder: string, handler: () => void | Promise<void>): void {
         chatInput.disabled = false
@@ -1369,17 +1480,21 @@ export async function renderChatSurveyPage(
 
     const savedProgress = loadSurveyProgress(projectSlugKey, questions)
 
-    if (savedProgress && savedProgress.currentQuestionIndex > 0 && questions.length > 0) {
-        const resumeAt = Math.min(savedProgress.currentQuestionIndex, questions.length)
+    // Check if there's meaningful progress to resume
+    const hasAnsweredQuestions = savedProgress && savedProgress.answersByQuestionId && savedProgress.answersByQuestionId.size > 0
+    const shouldResume = savedProgress && (savedProgress.currentQuestionIndex > 0 || hasAnsweredQuestions) && questions.length > 0
+
+    if (shouldResume) {
+        const resumeAt = Math.min(savedProgress!.currentQuestionIndex, questions.length)
         confirmedUpToIndex = resumeAt
-        const savedOpenTextDrafts = savedProgress.openTextDraftsByQuestionId ?? new Map<number, string[]>()
+        const savedOpenTextDrafts = savedProgress!.openTextDraftsByQuestionId ?? new Map<number, string[]>()
         savedOpenTextDrafts.forEach((messages, questionId) => {
             openTextDraftsByQuestionId.set(questionId, [...messages])
         })
 
         // Restore answers to components
         for (let i = 0; i < questions.length; i++) {
-            const saved = savedProgress.answersByQuestionId.get(questions[i].id)
+            const saved = savedProgress!.answersByQuestionId.get(questions[i].id)
             if (saved !== undefined && saved !== null) {
                 components[i].setAnswer(saved)
                 answeredState[i] = hasAnswer(saved)
@@ -1403,20 +1518,45 @@ export async function renderChatSurveyPage(
                 required: q.isRequired,
             })
 
-            const answer = components[i].getAnswer()
-            const displayText = formatAnswerForDisplay(q, answer)
-            if (displayText) {
-                appendUserBubble(displayText)
-            }
+            // For open text questions, show as clickable editable bubble
+            if (q.type === QuestionType.OpenText) {
+                const answer = components[i].getAnswer()
+                const displayText = formatAnswerForDisplay(q, answer)
+                
+                // Always show a bubble for open text (filled or empty) so it can be edited
+                const row = document.createElement('div')
+                row.className = 'chat-row chat-row--user'
+                const bubble = document.createElement('div')
+                bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                bubble.textContent = displayText || '\u200B' // Use zero-width space if empty to maintain bubble height
+                row.appendChild(bubble)
+                bubble.addEventListener('click', createEditHandler(i, bubble))
+                messagesEl.appendChild(row)
+            } else {
+                // For other question types, show the actual question component with answer pre-selected
+                const block = document.createElement('div')
+                block.className = 'chat-question-block'
+                block.setAttribute('data-question-index', String(i))
 
-            const confirmRow = document.createElement('div')
-            confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-            confirmRow.setAttribute('data-confirm-for', String(i))
-            confirmRow.innerHTML = `
-                <div class="chat-confirm-line"></div>
-                <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
-                <div class="chat-confirm-line"></div>`
-            messagesEl.appendChild(confirmRow)
+                const answerRegion = document.createElement('div')
+                answerRegion.className = 'chat-answer-region'
+
+                const el = components[i].getElement()
+                el.classList.add('chat-question-component')
+                answerRegion.appendChild(el)
+
+                const confirmRow = document.createElement('div')
+                confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                confirmRow.setAttribute('data-confirm-for', String(i))
+                confirmRow.innerHTML = `
+                    <div class="chat-confirm-line"></div>
+                    <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                    <div class="chat-confirm-line"></div>`
+
+                block.appendChild(answerRegion)
+                block.appendChild(confirmRow)
+                messagesEl.appendChild(block)
+            }
         }
 
         scrollToBottom()

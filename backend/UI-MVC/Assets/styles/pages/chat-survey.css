@@ -206,6 +206,28 @@
   border-bottom-right-radius: var(--radius-sm);
 }
 
+/* Editable user bubble (clickable to re-edit) */
+.chat-bubble--editable {
+  cursor: pointer;
+  transition: filter var(--transition-base), transform var(--transition-base);
+}
+
+.chat-bubble--editable:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
+}
+
+/* Editing state - bubble is in edit mode */
+.chat-bubble--editing {
+  cursor: text;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  filter: none;
+  transform: none;
+}
+
 /* Project title bubble */
 .chat-bubble--project-title {
   font-size: var(--font-size-lg);
