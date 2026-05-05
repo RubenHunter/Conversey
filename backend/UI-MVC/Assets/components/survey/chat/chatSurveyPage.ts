@@ -857,7 +857,25 @@ export async function renderChatSurveyPage(
         let isLoadingMoreIdeas = false
         let autoLoadArmed = true
         let lastScrollTop = 0
+        let suppressListScrollSyncUntil = 0
+
+        function suppressListScrollSync(durationMs: number): void {
+            suppressListScrollSyncUntil = performance.now() + durationMs
+        }
+
         const discoveryCache = new Map<string, DiscoveryFeed>()
+
+        function resetPaging(): void {
+            extraLoadsUsed = 0
+            isLoadingMoreIdeas = false
+            autoLoadArmed = true
+        }
+
+        function getMaxExtraLoads(): number {
+            if (activeView.type !== 'topic') return 3
+            const topic = topics.find((item) => item.id === activeView.topicId)
+            return topic?.maxBroadSelectionLoads ?? 3
+        }
 
         const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
         const firstIdeaContactDialog = createFirstIdeaContactDialogController({
@@ -1094,14 +1112,26 @@ export async function renderChatSurveyPage(
 
             isLoadingMoreIdeas = true
             updateLoadMoreButton()
+            suppressListScrollSync(2500)
             loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
             const firstNewIndex = getVisibleLimit()
 
             try {
                 await new Promise<void>((resolve) => {
-                    window.setTimeout(resolve, 2000)
+                    const timeout = window.setTimeout(resolve, 2000)
+                    const checkCancel = () => {
+                        if (!isLoadingMoreIdeas) {
+                            window.clearTimeout(timeout)
+                            resolve()
+                        } else {
+                            requestAnimationFrame(checkCancel)
+                        }
+                    }
+                    requestAnimationFrame(checkCancel)
                 })
+
+                if (!isLoadingMoreIdeas) return
 
                 extraLoadsUsed += 1
                 showPostPreviewPair = false
@@ -1476,30 +1506,33 @@ export async function renderChatSurveyPage(
         })
 
         ideasListEl.addEventListener('scroll', () => {
+            const isSuppressed = performance.now() < suppressListScrollSyncUntil
             listController?.updateFromScroll()
 
             const currentScrollTop = ideasListEl.scrollTop
             const isScrollingUp = currentScrollTop < lastScrollTop
             lastScrollTop = currentScrollTop
 
-            // Cancel immediately when scrolling up
             if (isScrollingUp && isLoadingMoreIdeas) {
                 isLoadingMoreIdeas = false
                 updateLoadMoreButton()
-                return
+                if (!isSuppressed) return
             }
+
+            if (isSuppressed) return
 
             const distanceFromBottom = ideasListEl.scrollHeight - ideasListEl.clientHeight - ideasListEl.scrollTop
             if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
-                if (autoLoadArmed && hasMoreIdeasToLoad()) {
+                if (autoLoadArmed && !isLoadingMoreIdeas && hasMoreIdeasToLoad()) {
                     autoLoadArmed = false
                     void loadMoreIdeas()
                 }
             } else {
                 autoLoadArmed = true
             }
-
-            updateLoadMoreButton()
+            if (!isLoadingMoreIdeas) {
+                updateLoadMoreButton()
+            }
         }, { passive: true })
 
         loadMoreBtn.addEventListener('click', () => {
