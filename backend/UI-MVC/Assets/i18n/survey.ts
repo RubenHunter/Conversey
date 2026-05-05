@@ -38,6 +38,12 @@ export interface SurveyStrings {
     layoutPickerChat: string
     layoutPickerChatDesc: string
     layoutPickerSave: string
+    exploreIdeas: string
+    loadMoreIdeas: string
+    loadingMoreIdeas: string
+    selectTopic: string
+    thoughtsOnTopic: string
+    surveyCompleted: string
 }
 
 const nl: SurveyStrings = {
@@ -78,6 +84,12 @@ const nl: SurveyStrings = {
     layoutPickerChat: 'Chatweergave',
     layoutPickerChatDesc: 'Beantwoord vragen in een gespreksstijl.',
     layoutPickerSave: 'Mijn keuze onthouden',
+    exploreIdeas: 'Ideeën verkennen',
+    loadMoreIdeas: 'Klik of scroll naar beneden om 7 meer ideeën te laden',
+    loadingMoreIdeas: '7 meer ideeën laden...',
+    selectTopic: 'Selecteer een thema',
+    thoughtsOnTopic: 'Wat zijn je gedachten over: "{topicTitle}"?',
+    surveyCompleted: 'Bedankt voor het invullen van de enquête! Je antwoorden zijn opgeslagen.',
 }
 
 const en: SurveyStrings = {
@@ -118,6 +130,12 @@ const en: SurveyStrings = {
     layoutPickerChat: 'Chat layout',
     layoutPickerChatDesc: 'Answer questions in a conversational style.',
     layoutPickerSave: 'Remember my choice',
+    exploreIdeas: 'Explore ideas',
+    loadMoreIdeas: 'Click or scroll down to load 7 more ideas',
+    loadingMoreIdeas: 'Loading 7 more ideas...',
+    selectTopic: 'Select a topic',
+    thoughtsOnTopic: 'What are your thoughts on: "{topicTitle}"?',
+    surveyCompleted: 'Thank you for completing the survey! Your responses have been recorded.',
 }
 
 const fr: SurveyStrings = {
@@ -158,6 +176,12 @@ const fr: SurveyStrings = {
     layoutPickerChat: 'Mise en page chat',
     layoutPickerChatDesc: 'Répondez aux questions dans un style conversationnel.',
     layoutPickerSave: 'Retenir mon choix',
+    exploreIdeas: 'Explorer les idées',
+    loadMoreIdeas: 'Cliquez ou faites défiler vers le bas pour charger 7 idées supplémentaires',
+    loadingMoreIdeas: 'Chargement de 7 idées supplémentaires...',
+    selectTopic: 'Sélectionner un thème',
+    thoughtsOnTopic: 'Quelles sont vos pensées sur : "{topicTitle}" ?',
+    surveyCompleted: 'Merci d\'avoir complété l\'enquête ! Vos réponses ont été enregistrées.',
 }
 
 const translations: Record<SurveyLocale, SurveyStrings> = { nl, en, fr }

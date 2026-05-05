@@ -65,7 +65,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     const firstTopic = topics[0]
 
     if (!firstTopic) {
-        await appendAiBubble('Thank you for completing the survey! Your responses have been recorded.')
+        await appendAiBubble(t.surveyCompleted)
         return
     }
 
@@ -470,7 +470,8 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
 
         renderDiscoveryMenuOptions()
         void renderIdeasList()
-        void appendAiBubble(newTopic.prompt?.trim() || `What are your thoughts on: "${newTopic.title}"?`)
+        const topicPrompt = firstTopic.prompt?.trim()
+        await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
     })
 
     // Discovery dropdown events
@@ -638,10 +639,10 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     // Initial render
     renderDiscoveryMenuOptions()
     await renderIdeasList()
-
     await appendAiBubble(t.ideationIntro)
     await wait(200)
-    await appendAiBubble(firstTopic.prompt?.trim() || `What are your thoughts on: "${firstTopic.title}"?`)
+    const topicPrompt = firstTopic.prompt?.trim()
+    await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
 }
 
 

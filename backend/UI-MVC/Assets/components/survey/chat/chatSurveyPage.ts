@@ -59,7 +59,7 @@ type DiscoveryBadgeType = 'similar' | 'different'
 type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 7
-const LOAD_MORE_SCROLL_THRESHOLD = 24
+const LOAD_MORE_SCROLL_THRESHOLD = 150
 
 interface DiscoveryFeed {
     ideas: Idea[]
@@ -132,6 +132,10 @@ export async function renderChatSurveyPage(
 
     if (startInIdeasMode) {
         clearSurveyProgress(projectSlugKey)
+    } else {
+        // Clear saved survey history when starting a new survey
+        const surveyHistoryKey = `survey-history-${projectSlugKey}`
+        localStorage.removeItem(surveyHistoryKey)
     }
 
     const questions = await getQuestions(params.organizationSlug, params.projectSlug)
@@ -750,6 +754,11 @@ export async function renderChatSurveyPage(
 
     // ===== Lock survey history =====
     function lockSurveyHistory(): void {
+        // Save survey history HTML before locking
+        const surveyHistoryKey = `survey-history-${projectSlugKey}`
+        const historyHTML = messagesEl.innerHTML
+        localStorage.setItem(surveyHistoryKey, historyHTML)
+
         Array.from(messagesEl.children).forEach((el) => {
             if (!(el instanceof HTMLElement)) return
             el.classList.add('chat-survey-history-locked')
@@ -761,13 +770,13 @@ export async function renderChatSurveyPage(
                     control.disabled = true
                 }
             })
-            
+
             // Explicitly force contenteditable to false on bubbles
             el.querySelectorAll<HTMLElement>('[contenteditable="true"]').forEach((bubble) => {
                 bubble.contentEditable = 'false'
                 bubble.removeAttribute('contenteditable')
             })
-            
+
             // Remove click handlers from editable bubbles to prevent editing
             el.querySelectorAll<HTMLElement>('.chat-bubble--editable').forEach((bubble) => {
                 // Clone and replace to remove all event listeners
@@ -796,8 +805,24 @@ export async function renderChatSurveyPage(
         chatShell.querySelector('#chat-offensive-notice')?.remove()
     }
 
+    // ===== Restore survey history =====
+    function restoreSurveyHistory(): void {
+        const surveyHistoryKey = `survey-history-${projectSlugKey}`
+        const savedHistory = localStorage.getItem(surveyHistoryKey)
+        if (savedHistory) {
+            messagesEl.innerHTML = savedHistory
+            // Re-apply the locked class to all children
+            Array.from(messagesEl.children).forEach((el) => {
+                if (!(el instanceof HTMLElement)) return
+                el.classList.add('chat-survey-history-locked')
+            })
+        }
+    }
+
     // ===== Ideation phase =====
     async function enterIdeasPhase(): Promise<void> {
+        // Restore survey history if available
+        restoreSurveyHistory()
         lockSurveyHistory()
 
         // Keep organization branding anchored at the top of the full page in ideation mode.
@@ -813,7 +838,7 @@ export async function renderChatSurveyPage(
         const firstTopic = topics[0]
 
         if (!firstTopic) {
-            await appendAiBubble('Thank you for completing the survey! Your responses have been recorded.')
+            await appendAiBubble(t.surveyCompleted)
             return
         }
 
@@ -831,6 +856,7 @@ export async function renderChatSurveyPage(
         let extraLoadsUsed = 0
         let isLoadingMoreIdeas = false
         let autoLoadArmed = true
+        let lastScrollTop = 0
         const discoveryCache = new Map<string, DiscoveryFeed>()
 
         const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
@@ -861,30 +887,36 @@ export async function renderChatSurveyPage(
             <section class="ideas-community" aria-label="Ideas list">
                 <div id="ideas-discovery" class="ideas-discovery" hidden>
                     <button id="ideas-discovery-trigger" class="ideas-discovery-trigger" type="button" aria-haspopup="menu" aria-expanded="false">
-                        <span id="ideas-discovery-label">Explore ideas</span>
+                        <span id="ideas-discovery-label">${esc(t.exploreIdeas)}</span>
                         <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                     </button>
                     <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden></div>
                 </div>
                 <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>
-                <button id="chat-ideas-load-more" class="ideas-load-more" type="button" hidden>
-                    <span class="ideas-load-more-icon" aria-hidden="true">
-                        <svg class="ideas-load-more-ring" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <circle class="ideas-load-more-ring-track" cx="18" cy="18" r="14"/>
-                            <circle class="ideas-load-more-ring-fill" cx="18" cy="18" r="14"/>
-                        </svg>
-                        <span class="ideas-load-more-arrow">↓</span>
-                    </span>
-                    <span id="chat-ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 7 more ideas</span>
-                </button>
             </section>`
 
         chatShell.classList.add('chat-shell--ideas')
         chatShell.insertBefore(ideasArea, scrollAreaEl)
 
         const ideasListEl = container.querySelector<HTMLDivElement>('#chat-ideas-list')!
-        const loadMoreBtn = container.querySelector<HTMLButtonElement>('#chat-ideas-load-more')!
-        const loadMoreText = container.querySelector<HTMLSpanElement>('#chat-ideas-load-more-text')!
+
+        // Create load more button dynamically (will be appended to list)
+        const loadMoreBtn = document.createElement('button')
+        loadMoreBtn.id = 'chat-ideas-load-more'
+        loadMoreBtn.className = 'ideas-load-more'
+        loadMoreBtn.type = 'button'
+        loadMoreBtn.hidden = true
+        loadMoreBtn.innerHTML = `
+            <span class="ideas-load-more-icon" aria-hidden="true">
+                <svg class="ideas-load-more-ring" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle class="ideas-load-more-ring-track" cx="18" cy="18" r="14"/>
+                    <circle class="ideas-load-more-ring-fill" cx="18" cy="18" r="14"/>
+                </svg>
+                <span class="ideas-load-more-arrow">↓</span>
+            </span>
+            <span class="ideas-load-more-text">${esc(t.loadMoreIdeas)}</span>
+        `
+        const loadMoreText = loadMoreBtn.querySelector<HTMLSpanElement>('.ideas-load-more-text')!
         const topicTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
         const topicTriggerValue = container.querySelector<HTMLSpanElement>('#ideas-topic-trigger-value')!
         const topicFloatingTrigger = container.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
@@ -976,7 +1008,7 @@ export async function renderChatSurveyPage(
         const topicModal = createTopicModalController({
             root: container,
             topics,
-            onSelect: (nextView) => {
+            onSelect: async (nextView) => {
                 chatNudgeFlow.cancelIfTopicChanged()
                 activeView = nextView
                 if (nextView.type === 'topic') {
@@ -992,7 +1024,8 @@ export async function renderChatSurveyPage(
                 if (activeView.type === 'topic') {
                     const topic = topics.find((item) => item.id === activeView.topicId)
                     if (topic) {
-                        void appendAiBubble(topic.prompt?.trim() || `What are your thoughts on: "${topic.title}"?`)
+                        const topicPrompt = topic.prompt?.trim()
+                        await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', topic.title))
                         activateIdeaInput(t.shareIdea, handleIdeaSubmit)
                     }
                 } else {
@@ -1034,11 +1067,13 @@ export async function renderChatSurveyPage(
             loadMoreBtn.classList.toggle('ideas-load-more--loading', isLoadingMoreIdeas)
             loadMoreBtn.setAttribute('aria-busy', String(isLoadingMoreIdeas))
             loadMoreText.textContent = isLoadingMoreIdeas
-                ? 'Loading 7 more ideas...'
-                : 'Click or scroll down to load 7 more ideas'
+                ? t.loadingMoreIdeas
+                : t.loadMoreIdeas
 
+            // Extra bottom space so the button is visible before the load triggers
             ideasListEl.classList.toggle('ideas-list--has-more', hasMoreIdeas)
 
+            // Force SVG animation restart each time loading begins
             if (isLoadingMoreIdeas && !wasLoading) {
                 const ringFill = loadMoreBtn.querySelector<SVGCircleElement>('.ideas-load-more-ring-fill')
                 if (ringFill) {
@@ -1046,6 +1081,11 @@ export async function renderChatSurveyPage(
                     void ringFill.getBoundingClientRect()
                     ringFill.style.animation = ''
                 }
+            }
+
+            // Append button to list so it scrolls with content (like vertical scroll mode)
+            if (loadMoreBtn.parentElement !== ideasListEl) {
+                ideasListEl.appendChild(loadMoreBtn)
             }
         }
 
@@ -1119,17 +1159,17 @@ export async function renderChatSurveyPage(
                     .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
                     .join('')
                 const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">Idea categories</p>${semanticButtons}`
+                    ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>${semanticButtons}`
                     : ''
 
-                discoveryMenu.innerHTML = `<button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>${categoriesSection}`
+                discoveryMenu.innerHTML = `<button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.broadSelection)}</button>${categoriesSection}`
                 return
             }
 
             discoveryMenu.innerHTML = `
-                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>`
+                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${esc(t.similarIdeas)}</button>
+                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${esc(t.differingIdeas)}</button>
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>`
         }
 
         function closeDiscoveryMenu(): void {
@@ -1147,8 +1187,8 @@ export async function renderChatSurveyPage(
             discoveryRoot.hidden = false
             renderDiscoveryMenuOptions()
             const ownIdeaExists = hasOwnIdeaInTopic(activeView.topicId)
-            const labelMap: Record<DiscoveryMode, string> = { all: 'All ideas', similar: 'Similar ideas', different: 'Differing ideas' }
-            discoveryLabel.textContent = ownIdeaExists ? labelMap[discoveryMode] : (selectedSemanticCategory ?? 'Broad selection')
+            const labelMap: Record<DiscoveryMode, string> = { all: t.allIdeas, similar: t.similarIdeas, different: t.differingIdeas }
+            discoveryLabel.textContent = ownIdeaExists ? labelMap[discoveryMode] : (selectedSemanticCategory ?? t.broadSelection)
 
             discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option').forEach((option) => {
                 const mode = option.dataset.discoveryMode
@@ -1260,9 +1300,9 @@ export async function renderChatSurveyPage(
         }
 
         function getActiveIdeasLabel(view: ActiveView): string {
-            if (view.type === 'my-ideas') return 'My ideas'
+            if (view.type === 'my-ideas') return t.myIdeas
             const topic = topics.find((item) => item.id === view.topicId)
-            return topic ? topic.title : 'Select a topic'
+            return topic ? topic.title : t.selectTopic
         }
 
         function updateTopicLabels(): void {
@@ -1438,6 +1478,17 @@ export async function renderChatSurveyPage(
         ideasListEl.addEventListener('scroll', () => {
             listController?.updateFromScroll()
 
+            const currentScrollTop = ideasListEl.scrollTop
+            const isScrollingUp = currentScrollTop < lastScrollTop
+            lastScrollTop = currentScrollTop
+
+            // Cancel immediately when scrolling up
+            if (isScrollingUp && isLoadingMoreIdeas) {
+                isLoadingMoreIdeas = false
+                updateLoadMoreButton()
+                return
+            }
+
             const distanceFromBottom = ideasListEl.scrollHeight - ideasListEl.clientHeight - ideasListEl.scrollTop
             if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
                 if (autoLoadArmed && hasMoreIdeasToLoad()) {
@@ -1489,7 +1540,8 @@ export async function renderChatSurveyPage(
         await renderIdeasList()
         await appendAiBubble(t.ideationIntro)
         await wait(200)
-        await appendAiBubble(firstTopic.prompt?.trim() || `What are your thoughts on: "${firstTopic.title}"?`)
+        const topicPrompt = firstTopic.prompt?.trim()
+        await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
         activateIdeaInput(t.shareIdea, handleIdeaSubmit)
     }
 

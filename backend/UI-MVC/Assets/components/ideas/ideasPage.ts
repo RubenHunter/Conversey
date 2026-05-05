@@ -31,27 +31,28 @@ import { createTopicModalController } from './topicModal'
 import { createIdeasListController } from './ideasListController'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler'
 import { createIdeaNudgeDialogController } from './ideaNudgeDialog'
-import {ProjectContext, render} from "../../main";
+import {ProjectContext, render} from "../../main"
+import { getSurveyStrings } from '../../i18n/survey';
 
 type DiscoveryBadgeType = 'similar' | 'different'
 
 // Get label for active ideas view
-function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
-    if (activeView.type === 'my-ideas') return 'My ideas'
+function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[], t: any): string {
+    if (activeView.type === 'my-ideas') return t.myIdeas
     const topic = topics.find((item) => item.id === activeView.topicId)
-    return topic ? topic.title : 'Select a topic'
+    return topic ? topic.title : t.selectTopic
 }
 
 type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 7
-const LOAD_MORE_SCROLL_THRESHOLD = 24
+const LOAD_MORE_SCROLL_THRESHOLD = 150
 
-const DISCOVERY_LABELS: Record<DiscoveryMode, string> = {
-    all: 'All ideas',
-    similar: 'Similar ideas',
-    different: 'Differing ideas',
-}
+const getDiscoveryLabels = (t: any): Record<DiscoveryMode, string> => ({
+    all: t.allIdeas,
+    similar: t.similarIdeas,
+    different: t.differingIdeas,
+})
 
 interface DiscoveryFeed {
     ideas: Idea[]
@@ -124,6 +125,7 @@ function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
 
 
 export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+    const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
@@ -152,13 +154,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 aria-haspopup="menu"
                                 aria-expanded="false"
                             >
-                                <span id="ideas-discovery-label">Explore ideas</span>
+                                <span id="ideas-discovery-label">${t.exploreIdeas}</span>
                                 <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                             </button>
                             <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden>
-                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
                             </div>
                         </div>
                         <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
@@ -170,7 +172,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 </svg>
                                 <span class="ideas-load-more-arrow">↓</span>
                             </span>
-                            <span id="ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 7 more ideas</span>
+                            <span id="ideas-load-more-text" class="ideas-load-more-text">${t.loadMoreIdeas}</span>
                         </button>
                     </section>
 
@@ -438,12 +440,14 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     let discoveryRequestToken = 0
     const discoveryCache = new Map<string, DiscoveryFeed>()
     let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
-    let suppressListScrollSyncUntil = 0
+    let visibleIdeasCache: Idea[] = []
     let extraLoadsUsed = 0
-    let showPostPreviewPair = false
-    let latestSubmittedIdea: Idea | null = null
     let isLoadingMoreIdeas = false
     let autoLoadArmed = true
+    let lastScrollTop = 0
+    let suppressListScrollSyncUntil = 0
+    let showPostPreviewPair = false
+    let latestSubmittedIdea: Idea | null = null
 
     const firstIdeaContactDialog = createFirstIdeaContactDialogController({
         root: container,
@@ -532,23 +536,23 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             const semanticButtons = categories
                 .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
                 .join('')
-            const categoriesSection = categories.length > 0
-                ? `<hr class="ideas-discovery-separator" role="separator">
-                   <p class="ideas-discovery-section-label">Idea categories</p>
-                   ${semanticButtons}`
-                : ''
+                const categoriesSection = categories.length > 0
+                    ? `<hr class="ideas-discovery-separator" role="separator">
+                       <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
+                       ${semanticButtons}`
+                    : ''
 
             discoveryMenu.innerHTML = `
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.broadSelection}</button>
                 ${categoriesSection}
             `
             return
         }
 
         discoveryMenu.innerHTML = `
-            <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-            <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+            <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
+            <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
+            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
         `
     }
 
@@ -580,7 +584,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         discoveryRoot.hidden = false
         renderDiscoveryMenuOptions()
 
-        discoveryLabel.textContent = ownIdeaExists ? DISCOVERY_LABELS[discoveryMode] : (selectedSemanticCategory ?? 'Broad selection')
+        const discoveryLabels = getDiscoveryLabels(t)
+        discoveryLabel.textContent = ownIdeaExists ? discoveryLabels[discoveryMode] : (selectedSemanticCategory ?? t.broadSelection)
 
         const options = discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option')
         options.forEach((option) => {
@@ -807,8 +812,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         },
     })
 
-    let visibleIdeasCache: Idea[] = []
-
     const topicModal = createTopicModalController({
         root: container,
         topics,
@@ -852,7 +855,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     })
 
     function updateTopicLabels(): void {
-        const label = getActiveIdeasLabel(activeView, topics)
+        const label = getActiveIdeasLabel(activeView, topics, t)
         topicTriggerValue.textContent = label
         topicFloatingTriggerValue.textContent = label
         topicFloatingTrigger.hidden = activeView.type !== 'my-ideas'
@@ -963,8 +966,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         loadMoreBtn.classList.toggle('ideas-load-more--loading', isLoadingMoreIdeas)
         loadMoreBtn.setAttribute('aria-busy', String(isLoadingMoreIdeas))
         loadMoreText.textContent = isLoadingMoreIdeas
-            ? 'Loading 7 more ideas...'
-            : 'Click or scroll down to load 7 more ideas'
+            ? t.loadingMoreIdeas
+            : t.loadMoreIdeas
 
         // Extra bottom space so the button is visible before the load triggers
         list.classList.toggle('ideas-list--has-more', hasMoreIdeas)
@@ -990,16 +993,29 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         isLoadingMoreIdeas = true
         updateLoadMoreButton()
 
-        // Scroll the button into center view and briefly pause auto-scroll while it activates
-        suppressListScrollSync(1000)
+        if (loadMoreBtn.parentElement !== list) {
+            list.appendChild(loadMoreBtn)
+        }
+        suppressListScrollSync(2500)
         loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
         const firstNewIndex = getVisibleLimit()
 
         try {
             await new Promise<void>((resolve) => {
-                window.setTimeout(resolve, 2000)
+                const timeout = window.setTimeout(resolve, 2000)
+                const checkCancel = () => {
+                    if (!isLoadingMoreIdeas) {
+                        window.clearTimeout(timeout)
+                        resolve()
+                    } else {
+                        requestAnimationFrame(checkCancel)
+                    }
+                }
+                requestAnimationFrame(checkCancel)
             })
+
+            if (!isLoadingMoreIdeas) return
 
             extraLoadsUsed += 1
             showPostPreviewPair = false
@@ -1094,18 +1110,33 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     document.addEventListener('keydown', handleKeyDown)
 
     list.addEventListener('scroll', () => {
-        if (performance.now() < suppressListScrollSyncUntil) return
+        const isSuppressed = performance.now() < suppressListScrollSyncUntil
         listController?.updateFromScroll()
+
+        const currentScrollTop = list.scrollTop
+        const isScrollingUp = currentScrollTop < lastScrollTop
+        lastScrollTop = currentScrollTop
+
+        if (isScrollingUp && isLoadingMoreIdeas) {
+            isLoadingMoreIdeas = false
+            updateLoadMoreButton()
+            if (!isSuppressed) return
+        }
+
+        if (isSuppressed) return
+
         const distanceFromBottom = list.scrollHeight - list.clientHeight - list.scrollTop
         if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
-            if (autoLoadArmed && hasMoreIdeasToLoad()) {
+            if (autoLoadArmed && !isLoadingMoreIdeas && hasMoreIdeasToLoad()) {
                 autoLoadArmed = false
                 void loadMoreIdeas()
             }
         } else {
             autoLoadArmed = true
         }
-        updateLoadMoreButton()
+        if (!isLoadingMoreIdeas) {
+            updateLoadMoreButton()
+        }
     }, { passive: true })
 
 

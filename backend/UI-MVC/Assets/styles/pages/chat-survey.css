@@ -733,6 +733,8 @@
   top: 100%;
   right: 0;
   min-width: 180px;
+  max-height: calc(var(--spacing-xl) * 8);
+  overflow-y: auto;
   z-index: 10;
 }
 
@@ -800,6 +802,10 @@
 
 .chat-shell--ideas .ideas-list {
   height: 100%;
+}
+
+.chat-shell--ideas .ideas-list--has-more {
+  padding-bottom: 18rem;
 }
 
 .chat-shell--ideas .ideas-load-more {
