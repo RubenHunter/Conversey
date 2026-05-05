@@ -13,6 +13,15 @@
 /*	box-sizing: border-box;*/
 /*}*/
 
+
+@theme {
+	--color-text: #05030a;
+	--color-background: #f8f7fc;
+	--color-primary: #6c5ce7;
+	--color-secondary: #db99c8;
+	--color-accent: #cd6f88;
+}
+
 html,
 body {
 	min-height: 100vh;
