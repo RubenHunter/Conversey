@@ -1,0 +1,31 @@
+.icon-button {
+    --size: 16px;
+    width: var(--size);
+    height: var(--size);
+    background: none;
+    border: none;
+    background-size: contain;
+    content-visibility: hidden;
+    box-sizing: border-box;
+}
+
+.add-icon {
+    background-image: url("add.svg");
+}
+
+.add-directory-icon {
+    background-image: url("add_directory.svg");
+}
+
+.select-icon {
+    background-color: white;
+    border: 2px solid black;
+}
+
+.trash-icon {
+    background-image: url("trash.svg");
+}
+
+.pencil-icon {
+    background-image: url("pencil.svg");
+}

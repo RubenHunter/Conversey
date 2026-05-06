@@ -1,0 +1,30 @@
+﻿.draggable-question > span {
+    background: url("assets/traingle_up.svg");
+    transition: all .2s linear;
+}
+
+details[open] > .draggable-question > span {
+    transform: rotate(180deg);
+}
+
+details[open] > ol .draggable-question {
+    animation: sweep .5s ease-out;
+}
+
+@keyframes sweep {
+    0%    {opacity: 0; transform: translatey(-15px);}
+    100%  {opacity: 1; transform: translatey(0px);}
+}
+
+details ol .draggable-question {
+    margin-left: 15px;
+}
+
+.draggable-question::before {
+    content: "";
+    background: url("assets/drag.svg");
+    background-size: contain;
+    display: block;
+    width: 15px;
+    height: 24px;
+}

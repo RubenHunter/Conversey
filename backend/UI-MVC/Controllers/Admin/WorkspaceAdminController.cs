@@ -30,6 +30,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         return View(CreateFormVm(new Project{StartDate = DateTime.Today, EndDate = DateTime.Today}));
     }
+    
+    [HttpGet("/admin/projects/new/questions")]
+    public IActionResult AddQuestions()
+    {
+        return View("AddQuestions/AddQuestions");
+    }
 
     [HttpPost("/admin/projects/new")]
     public IActionResult CreateProject(AdminFormViewModel<Project> projectFormViewModel)
