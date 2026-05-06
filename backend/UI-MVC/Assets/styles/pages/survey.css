@@ -345,10 +345,13 @@
 }
 
 .survey-error {
-    font-size: var(--font-size-sm);
-    color: var(--color-error);
-    margin-top: var(--spacing-xs);
-    display: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  margin-top: var(--spacing-xs);
+  display: none;
+  background-color: color-mix(var(--color-surface) 67%, transparent);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .survey-error.show {
@@ -600,7 +603,7 @@
   transition: transform 0.2s ease;
   background-color: rgba(0, 0, 0, 0.35);
   border-radius: var(--radius-lg);
-    padding: clamp(var(--spacing-sm), 2vh, var(--spacing-sm));
+  padding: clamp(var(--spacing-sm), 2vh, var(--spacing-sm));
 }
 
 .layout-picker-label-title {
