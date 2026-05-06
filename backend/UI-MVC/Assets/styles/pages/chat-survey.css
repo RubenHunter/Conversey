@@ -14,6 +14,21 @@
   background-color: var(--color-bg);
   align-self: stretch;
   width: 100%;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-image: var(--project-bg, none);
+}
+
+.chat-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
 }
 
 /* Override topbar bleed within the chat shell */
@@ -36,6 +51,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== Survey header (shared with vertical scroll) — sticky inside chat scroll area ===== */
@@ -443,6 +460,8 @@
   border-top: 1px solid var(--color-border);
   padding: var(--spacing-sm) var(--spacing-md);
   padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0px));
+  position: relative;
+  z-index: 1;
 }
 
 .chat-input-bar {
@@ -691,7 +710,7 @@
 
 /* ===== Ideas area ===== */
 .chat-ideas-area {
-  flex: 0 0 45svh;
+  flex:0 0 45svh;
   height: 45svh;
   min-height: 45svh;
   max-height: 45svh;
@@ -702,6 +721,8 @@
   flex-direction: column;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
+  position: relative;
+  z-index: 1;
 }
 
 .chat-ideas-area-header {

@@ -150,6 +150,9 @@ export async function renderChatSurveyPage(
     })
 
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
+    if (project.imageUrl) {
+        chatShell.style.setProperty('--project-bg', `url(${project.imageUrl})`);
+    }
     const scrollAreaEl = container.querySelector<HTMLDivElement>('#chat-scroll-area')!
     const messagesEl = container.querySelector<HTMLDivElement>('#chat-messages')!
     const headerController = createSurveyHeaderController({ root: container })
@@ -723,28 +726,30 @@ export async function renderChatSurveyPage(
                 })
                  localStorage.setItem(completedKey, 'true')
                  clearSurveyProgress(projectSlugKey)
-                 
+  
                  // Lock all survey answers to prevent further editing
                  for (let i = 0; i <= confirmedUpToIndex && i < components.length; i++) {
                      components[i].lock()
                  }
-                 lockSurveyHistory()
                  deactivateInput()
-                
-                submitRow.remove()
-
-                const successRow = document.createElement('div')
-                successRow.className = 'chat-submit-success'
-                successRow.innerHTML = `
-                    <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
-                    <p class="chat-submit-success-title">${esc(t.submittedTitle)}</p>
-                    <p class="chat-submit-success-sub">${esc(t.submittedSub)}</p>`
-                messagesEl.appendChild(successRow)
-                scrollToBottom()
-
-                await wait(2200)
-                await enterIdeasPhase()
-            } catch {
+               
+                 submitRow.remove()
+ 
+                 const successRow = document.createElement('div')
+                 successRow.className = 'chat-submit-success'
+                 successRow.innerHTML = `
+                     <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
+                     <p class="chat-submit-success-title">${esc(t.submittedTitle)}</p>
+                     <p class="chat-submit-success-sub">${esc(t.submittedSub)}</p>`
+                 messagesEl.appendChild(successRow)
+                 scrollToBottom()
+ 
+                 // Save survey history after success message is added and submit button removed
+                 lockSurveyHistory()
+ 
+                 await wait(2200)
+                 await enterIdeasPhase()
+             } catch {
                 btn.disabled = false
                 btn.textContent = t.submitSurvey
                 await appendAiBubble(t.somethingWrong)
