@@ -152,6 +152,9 @@ export async function renderChatSurveyPage(
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
     if (project.imageUrl) {
         chatShell.style.setProperty('--project-bg', `url(${project.imageUrl})`);
+    } else {
+        chatShell.style.setProperty('--project-bg', 'none');
+        chatShell.style.backgroundColor = 'white';
     }
     const scrollAreaEl = container.querySelector<HTMLDivElement>('#chat-scroll-area')!
     const messagesEl = container.querySelector<HTMLDivElement>('#chat-messages')!

@@ -594,27 +594,32 @@
 
 /* Text label */
 .layout-picker-label {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    transition: transform 0.2s ease;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  transition: transform 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-lg);
+    padding: clamp(var(--spacing-sm), 2vh, var(--spacing-sm));
 }
 
 .layout-picker-label-title {
-    display: block;
-    font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-3xl));
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.3px;
-    margin-bottom: var(--spacing-xs);
+  display: block;
+  font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-3xl));
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  margin-bottom: var(--spacing-xs);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 .layout-picker-label-desc {
-    font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
-    color: rgba(255, 255, 255, 0.75);
-    margin: 0;
-    line-height: 1.5;
-    max-width: 200px;
+  font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 200px;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
 }
 
 /* ── Vertical divider + OR badge ── */
