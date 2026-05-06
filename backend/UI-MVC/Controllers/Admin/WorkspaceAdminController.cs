@@ -136,13 +136,49 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
-    private AdminFormViewModel<Project> CreateFormVm(Project project)
+    private ProjectViewModel CreateFormVm(Project project)
     {
-        return new AdminFormViewModel<Project>
+        return new ProjectViewModel
         {
-            FormItem = project,
-            FormAction = "CreateProject",
-            SubmitLabel = "Create Project",
+            AdminFormViewModel = new AdminFormViewModel<Project>
+            {
+                FormItem = project,
+                FormAction = "CreateProject",
+                SubmitLabel = "Create Project",
+            },
+            StepperViewModel = new StepperViewModel
+            {
+                Title = "Creating a Project",
+                EntityName = "Project",
+                Steps =
+                [
+                    new StepItem
+                    {
+                        Label = "Intro & Presentation",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Survey",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Ideation",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "AI Configuration",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Done",
+                        PartialViewName = "_ProjectForm"
+                    }
+                ]
+            }
         };
     }
     

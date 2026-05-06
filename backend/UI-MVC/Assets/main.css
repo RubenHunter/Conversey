@@ -13,6 +13,7 @@
 /*	box-sizing: border-box;*/
 /*}*/
 
+@plugin "tailwindcss-animate";
 
 @theme {
 	--color-text: #05030a;

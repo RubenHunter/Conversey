@@ -1,3 +1,7 @@
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
+@inject AdminContext AdminContext
+
 <header class="w-full flex items-center justify-between px-8 py-3 border-b border-secondary/10 bg-white sticky top-0 z-50 shadow-sm">
     <!-- Left Section -->
     <div class="flex items-center space-x-4">
@@ -12,12 +16,42 @@
                 @(ViewData["WorkspaceName"] ?? "Workspace")
             </span>
             <nav class="flex items-center space-x-2 text-sm">
-                <a href="#" class="font-semibold text-text hover:text-primary transition-colors">
-                    @(ViewData["Breadcrumb"] ?? "Dashboard")
-                </a>
-                <svg class="w-4 h-4 text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
+                @{
+                    var breadcrumbList = ViewData["Breadcrumbs"] as (string Label, string? Url, bool IsCurrent)[];
+                }
+                @if (breadcrumbList != null && breadcrumbList.Length > 0)
+                {
+                    for (var i = 0; i < breadcrumbList.Length; i++)
+                    {
+                        var crumb = breadcrumbList[i];
+                        if (!string.IsNullOrWhiteSpace(crumb.Url) && !crumb.IsCurrent)
+                        {
+                            <a href="@crumb.Url" class="font-semibold text-text hover:text-primary transition-colors">
+                                @crumb.Label
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="font-semibold text-text/70">@crumb.Label</span>
+                        }
+
+                        if (i < breadcrumbList.Length - 1)
+                        {
+                            <svg class="w-4 h-4 text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        }
+                    }
+                }
+                else
+                {
+                    <a href="#" class="font-semibold text-text hover:text-primary transition-colors">
+                        @(ViewData["Breadcrumb"] ?? "Dashboard")
+                    </a>
+                    <svg class="w-4 h-4 text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                }
             </nav>
         </div>
     </div>
@@ -40,8 +74,17 @@
 
         <button class="flex items-center group">
             <div class="flex-col items-end mr-3 hidden sm:flex">
-                <span class="text-xs font-bold text-text group-hover:text-primary transition-colors">Admin User</span>
-                <span class="text-[10px] text-secondary">Super Admin</span>
+                <span class="text-xs font-bold text-text group-hover:text-primary transition-colors">@AdminContext.CurrentAdmin.Email</span>
+                @{
+                    if (AdminContext.CurrentAdmin is ConverseyAdmin)
+                    {
+                        <span class="text-[10px] text-secondary">Conversey Admin</span>
+                    }
+                    else if (AdminContext.CurrentAdmin is WorkspaceAdmin)
+                    {
+                        <span class="text-[10px] text-secondary">Workspace Admin</span>
+                    }
+                }
             </div>
             <div class="w-9 h-9 bg-background rounded-xl border border-secondary/20 flex items-center justify-center text-primary group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
