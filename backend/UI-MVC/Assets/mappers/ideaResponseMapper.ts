@@ -1,5 +1,5 @@
-import type { ApiIdeaResponseDto, ApiResponseReactionSummaryDto } from '../api/dtos/ideaResponseDto.ts'
-import type { IdeaResponse, ResponseReactionSummary } from '../models/ideaResponse.ts'
+import type { ApiIdeaResponseDto, ApiResponseReactionSummaryDto } from '../api/dtos/ideaResponseDto'
+import type { IdeaResponse, ResponseReactionSummary } from '../models/ideaResponse'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
     return values.find((value) => typeof value === 'number' && Number.isFinite(value))

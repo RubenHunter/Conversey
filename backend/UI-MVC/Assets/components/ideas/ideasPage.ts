@@ -1,5 +1,5 @@
 import '../../styles/pages/ideas.css'
-//import type { RouteParams } from '../../utils/router.ts'
+//import type { RouteParams } from '../../utils/router'
 import { getProject } from '../../services/projectService'
 import {
     getDiscoveredIdeasForTopic,
@@ -24,17 +24,18 @@ import { resolveInitialIdeasView } from './initialView'
 import { createIdeaPanelController } from './ideaPanel'
 import { createSafetyReviewDialogController } from './safetyReviewDialog'
 import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
+import {createIdeaNudgeDialogController} from './ideaNudgeDialog'
 import { renderIdeasComposer } from './composer'
-import type { ActiveView } from './types.ts'
-import { renderIdeasHeader } from './ideasHeader'
-import { createTopicModalController } from './topicModal'
-import { createIdeasListController } from './ideasListController'
-import { createIdeasSubmitHandler } from './ideasSubmitHandler'
-import { createIdeaNudgeDialogController } from './ideaNudgeDialog'
-import {ProjectContext, render} from "../../main"
-import { getSurveyStrings } from '../../i18n/survey';
+import { renderIdeasHeader } from "./ideasHeader"
+import {createTopicModalController} from "./topicModal";
+import {createIdeasListController} from "./ideasListController";
+import {createIdeasSubmitHandler} from "./ideasSubmitHandler";
+import type { ActiveView } from './types'
+import { DiscoveryMode, DiscoveryBadgeType, IdeaAuthorType, DiscoveryFeed } from './types'
+import { getSurveyStrings } from '../../i18n/survey'
+import { hasOwnIdeaInTopic, getTopicSemanticCategories, buildBroadFeed, createDiscoveryFeed, createPostPreviewFeed } from './ideasDiscovery'
+import {ProjectContext, render} from "../../main";
 
-type DiscoveryBadgeType = 'similar' | 'different'
 
 // Get label for active ideas view
 function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[], t: any): string {
@@ -42,8 +43,6 @@ function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[], t: any
     const topic = topics.find((item) => item.id === activeView.topicId)
     return topic ? topic.title : t.selectTopic
 }
-
-type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 7
 const LOAD_MORE_SCROLL_THRESHOLD = 150
@@ -54,78 +53,13 @@ const getDiscoveryLabels = (t: any): Record<DiscoveryMode, string> => ({
     different: t.differingIdeas,
 })
 
-interface DiscoveryFeed {
-    ideas: Idea[]
-    badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>
-}
 
-function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
-    return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
-}
 
-function getTopicSemanticCategories(allIdeas: Idea[], topicId: number): string[] {
-    const categories = new Set<string>()
-    allIdeas
-        .filter((idea) => idea.topicId === topicId)
-        .forEach((idea) => {
-            idea.semanticCategories.forEach((category) => {
-                if (category.trim().length > 0) {
-                    categories.add(category)
-                }
-            })
-        })
-
-    return [...categories].sort((a, b) => a.localeCompare(b))
-}
-
-function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
-    const byCategory = new Map<string, Idea[]>()
-    const withoutCategories: Idea[] = []
-
-    topicIdeas.forEach((idea) => {
-        if (idea.semanticCategories.length === 0) {
-            withoutCategories.push(idea)
-            return
-        }
-        idea.semanticCategories.forEach((category) => {
-            const bucket = byCategory.get(category) ?? []
-            bucket.push(idea)
-            byCategory.set(category, bucket)
-        })
-    })
-
-    const broad: Idea[] = []
-    const seen = new Set<number>()
-    const categories = [...byCategory.keys()]
-    let added = true
-    while (added) {
-        added = false
-        categories.forEach((category) => {
-            const bucket = byCategory.get(category)
-            if (!bucket || bucket.length === 0) return
-            const nextIdea = bucket.shift()!
-            if (seen.has(nextIdea.id)) return
-            seen.add(nextIdea.id)
-            broad.push(nextIdea)
-            added = true
-        })
-    }
-    withoutCategories.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-    topicIdeas.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-    return broad
-}
 
 
 export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
+    let discoveryRequestToken = 0
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
@@ -133,9 +67,22 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const organizationName = project.organizationName?.trim() || project.organizationSlug
     const topics = context.topics
     const allIdeas = [...context.ideas]
+    let suppressListScrollSyncUntil: number = 0
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     const flaggedIdeaIds = new Set<number>()
+
+    let extraLoadsUsed: number = 0
+    let isLoadingMoreIdeas: boolean = false
+    let autoLoadArmed: boolean = true
+    let discoveryMode: DiscoveryMode = DiscoveryMode.All
+    let selectedSemanticCategory: string | null = null
+    let showPostPreviewPair: boolean = false
+    let discoveryCache: Map<string, DiscoveryFeed> = new Map()
+    let latestSubmittedIdea: Idea | null = null
+    let visibleIdeasCache: Idea[] = []
+    let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
+    let lastScrollTop: number = 0
 
     const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug })
 
@@ -275,7 +222,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                 </svg>
-                                <span>Use as starter</span>
+                                <span>${t.useAsStarter}</span>
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
@@ -289,7 +236,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">Edit idea before publish</span>
+                                <span class="survey-magic-btn-text">${t.editIdeaBeforePublish}</span>
                             </button>
                         </div>
                     </div>
@@ -434,40 +381,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const discoveryLabel = container.querySelector<HTMLSpanElement>('#ideas-discovery-label')!
     const discoveryMenu = container.querySelector<HTMLDivElement>('#ideas-discovery-menu')!
     const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
-
-    let discoveryMode: DiscoveryMode = 'all'
-    let selectedSemanticCategory: string | null = null
-    let discoveryRequestToken = 0
-    const discoveryCache = new Map<string, DiscoveryFeed>()
-    let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
-    let visibleIdeasCache: Idea[] = []
-    let extraLoadsUsed = 0
-    let isLoadingMoreIdeas = false
-    let autoLoadArmed = true
-    let lastScrollTop = 0
-    let suppressListScrollSyncUntil = 0
-    let showPostPreviewPair = false
-    let latestSubmittedIdea: Idea | null = null
-
-    const firstIdeaContactDialog = createFirstIdeaContactDialogController({
+    let firstIdeaContactDialog = createFirstIdeaContactDialogController({
         root: container,
         storageKey: firstIdeaContactStorageKey,
     })
 
-    function getNudgingContext(view: ActiveView) {
-        if (view.type !== 'topic') return null
-        const topic = topics.find((item) => item.id === view.topicId)
-        if (!topic) return null
-        return {
-            projectTitle: project.title,
-            projectDescription: project.description,
-            topicTitle: topic.title,
-            topicPrompt: topic.prompt,
-        }
-    }
-
     function resetIdeasListToTop(): void {
-        list.scrollTo({top: 0, behavior: 'auto'})
+        list.scrollTop = 0
     }
 
     function suppressListScrollSync(durationMs: number): void {
@@ -500,30 +420,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             })
     }
 
-    function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
-        const previewIdeas: Idea[] = []
-        const previewBadges = new Map<number, DiscoveryBadgeType>()
-        const seen = new Set<number>()
 
-        const addIdea = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): boolean => {
-            if (!idea || seen.has(idea.id)) return false
-            seen.add(idea.id)
-            previewIdeas.push(idea)
-            if (badge && previewBadges.size < 2) {
-                previewBadges.set(idea.id, badge)
-            }
-            return true
-        }
-
-        addIdea(similarIdeas[0], 'similar')
-        // Find first different idea that hasn't already been shown as similar
-        for (const idea of differentIdeas) {
-            if (addIdea(idea, 'different')) break
-        }
-        addIdea(submittedIdea)
-
-        return createDiscoveryFeed(previewIdeas, previewBadges)
-    }
 
     function renderDiscoveryMenuOptions(): void {
         if (activeView.type !== 'topic') {
@@ -554,13 +451,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
         `
-    }
-
-    function createDiscoveryFeed(ideas: Idea[], badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>): DiscoveryFeed {
-        return {
-            ideas,
-            badgesByIdeaId,
-        }
     }
 
     function closeDiscoveryMenu(): void {
@@ -600,14 +490,14 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     async function getVisibleIdeasForCurrentMode(): Promise<DiscoveryFeed> {
         if (activeView.type === 'my-ideas') {
-            const myIdeas = allIdeas.filter((idea) => idea.authorType === 'self')
+            const myIdeas = allIdeas.filter((idea) => idea.authorType === IdeaAuthorType.Self)
             return createDiscoveryFeed(myIdeas, new Map())
         }
 
         const topicId = activeView.topicId
         const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, topicId)
         const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
-        const cacheSuffix = discoveryMode === 'all' && showPostPreviewPair ? 'preview' : 'full'
+        const cacheSuffix = discoveryMode === DiscoveryMode.All && showPostPreviewPair ? 'preview' : 'full'
         const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
         const cached = discoveryCache.get(cacheKey)
         if (cached) {
@@ -629,7 +519,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     )
                     discovered = createDiscoveryFeed(filtered, new Map())
                 }
-            } else if (discoveryMode === 'all') {
+            } else if (discoveryMode === DiscoveryMode.All) {
                 const [similarIdeas, rawDifferentIdeas] = await Promise.all([
                     getDiscoveredIdeasForTopic(
                         params.organizationSlug,
@@ -662,9 +552,9 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 }
 
                 if (showPostPreviewPair) {
-                    const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                    const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
                     // Use rawDifferentIdeas for the preview so we always find a unique "differing" pick
-                    discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea)
+                    discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea, new Map())
                 } else {
                     // Pinned top 3: most similar, most different, then user's own idea
                     const pinnedIdeas: Idea[] = []
@@ -678,14 +568,14 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         if (badge) pinnedBadges.set(idea.id, badge)
                     }
 
-                    addPinned(similarIdeas[0], 'similar')
+                    addPinned(similarIdeas[0], DiscoveryBadgeType.Similar)
                     for (const idea of oppositeIdeas) {
                         if (!pinnedIds.has(idea.id)) {
-                            addPinned(idea, 'different');
+                            addPinned(idea, DiscoveryBadgeType.Different);
                             break
                         }
                     }
-                    const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                    const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
                     addPinned(userIdea)
 
                     // Remaining topic ideas in broad category-interleaved order
@@ -695,7 +585,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 }
             } else {
                 // Fetch both modes in parallel and deduplicate to prevent overlap between lists
-                const otherMode: IdeaDiscoveryCategory = discoveryMode === 'similar' ? 'different' : 'similar'
+                const otherMode: IdeaDiscoveryCategory = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
                 const [modeIdeas, otherIdeas] = await Promise.all([
                     getDiscoveredIdeasForTopic(
                         params.organizationSlug,
@@ -715,8 +605,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     ),
                 ])
 
-                const similarList = discoveryMode === 'similar' ? modeIdeas : otherIdeas
-                const rawDifferentList = discoveryMode === 'different' ? modeIdeas : otherIdeas
+                const similarList = discoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
+                const rawDifferentList = discoveryMode === DiscoveryMode.Different ? modeIdeas : otherIdeas
                 const simIds = new Set(similarList.map((idea) => idea.id))
                 const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
 
@@ -725,11 +615,11 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 if (!discoveryCache.has(otherCacheKey)) {
                     discoveryCache.set(
                         otherCacheKey,
-                        createDiscoveryFeed(discoveryMode === 'similar' ? deduplicatedDifferent : similarList, new Map()),
+                        createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? deduplicatedDifferent : similarList, new Map()),
                     )
                 }
 
-                discovered = createDiscoveryFeed(discoveryMode === 'similar' ? similarList : deduplicatedDifferent, new Map())
+                discovered = createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? similarList : deduplicatedDifferent, new Map())
             }
 
             discoveryCache.set(cacheKey, discovered)
@@ -759,6 +649,18 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             textareaWrapper.classList.remove('ideas-compose-copied')
             copyPulseTimeout = null
         }, 850)
+    }
+
+    function getNudgingContext(view: ActiveView) {
+        if (view.type !== 'topic') return null
+        const topic = topics.find((item) => item.id === view.topicId)
+        if (!topic) return null
+        return {
+            projectTitle: project.title,
+            projectDescription: project.description,
+            topicTitle: topic.title,
+            topicPrompt: topic.prompt,
+        }
     }
 
     // Create controllers
@@ -818,7 +720,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         onSelect: (nextView) => {
             activeView = nextView
             if (nextView.type === 'topic') {
-                discoveryMode = 'all'
+                discoveryMode = DiscoveryMode.All
                 selectedSemanticCategory = null
                 showPostPreviewPair = false
             }
@@ -844,7 +746,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = 'all'
+            discoveryMode = DiscoveryMode.All
             selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
@@ -901,7 +803,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             flaggedIdeaIds,
             discoveryBadgeByIdeaId,
             onDiscoveryBadgeClick: (badge) => {
-                discoveryMode = badge === 'similar' ? 'similar' : 'different'
+                discoveryMode = badge === 'similar' ? DiscoveryMode.Similar : DiscoveryMode.Different
                 showPostPreviewPair = false
                 resetPaging()
                 closeDiscoveryMenu()
@@ -950,12 +852,12 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     }
 
     function getEmptyStateMessage(): string {
-        if (activeView.type !== 'topic') return 'No ideas here yet.'
+        if (activeView.type !== 'topic') return t.noIdeasHere
         const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, activeView.topicId)
-        if (!ownIdeaExists) return 'No ideas have been shared yet. Be the first!'
-        if (discoveryMode === 'similar') return 'Your idea seems super original — no similar ideas found yet.'
-        if (discoveryMode === 'different') return 'No clearly contrasting ideas found yet.'
-        return 'No ideas here yet.'
+        if (!ownIdeaExists) return t.noIdeasYetBeFirst
+        if (discoveryMode === DiscoveryMode.Similar) return t.noSimilarIdeasFound
+        if (discoveryMode === DiscoveryMode.Different) return t.noContrastingIdeasFound
+        return t.noIdeasHere
     }
 
     function updateLoadMoreButton(): void {
@@ -1061,7 +963,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             selectedSemanticCategory = null
             showPostPreviewPair = false
         } else {
-            discoveryMode = 'all'
+            discoveryMode = DiscoveryMode.All
             selectedSemanticCategory = semanticCategory ?? null
             showPostPreviewPair = false
         }
@@ -1207,7 +1109,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         try {
             await submitHandler.submit(body, activeView)
         } finally {
-            submitBtn.textContent = 'Submit Idea'
+            submitBtn.textContent = t.submitIdea
             submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
         }
     })

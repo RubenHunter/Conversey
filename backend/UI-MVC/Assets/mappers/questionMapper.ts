@@ -1,5 +1,5 @@
-import type { ApiAnswerOptionDto, ApiQuestionDto, ApiQuestionTypeDto } from '../api/dtos/questionDto.ts'
-import { QuestionType, type AnswerOption, type Question } from '../models/question.ts'
+import type { ApiAnswerOptionDto, ApiQuestionDto, ApiQuestionTypeDto } from '../api/dtos/questionDto'
+import { QuestionType, type AnswerOption, type Question } from '../models/question'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
     return values.find((value) => typeof value === 'number' && Number.isFinite(value))

@@ -1,6 +1,6 @@
-import { assessIdeaNudging } from '../../services/ideaService.ts'
-import type { ActiveView } from './types.ts'
-import type { IdeaNudgingContext, IdeaNudgingTurn } from '../../services/ideaService.ts'
+import { assessIdeaNudging } from '../../services/ideaService'
+import type { ActiveView } from './types'
+import type { IdeaNudgingContext, IdeaNudgingTurn } from '../../services/ideaService'
 
 export interface IdeaNudgingResult {
     proceed: boolean

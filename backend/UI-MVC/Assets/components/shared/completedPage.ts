@@ -1,4 +1,4 @@
-import {navigate, ProjectContext, render} from "../main";
+import {navigate, ProjectContext, render} from "../../main";
 
 function isSurveyCompleted(projectSlug: string): boolean {
     return localStorage.getItem(`survey-completed-${projectSlug}`) === 'true'

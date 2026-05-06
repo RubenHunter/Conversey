@@ -98,9 +98,10 @@
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
-  align-self: stretch;
+   align-self: stretch;
 }
 
+/* Desktop: wider padding for chat messages - converted to Tailwind: min-[832px]:px-8 */
 @media (min-width: 832px) {
   .chat-messages {
     padding: var(--spacing-md) var(--spacing-xl);

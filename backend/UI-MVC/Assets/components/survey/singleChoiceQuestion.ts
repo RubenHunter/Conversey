@@ -1,4 +1,4 @@
-import type { Question } from '../../models/question.ts'
+import type { Question } from '../../models/question'
 import { generateQuestionHeader } from './shared'
 
 export type QuestionAnswer = number | string | number[] | null

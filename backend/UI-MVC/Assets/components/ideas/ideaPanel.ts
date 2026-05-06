@@ -1,7 +1,8 @@
-import type { Idea, IdeaReactionSummary } from '../../models/idea.ts'
-import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse.ts'
-import type { IdeaPanelController, ReviewBeforePost } from './types.ts'
-import type { PostSafetyDecision } from './safetyReviewDialog.ts'
+import type { Idea, IdeaReactionSummary } from '../../models/idea'
+import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse'
+import type { IdeaPanelController, ReviewBeforePost } from './types'
+import type { PostSafetyDecision } from './safetyReviewDialog'
+import { getSurveyStrings } from '../../i18n/survey'
 
 interface ResponseSubmitResult {
     response: IdeaResponse
@@ -49,6 +50,7 @@ export function createIdeaPanelController({
     onCopyIdea,
     onIdeaReactionsUpdated,
 }: CreateIdeaPanelControllerParams): IdeaPanelController {
+    const t = getSurveyStrings()
     const panelBackdrop = root.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panel = root.querySelector<HTMLDivElement>('#idea-panel')!
     const panelClose = root.querySelector<HTMLButtonElement>('#idea-panel-close')!
@@ -349,17 +351,17 @@ export function createIdeaPanelController({
         panelComments.innerHTML = ''
 
         if (loadingIdeas.has(idea.id)) {
-            panelComments.innerHTML = `<p class="idea-panel-no-comments">Loading responses...</p>`
+            panelComments.innerHTML = `<p class="idea-panel-no-comments">${t.loadingResponses}</p>`
             return
         }
 
         if (failedIdeas.has(idea.id) && comments.length === 0) {
-            panelComments.innerHTML = `<p class="idea-panel-no-comments">Could not load responses right now. Try reopening this idea.</p>`
+            panelComments.innerHTML = `<p class="idea-panel-no-comments">${t.couldNotLoadResponses}</p>`
             return
         }
 
         if (comments.length === 0) {
-            panelComments.innerHTML = `<p class="idea-panel-no-comments">No responses yet. Be the first!</p>`
+            panelComments.innerHTML = `<p class="idea-panel-no-comments">${t.noResponsesYet}</p>`
             return
         }
 
@@ -609,7 +611,7 @@ export function createIdeaPanelController({
             exitEditMode()
             renderPanel(currentIdea)
         } finally {
-            panelEditSave.textContent = 'Save changes'
+            panelEditSave.textContent = t.saveChanges
             updateEditSaveState()
         }
     })

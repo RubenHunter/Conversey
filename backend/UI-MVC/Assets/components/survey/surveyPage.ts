@@ -7,15 +7,17 @@ import {renderSingleChoiceQuestion} from './singleChoiceQuestion'
 import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion'
 import {renderOpenTextQuestion} from './openTextQuestion'
 import {renderScaleQuestion} from './scaleQuestion'
-import type {ScrollNav} from '../scrollNav'
-import {renderScrollNav} from '../scrollNav'
+import type {ScrollNav} from '../shared/scrollNav'
 import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
 import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
 import {navigate, ProjectContext, render} from "../../main";
 import {InteractionType} from '../../models/project'
 import {showLayoutPicker} from './layoutPicker'
+import {getSurveyStrings} from '../../i18n/survey'
+import {renderScrollNav} from '../shared/scrollNav'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+    const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
@@ -397,8 +399,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             return { questionId: question.id, openTextValue, value: openTextValue }
         }).flat()
         
-        submitBtn.textContent = 'Submitting...'
-
+        submitBtn.textContent = t.submitting
+        
         try {
             await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')
@@ -406,8 +408,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             cleanupSurveyPage()
             navigate("completed");
         } catch {
-            submitBtn.textContent = 'Submit Survey'
-            alert('Failed to submit survey. Please try again.')
+            submitBtn.textContent = t.submitSurvey
+            alert(t.submitFailed)
         }
     })
 }
@@ -417,7 +419,7 @@ render(async (container, params) => {
     const project = await getProject(params.organizationSlug, params.projectSlug)
 
     if (project.interactionType === InteractionType.Chat) {
-        const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+        const { renderChatSurveyPage } = await import("../chat/chatSurveyPage")
         await renderChatSurveyPage(container, params, project)
         return
     }
@@ -427,7 +429,7 @@ render(async (container, params) => {
         const savedLayout = localStorage.getItem(layoutKey)
 
         if (savedLayout === 'chat') {
-            const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+            const { renderChatSurveyPage } = await import('../chat/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
             return
         }
@@ -445,7 +447,7 @@ render(async (container, params) => {
             organizationSlug: project.organizationSlug,
         })
         if (choice === 'chat') {
-            const { renderChatSurveyPage } = await import('./chat/chatSurveyPage')
+            const { renderChatSurveyPage } = await import('../chat/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
         } else {
             await renderSurveyPage(container, params)

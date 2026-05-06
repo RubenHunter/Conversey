@@ -1,17 +1,17 @@
-import '../../../styles/pages/chat-survey.css'
-import '../../../styles/pages/ideas.css'
-import type { Project } from '../../../models/project'
-import type { ProjectContext } from '../../../main'
-import { getQuestions, submitAnswers } from '../../../services/surveyService'
-import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
-import { QuestionType } from '../../../models/question'
-import type { ResponseAnswer } from '../../../models/response'
-import type { QuestionAnswer, QuestionComponent } from '../singleChoiceQuestion'
-import { renderSingleChoiceQuestion } from '../singleChoiceQuestion'
-import { renderMultipleChoiceQuestion } from '../multipleChoiceQuestion'
-import { renderOpenTextQuestion } from '../openTextQuestion'
-import { renderScaleQuestion } from '../scaleQuestion'
-import { renderSurveyHeader, createSurveyHeaderController } from '../surveyHeader'
+import '../../styles/pages/chat-survey.css'
+import '../../styles/pages/ideas.css'
+import type { Project } from '../../models/project'
+import type { ProjectContext } from '../../main'
+import { getQuestions, submitAnswers } from '../../services/surveyService'
+import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../services/surveyProgressService'
+import { QuestionType } from '../../models/question'
+import type { ResponseAnswer } from '../../models/response'
+import type { QuestionAnswer, QuestionComponent } from '../survey/singleChoiceQuestion'
+import { renderSingleChoiceQuestion } from '../survey/singleChoiceQuestion'
+import { renderMultipleChoiceQuestion } from '../survey/multipleChoiceQuestion'
+import { renderOpenTextQuestion } from '../survey/openTextQuestion'
+import { renderScaleQuestion } from '../survey/scaleQuestion'
+import { renderSurveyHeader, createSurveyHeaderController } from '../survey/surveyHeader'
 import {
     getIdeasContext,
     getDiscoveredIdeasForTopic,
@@ -20,7 +20,7 @@ import {
     saveYouthContactEmail,
     type IdeaDiscoveryCategory,
     updateIdeaAfterSafetyReview,
-} from '../../../services/ideaService'
+} from '../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -29,17 +29,18 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../../services/ideaResponseService'
-import { createIdeasListController } from '../../ideas/ideasListController'
-import { createSafetyReviewDialogController } from '../../ideas/safetyReviewDialog'
-import { createIdeaPanelController } from '../../ideas/ideaPanel'
-import { createIdeasSubmitHandler } from '../../ideas/ideasSubmitHandler'
-import { createFirstIdeaContactDialogController } from '../../ideas/firstIdeaContactDialog'
-import { createTopicModalController } from '../../ideas/topicModal'
-import { createChatIdeaNudgeFlow } from '../../ideas/chatIdeaNudgeFlow'
-import type { Idea, IdeaTopic } from '../../../models/idea'
-import type { ActiveView } from '../../ideas/types'
-import { getSurveyStrings } from '../../../i18n/survey'
+} from '../../services/ideaResponseService'
+import { createIdeasListController } from '../ideas/ideasListController'
+import { createSafetyReviewDialogController } from '../ideas/safetyReviewDialog'
+import { createIdeaPanelController } from '../ideas/ideaPanel'
+import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
+import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
+import { createTopicModalController } from '../ideas/topicModal'
+import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
+import type { Idea, IdeaTopic } from '../../models/idea'
+import type { ActiveView } from '../ideas/types'
+import { DiscoveryMode, DiscoveryBadgeType } from '../ideas/types'
+import { getSurveyStrings } from '../../i18n/survey'
 import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers'
 import {
     AI_AVATAR,
@@ -54,9 +55,6 @@ interface OpenTextState {
     messages: string[]
     floatingConfirmRow: HTMLElement | null
 }
-
-type DiscoveryBadgeType = 'similar' | 'different'
-type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 7
 const LOAD_MORE_SCROLL_THRESHOLD = 150

@@ -1,8 +1,8 @@
-import { submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService.ts'
-import type { Idea } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
-import type { PostSafetyDecision } from './safetyReviewDialog.ts'
-import type { IdeaNudgingContext } from '../../services/ideaService.ts'
+import { submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService'
+import type { Idea } from '../../models/idea'
+import type { ActiveView } from './types'
+import type { PostSafetyDecision } from './safetyReviewDialog'
+import type { IdeaNudgingContext } from '../../services/ideaService'
 
 interface IdeaNudgingResult {
     proceed: boolean

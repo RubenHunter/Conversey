@@ -1,5 +1,5 @@
-import type { Question } from '../../models/question.ts'
-import type { QuestionComponent } from './singleChoiceQuestion.ts'
+import type { Question } from '../../models/question'
+import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader } from './shared'
 
 export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {

@@ -1,6 +1,6 @@
-import { renderCommunityIdeasList } from './communityList.ts'
-import type { Idea, IdeaTopic } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
+import { renderCommunityIdeasList } from './communityList'
+import type { Idea, IdeaTopic } from '../../models/idea'
+import type { ActiveView } from './types'
 
 type DiscoveryBadgeType = 'similar' | 'different'
 

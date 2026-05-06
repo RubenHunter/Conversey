@@ -2,8 +2,8 @@
  * Chat Ideation Phase Controller
  * Handles the ideas browsing, filtering, submission, and discovery in chat survey mode
  */
-import type { Project } from '../../../models/project'
-import type { ProjectContext } from '../../../main'
+import type { Project } from '../../models/project'
+import type { ProjectContext } from '../../main'
 import {
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
@@ -12,7 +12,7 @@ import {
     getDiscoveredIdeasForTopic,
     IDEA_DISCOVERY_MAX_RESULTS,
     type IdeaDiscoveryCategory,
-} from '../../../services/ideaService'
+} from '../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -21,16 +21,16 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../../services/ideaResponseService'
-import { createIdeasListController } from '../../ideas/ideasListController'
-import { createSafetyReviewDialogController } from '../../ideas/safetyReviewDialog'
-import { createIdeaPanelController } from '../../ideas/ideaPanel'
-import { createIdeasSubmitHandler } from '../../ideas/ideasSubmitHandler'
-import { createFirstIdeaContactDialogController } from '../../ideas/firstIdeaContactDialog'
-import { createChatIdeaNudgeFlow } from '../../ideas/chatIdeaNudgeFlow'
-import type { Idea, IdeaTopic } from '../../../models/idea'
-import type { ActiveView } from '../../ideas/types'
-import { getSurveyStrings } from '../../../i18n/survey'
+} from '../../services/ideaResponseService'
+import { createIdeasListController } from '../ideas/ideasListController'
+import { createSafetyReviewDialogController } from '../ideas/safetyReviewDialog'
+import { createIdeaPanelController } from '../ideas/ideaPanel'
+import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
+import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
+import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
+import type { Idea, IdeaTopic } from '../../models/idea'
+import type { ActiveView } from '../ideas/types'
+import { getSurveyStrings } from '../../i18n/survey'
 import { wait, esc } from './chatHelpers'
 import { AI_AVATAR, CHECKMARK_SVG, MAGIC_SVG } from './chatTemplates'
 

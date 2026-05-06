@@ -1,6 +1,6 @@
-import { QuestionType } from '../../../models/question'
-import type { Question } from '../../../models/question'
-import type { QuestionAnswer } from '../singleChoiceQuestion'
+import { QuestionType } from '../../models/question'
+import type { Question } from '../../models/question'
+import type { QuestionAnswer } from '../survey/singleChoiceQuestion'
 
 export function esc(text: string): string {
     return text

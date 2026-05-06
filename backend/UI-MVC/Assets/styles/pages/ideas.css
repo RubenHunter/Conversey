@@ -451,6 +451,7 @@
   justify-content: flex-end;
 }
 
+/* Replaced with Tailwind: max-[720px]:w-[calc(100vw-1rem)] max-[720px]:max-h-[220px] */
 @media (max-width: 720px) {
   .idea-nudge-dialog {
     width: calc(100vw - 1rem);

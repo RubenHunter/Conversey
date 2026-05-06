@@ -1,8 +1,8 @@
-import type { ApiQuestionDto } from '../api/dtos/questionDto.ts'
+import type { ApiQuestionDto } from '../api/dtos/questionDto'
 import { mapApiQuestionsToQuestions } from '../mappers/questionMapper'
 import { mapSurveyResponseToApiResponseDto } from '../mappers/responseMapper'
-import type { Question } from '../models/question.ts'
-import type { SurveyResponse } from '../models/response.ts'
+import type { Question } from '../models/question'
+import type { SurveyResponse } from '../models/response'
 import { apiFetch } from './apiService'
 import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService'
 

@@ -1,5 +1,5 @@
-﻿import type { IdeaTopic } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
+﻿import type { IdeaTopic } from '../../models/idea'
+import type { ActiveView } from './types'
 
 interface RenderComposerParams {
     activeView: ActiveView

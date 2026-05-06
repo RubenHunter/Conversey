@@ -1,7 +1,7 @@
-import { assessIdeaNudging } from '../../services/ideaService.ts'
-import type { ActiveView } from './types.ts'
-import type { IdeaNudgingContext, IdeaNudgingTurn } from '../../services/ideaService.ts'
-import type { IdeaNudgingResult } from './ideaNudgeDialog.ts'
+import { assessIdeaNudging } from '../../services/ideaService'
+import type { ActiveView } from './types'
+import type { IdeaNudgingContext, IdeaNudgingTurn } from '../../services/ideaService'
+import type { IdeaNudgingResult } from './ideaNudgeDialog'
 
 interface CreateChatIdeaNudgeFlowParams {
     workspaceSlug: string

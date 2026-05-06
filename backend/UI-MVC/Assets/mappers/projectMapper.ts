@@ -1,5 +1,5 @@
-import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto, ApiProjectStyleDto } from '../api/dtos/projectDto.ts'
-import { InteractionType, ProjectStatus, type Project, type ProjectStyle, type ProjectTopic } from '../models/project.ts'
+import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto, ApiProjectStyleDto } from '../api/dtos/projectDto'
+import { InteractionType, ProjectStatus, type Project, type ProjectStyle, type ProjectTopic } from '../models/project'
 
 function pickString(...values: Array<string | undefined>): string | undefined {
     return values.find((value) => typeof value === 'string' && value.length > 0)

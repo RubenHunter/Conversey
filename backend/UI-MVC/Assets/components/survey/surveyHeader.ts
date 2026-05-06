@@ -1,4 +1,4 @@
-import { getOrganizationBranding } from '../organizationBranding'
+import { getOrganizationBranding } from '../shared/organizationBranding'
 
 interface RenderSurveyHeaderParams {
     organizationName: string

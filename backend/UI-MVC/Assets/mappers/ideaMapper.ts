@@ -1,5 +1,5 @@
-﻿import type { ApiIdeaDto, ApiIdeaTopicDto, ApiSubmitIdeaRequestDto } from '../api/dtos/ideaDto.ts'
-import type { Idea, IdeaReactionSummary, IdeaTopic, SubmitIdeaRequest } from '../models/idea.ts'
+﻿import type { ApiIdeaDto, ApiIdeaTopicDto, ApiSubmitIdeaRequestDto } from '../api/dtos/ideaDto'
+import type { Idea, IdeaReactionSummary, IdeaTopic, SubmitIdeaRequest } from '../models/idea'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
     return values.find((value) => typeof value === 'number' && Number.isFinite(value))
