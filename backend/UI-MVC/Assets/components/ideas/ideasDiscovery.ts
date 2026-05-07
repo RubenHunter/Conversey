@@ -1,8 +1,6 @@
-import type { Idea, IdeaTopic } from '../../models/idea'
-import type { DiscoveryFeed, DiscoveryMode } from './types'
+import type { Idea } from '../../models/idea'
+import type { DiscoveryFeed } from './types'
 import { DiscoveryBadgeType } from './types'
-import { getDiscoveredIdeasForTopic, IDEA_DISCOVERY_MAX_RESULTS, getOrCreateProjectScopedYouthId } from '../../services/ideaService'
-import type { ProjectContext } from '../../main'
 
 let suppressListScrollSyncUntil: number = 0
 
@@ -14,8 +12,10 @@ export function isScrollSyncSuppressed(): boolean {
     return performance.now() < suppressListScrollSyncUntil
 }
 
+import { IdeaAuthorType } from '../../models/idea'
+
 export function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
-    return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+    return allIdeas.some((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)
 }
 
 export function getTopicSemanticCategories(allIdeas: Idea[], topicId: number): string[] {
@@ -86,7 +86,7 @@ export function createPostPreviewFeed(
     similarIdeas: Idea[],
     differentIdeas: Idea[],
     submittedIdea: Idea | null,
-    badgesByIdeaId: Map<number, DiscoveryBadgeType>,
+    _badgesByIdeaId: Map<number, DiscoveryBadgeType>,
 ): DiscoveryFeed {
     const previewIdeas: Idea[] = []
     const previewBadges = new Map<number, DiscoveryBadgeType>()

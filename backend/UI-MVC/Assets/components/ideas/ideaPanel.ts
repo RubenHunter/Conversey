@@ -1,9 +1,10 @@
 import type { Idea, IdeaReactionSummary } from '../../models/idea'
 import { IdeaAuthorType } from '../../models/idea'
 import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse'
-import type { IdeaPanelController, ReviewBeforePost } from './types'
+import type {ActiveView, IdeaPanelController, ReviewBeforePost} from './types'
 import type { PostSafetyDecision } from './safetyReviewDialog'
 import { getSurveyStrings } from '../../i18n/survey'
+import {IdeaNudgingContext} from "../../services/ideaService.ts";
 
 interface ResponseSubmitResult {
     response: IdeaResponse
@@ -30,6 +31,7 @@ interface CreateIdeaPanelControllerParams {
     unreactToIdea: (idea: Idea, emoji: string) => Promise<IdeaReactionSummary[]>
     onCopyIdea: (idea: Idea) => void
     onIdeaReactionsUpdated: (ideaId: number, reactions: IdeaReactionSummary[]) => void
+    getNudgingContext?: (view: ActiveView) => IdeaNudgingContext | null
 }
 
 type PickerTarget = { kind: 'idea' } | { kind: 'response'; responseId: number }

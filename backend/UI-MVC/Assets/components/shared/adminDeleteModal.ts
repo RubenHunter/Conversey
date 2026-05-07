@@ -21,8 +21,8 @@ class DeleteModal {
             btn.addEventListener("click", (e) => {
                 const el = e.currentTarget as HTMLButtonElement;
 
-                this.currentId = el.dataset.deleteId!;
-                this.endpoint = el.dataset.deleteEndpoint;
+                this.currentId = el.dataset.deleteId ?? null;
+                this.endpoint = el.dataset.deleteEndpoint ?? null;
 
                 const name = el.dataset.deleteName || "this item";
 

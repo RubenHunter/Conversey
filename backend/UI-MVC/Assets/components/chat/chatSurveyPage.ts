@@ -17,8 +17,7 @@ import {
     getDiscoveredIdeasForTopic,
     IDEA_DISCOVERY_MAX_RESULTS,
     getOrCreateProjectScopedYouthId,
-    saveYouthContactEmail,
-    updateIdeaAfterSafetyReview,
+    updateIdeaAfterSafetyReview, saveYouthContactEmail,
 } from '../../services/ideaService'
 import {
     addIdeaReaction,
@@ -36,17 +35,18 @@ import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
 import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
 import { createTopicModalController } from '../ideas/topicModal'
 import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
-import type { Idea, IdeaTopic } from '../../models/idea'
+import {Idea, IdeaAuthorType, IdeaTopic} from '../../models/idea'
+import type {IdeaNudgingContext} from '../../services/ideaService'
 import type { ActiveView } from '../ideas/types'
 import { DiscoveryMode, DiscoveryBadgeType } from '../ideas/types'
 import { getSurveyStrings } from '../../i18n/survey'
-import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers'
+import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers.ts'
 import {
     AI_AVATAR,
     CHECKMARK_SVG,
     SPEAKER_SVG,
     renderChatShellTemplate,
-} from './chatTemplates'
+} from './chatTemplates.ts'
 
 interface OpenTextState {
     questionIndex: number
@@ -177,12 +177,12 @@ export async function renderChatSurveyPage(
     let confirmedUpToIndex = 0
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
-    let activeSendHandler: (() => void | Promise<void>) | null = null
-    let editingBubble: HTMLElement | null = null
+        let activeSendHandler: (() => void | Promise<void>) | null = null
+        let editingBubble: HTMLElement | null = null
+        let handleIdeaSubmit: () => Promise<void> = async () => { return }
 
     // ===== Edit handler (must be defined early for use in sendOpenTextMessage) =====
-    const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
-        const q = questions[questionIndex]
+        const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
         
         // Make the bubble contenteditable
         bubbleElement.contentEditable = 'true'
@@ -850,7 +850,7 @@ export async function renderChatSurveyPage(
         surveyHeaderEl.hidden = true
 
         let activeView: ActiveView = { type: 'topic', topicId: firstTopic.id }
-        let discoveryMode: DiscoveryMode = 'all'
+        let discoveryMode: DiscoveryMode = DiscoveryMode.All
         let selectedSemanticCategory: string | null = null
         let showPostPreviewPair = false
         let latestSubmittedIdea: Idea | null = null
@@ -981,7 +981,7 @@ export async function renderChatSurveyPage(
             root: container,
             reviewBeforePost: (input) => safetyDialog.reviewBeforePost(input),
             reviewWithSuggestion,
-            getNudgingContext: (view) => {
+            getNudgingContext: (view: ActiveView) => {
                 if (view.type !== 'topic') return null
                 const topic = topics.find((item) => item.id === view.topicId)
                 if (!topic) return null
@@ -992,7 +992,6 @@ export async function renderChatSurveyPage(
                     topicPrompt: topic.prompt,
                 }
             },
-            runNudgingFlow: (input, view) => chatNudgeFlow.start(input, view),
             updateIdeaAfterSafetyReview: (idea, text, mark) =>
                 updateIdeaAfterSafetyReview(params.organizationSlug, params.projectSlug, idea.topicId, idea.id, text, mark),
             loadResponses: (idea) => getIdeaResponses(params.organizationSlug, params.projectSlug, idea, youthToken),
@@ -1022,7 +1021,7 @@ export async function renderChatSurveyPage(
                 chatNudgeFlow.cancelIfTopicChanged()
                 activeView = nextView
                 if (nextView.type === 'topic') {
-                    discoveryMode = 'all'
+                    discoveryMode = DiscoveryMode.All
                     selectedSemanticCategory = null
                     showPostPreviewPair = false
                 }
@@ -1032,7 +1031,8 @@ export async function renderChatSurveyPage(
                 topicModal.renderTopics(activeView)
                 updateTopicLabels()
                 if (activeView.type === 'topic') {
-                    const topic = topics.find((item) => item.id === activeView.topicId)
+                    const view = activeView as { type: 'topic'; topicId: number }
+                    const topic = topics.find((item) => item.id === view.topicId)
                     if (topic) {
                         const topicPrompt = topic.prompt?.trim()
                         await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', topic.title))
@@ -1044,8 +1044,52 @@ export async function renderChatSurveyPage(
             },
         })
 
+        // Wire up topic trigger → toggle topic modal
+        topicTrigger.addEventListener('click', (e) => {
+            e.stopPropagation()
+            if (topicModal.isOpen()) {
+                topicModal.close()
+            } else {
+                topicModal.open(topicTrigger)
+            }
+        })
+
+        // Wire up discovery trigger → toggle discovery menu
+        discoveryTrigger.addEventListener('click', (e) => {
+            e.stopPropagation()
+            const opening = discoveryMenu.hidden
+            if (opening) {
+                renderDiscoveryMenuOptions()
+            }
+            discoveryMenu.hidden = !opening
+            discoveryTrigger.setAttribute('aria-expanded', String(opening))
+        })
+
+        // Wire up discovery menu option clicks
+        discoveryMenu.addEventListener('click', (e) => {
+            const opt = (e.target as HTMLElement).closest<HTMLElement>('[data-discovery-mode], [data-semantic-category]')
+            if (!opt) return
+
+            const mode = opt.dataset.discoveryMode
+            const category = opt.dataset.semanticCategory
+
+            if (mode) {
+                if (mode === 'all') discoveryMode = DiscoveryMode.All
+                else if (mode === 'similar') discoveryMode = DiscoveryMode.Similar
+                else if (mode === 'different') discoveryMode = DiscoveryMode.Different
+                selectedSemanticCategory = null
+            } else if (category) {
+                selectedSemanticCategory = category
+            }
+
+            discoveryMenu.hidden = true
+            discoveryTrigger.setAttribute('aria-expanded', 'false')
+            updateDiscoveryUi()
+            void renderIdeasList()
+        })
+
         function hasOwnIdeaInTopic(topicId: number): boolean {
-            return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+            return allIdeas.some((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)
         }
 
         function resetPaging(): void {
@@ -1056,7 +1100,8 @@ export async function renderChatSurveyPage(
 
         function getMaxExtraLoads(): number {
             if (activeView.type !== 'topic') return 3
-            const topic = topics.find((item) => item.id === activeView.topicId)
+            const topicId = (activeView as { type: 'topic'; topicId: number }).topicId
+            const topic = topics.find((item) => item.id === topicId)
             return topic?.maxBroadSelectionLoads ?? 3
         }
 
@@ -1160,9 +1205,9 @@ export async function renderChatSurveyPage(
                 return true
             }
 
-            addIdea(similarIdeas[0], 'similar')
-            for (const idea of differentIdeas) {
-                if (addIdea(idea, 'different')) break
+            addIdea(similarIdeas[0], DiscoveryBadgeType.Similar)
+                for (const idea of differentIdeas) {
+                    if (addIdea(idea, DiscoveryBadgeType.Different)) break
             }
             addIdea(submittedIdea)
 
@@ -1208,15 +1253,16 @@ export async function renderChatSurveyPage(
 
             discoveryRoot.hidden = false
             renderDiscoveryMenuOptions()
-            const ownIdeaExists = hasOwnIdeaInTopic(activeView.topicId)
-            const labelMap: Record<DiscoveryMode, string> = { all: t.allIdeas, similar: t.similarIdeas, different: t.differingIdeas }
+            const view = activeView as { type: 'topic'; topicId: number }
+            const ownIdeaExists = hasOwnIdeaInTopic(view.topicId)
+            const labelMap: Record<DiscoveryMode, string> = { all: t.allIdeas, similar: t.similarIdeas, different: t.differingIdeas, random: '' }
             discoveryLabel.textContent = ownIdeaExists ? labelMap[discoveryMode] : (selectedSemanticCategory ?? t.broadSelection)
 
             discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option').forEach((option) => {
                 const mode = option.dataset.discoveryMode
                 const semanticCategory = option.dataset.semanticCategory
                 const isOwnMode = ownIdeaExists && mode === discoveryMode
-                const isBroadSelection = !ownIdeaExists && !selectedSemanticCategory && mode === 'all'
+                const isBroadSelection = !ownIdeaExists && !selectedSemanticCategory && mode === DiscoveryMode.All
                 const isSemanticSelection = !ownIdeaExists && !!selectedSemanticCategory && semanticCategory === selectedSemanticCategory
                 option.classList.toggle('selected', isOwnMode || isBroadSelection || isSemanticSelection)
             })
@@ -1224,13 +1270,13 @@ export async function renderChatSurveyPage(
 
         async function getVisibleIdeasForCurrentMode(): Promise<DiscoveryFeed> {
             if (activeView.type === 'my-ideas') {
-                return createDiscoveryFeed(allIdeas.filter((idea) => idea.authorType === 'self'), new Map())
+                return createDiscoveryFeed(allIdeas.filter((idea) => idea.authorType === IdeaAuthorType.Self), new Map())
             }
 
             const topicId = activeView.topicId
             const ownIdeaExists = hasOwnIdeaInTopic(topicId)
             const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
-            const cacheSuffix = discoveryMode === 'all' && showPostPreviewPair ? 'preview' : 'full'
+                     const cacheSuffix = discoveryMode === DiscoveryMode.All && showPostPreviewPair ? 'preview' : 'full'
             const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
             const cached = discoveryCache.get(cacheKey)
             if (cached) return cached
@@ -1249,10 +1295,10 @@ export async function renderChatSurveyPage(
                         )
                         discovered = createDiscoveryFeed(filtered, new Map())
                     }
-                } else if (discoveryMode === 'all') {
+                } else if (discoveryMode === DiscoveryMode.All) {
                     const [similarIdeas, rawDifferentIdeas] = await Promise.all([
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, 'similar', IDEA_DISCOVERY_MAX_RESULTS),
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, 'different', IDEA_DISCOVERY_MAX_RESULTS),
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, DiscoveryMode.Similar, IDEA_DISCOVERY_MAX_RESULTS),
+                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, DiscoveryMode.Different, IDEA_DISCOVERY_MAX_RESULTS),
                     ])
                     const similarIds = new Set(similarIdeas.map((idea) => idea.id))
                     const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
@@ -1267,7 +1313,7 @@ export async function renderChatSurveyPage(
                     }
 
                     if (showPostPreviewPair) {
-                        const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
+                        const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
                         discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea)
                     } else {
                         const pinnedIdeas: Idea[] = []
@@ -1281,36 +1327,36 @@ export async function renderChatSurveyPage(
                             if (badge) pinnedBadges.set(idea.id, badge)
                         }
 
-                        addPinned(similarIdeas[0], 'similar')
+                        addPinned(similarIdeas[0], DiscoveryBadgeType.Similar)
                         for (const idea of oppositeIdeas) {
                             if (!pinnedIds.has(idea.id)) {
-                                addPinned(idea, 'different')
+                                addPinned(idea, DiscoveryBadgeType.Different)
                                 break
                             }
                         }
-                        const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
-                        addPinned(userIdea)
+                        const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
+                         addPinned(userIdea)
                         const broadRemainder = buildBroadFeed(allIdeas.filter((idea) => idea.topicId === topicId)).filter((idea) => !pinnedIds.has(idea.id))
                         discovered = createDiscoveryFeed([...pinnedIdeas, ...broadRemainder], pinnedBadges)
                     }
                 } else {
-                    const otherMode: IdeaDiscoveryCategory = discoveryMode === 'similar' ? 'different' : 'similar'
+                    const otherMode: DiscoveryMode = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
                     const [modeIdeas, otherIdeas] = await Promise.all([
                         getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, discoveryMode, IDEA_DISCOVERY_MAX_RESULTS),
                         getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, otherMode, IDEA_DISCOVERY_MAX_RESULTS),
                     ])
 
-                    const similarList = discoveryMode === 'similar' ? modeIdeas : otherIdeas
-                    const rawDifferentList = discoveryMode === 'different' ? modeIdeas : otherIdeas
+                    const similarList = discoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
+                    const rawDifferentList = discoveryMode === DiscoveryMode.Different ? modeIdeas : otherIdeas
                     const simIds = new Set(similarList.map((idea) => idea.id))
                     const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
 
                     const otherCacheKey = `${topicId}:${otherMode}:${categorySuffix}:full`
                     if (!discoveryCache.has(otherCacheKey)) {
-                        discoveryCache.set(otherCacheKey, createDiscoveryFeed(discoveryMode === 'similar' ? deduplicatedDifferent : similarList, new Map()))
+                        discoveryCache.set(otherCacheKey, createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? deduplicatedDifferent : similarList, new Map()))
                     }
 
-                    discovered = createDiscoveryFeed(discoveryMode === 'similar' ? similarList : deduplicatedDifferent, new Map())
+                        discovered = createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? similarList : deduplicatedDifferent, new Map())
                 }
 
                 discoveryCache.set(cacheKey, discovered)
@@ -1374,8 +1420,8 @@ export async function renderChatSurveyPage(
                 topics,
                 flaggedIdeaIds,
                 discoveryBadgeByIdeaId,
-                onDiscoveryBadgeClick: (badge) => {
-                    discoveryMode = badge === 'similar' ? 'similar' : 'different'
+                onDiscoveryBadgeClick: (badge: DiscoveryBadgeType) => {
+                    discoveryMode = badge === DiscoveryBadgeType.Similar ? DiscoveryMode.Similar : DiscoveryMode.Different
                     showPostPreviewPair = false
                     resetPaging()
                     closeDiscoveryMenu()
@@ -1405,97 +1451,66 @@ export async function renderChatSurveyPage(
                     topicPrompt: topic.prompt,
                 }
             },
-            runNudgingFlow: (input, view) => chatNudgeFlow.start(input, view),
-            onIdeaSubmitted: (idea: Idea) => {
-                allIdeas.unshift(idea)
-                latestSubmittedIdea = idea
-                discoveryMode = 'all'
-                selectedSemanticCategory = null
-                showPostPreviewPair = true
-                resetPaging()
-                discoveryCache.clear()
-                void renderIdeasList()
-                void appendAiBubble(t.ideaShared)
-
-                if (!firstIdeaContactDialog.hasStoredDecision()) {
-                    void firstIdeaContactDialog.open().then((choice) => {
-                        if (choice?.permissionGranted && choice.email) {
-                            void saveYouthContactEmail(params.organizationSlug, params.projectSlug, youthToken, choice.email)
-                        }
-                    })
-                }
+            runNudgingFlow: async (input: string, activeView: ActiveView, _context: IdeaNudgingContext) => {
+                return chatNudgeFlow.start(input, activeView)
             },
-        })
+             onIdeaSubmitted: (idea: Idea) => {
+                 allIdeas.unshift(idea)
+                 latestSubmittedIdea = idea
+                 discoveryMode = DiscoveryMode.All
+                 selectedSemanticCategory = null
+                 showPostPreviewPair = false
+                 resetPaging()
+                 closeDiscoveryMenu()
+                 void renderIdeasList()
 
-        async function handleIdeaSubmit(): Promise<void> {
-            const text = chatInput.value.trim()
-            if (!text || activeView.type !== 'topic') return
+                 if (!firstIdeaContactDialog.hasStoredDecision()) {
+                     void firstIdeaContactDialog.open().then((choice) => {
+                         if (choice?.permissionGranted && choice.email) {
+                             void saveYouthContactEmail(
+                                 params.organizationSlug,
+                                 params.projectSlug,
+                                 youthToken,
+                                 choice.email,
+                             )
+                         }
+                     })
+                 }
+             },
+         })
 
-            if (chatNudgeFlow.isActive()) {
-                chatNudgeFlow.submitAnswer(text)
-                chatInput.value = ''
-                chatInput.dispatchEvent(new Event('input', { bubbles: true }))
-                return
-            }
+         handleIdeaSubmit = async (): Promise<void> => {
+             const text = chatInput.value.trim()
+             if (!text) return
+             if (activeView.type !== 'topic') return
 
-            chatInput.disabled = true
-            sendBtn.disabled = true
-            magicBtn.hidden = true
-            chatInput.placeholder = t.submitting
-            updateSendIcon()
-            appendUserBubble(text)
+             if (chatNudgeFlow.isActive()) {
+                 chatNudgeFlow.submitAnswer(text)
+                 chatInput.value = ''
+                 chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+                 return
+             }
 
-            try {
-                await submitHandler.submit(text, activeView)
-            } catch {
-                await appendAiBubble(t.somethingWrong)
-            } finally {
-                if (activeView.type === 'topic') {
-                    activateIdeaInput(t.shareAnother, handleIdeaSubmit)
-                }
-            }
-        }
+             chatInput.disabled = true
+             const userBubble = document.createElement('div')
+             userBubble.className = 'chat-row chat-row--user'
+             userBubble.innerHTML = `<div class="chat-bubble chat-bubble--user">${esc(text)}</div>`
+             messagesEl.appendChild(userBubble)
+             scrollToBottom()
 
-        topicTrigger.addEventListener('click', () => {
-            topicModal.open(topicTrigger)
-        })
+             chatInput.value = ''
+             chatInput.dispatchEvent(new Event('input', { bubbles: true }))
 
-        topicFloatingTrigger.addEventListener('click', () => {
-            topicModal.open(topicFloatingTrigger)
-        })
-
-        discoveryTrigger.addEventListener('click', (event) => {
-            event.stopPropagation()
-            if (discoveryRoot.hidden) return
-            if (discoveryMenu.hidden) {
-                discoveryMenu.hidden = false
-                discoveryTrigger.setAttribute('aria-expanded', 'true')
-            } else {
-                closeDiscoveryMenu()
-            }
-        })
-
-        discoveryMenu.addEventListener('click', (event) => {
-            const option = (event.target as HTMLElement).closest<HTMLButtonElement>('.ideas-discovery-option')
-            if (!option || activeView.type !== 'topic') return
-
-            const selectedMode = option.dataset.discoveryMode as DiscoveryMode | undefined
-            const semanticCategory = option.dataset.semanticCategory
-
-            if (hasOwnIdeaInTopic(activeView.topicId)) {
-                if (!selectedMode) return
-                discoveryMode = selectedMode
-                selectedSemanticCategory = null
-            } else {
-                discoveryMode = 'all'
-                selectedSemanticCategory = semanticCategory ?? null
-            }
-
-            showPostPreviewPair = false
-            resetPaging()
-            closeDiscoveryMenu()
-            void renderIdeasList()
-        })
+             try {
+                 await submitHandler.submit(text, activeView)
+             } catch {
+                 await appendAiBubble(t.somethingWrong)
+             } finally {
+                 chatInput.disabled = false
+                 chatInput.placeholder = t.shareAnother
+                 chatInput.focus()
+             }
+         }
 
         ideasListEl.addEventListener('scroll', () => {
             const isSuppressed = performance.now() < suppressListScrollSyncUntil

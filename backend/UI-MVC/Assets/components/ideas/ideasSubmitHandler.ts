@@ -1,8 +1,8 @@
-import { submitIdea, updateIdeaAfterSafetyReview } from '../../services/ideaService'
-import type { Idea } from '../../models/idea'
-import type { ActiveView } from './types'
-import type { PostSafetyDecision } from './safetyReviewDialog'
-import type { IdeaNudgingContext } from '../../services/ideaService'
+import type {IdeaNudgingContext} from '../../services/ideaService'
+import {submitIdea, updateIdeaAfterSafetyReview} from '../../services/ideaService'
+import {Idea, IdeaAuthorType} from '../../models/idea'
+import type {ActiveView} from './types'
+import type {PostSafetyDecision} from './safetyReviewDialog'
 
 interface IdeaNudgingResult {
     proceed: boolean
@@ -74,7 +74,7 @@ export function createIdeasSubmitHandler({
                 projectId,
                 topicId: activeView.topicId,
                 body: finalBody,
-                authorType: 'self',
+                authorType: IdeaAuthorType.Self,
                 qualityNudgeBypassed: bypassQualityNudging,
             })
 

@@ -2,16 +2,15 @@
  * Chat Ideation Phase Controller
  * Handles the ideas browsing, filtering, submission, and discovery in chat survey mode
  */
-import type { Project } from '../../models/project'
-import type { ProjectContext } from '../../main'
+import type {Project} from '../../models/project'
+import type {ProjectContext} from '../../main'
 import {
+    getDiscoveredIdeasForTopic,
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
+    IDEA_DISCOVERY_MAX_RESULTS,
     saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
-    getDiscoveredIdeasForTopic,
-    IDEA_DISCOVERY_MAX_RESULTS,
-    type IdeaDiscoveryCategory,
 } from '../../services/ideaService'
 import {
     addIdeaReaction,
@@ -22,17 +21,16 @@ import {
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
 } from '../../services/ideaResponseService'
-import { createIdeasListController } from '../ideas/ideasListController'
-import { createSafetyReviewDialogController } from '../ideas/safetyReviewDialog'
-import { createIdeaPanelController } from '../ideas/ideaPanel'
-import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
-import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
-import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
-import type { Idea, IdeaTopic } from '../../models/idea'
-import type { ActiveView } from '../ideas/types'
-import { getSurveyStrings } from '../../i18n/survey'
-import { wait, esc } from './chatHelpers'
-import { AI_AVATAR, CHECKMARK_SVG, MAGIC_SVG } from './chatTemplates'
+import {createIdeasListController} from '../ideas/ideasListController'
+import {createSafetyReviewDialogController} from '../ideas/safetyReviewDialog'
+import {createIdeaPanelController} from '../ideas/ideaPanel'
+import {createIdeasSubmitHandler} from '../ideas/ideasSubmitHandler'
+import {createFirstIdeaContactDialogController} from '../ideas/firstIdeaContactDialog'
+import {createChatIdeaNudgeFlow} from '../ideas/chatIdeaNudgeFlow'
+import {Idea, IdeaAuthorType, IdeaTopic} from '../../models/idea'
+import {ActiveView, DiscoveryBadgeType, DiscoveryMode} from '../ideas/types'
+import {getSurveyStrings} from '../../i18n/survey'
+import {esc, wait} from './chatHelpers.ts'
 
 interface ChatIdeationOptions {
     container: HTMLElement
@@ -47,7 +45,7 @@ interface ChatIdeationOptions {
 
 interface DiscoveryCache {
     ideas: Idea[]
-    badgesByIdeaId: Map<number, 'similar' | 'different'>
+    badgesByIdeaId: Map<number, DiscoveryBadgeType>
 }
 
 /**
@@ -75,7 +73,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     let currentView: ActiveView = { type: 'topic', topicId: firstTopic.id }
     let currentDiscoveryLabel = t.broadSelection
     let currentSemanticCategory: string | null = null
-    let currentDiscoveryMode: 'broad' | 'similar' | 'different' | 'all' = 'broad'
+    let currentDiscoveryMode: DiscoveryMode = DiscoveryMode.All
 
     const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
     const firstIdeaContactDialog = createFirstIdeaContactDialogController({
@@ -87,7 +85,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
 
     // ===== Helpers =====
     function hasOwnIdeaInTopic(topicId: number): boolean {
-        return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+        return allIdeas.some((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)
     }
 
     function getSemanticCategoriesForTopic(topicId: number): string[] {
@@ -247,7 +245,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     // ===== Get visible ideas with AI discovery =====
     async function getVisibleIdeasForCurrentMode(): Promise<Idea[]> {
         if (currentView.type === 'my-ideas') {
-            return allIdeas.filter((x) => x.authorType === 'self')
+            return allIdeas.filter((x) => x.authorType === IdeaAuthorType.Self)
         }
 
         const topicId = currentView.topicId
@@ -284,7 +282,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                         params.projectSlug,
                         topicId,
                         youthToken,
-                        'similar',
+                        DiscoveryMode.Similar,
                         IDEA_DISCOVERY_MAX_RESULTS,
                     ),
                     getDiscoveredIdeasForTopic(
@@ -292,7 +290,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                         params.projectSlug,
                         topicId,
                         youthToken,
-                        'different',
+                        DiscoveryMode.Different,
                         IDEA_DISCOVERY_MAX_RESULTS,
                     ),
                 ])
@@ -300,7 +298,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                 const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
 
                 // Combine with user's own idea pinned first
-                const userIdea = allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId)
+                const userIdea = allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)
                 const combined = [
                     ...(userIdea ? [userIdea] : []),
                     ...similarIdeas.slice(0, 3),
@@ -316,14 +314,14 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                 ideas = combined
             } else {
                 // Fetch specific mode
-                const otherMode: IdeaDiscoveryCategory = currentDiscoveryMode === 'similar' ? 'different' : 'similar'
+                const otherMode: DiscoveryMode = currentDiscoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
                 const [modeIdeas, otherIdeas] = await Promise.all([
                     getDiscoveredIdeasForTopic(
                         params.organizationSlug,
                         params.projectSlug,
                         topicId,
                         youthToken,
-                        currentDiscoveryMode as IdeaDiscoveryCategory,
+                        currentDiscoveryMode as DiscoveryMode,
                         IDEA_DISCOVERY_MAX_RESULTS,
                     ),
                     getDiscoveredIdeasForTopic(
@@ -336,12 +334,12 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                     ),
                 ])
 
-                const similarList = currentDiscoveryMode === 'similar' ? modeIdeas : otherIdeas
+                const similarList = currentDiscoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
                 const simIds = new Set(similarList.map((idea) => idea.id))
-                const filtered = (currentDiscoveryMode === 'similar' ? modeIdeas : otherIdeas).filter(
+                const filtered = (currentDiscoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas).filter(
                     (idea) => !simIds.has(idea.id),
                 )
-                ideas = currentDiscoveryMode === 'similar' ? similarList : filtered
+                ideas = currentDiscoveryMode === DiscoveryMode.Similar ? similarList : filtered
             }
 
             discoveryCache.set(cacheKey, { ideas, badgesByIdeaId: new Map() })
@@ -458,7 +456,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         currentView = { type: 'topic', topicId: newTopicId }
         topicTriggerName.textContent = newTopic.title
         currentSemanticCategory = null
-        currentDiscoveryMode = 'broad'
+        currentDiscoveryMode = DiscoveryMode.All
         currentDiscoveryLabel = hasOwnIdeaInTopic(newTopicId) ? t.similarIdeas : t.broadSelection
         updateDiscoveryLabel()
 
@@ -471,7 +469,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         renderDiscoveryMenuOptions()
         void renderIdeasList()
         const topicPrompt = firstTopic.prompt?.trim()
-        await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
+        appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
     })
 
     // Discovery dropdown events
@@ -491,7 +489,9 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         const category = opt.getAttribute('data-chat-category')
 
         if (sort) {
-            currentDiscoveryMode = sort as 'broad' | 'similar' | 'different' | 'all'
+            if (sort === 'broad' || sort === 'all') currentDiscoveryMode = DiscoveryMode.All
+            else if (sort === 'similar') currentDiscoveryMode = DiscoveryMode.Similar
+            else if (sort === 'different') currentDiscoveryMode = DiscoveryMode.Different
             currentSemanticCategory = null
             const sortLabels: Record<string, string> = {
                 broad: t.broadSelection,
@@ -574,7 +574,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                 currentView.type === 'topic' && !hasOwnIdeaInTopic(currentView.topicId)
             allIdeas.unshift(idea)
             if (wasFirstOwnInTopic) {
-                currentDiscoveryMode = 'similar'
+                currentDiscoveryMode = DiscoveryMode.Similar
                 currentDiscoveryLabel = t.similarIdeas
                 currentSemanticCategory = null
                 updateDiscoveryLabel()
@@ -635,6 +635,16 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     function scrollToBottom(): void {
         scrollAreaEl.scrollTo({ top: scrollAreaEl.scrollHeight, behavior: 'smooth' })
     }
+
+    // Wire up send button and input
+    const sendBtn = chatShell.querySelector<HTMLButtonElement>('#chat-send-btn')!
+    sendBtn.addEventListener('click', () => { void handleIdeaSubmit() })
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            void handleIdeaSubmit()
+        }
+    })
 
     // Initial render
     renderDiscoveryMenuOptions()

@@ -51,6 +51,7 @@ const getDiscoveryLabels = (t: any): Record<DiscoveryMode, string> => ({
     all: t.allIdeas,
     similar: t.similarIdeas,
     different: t.differingIdeas,
+    random: '',
 })
 
 
@@ -665,7 +666,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 }
             } else {
                 // Fetch both modes in parallel and deduplicate to prevent overlap between lists
-                const otherMode: IdeaDiscoveryCategory = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
+                const otherMode: DiscoveryMode = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
                 const [modeIdeas, otherIdeas] = await Promise.all([
                     getDiscoveredIdeasForTopic(
                         params.organizationSlug,

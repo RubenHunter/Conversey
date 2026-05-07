@@ -32,4 +32,6 @@ export interface IdeaPanelController {
     open: (idea: Idea) => void
     close: () => void
     isOpen: () => boolean
+    onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void
+    runNudgingFlow?: (input: string, view: ActiveView) => void
 }
