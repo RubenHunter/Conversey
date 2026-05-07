@@ -1,5 +1,6 @@
 ﻿import type { ApiIdeaDto, ApiIdeaTopicDto, ApiSubmitIdeaRequestDto } from '../api/dtos/ideaDto'
 import type { Idea, IdeaReactionSummary, IdeaTopic, SubmitIdeaRequest } from '../models/idea'
+import { IdeaAuthorType } from '../models/idea'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
     return values.find((value) => typeof value === 'number' && Number.isFinite(value))
@@ -89,7 +90,7 @@ export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): I
         projectId: mapProjectId(dto.projectId ?? dto.ProjectId),
         topicId: pickNumber(dto.topicId, dto.TopicId) ?? 0,
         body: pickString(dto.body, dto.Body, dto.content, dto.Content) ?? '',
-        authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? 'self' : dto.authorType ?? dto.AuthorType ?? 'other',
+        authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? IdeaAuthorType.Self : dto.authorType ?? dto.AuthorType ?? IdeaAuthorType.Other,
         createdAt: pickString(dto.createdAt, dto.CreatedAt, dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
         reactions,
         pendingReview: isPendingStatus(dto.status ?? dto.Status),

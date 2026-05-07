@@ -1,4 +1,5 @@
-﻿type ApiSlugValue = string | { text?: string; Text?: string }
+﻿import type { IdeaAuthorType } from '../../models/idea'
+type ApiSlugValue = string | { text?: string; Text?: string }
 
 export interface ApiIdeaTopicDto {
     id?: number
@@ -26,8 +27,8 @@ export interface ApiIdeaDto {
     Content?: string
     status?: string | number
     Status?: string | number
-    authorType?: 'self' | 'other'
-    AuthorType?: 'self' | 'other'
+    authorType?: IdeaAuthorType
+    AuthorType?: IdeaAuthorType
     youthId?: string
     YouthId?: string
     youthToken?: string

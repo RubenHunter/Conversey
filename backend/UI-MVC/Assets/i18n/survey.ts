@@ -67,6 +67,58 @@ export interface SurveyStrings {
     mostSimilarIdeas: string
     leastSimilarIdeas: string
     noResponsesYet: string
+    // Topic modal
+    selectTopicTitle: string
+    cancel: string
+    // Idea panel
+    ideaDetail: string
+    originalIdea: string
+    responses: string
+    writeComment: string
+    addReaction: string
+    useAsStartingPoint: string
+    editIdea: string
+    post: string
+    // Safety review
+    safetyReviewTitle: string
+    safetyReviewCopy: string
+    yourOriginalMessage: string
+    editYourResponse: string
+    aiSuggestion: string
+    editAiSuggestion: string
+    acceptSuggestion: string
+    postOriginalAnyway: string
+    // Nudge dialog
+    nudgeTitle: string
+    nudgeStatus: string
+    yourAnswer: string
+    answerContinue: string
+    // First idea contact
+    wantStayInTouch: string
+    stayInTouchCopy: string
+    dontAskAgain: string
+    noThanks: string
+    leaveMyEmail: string
+    stayInTouchTitle: string
+    leaveEmailCopy: string
+    emailAddress: string
+    agreeContact: string
+    rememberChoice: string
+    deny: string
+    allowContact: string
+    // Completed page
+    thankYouSurvey: string
+    helpShareIdeas: string
+    continueToIdeas: string
+    // Survey page
+    surveyAlreadyCompleted: string
+    redirectingToIdeas: string
+    checkmarkConfirm: string
+    chatSend: string
+    // Admin delete modal
+    deleteFailed: string
+    deletedSuccessfully: string
+    networkError: string
 }
 
 const nl: SurveyStrings = {
@@ -136,6 +188,58 @@ const nl: SurveyStrings = {
     mostSimilarIdeas: 'Meest vergelijkbare ideeën',
     leastSimilarIdeas: 'Minst vergelijkbare ideeën',
     noResponsesYet: 'Nog geen reacties. Wees de eerste!',
+    // Topic modal
+    selectTopicTitle: 'Selecteer een onderwerp',
+    cancel: 'Annuleren',
+    // Idea panel
+    ideaDetail: 'Idee',
+    originalIdea: 'Origineel idee',
+    responses: 'Reacties',
+    writeComment: 'Schrijf een reactie...',
+    addReaction: 'Reactie toevoegen',
+    useAsStartingPoint: 'Gebruik als startpunt',
+    editIdea: 'Bewerk idee',
+    post: 'Plaatsen',
+    // Safety review
+    safetyReviewTitle: 'Laat dit een veilige plek zijn',
+    safetyReviewCopy: 'Onze AI heeft je tekst gemarkeerd als mogelijk aanstootgevend. Je kunt de suggestie gebruiken, het bewerken, of je oorspronkelijke tekst behouden.',
+    yourOriginalMessage: 'Je oorspronkelijke bericht',
+    editYourResponse: 'Bewerk je reactie',
+    aiSuggestion: 'AI suggestie',
+    editAiSuggestion: 'Bewerk de AI suggestie',
+    acceptSuggestion: 'Accepteer suggestie',
+    postOriginalAnyway: 'Toch oorspronkelijke plaatsen',
+    // Nudge dialog
+    nudgeTitle: 'Laat je idee groeien',
+    nudgeStatus: 'De AI stelt één vraag tegelijk. Sluit de dialoog om de huidige versie in te dienen als "wachtend op review".',
+    yourAnswer: 'Je antwoord',
+    answerContinue: 'Antwoord & ga door',
+    // First idea contact
+    wantStayInTouch: 'Wil je op de hoogte blijven?',
+    stayInTouchCopy: 'We kunnen je laten weten wat er met je idee gebeurt.',
+    dontAskAgain: 'Vraag me dit niet opnieuw',
+    noThanks: 'Nee bedankt',
+    leaveMyEmail: 'Laat mijn e-mail achter',
+    stayInTouchTitle: 'Blijf in contact over je idee',
+    leaveEmailCopy: 'Je kunt je e-mail achterlaten als je wilt dat we contact opnemen over je ideeën.',
+    emailAddress: 'E-mailadres',
+    agreeContact: 'Ik ga akkoord om gecontacteerd te worden over dit idee.',
+    rememberChoice: 'Onthoud mijn keuze',
+    deny: 'Weiger',
+    allowContact: 'Sta contact toe',
+    // Completed page
+    thankYouSurvey: 'Bedankt voor het invullen van de enquête!',
+    helpShareIdeas: 'Zou je ons ook kunnen helpen door je ideeën te delen?',
+    continueToIdeas: 'Ga verder naar Ideeën',
+    // Survey page
+    surveyAlreadyCompleted: 'Enquête al ingevuld',
+    redirectingToIdeas: 'Omleiden naar ideeën...',
+    checkmarkConfirm: 'Bevestig antwoord en ga verder',
+    chatSend: 'Verstuur',
+    // Admin delete modal
+    deleteFailed: 'Verwijderen mislukt',
+    deletedSuccessfully: 'Succesvol verwijderd',
+    networkError: 'Netwerkfout',
 }
 
 const en: SurveyStrings = {
@@ -205,6 +309,58 @@ const en: SurveyStrings = {
     mostSimilarIdeas: 'Most similar ideas',
     leastSimilarIdeas: 'Least similar ideas',
     noResponsesYet: 'No responses yet. Be the first!',
+    // Topic modal
+    selectTopicTitle: 'Select a Topic',
+    cancel: 'Cancel',
+    // Idea panel
+    ideaDetail: 'Idea',
+    originalIdea: 'Original idea',
+    responses: 'Responses',
+    writeComment: 'Write a comment...',
+    addReaction: 'Add reaction',
+    useAsStartingPoint: 'Use as starter',
+    editIdea: 'Edit idea before publish',
+    post: 'Post',
+    // Safety review
+    safetyReviewTitle: 'Let\'s keep this space safe',
+    safetyReviewCopy: 'Our AI flagged your text as potentially offensive. You can use the suggestion, edit it, or continue with your original text.',
+    yourOriginalMessage: 'Your original message',
+    editYourResponse: 'Edit your response',
+    aiSuggestion: 'AI suggestion',
+    editAiSuggestion: 'Edit the AI suggestion',
+    acceptSuggestion: 'Accept suggestion',
+    postOriginalAnyway: 'Post original anyway',
+    // Nudge dialog
+    nudgeTitle: 'Let\'s deepen your idea',
+    nudgeStatus: 'The AI will ask one question at a time. Close the dialog to post the current version as pending review.',
+    yourAnswer: 'Your answer',
+    answerContinue: 'Answer & continue',
+    // First idea contact
+    wantStayInTouch: 'Want to stay in touch?',
+    stayInTouchCopy: 'We can let you know if anything happens with your idea.',
+    dontAskAgain: 'Don\'t ask me again',
+    noThanks: 'No thanks',
+    leaveMyEmail: 'Leave my email',
+    stayInTouchTitle: 'Stay in touch about your idea',
+    leaveEmailCopy: 'You can leave your email if you want us to contact you about your ideas.',
+    emailAddress: 'Email address',
+    agreeContact: 'I agree to be contacted about this idea.',
+    rememberChoice: 'Remember my choice',
+    deny: 'Deny',
+    allowContact: 'Allow contact',
+    // Completed page
+    thankYouSurvey: 'Thank you for filling out this survey!',
+    helpShareIdeas: 'Could you also help us by sharing your ideas?',
+    continueToIdeas: 'Continue to Ideas',
+    // Survey page
+    surveyAlreadyCompleted: 'Survey already completed',
+    redirectingToIdeas: 'Redirecting you to ideas...',
+    checkmarkConfirm: 'Confirm answer and continue',
+    chatSend: 'Send',
+    // Admin delete modal
+    deleteFailed: 'Delete failed',
+    deletedSuccessfully: 'Deleted successfully',
+    networkError: 'Network error',
 }
 
 const fr: SurveyStrings = {
@@ -274,6 +430,58 @@ const fr: SurveyStrings = {
     mostSimilarIdeas: `Idées les plus similaires`,
     leastSimilarIdeas: `Idées les moins similaires`,
     noResponsesYet: `Pas encore de réponses. Soyez le premier !`,
+    // Topic modal
+    selectTopicTitle: `Sélectionner un thème`,
+    cancel: `Annuler`,
+    // Idea panel
+    ideaDetail: `Idée`,
+    originalIdea: `Idée originale`,
+    responses: `Réponses`,
+    writeComment: `Écrire un commentaire...`,
+    addReaction: `Ajouter une réaction`,
+    useAsStartingPoint: `Utiliser comme point de départ`,
+    editIdea: `Modifier l'idée avant publication`,
+    post: `Publier`,
+    // Safety review
+    safetyReviewTitle: `Gardons cet espace sûr`,
+    safetyReviewCopy: `Notre IA a signalé votre texte comme potentiellement offensant. Vous pouvez utiliser la suggestion, la modifier, ou continuer avec votre texte original.`,
+    yourOriginalMessage: `Votre message original`,
+    editYourResponse: `Modifier votre réponse`,
+    aiSuggestion: `Suggestion IA`,
+    editAiSuggestion: `Modifier la suggestion IA`,
+    acceptSuggestion: `Accepter la suggestion`,
+    postOriginalAnyway: `Publier l'original quand même`,
+    // Nudge dialog
+    nudgeTitle: `Approfondissons votre idée`,
+    nudgeStatus: `L'IA posera une question à la fois. Fermez la boîte de dialogue pour soumettre la version actuelle en attente de révision.`,
+    yourAnswer: `Votre réponse`,
+    answerContinue: `Répondre et continuer`,
+    // First idea contact
+    wantStayInTouch: `Voulez-vous rester en contact ?`,
+    stayInTouchCopy: `Nous pouvons vous informer de ce qui arrive à votre idée.`,
+    dontAskAgain: `Ne plus me demander`,
+    noThanks: `Non merci`,
+    leaveMyEmail: `Laisser mon e-mail`,
+    stayInTouchTitle: `Restez en contact à propos de votre idée`,
+    leaveEmailCopy: `Vous pouvez laisser votre e-mail si vous souhaitez que nous vous contactons à propos de vos idées.`,
+    emailAddress: `Adresse e-mail`,
+    agreeContact: `J'accepte d'être contacté à propos de cette idée.`,
+    rememberChoice: `Se souvenir de mon choix`,
+    deny: `Refuser`,
+    allowContact: `Autoriser le contact`,
+    // Completed page
+    thankYouSurvey: `Merci d'avoir rempli l'enquête !`,
+    helpShareIdeas: `Pourriez-vous nous aider en partageant vos idées ?`,
+    continueToIdeas: `Continuer vers les Idées`,
+    // Survey page
+    surveyAlreadyCompleted: `Enquête déjà remplie`,
+    redirectingToIdeas: `Redirection vers les idées...`,
+    checkmarkConfirm: 'Confirmer la réponse et continuer',
+    chatSend: 'Envoyer',
+    // Admin delete modal
+    deleteFailed: `La suppression a échoué`,
+    deletedSuccessfully: `Supprimé avec succès`,
+    networkError: `Erreur réseau`,
 }
 
 const translations: Record<SurveyLocale, SurveyStrings> = { nl, en, fr }

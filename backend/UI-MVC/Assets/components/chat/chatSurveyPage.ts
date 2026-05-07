@@ -18,7 +18,6 @@ import {
     IDEA_DISCOVERY_MAX_RESULTS,
     getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
-    type IdeaDiscoveryCategory,
     updateIdeaAfterSafetyReview,
 } from '../../services/ideaService'
 import {
@@ -45,7 +44,6 @@ import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers'
 import {
     AI_AVATAR,
     CHECKMARK_SVG,
-    IDEATION_MODALS_HTML,
     SPEAKER_SVG,
     renderChatShellTemplate,
 } from './chatTemplates'
@@ -144,7 +142,7 @@ export async function renderChatSurveyPage(
         projectTitle: project.title,
         questionsCount: questions.length,
         headerHTML,
-        strings: { selectAbove: t.selectAbove, magicMode: t.magicMode },
+        t,
     })
 
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
@@ -870,18 +868,6 @@ export async function renderChatSurveyPage(
         }
 
         const discoveryCache = new Map<string, DiscoveryFeed>()
-
-        function resetPaging(): void {
-            extraLoadsUsed = 0
-            isLoadingMoreIdeas = false
-            autoLoadArmed = true
-        }
-
-        function getMaxExtraLoads(): number {
-            if (activeView.type !== 'topic') return 3
-            const topic = topics.find((item) => item.id === activeView.topicId)
-            return topic?.maxBroadSelectionLoads ?? 3
-        }
 
         const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
         const firstIdeaContactDialog = createFirstIdeaContactDialogController({

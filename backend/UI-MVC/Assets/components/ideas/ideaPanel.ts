@@ -1,4 +1,5 @@
 import type { Idea, IdeaReactionSummary } from '../../models/idea'
+import { IdeaAuthorType } from '../../models/idea'
 import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse'
 import type { IdeaPanelController, ReviewBeforePost } from './types'
 import type { PostSafetyDecision } from './safetyReviewDialog'
@@ -157,7 +158,7 @@ export function createIdeaPanelController({
     }
 
     function isEditableIdea(idea: Idea | null): boolean {
-        return Boolean(idea && idea.authorType === 'self' && idea.pendingReview)
+        return Boolean(idea && idea.authorType === IdeaAuthorType.Self && idea.pendingReview)
     }
 
     function syncEditedIdeaCard(idea: Idea): void {

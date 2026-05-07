@@ -28,8 +28,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-redirect-wrap screen-height">
                 <div class="survey-redirect-card">
                     <div class="survey-redirect-check">✓</div>
-                    <h2>Survey already completed</h2>
-                    <p>Redirecting you to ideas...</p>
+                    <h2>${t.surveyAlreadyCompleted}</h2>
+                    <p>${t.redirectingToIdeas}</p>
                     <div class="survey-confetti" aria-hidden="true"></div>
                 </div>
             </div>
@@ -87,7 +87,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-submit" class="survey-submit-btn">Submit Survey</button>
+                    <button id="btn-submit" class="survey-submit-btn">${t.submitSurvey}</button>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿import type { Idea } from '../../models/idea'
+﻿import type { Idea, IdeaAuthorType } from '../../models/idea'
 import type { PostSafetyDecision } from './safetyReviewDialog'
 
 export interface DiscoveryFeed {
@@ -10,16 +10,12 @@ export enum DiscoveryMode {
     All = 'all',
     Similar = 'similar',
     Different = 'different',
+    Random = 'random',
 }
 
 export enum DiscoveryBadgeType {
     Similar = 'similar',
     Different = 'different',
-}
-
-export enum IdeaAuthorType {
-    Self = 'self',
-    Other = 'other',
 }
 
 export type ActiveView = { type: 'topic'; topicId: number } | { type: 'my-ideas' }
