@@ -309,6 +309,12 @@
     height: 16px;
 }
 
+@media screen and (max-device-width: 600px){
+    .scale-ticks{
+        display: none;
+    }
+}
+
 .scale-tick-label {
     font-size: 11px;
     color: var(--color-text-muted, var(--color-border));

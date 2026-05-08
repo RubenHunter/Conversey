@@ -1,14 +1,22 @@
+// Bubble interface voor tijdelijke/finale bubbels
+interface Bubble {
+    text: string;
+    isTemporary: boolean;
+}
+
 export interface BubbleListController {
     addBubbles(phrases: string[]): void;
+    addTemporaryBubbles(phrases: string[]): void;
     removeBubble(index: number): void;
     getBubbles(): string[];
     getRejectedPhrases(): string[];
+    convertTemporaryToPermanent(): void;
     reset(): void;
     readonly element: HTMLElement;
 }
 
 export function createBubbleList(): BubbleListController {
-    const activeBubbles: string[] = [];
+    const activeBubbles: Bubble[] = [];
     const rejectedPhrases = new Set<string>();
     const container = document.createElement('div');
     container.className = 'flex flex-wrap gap-2 p-4 min-h-24 overflow-y-auto';
@@ -24,26 +32,35 @@ export function createBubbleList(): BubbleListController {
             container.appendChild(placeholder);
             return;
         }
-        activeBubbles.forEach((text, i) => {
-            const bubble = document.createElement('div');
-            bubble.className = 'badge badge-primary gap-1 cursor-default magic-mode-badge-enter';
-            bubble.setAttribute('role', 'listitem');
+        activeBubbles.forEach((bubble, i) => {
+            const bubbleEl = document.createElement('div');
+            
+            // Verschillende classes voor tijdelijk vs. final
+            if (bubble.isTemporary) {
+                // Tijdelijk: grijs, geen animatie
+                bubbleEl.className = 'badge badge-primary gap-1 cursor-default opacity-50';
+            } else {
+                // Final: normale kleur + animatie
+                bubbleEl.className = 'badge badge-primary gap-1 cursor-default magic-mode-badge-enter';
+            }
+            
+            bubbleEl.setAttribute('role', 'listitem');
 
             const label = document.createElement('span');
-            label.textContent = text;
+            label.textContent = bubble.text;
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'btn btn-ghost btn-xs p-0';
-            closeBtn.setAttribute('aria-label', `Verwijder "${text}"`);
+            closeBtn.setAttribute('aria-label', `Verwijder "${bubble.text}"`);
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>';
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 removeBubble(i);
             });
 
-            bubble.appendChild(label);
-            bubble.appendChild(closeBtn);
-            container.appendChild(bubble);
+            bubbleEl.appendChild(label);
+            bubbleEl.appendChild(closeBtn);
+            container.appendChild(bubbleEl);
         });
     }
 
@@ -53,20 +70,39 @@ export function createBubbleList(): BubbleListController {
             if (!trimmed) continue;
             const key = normalize(trimmed);
             if (rejectedPhrases.has(key)) continue;
-            if (activeBubbles.some(b => normalize(b) === key)) continue;
-            activeBubbles.push(trimmed);
+            if (activeBubbles.some(b => normalize(b.text) === key)) continue;
+            activeBubbles.push({ text: trimmed, isTemporary: false });
+        }
+        render();
+    }
+
+    function addTemporaryBubbles(phrases: string[]): void {
+        for (const p of phrases) {
+            const trimmed = p.trim();
+            if (!trimmed) continue;
+            const key = normalize(trimmed);
+            if (rejectedPhrases.has(key)) continue;
+            if (activeBubbles.some(b => normalize(b.text) === key)) continue;
+            activeBubbles.push({ text: trimmed, isTemporary: true });
+        }
+        render();
+    }
+
+    function convertTemporaryToPermanent(): void {
+        for (let i = 0; i < activeBubbles.length; i++) {
+            activeBubbles[i] = { ...activeBubbles[i], isTemporary: false };
         }
         render();
     }
 
     function removeBubble(index: number): void {
         const removed = activeBubbles.splice(index, 1)[0];
-        if (removed) rejectedPhrases.add(normalize(removed));
+        if (removed) rejectedPhrases.add(normalize(removed.text));
         render();
     }
 
     function getBubbles(): string[] {
-        return [...activeBubbles];
+        return activeBubbles.map(b => b.text);
     }
 
     function getRejectedPhrases(): string[] {
@@ -80,5 +116,14 @@ export function createBubbleList(): BubbleListController {
     }
 
     render();
-    return { addBubbles, removeBubble, getBubbles, getRejectedPhrases, reset, element: container };
+    return { 
+        addBubbles, 
+        addTemporaryBubbles, 
+        convertTemporaryToPermanent,
+        removeBubble, 
+        getBubbles, 
+        getRejectedPhrases, 
+        reset, 
+        element: container 
+    };
 }

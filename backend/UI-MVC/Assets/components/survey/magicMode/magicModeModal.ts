@@ -12,6 +12,17 @@ export function createMagicModeModal(): MagicModeModalController {
     let isRecording = false;
     let onCloseCallback: ((text: string) => void) | null = null;
     const bubbleList = createBubbleList();
+    
+    // Stabiliteitscheck state
+    let lastTranscript: string = '';
+    let stabilityCount: number = 0;
+    let isFinalized: boolean = false;
+    const STABILITY_THRESHOLD = 2; // 2x dezelfde transcriptie = stabiel
+
+    // Optimizatie state
+    let isProcessing = false;
+    const phraseCache = new Map<string, string[]>();
+    const MAX_CACHE_SIZE = 100;
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
         const backdrop = document.createElement('div');
@@ -103,10 +114,106 @@ export function createMagicModeModal(): MagicModeModalController {
         return activeDialog?.querySelector('p.text-base-content\\/70') ?? null;
     }
 
+    function generateCacheKey(
+        transcript: string,
+        language: string,
+        maxPhrases: number,
+        existingPhrases: string[],
+        rejectedPhrases: string[]
+    ): string {
+        const normalizedTranscript = transcript.trim().toLowerCase();
+        const normalizedExisting = existingPhrases
+            .map(p => p.trim().toLowerCase())
+            .sort()
+            .join('|');
+        const normalizedRejected = rejectedPhrases
+            .map(p => p.trim().toLowerCase())
+            .sort()
+            .join('|');
+        return `${normalizedTranscript}|${language}|${maxPhrases}|${normalizedExisting}|${normalizedRejected}`;
+    }
+
+    function cleanupCache(): void {
+        if (phraseCache.size > MAX_CACHE_SIZE) {
+            const keys = Array.from(phraseCache.keys());
+            for (let i = 0; i < keys.length - (MAX_CACHE_SIZE / 2); i++) {
+                phraseCache.delete(keys[i]);
+            }
+        }
+    }
+
+    async function fetchAndCachePhrases(text: string, cacheKey: string): Promise<{phrases: string[], rejectedPhrases: Array<{phrase: string, reason: string, similarTo?: string}>}> {
+        const result = await fetchKeyPhrases(text, bubbleList.getBubbles(), bubbleList.getRejectedPhrases());
+        
+        if (result.phrases.length > 0) {
+            phraseCache.set(cacheKey, result.phrases);
+            cleanupCache();
+        }
+        
+        return result;
+    }
+
     async function onTranscript(text: string): Promise<void> {
         if (!text.trim()) return;
-        const phrases = await fetchKeyPhrases(text, bubbleList.getBubbles(), bubbleList.getRejectedPhrases());
-        bubbleList.addBubbles(phrases.length > 0 ? phrases : [text]);
+
+        // Stabiliteitscheck: track hoevaak dezelfde transcriptie achter elkaar komt
+        // Dit doe je VOORDAT je beslist of je de transcriptie verwerkt
+        if (text === lastTranscript) {
+            stabilityCount++;
+        } else {
+            // Nieuwe transcriptie: reset counter
+            stabilityCount = 1;  // 1 omdat dit de eerste keer is dat we deze text zien
+            lastTranscript = text;
+            isFinalized = false;
+        }
+
+        // Skip als er al een Mistral call bezig is
+        // We willen alleen de LAATSTE transcriptie verwerken als processing klaar is
+        if (isProcessing) return;
+
+        // Genereer cache key
+        const cacheKey = generateCacheKey(
+            text,
+            detectLocale(),
+            2,
+            bubbleList.getBubbles(),
+            bubbleList.getRejectedPhrases()
+        );
+
+        // Check cache
+        if (phraseCache.has(cacheKey)) {
+            const cachedPhrases = phraseCache.get(cacheKey)!;
+            if (cachedPhrases.length > 0) {
+                bubbleList.addTemporaryBubbles(cachedPhrases);
+            }
+
+            // Stabiliteitscheck: als transcriptie 2x achter elkaar hetzelfde is, maak bubbels final
+            if (stabilityCount >= STABILITY_THRESHOLD && !isFinalized) {
+                bubbleList.convertTemporaryToPermanent();
+                isFinalized = true;
+            }
+            return;
+        }
+
+        // Markeer als processing
+        isProcessing = true;
+
+        try {
+            const result = await fetchAndCachePhrases(text, cacheKey);
+
+            // Voeg toe als tijdelijk
+            if (result.phrases.length > 0) {
+                bubbleList.addTemporaryBubbles(result.phrases);
+            }
+
+            // Stabiliteitscheck: als transcriptie 2x achter elkaar hetzelfde is, maak bubbels final
+            if (stabilityCount >= STABILITY_THRESHOLD && !isFinalized) {
+                bubbleList.convertTemporaryToPermanent();
+                isFinalized = true;
+            }
+        } finally {
+            isProcessing = false;
+        }
     }
 
     function closeModal(): void {
@@ -119,6 +226,14 @@ export function createMagicModeModal(): MagicModeModalController {
         activeDialog?.remove();
         activeBackdrop = null;
         activeDialog = null;
+        
+        // Reset state
+        lastTranscript = '';
+        stabilityCount = 0;
+        isFinalized = false;
+        isProcessing = false;
+        phraseCache.clear();
+        
         onCloseCallback?.(text);
     }
 
@@ -126,6 +241,13 @@ export function createMagicModeModal(): MagicModeModalController {
         open(questionText: string, onClose: (text: string) => void): void {
             onCloseCallback = onClose;
             bubbleList.reset();
+            
+            // Reset state bij nieuwe modal
+            lastTranscript = '';
+            stabilityCount = 0;
+            isFinalized = false;
+            isProcessing = false;
+            phraseCache.clear();
 
             const { backdrop, dialog } = buildDOM();
             activeBackdrop = backdrop;
@@ -143,6 +265,13 @@ export function createMagicModeModal(): MagicModeModalController {
             activeDialog?.remove();
             activeBackdrop = null;
             activeDialog = null;
+            
+            // Reset state
+            lastTranscript = '';
+            stabilityCount = 0;
+            isFinalized = false;
+            isProcessing = false;
+            phraseCache.clear();
         }
     };
 }
@@ -151,7 +280,7 @@ async function fetchKeyPhrases(
     transcript: string,
     existingPhrases: string[],
     rejectedPhrases: string[]
-): Promise<string[]> {
+): Promise<{phrases: string[], rejectedPhrases: Array<{phrase: string, reason: string, similarTo?: string}>}> {
     try {
         const response = await fetch('/api/magic-mode/key-phrases', {
             method: 'POST',
@@ -159,15 +288,37 @@ async function fetchKeyPhrases(
             body: JSON.stringify({
                 transcript,
                 language: detectLocale(),
-                maxPhrases: 5,
+                maxPhrases: 2,
                 existingPhrases,
                 rejectedPhrases
             })
         });
-        if (!response.ok) return [];
-        const data = await response.json() as { phrases: string[] };
-        return data.phrases ?? [];
+        if (!response.ok) return { phrases: [], rejectedPhrases: [] };
+        const data = await response.json() as {
+            phrases: string[],
+            rejectedPhrasesWithReasons?: Array<{phrase: string, reason: number, similarTo?: string}>
+        };
+        
+        // Convert numeric reason codes to human-readable strings
+        const reasonMap: Record<number, string> = {
+            0: 'None',
+            1: 'WordCountTooLow',
+            2: 'WordCountExceeded',
+            3: 'DuplicateExact',
+            4: 'DuplicateSemantic',
+            5: 'SubsetOfExisting',
+            6: 'FillerContent',
+            7: 'TooGeneric'
+        };
+        
+        const convertedRejected = (data.rejectedPhrasesWithReasons || []).map(r => ({
+            phrase: r.phrase,
+            reason: reasonMap[r.reason] || 'Unknown',
+            similarTo: r.similarTo
+        }));
+        
+        return { phrases: data.phrases ?? [], rejectedPhrases: convertedRejected };
     } catch {
-        return [];
+        return { phrases: [], rejectedPhrases: [] };
     }
 }
