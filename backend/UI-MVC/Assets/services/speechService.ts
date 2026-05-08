@@ -8,7 +8,8 @@ import {apiFetch} from './apiService';
 const SPEECH_CONFIG = {
   CHUNK_INTERVAL_MS: 2000,
   TRANSCRIBE_INTERVAL_MS: 2000,
-  MIN_AUDIO_SIZE: 60000,
+  MIN_AUDIO_SIZE: 60000,           // For final transcription
+  MIN_TEMPORARY_AUDIO_SIZE: 5000,  // For real-time feedback (5KB)
   DOT_ANIMATION_INTERVAL_MS: 500,
   AUDIO_TIMEOUT_MS: 200,
   MIN_INITIAL_DURATION_MS: 5000,
@@ -92,6 +93,12 @@ function toBase64(blob: Blob): Promise<string> {
 }
 
 function getBestMimeType(): string | undefined {
+  // Force WAV for Mistral Voxtral compatibility
+  const wavType = PRIORITY_MIME_TYPES.find(t => t.includes('audio/wav'));
+  if (wavType && MediaRecorder.isTypeSupported(wavType)) {
+    return wavType;
+  }
+  // Fallback to first supported type
   return PRIORITY_MIME_TYPES.find(MediaRecorder.isTypeSupported);
 }
 
@@ -101,7 +108,8 @@ function getBestMimeType(): string | undefined {
 
 async function transcribe(audio: Blob, language: string, contextBias: string[] = []): Promise<string> {
   const audioBase64 = (await toBase64(audio)).split(',')[1];
-  const mimeType = audio.type || 'audio/webm';
+  // Force WAV mime type for Mistral Voxtral API compatibility
+  const mimeType = 'audio/wav';
   try {
     const response = await apiFetch<TranscribeResponse>('/speech/transcribe', {
       method: 'POST',
@@ -381,7 +389,9 @@ export class STTManager {
     try {
       // Use ONLY temporaryChunks (last 10s audio) for real-time feedback
       const blob = new Blob(this.temporaryChunks, { type: this.recorder?.mimeType || 'audio/webm' });
-      if (blob.size >= SPEECH_CONFIG.MIN_AUDIO_SIZE) {
+      
+      // Use lower threshold for temporary chunks (real-time feedback)
+      if (blob.size >= SPEECH_CONFIG.MIN_TEMPORARY_AUDIO_SIZE) {
         const text = await transcribe(blob, this.language, this.contextBias);
         if (text?.trim()) this.notifyText(text, false);
       }
