@@ -2,8 +2,6 @@ import '../../styles/pages/ideas.css'
 //import type { RouteParams } from '../../utils/router'
 import { getProject } from '../../services/projectService'
 import {
-    getDiscoveredIdeasForTopic,
-    IDEA_DISCOVERY_MAX_RESULTS,
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
@@ -33,7 +31,8 @@ import type { ActiveView } from './types'
 import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from './types'
 import { IdeaAuthorType } from '../../models/idea'
 import { getSurveyStrings } from '../../i18n/survey'
-import { hasOwnIdeaInTopic, getTopicSemanticCategories, buildBroadFeed, createDiscoveryFeed, createPostPreviewFeed } from './ideasDiscovery'
+import { hasOwnIdeaInTopic, getTopicSemanticCategories, createDiscoveryFeed } from './ideasDiscovery'
+import { getVisibleIdeas, type DiscoveryOptions } from './discoveryApi'
 import {ProjectContext, render} from "../../main";
 
 
@@ -575,140 +574,19 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             return createDiscoveryFeed(myIdeas, new Map())
         }
 
-        const topicId = activeView.topicId
-        const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, topicId)
-        const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
-        const cacheSuffix = discoveryMode === DiscoveryMode.All && showPostPreviewPair ? 'preview' : 'full'
-        const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
-        const cached = discoveryCache.get(cacheKey)
-        if (cached) {
-            return cached
+        const options: DiscoveryOptions = {
+            allIdeas,
+            topicId: activeView.topicId,
+            discoveryMode,
+            showPostPreviewPair,
+            youthToken,
+            organizationSlug: params.organizationSlug,
+            projectSlug: params.projectSlug,
+            selectedSemanticCategory,
+            latestSubmittedIdea,
+            discoveryCache,
         }
-
-        try {
-            let discovered: DiscoveryFeed
-
-            if (!ownIdeaExists) {
-                const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-
-                if (!selectedSemanticCategory) {
-                    discovered = createDiscoveryFeed(buildBroadFeed(topicIdeas), new Map())
-                } else {
-                    const categoryFilter = selectedSemanticCategory.toLowerCase()
-                    const filtered = topicIdeas.filter((idea) =>
-                        idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
-                    )
-                    discovered = createDiscoveryFeed(filtered, new Map())
-                }
-            } else if (discoveryMode === DiscoveryMode.All) {
-                const [similarIdeas, rawDifferentIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        DiscoveryMode.Similar,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        DiscoveryMode.Different,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-                const similarIds = new Set(similarIdeas.map((idea) => idea.id))
-                const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
-
-                // Pre-populate individual mode caches so switching modes uses consistent deduplicated data
-                const similarCacheKey = `${topicId}:similar:${categorySuffix}:full`
-                const differentCacheKey = `${topicId}:different:${categorySuffix}:full`
-                if (!discoveryCache.has(similarCacheKey)) {
-                    discoveryCache.set(similarCacheKey, createDiscoveryFeed(similarIdeas, new Map()))
-                }
-                if (!discoveryCache.has(differentCacheKey)) {
-                    discoveryCache.set(differentCacheKey, createDiscoveryFeed(oppositeIdeas, new Map()))
-                }
-
-                if (showPostPreviewPair) {
-                    const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
-                    // Use rawDifferentIdeas for the preview so we always find a unique "differing" pick
-                    discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea, new Map())
-                } else {
-                    // Pinned top 3: most similar, most different, then user's own idea
-                    const pinnedIdeas: Idea[] = []
-                    const pinnedBadges = new Map<number, DiscoveryBadgeType>()
-                    const pinnedIds = new Set<number>()
-
-                    const addPinned = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): void => {
-                        if (!idea || pinnedIds.has(idea.id)) return
-                        pinnedIds.add(idea.id)
-                        pinnedIdeas.push(idea)
-                        if (badge) pinnedBadges.set(idea.id, badge)
-                    }
-
-                    addPinned(similarIdeas[0], DiscoveryBadgeType.Similar)
-                    for (const idea of oppositeIdeas) {
-                        if (!pinnedIds.has(idea.id)) {
-                            addPinned(idea, DiscoveryBadgeType.Different);
-                            break
-                        }
-                    }
-                    const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
-                    addPinned(userIdea)
-
-                    // Remaining topic ideas in broad category-interleaved order
-                    const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-                    const broadRemainder = buildBroadFeed(topicIdeas).filter((idea) => !pinnedIds.has(idea.id))
-                    discovered = createDiscoveryFeed([...pinnedIdeas, ...broadRemainder], pinnedBadges)
-                }
-            } else {
-                // Fetch both modes in parallel and deduplicate to prevent overlap between lists
-                const otherMode: DiscoveryMode = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
-                const [modeIdeas, otherIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        discoveryMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        otherMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-
-                const similarList = discoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
-                const rawDifferentList = discoveryMode === DiscoveryMode.Different ? modeIdeas : otherIdeas
-                const simIds = new Set(similarList.map((idea) => idea.id))
-                const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
-
-                // Cache the other mode so switching back uses consistent data
-                const otherCacheKey = `${topicId}:${otherMode}:${categorySuffix}:full`
-                if (!discoveryCache.has(otherCacheKey)) {
-                    discoveryCache.set(
-                        otherCacheKey,
-                        createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? deduplicatedDifferent : similarList, new Map()),
-                    )
-                }
-
-                discovered = createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? similarList : deduplicatedDifferent, new Map())
-            }
-
-            discoveryCache.set(cacheKey, discovered)
-            return discovered
-        } catch (error) {
-            console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
-            return createDiscoveryFeed(allIdeas.filter((idea) => idea.topicId === topicId).slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
-        }
+        return getVisibleIdeas(options)
     }
 
     let copyPulseTimeout: number | null = null

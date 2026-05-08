@@ -2,16 +2,9 @@
  * Chat Ideation Phase Controller
  * Handles the ideas browsing, filtering, submission, and discovery in chat survey mode
  */
-import type {Project} from '../../models/project'
 import type {ProjectContext} from '../../main'
-import {
-    getDiscoveredIdeasForTopic,
-    getIdeasContext,
-    getOrCreateProjectScopedYouthId,
-    IDEA_DISCOVERY_MAX_RESULTS,
-    saveYouthContactEmail,
-    updateIdeaAfterSafetyReview,
-} from '../../services/ideaService'
+import type { Project } from '../../models/project'
+import { saveYouthContactEmail, updateIdeaAfterSafetyReview } from '../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -27,10 +20,13 @@ import {createIdeaPanelController} from '../ideas/ideaPanel'
 import {createIdeasSubmitHandler} from '../ideas/ideasSubmitHandler'
 import {createFirstIdeaContactDialogController} from '../ideas/firstIdeaContactDialog'
 import {createChatIdeaNudgeFlow} from '../ideas/chatIdeaNudgeFlow'
-import {Idea, IdeaAuthorType, IdeaTopic} from '../../models/idea'
-import {ActiveView, DiscoveryBadgeType, DiscoveryMode} from '../ideas/types'
+import {Idea, IdeaAuthorType} from '../../models/idea'
+import {ActiveView, DiscoveryMode} from '../ideas/types'
+import type { DiscoveryFeed } from '../ideas/types'
 import {getSurveyStrings} from '../../i18n/survey'
 import {esc, wait} from './chatHelpers.ts'
+import {getVisibleIdeas, type DiscoveryOptions} from '../ideas/discoveryApi'
+import {initIdeasContext, type IdeasInitResult} from '../ideas/ideasInit'
 
 interface ChatIdeationOptions {
     container: HTMLElement
@@ -43,10 +39,7 @@ interface ChatIdeationOptions {
     messagesEl: HTMLDivElement
 }
 
-interface DiscoveryCache {
-    ideas: Idea[]
-    badgesByIdeaId: Map<number, DiscoveryBadgeType>
-}
+// Use DiscoveryFeed from ideasDiscovery instead of local DiscoveryCache
 
 /**
  * Initiates the chat ideation phase with proper async idea discovery and filtering
@@ -56,11 +49,8 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     const t = getSurveyStrings()
     const { container, params, project, appendAiBubble, chatInput, chatShell, scrollAreaEl, messagesEl } = options
 
-    const ideasContext = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
-    const youthToken = getOrCreateProjectScopedYouthId(project.slug)
-    const allIdeas: Idea[] = [...ideasContext.ideas]
-    const topics: IdeaTopic[] = ideasContext.topics
-    const firstTopic = topics[0]
+    const initResult: IdeasInitResult = await initIdeasContext(params.organizationSlug, params.projectSlug, project)
+    const { allIdeas, topics, youthToken, firstTopic } = initResult
 
     if (!firstTopic) {
         await appendAiBubble(t.surveyCompleted)
@@ -81,7 +71,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         storageKey: firstIdeaContactStorageKey,
     })
 
-    const discoveryCache = new Map<string, DiscoveryCache>()
+    const discoveryCache = new Map<string, DiscoveryFeed>()
 
     // ===== Helpers =====
     function hasOwnIdeaInTopic(topicId: number): boolean {
@@ -248,107 +238,19 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
             return allIdeas.filter((x) => x.authorType === IdeaAuthorType.Self)
         }
 
-        const topicId = currentView.topicId
-        const ownIdeaExists = hasOwnIdeaInTopic(topicId)
-        const categorySuffix = ownIdeaExists ? 'own' : (currentSemanticCategory ?? 'broad')
-        const cacheKey = `${topicId}:${currentDiscoveryMode}:${categorySuffix}`
-        
-        const cached = discoveryCache.get(cacheKey)
-        if (cached) {
-            return cached.ideas
+        const options: DiscoveryOptions = {
+            allIdeas,
+            topicId: currentView.topicId,
+            discoveryMode: currentDiscoveryMode,
+            showPostPreviewPair: false,
+            youthToken,
+            organizationSlug: params.organizationSlug,
+            projectSlug: params.projectSlug,
+            selectedSemanticCategory: currentSemanticCategory,
+            latestSubmittedIdea: null,
+            discoveryCache,
         }
-
-        try {
-            let ideas: Idea[] = []
-
-            if (!ownIdeaExists) {
-                const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-
-                if (!currentSemanticCategory) {
-                    // Broad selection - just return all ideas
-                    ideas = topicIdeas
-                } else {
-                    // Filter by semantic category
-                    const categoryFilter = currentSemanticCategory.toLowerCase()
-                    ideas = topicIdeas.filter((idea) =>
-                        idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
-                    )
-                }
-            } else if (currentDiscoveryMode === 'all') {
-                // User has own idea, fetch both similar and different
-                const [similarIdeas, rawDifferentIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        DiscoveryMode.Similar,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        DiscoveryMode.Different,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-                const similarIds = new Set(similarIdeas.map((idea) => idea.id))
-                const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
-
-                // Combine with user's own idea pinned first
-                const userIdea = allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)
-                const combined = [
-                    ...(userIdea ? [userIdea] : []),
-                    ...similarIdeas.slice(0, 3),
-                    ...oppositeIdeas.slice(0, 3),
-                    ...allIdeas.filter(
-                        (idea) =>
-                            idea.topicId === topicId &&
-                            idea.authorType !== 'self' &&
-                            !similarIds.has(idea.id) &&
-                            !oppositeIdeas.some((x) => x.id === idea.id),
-                    ),
-                ]
-                ideas = combined
-            } else {
-                // Fetch specific mode
-                const otherMode: DiscoveryMode = currentDiscoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
-                const [modeIdeas, otherIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        currentDiscoveryMode as DiscoveryMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        otherMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-
-                const similarList = currentDiscoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
-                const simIds = new Set(similarList.map((idea) => idea.id))
-                const filtered = (currentDiscoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas).filter(
-                    (idea) => !simIds.has(idea.id),
-                )
-                ideas = currentDiscoveryMode === DiscoveryMode.Similar ? similarList : filtered
-            }
-
-            discoveryCache.set(cacheKey, { ideas, badgesByIdeaId: new Map() })
-            return ideas
-        } catch (error) {
-            console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
-            const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-            return topicIdeas.slice(0, 20)
-        }
+        return (await getVisibleIdeas(options)).ideas
     }
 
     function renderDiscoveryMenuOptions(): void {

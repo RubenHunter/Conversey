@@ -13,10 +13,6 @@ import { renderOpenTextQuestion } from '../survey/openTextQuestion'
 import { renderScaleQuestion } from '../survey/scaleQuestion'
 import { renderSurveyHeader, createSurveyHeaderController } from '../survey/surveyHeader'
 import {
-    getIdeasContext,
-    getDiscoveredIdeasForTopic,
-    IDEA_DISCOVERY_MAX_RESULTS,
-    getOrCreateProjectScopedYouthId,
     updateIdeaAfterSafetyReview, saveYouthContactEmail,
 } from '../../services/ideaService'
 import {
@@ -35,11 +31,13 @@ import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
 import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
 import { createTopicModalController } from '../ideas/topicModal'
 import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
-import {Idea, IdeaAuthorType, IdeaTopic} from '../../models/idea'
+import {Idea, IdeaAuthorType} from '../../models/idea'
 import type {IdeaNudgingContext} from '../../services/ideaService'
 import type { ActiveView, DiscoveryFeed } from '../ideas/types'
 import { DiscoveryMode, DiscoveryBadgeType } from '../ideas/types'
-import { buildBroadFeed, createDiscoveryFeed, createPostPreviewFeed } from '../ideas/ideasDiscovery'
+import { createDiscoveryFeed, getTopicSemanticCategories as getTopicSemanticCats } from '../ideas/ideasDiscovery'
+import { getVisibleIdeas, type DiscoveryOptions } from '../ideas/discoveryApi'
+import { initIdeasContext, type IdeasInitResult } from '../ideas/ideasInit'
 import { getSurveyStrings } from '../../i18n/survey'
 import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers.ts'
 import {
@@ -777,11 +775,8 @@ export async function renderChatSurveyPage(
             chatShell.insertBefore(topbar, chatShell.firstChild)
         }
 
-        const ideasContext = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
-        const youthToken = getOrCreateProjectScopedYouthId(project.slug)
-        const allIdeas: Idea[] = [...ideasContext.ideas]
-        const topics: IdeaTopic[] = ideasContext.topics
-        const firstTopic = topics[0]
+        const initResult: IdeasInitResult = await initIdeasContext(params.organizationSlug, params.projectSlug, project)
+        const { allIdeas, topics, youthToken, firstTopic } = initResult
 
         if (!firstTopic) {
             await appendAiBubble(t.surveyCompleted)
@@ -1123,15 +1118,7 @@ export async function renderChatSurveyPage(
         }
 
         function getTopicSemanticCategories(topicId: number): string[] {
-            const categories = new Set<string>()
-            allIdeas
-                .filter((idea) => idea.topicId === topicId)
-                .forEach((idea) => {
-                    idea.semanticCategories.forEach((category) => {
-                        if (category.trim().length > 0) categories.add(category)
-                    })
-                })
-            return [...categories].sort((a, b) => a.localeCompare(b))
+            return getTopicSemanticCats(allIdeas, topicId)
         }
 
         function renderDiscoveryMenuOptions(): void {
@@ -1193,98 +1180,19 @@ export async function renderChatSurveyPage(
                 return createDiscoveryFeed(allIdeas.filter((idea) => idea.authorType === IdeaAuthorType.Self), new Map())
             }
 
-            const topicId = activeView.topicId
-            const ownIdeaExists = hasOwnIdeaInTopic(topicId)
-            const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
-                     const cacheSuffix = discoveryMode === DiscoveryMode.All && showPostPreviewPair ? 'preview' : 'full'
-            const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
-            const cached = discoveryCache.get(cacheKey)
-            if (cached) return cached
-
-            try {
-                let discovered: DiscoveryFeed
-
-                if (!ownIdeaExists) {
-                    const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-                    if (!selectedSemanticCategory) {
-                        discovered = createDiscoveryFeed(buildBroadFeed(topicIdeas), new Map())
-                    } else {
-                        const categoryFilter = selectedSemanticCategory.toLowerCase()
-                        const filtered = topicIdeas.filter((idea) =>
-                            idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
-                        )
-                        discovered = createDiscoveryFeed(filtered, new Map())
-                    }
-                } else if (discoveryMode === DiscoveryMode.All) {
-                    const [similarIdeas, rawDifferentIdeas] = await Promise.all([
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, DiscoveryMode.Similar, IDEA_DISCOVERY_MAX_RESULTS),
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, DiscoveryMode.Different, IDEA_DISCOVERY_MAX_RESULTS),
-                    ])
-                    const similarIds = new Set(similarIdeas.map((idea) => idea.id))
-                    const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
-
-                    const similarCacheKey = `${topicId}:similar:${categorySuffix}:full`
-                    const differentCacheKey = `${topicId}:different:${categorySuffix}:full`
-                    if (!discoveryCache.has(similarCacheKey)) {
-                        discoveryCache.set(similarCacheKey, createDiscoveryFeed(similarIdeas, new Map()))
-                    }
-                    if (!discoveryCache.has(differentCacheKey)) {
-                        discoveryCache.set(differentCacheKey, createDiscoveryFeed(oppositeIdeas, new Map()))
-                    }
-
-                    if (showPostPreviewPair) {
-                        const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
-                        discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea, new Map())
-                    } else {
-                        const pinnedIdeas: Idea[] = []
-                        const pinnedBadges = new Map<number, DiscoveryBadgeType>()
-                        const pinnedIds = new Set<number>()
-
-                        const addPinned = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): void => {
-                            if (!idea || pinnedIds.has(idea.id)) return
-                            pinnedIds.add(idea.id)
-                            pinnedIdeas.push(idea)
-                            if (badge) pinnedBadges.set(idea.id, badge)
-                        }
-
-                        addPinned(similarIdeas[0], DiscoveryBadgeType.Similar)
-                        for (const idea of oppositeIdeas) {
-                            if (!pinnedIds.has(idea.id)) {
-                                addPinned(idea, DiscoveryBadgeType.Different)
-                                break
-                            }
-                        }
-                        const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
-                         addPinned(userIdea)
-                        const broadRemainder = buildBroadFeed(allIdeas.filter((idea) => idea.topicId === topicId)).filter((idea) => !pinnedIds.has(idea.id))
-                        discovered = createDiscoveryFeed([...pinnedIdeas, ...broadRemainder], pinnedBadges)
-                    }
-                } else {
-                    const otherMode: DiscoveryMode = discoveryMode === DiscoveryMode.Similar ? DiscoveryMode.Different : DiscoveryMode.Similar
-                    const [modeIdeas, otherIdeas] = await Promise.all([
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, discoveryMode, IDEA_DISCOVERY_MAX_RESULTS),
-                        getDiscoveredIdeasForTopic(params.organizationSlug, params.projectSlug, topicId, youthToken, otherMode, IDEA_DISCOVERY_MAX_RESULTS),
-                    ])
-
-                    const similarList = discoveryMode === DiscoveryMode.Similar ? modeIdeas : otherIdeas
-                    const rawDifferentList = discoveryMode === DiscoveryMode.Different ? modeIdeas : otherIdeas
-                    const simIds = new Set(similarList.map((idea) => idea.id))
-                    const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
-
-                    const otherCacheKey = `${topicId}:${otherMode}:${categorySuffix}:full`
-                    if (!discoveryCache.has(otherCacheKey)) {
-                        discoveryCache.set(otherCacheKey, createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? deduplicatedDifferent : similarList, new Map()))
-                    }
-
-                        discovered = createDiscoveryFeed(discoveryMode === DiscoveryMode.Similar ? similarList : deduplicatedDifferent, new Map())
-                }
-
-                discoveryCache.set(cacheKey, discovered)
-                return discovered
-            } catch (error) {
-                console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
-                return createDiscoveryFeed(allIdeas.filter((idea) => idea.topicId === topicId).slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
+            const options: DiscoveryOptions = {
+                allIdeas,
+                topicId: activeView.topicId,
+                discoveryMode,
+                showPostPreviewPair,
+                youthToken,
+                organizationSlug: params.organizationSlug,
+                projectSlug: params.projectSlug,
+                selectedSemanticCategory,
+                latestSubmittedIdea,
+                discoveryCache,
             }
+            return getVisibleIdeas(options)
         }
 
         function getActiveIdeasLabel(view: ActiveView): string {
