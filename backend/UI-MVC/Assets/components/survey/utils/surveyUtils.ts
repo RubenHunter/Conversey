@@ -1,4 +1,4 @@
-import { QuestionType, type Question } from '../../models/question'
+import { QuestionType, type Question } from '../../../models/question'
 
 export function esc(value: string): string {
     return value

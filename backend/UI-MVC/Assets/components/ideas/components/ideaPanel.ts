@@ -1,10 +1,10 @@
-import type { Idea, IdeaReactionSummary } from '../../models/idea'
-import { IdeaAuthorType } from '../../models/idea'
-import type { IdeaResponse, ResponseReactionSummary } from '../../models/ideaResponse'
-import type {ActiveView, IdeaPanelController, ReviewBeforePost} from './types'
+import type { Idea, IdeaReactionSummary } from '../../../models/idea'
+import { IdeaAuthorType } from '../../../models/idea'
+import type { IdeaResponse, ResponseReactionSummary } from '../../../models/ideaResponse'
+import type {ActiveView, IdeaPanelController, ReviewBeforePost} from '../types'
 import type { PostSafetyDecision } from './safetyReviewDialog'
-import { getSurveyStrings } from '../../i18n/survey'
-import {IdeaNudgingContext} from "../../services/ideaService.ts";
+import { getSurveyStrings } from '../../../i18n/survey'
+import {IdeaNudgingContext} from "../../../services/ideaService.ts";
 
 interface ResponseSubmitResult {
     response: IdeaResponse

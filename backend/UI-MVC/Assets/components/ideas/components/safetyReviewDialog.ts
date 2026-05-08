@@ -1,4 +1,4 @@
-﻿import { reviewContentForSafety } from '../../services/contentSafetyService'
+﻿import { reviewContentForSafety } from '../../../services/contentSafetyService'
 
 export interface PostSafetyDecision {
     proceed: boolean

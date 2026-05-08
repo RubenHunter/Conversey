@@ -1,21 +1,21 @@
-import {getProject} from '../../services/projectService'
-import {getQuestions, submitAnswers} from '../../services/surveyService'
-import {QuestionType} from '../../models/question'
-import type {ResponseAnswer} from '../../models/response'
-import type {QuestionAnswer, QuestionComponent} from './singleChoiceQuestion.ts'
-import {renderSingleChoiceQuestion} from './singleChoiceQuestion.ts'
-import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion.ts'
-import {renderOpenTextQuestion} from './openTextQuestion.ts'
-import {renderScaleQuestion} from './scaleQuestion.ts'
-import type {ScrollNav} from '../shared/scrollNav'
-import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
-import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader.ts'
-import {navigate, ProjectContext, render} from "../../main";
-import {InteractionType} from '../../models/project'
-import {showLayoutPicker} from './layoutPicker.ts'
-import {getSurveyStrings} from '../../i18n/survey'
-import {renderScrollNav} from '../shared/scrollNav'
-import {hasAnswer} from '../chat/chatHelpers'
+import {getProject} from '../../../services/projectService'
+import {getQuestions, submitAnswers} from '../../../services/surveyService'
+import {QuestionType} from '../../../models/question'
+import type {ResponseAnswer} from '../../../models/response'
+import type {QuestionAnswer, QuestionComponent} from '../components/singleChoiceQuestion'
+import {renderSingleChoiceQuestion} from '../components/singleChoiceQuestion'
+import {renderMultipleChoiceQuestion} from '../components/multipleChoiceQuestion'
+import {renderOpenTextQuestion} from '../components/openTextQuestion'
+import {renderScaleQuestion} from '../components/scaleQuestion'
+import type {ScrollNav} from '../../shared/scrollNav'
+import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../../services/surveyProgressService'
+import {renderSurveyHeader, createSurveyHeaderController} from '../components/surveyHeader'
+import {navigate, ProjectContext, render} from "../../../main";
+import {InteractionType} from '../../../models/project'
+import {showLayoutPicker} from '../components/layoutPicker'
+import {getSurveyStrings} from '../../../i18n/survey'
+import {renderScrollNav} from '../../shared/scrollNav'
+import {hasAnswer} from '../../chat/utils/chatHelpers'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
@@ -416,7 +416,7 @@ render(async (container, params) => {
     const project = await getProject(params.organizationSlug, params.projectSlug)
 
     if (project.interactionType === InteractionType.Chat) {
-        const { renderChatSurveyPage } = await import("../chat/chatSurveyPage")
+        const { renderChatSurveyPage } = await import("../../chat/pages/chatSurveyPage")
         await renderChatSurveyPage(container, params, project)
         return
     }
@@ -426,7 +426,7 @@ render(async (container, params) => {
         const savedLayout = localStorage.getItem(layoutKey)
 
         if (savedLayout === 'chat') {
-            const { renderChatSurveyPage } = await import('../chat/chatSurveyPage')
+            const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
             return
         }
@@ -444,7 +444,7 @@ render(async (container, params) => {
             organizationSlug: project.organizationSlug,
         })
         if (choice === 'chat') {
-            const { renderChatSurveyPage } = await import('../chat/chatSurveyPage')
+            const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
         } else {
             await renderSurveyPage(container, params)

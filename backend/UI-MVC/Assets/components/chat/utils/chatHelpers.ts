@@ -1,7 +1,7 @@
-import { QuestionType } from '../../models/question'
-import type { Question } from '../../models/question'
-import type { QuestionAnswer } from '../survey/singleChoiceQuestion'
-import { esc } from '../survey/shared'
+import { QuestionType } from '../../../models/question'
+import type { Question } from '../../../models/question'
+import type { QuestionAnswer } from '../../survey/components/singleChoiceQuestion'
+import { esc } from '../../survey/utils/surveyUtils'
 
 export { esc }
 

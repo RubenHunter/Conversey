@@ -1,12 +1,12 @@
-import '../../styles/pages/ideas.css'
+import '../../../styles/pages/ideas.css'
 //import type { RouteParams } from '../../utils/router'
-import { getProject } from '../../services/projectService'
+import { getProject } from '../../../services/projectService'
 import {
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
-} from '../../services/ideaService'
+} from '../../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -15,25 +15,25 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../services/ideaResponseService'
-import type { Idea, IdeaTopic } from '../../models/idea'
-import { resolveInitialIdeasView } from './initialView'
-import { createIdeaPanelController } from './ideaPanel'
-import { createSafetyReviewDialogController } from './safetyReviewDialog'
-import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
-import {createIdeaNudgeDialogController} from './ideaNudgeDialog'
-import { renderIdeasComposer } from './composer'
-import { renderIdeasHeader } from "./ideasHeader"
-import {createTopicModalController} from "./topicModal";
-import {createIdeasListController} from "./ideasListController";
-import {createIdeasSubmitHandler} from "./ideasSubmitHandler";
-import type { ActiveView } from './types'
-import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from './types'
-import { IdeaAuthorType } from '../../models/idea'
-import { getSurveyStrings } from '../../i18n/survey'
-import { hasOwnIdeaInTopic, getTopicSemanticCategories, createDiscoveryFeed } from './ideasDiscovery'
-import { getVisibleIdeas, type DiscoveryOptions } from './discoveryApi'
-import {ProjectContext, render} from "../../main";
+} from '../../../services/ideaResponseService'
+import type { Idea, IdeaTopic } from '../../../models/idea'
+import { resolveInitialIdeasView } from '../utils/initialView'
+import { createIdeaPanelController } from '../components/ideaPanel'
+import { createSafetyReviewDialogController } from '../components/safetyReviewDialog'
+import {createFirstIdeaContactDialogController} from '../components/firstIdeaContactDialog'
+import {createIdeaNudgeDialogController} from '../components/ideaNudgeDialog'
+import { renderIdeasComposer } from '../components/composer'
+import { renderIdeasHeader } from "../utils/ideasHeader"
+import {createTopicModalController} from "../components/topicModal";
+import {createIdeasListController} from "../components/ideasListController";
+import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
+import type { ActiveView } from '../types'
+import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
+import { IdeaAuthorType } from '../../../models/idea'
+import { getSurveyStrings } from '../../../i18n/survey'
+import { hasOwnIdeaInTopic, getTopicSemanticCategories, createDiscoveryFeed } from '../utils/ideasDiscovery'
+import { getVisibleIdeas, type DiscoveryOptions } from '../utils/discoveryApi'
+import {ProjectContext, render} from "../../../main";
 
 
 // Get label for active ideas view
@@ -251,66 +251,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
             </div>
         </div>
-            <div class="idea-panel-body">
-                <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
-                <div class="idea-panel-section idea-panel-section--idea">
-                    <p class="idea-panel-section-label">Original idea</p>
-                    <div id="idea-panel-post" class="idea-panel-post">
-                        <div id="idea-panel-badges" class="idea-panel-badges"></div>
-                        <p id="idea-panel-text" class="idea-panel-text"></p>
-                        <div id="idea-panel-edit-region" hidden>
-                            <textarea id="idea-panel-edit-input" class="idea-panel-input idea-panel-edit-input" rows="4" placeholder="Edit your idea..."></textarea>
-                            <div class="idea-panel-edit-actions">
-                                <button id="idea-panel-edit-cancel" class="idea-panel-send idea-panel-send--secondary" type="button">Cancel</button>
-                                <button id="idea-panel-edit-save" class="idea-panel-send" type="button" disabled>Save changes</button>
-                            </div>
-                        </div>
-                        <div class="idea-panel-post-actions">
-                            <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
-                                <span aria-hidden="true">+</span>
-                                <span aria-hidden="true">:)</span>
-                            </button>
-                            <button
-                                id="idea-panel-copy"
-                                class="idea-panel-copy-btn"
-                                type="button"
-                                aria-label="Use this idea as a starting point"
-                                title="Use this idea as a starting point"
-                                hidden
-                            >
-                                <svg class="idea-panel-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                                <span>${t.useAsStarter}</span>
-                            </button>
-                            <button
-                                id="idea-panel-edit-toggle"
-                                class="survey-magic-btn idea-panel-edit-cta"
-                                type="button"
-                                aria-label="Edit idea before publish"
-                                title="Edit idea before publish"
-                                hidden
-                            >
-                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
-                                </svg>
-                                <span class="survey-magic-btn-text">${t.editIdeaBeforePublish}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="idea-panel-section idea-panel-section--responses">
-                    <p class="idea-panel-section-label">Responses</p>
-                    <div id="idea-panel-comments" class="idea-panel-comments"></div>
-                </div>
-            </div>
-            <div class="idea-panel-footer">
-                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>
-                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
-            </div>
-        </div>
 
         <div id="safety-review-backdrop" class="safety-review-backdrop" hidden aria-hidden="true"></div>
         <div id="safety-review-dialog" class="safety-review-dialog" role="dialog" aria-modal="true" aria-label="${t.safetyReviewTitle}" hidden>
@@ -415,26 +355,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>${t.allowContact}</button>
             </div>
         </div>
-            <div class="modal-body first-idea-contact-body">
-                <p class="first-idea-contact-copy">You can leave your email if you want us to contact you about your ideas.</p>
-                <label class="first-idea-contact-field" for="first-idea-contact-email">
-                    <span class="first-idea-contact-label">Email address</span>
-                    <input id="first-idea-contact-email" class="first-idea-contact-input" type="email" autocomplete="email" placeholder="you@example.com" />
-                </label>
-                <label class="first-idea-contact-check">
-                    <input id="first-idea-contact-permission" class="first-idea-contact-checkbox" type="checkbox" />
-                    <span>I agree to be contacted about this idea.</span>
-                </label>
-                <a class="first-idea-contact-privacy-link" href="https://treecompany.be/privacyverklaring/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-                <label class="first-idea-contact-check first-idea-contact-check--remember">
-                    <input id="first-idea-contact-remember" class="first-idea-contact-checkbox" type="checkbox" />
-                    <span>Remember my choice</span>
-                </label>
-            </div>
-            <div class="first-idea-contact-actions">
-                <button id="first-idea-contact-deny" class="safety-review-btn first-idea-contact-deny" type="button">Deny</button>
-                <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>Allow contact</button>
-            </div>
         </div>
     `
 

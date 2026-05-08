@@ -1,7 +1,7 @@
-import { Idea, IdeaAuthorType } from '../../models/idea'
-import { DiscoveryBadgeType, DiscoveryFeed } from './types'
-import { DiscoveryMode } from './types'
-import { getDiscoveredIdeasForTopic, IDEA_DISCOVERY_MAX_RESULTS } from '../../services/ideaService'
+import { Idea, IdeaAuthorType } from '../../../models/idea'
+import { DiscoveryBadgeType, DiscoveryFeed } from '../types'
+import { DiscoveryMode } from '../types'
+import { getDiscoveredIdeasForTopic, IDEA_DISCOVERY_MAX_RESULTS } from '../../../services/ideaService'
 import { buildBroadFeed, createDiscoveryFeed, createPostPreviewFeed } from './ideasDiscovery'
 
 export interface DiscoveryOptions {

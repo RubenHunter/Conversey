@@ -1,6 +1,6 @@
-import type { Question } from '../../models/question'
+import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
-import { generateQuestionHeader } from './shared'
+import { generateQuestionHeader } from '../utils/surveyUtils'
 
 export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
     let selectedOptionIds: number[] = []

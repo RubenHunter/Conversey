@@ -1,7 +1,7 @@
-﻿import type { Idea, IdeaTopic } from '../../models/idea'
-import type { ActiveView } from './types'
-import { DiscoveryBadgeType } from './types'
-import { getSurveyStrings } from '../../i18n/survey'
+﻿import type { Idea, IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
+import { DiscoveryBadgeType } from '../types'
+import { getSurveyStrings } from '../../../i18n/survey'
 
 interface RenderCommunityListParams {
     list: HTMLDivElement

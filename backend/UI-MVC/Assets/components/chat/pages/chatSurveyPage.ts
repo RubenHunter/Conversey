@@ -1,20 +1,20 @@
-import '../../styles/pages/chat-survey.css'
-import '../../styles/pages/ideas.css'
-import type { Project } from '../../models/project'
-import type { ProjectContext } from '../../main'
-import { getQuestions, submitAnswers } from '../../services/surveyService'
-import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../services/surveyProgressService'
-import { QuestionType } from '../../models/question'
-import type { ResponseAnswer } from '../../models/response'
-import type { QuestionAnswer, QuestionComponent } from '../survey/singleChoiceQuestion'
-import { renderSingleChoiceQuestion } from '../survey/singleChoiceQuestion'
-import { renderMultipleChoiceQuestion } from '../survey/multipleChoiceQuestion'
-import { renderOpenTextQuestion } from '../survey/openTextQuestion'
-import { renderScaleQuestion } from '../survey/scaleQuestion'
-import { renderSurveyHeader, createSurveyHeaderController } from '../survey/surveyHeader'
+import '../../../styles/pages/chat-survey.css'
+import '../../../styles/pages/ideas.css'
+import type { Project } from '../../../models/project'
+import type { ProjectContext } from '../../../main'
+import { getQuestions, submitAnswers } from '../../../services/surveyService'
+import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
+import { QuestionType } from '../../../models/question'
+import type { ResponseAnswer } from '../../../models/response'
+import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
+import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
+import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
+import { renderOpenTextQuestion } from '../../survey/components/openTextQuestion'
+import { renderScaleQuestion } from '../../survey/components/scaleQuestion'
+import { renderSurveyHeader, createSurveyHeaderController } from '../../survey/components/surveyHeader'
 import {
     updateIdeaAfterSafetyReview, saveYouthContactEmail,
-} from '../../services/ideaService'
+} from '../../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -23,29 +23,29 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../services/ideaResponseService'
-import { createIdeasListController } from '../ideas/ideasListController'
-import { createSafetyReviewDialogController } from '../ideas/safetyReviewDialog'
-import { createIdeaPanelController } from '../ideas/ideaPanel'
-import { createIdeasSubmitHandler } from '../ideas/ideasSubmitHandler'
-import { createFirstIdeaContactDialogController } from '../ideas/firstIdeaContactDialog'
-import { createTopicModalController } from '../ideas/topicModal'
-import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
-import {Idea, IdeaAuthorType} from '../../models/idea'
-import type {IdeaNudgingContext} from '../../services/ideaService'
-import type { ActiveView, DiscoveryFeed } from '../ideas/types'
-import { DiscoveryMode, DiscoveryBadgeType } from '../ideas/types'
-import { createDiscoveryFeed, getTopicSemanticCategories as getTopicSemanticCats } from '../ideas/ideasDiscovery'
-import { getVisibleIdeas, type DiscoveryOptions } from '../ideas/discoveryApi'
-import { initIdeasContext, type IdeasInitResult } from '../ideas/ideasInit'
-import { getSurveyStrings } from '../../i18n/survey'
-import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers.ts'
+} from '../../../services/ideaResponseService'
+import { createIdeasListController } from '../../ideas/components/ideasListController'
+import { createSafetyReviewDialogController } from '../../ideas/components/safetyReviewDialog'
+import { createIdeaPanelController } from '../../ideas/components/ideaPanel'
+import { createIdeasSubmitHandler } from '../../ideas/components/ideasSubmitHandler'
+import { createFirstIdeaContactDialogController } from '../../ideas/components/firstIdeaContactDialog'
+import { createTopicModalController } from '../../ideas/components/topicModal'
+import { createChatIdeaNudgeFlow } from '../../ideas/components/chatIdeaNudgeFlow'
+import {Idea, IdeaAuthorType} from '../../../models/idea'
+import type {IdeaNudgingContext} from '../../../services/ideaService'
+import type { ActiveView, DiscoveryFeed } from '../../ideas/types'
+import { DiscoveryMode, DiscoveryBadgeType } from '../../ideas/types'
+import { createDiscoveryFeed, getTopicSemanticCategories as getTopicSemanticCats } from '../../ideas/utils/ideasDiscovery'
+import { getVisibleIdeas, type DiscoveryOptions } from '../../ideas/utils/discoveryApi'
+import { initIdeasContext, type IdeasInitResult } from '../../ideas/utils/ideasInit'
+import { getSurveyStrings } from '../../../i18n/survey'
+import { formatAnswerForDisplay, hasAnswer, wait, esc } from '../utils/chatHelpers.ts'
 import {
     AI_AVATAR,
     CHECKMARK_SVG,
     SPEAKER_SVG,
     renderChatShellTemplate,
-} from './chatTemplates.ts'
+} from '../utils/chatTemplates.ts'
 
 interface OpenTextState {
     questionIndex: number

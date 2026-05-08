@@ -1,5 +1,5 @@
 ﻿import type { Idea, IdeaAuthorType } from '../../models/idea'
-import type { PostSafetyDecision } from './safetyReviewDialog'
+import type { PostSafetyDecision } from './components/safetyReviewDialog'
 
 export interface DiscoveryFeed {
     ideas: Idea[]

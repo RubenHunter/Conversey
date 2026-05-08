@@ -1,7 +1,7 @@
 import { renderCommunityIdeasList } from './communityList'
-import type { Idea, IdeaTopic } from '../../models/idea'
-import type { ActiveView } from './types'
-import { DiscoveryBadgeType } from './types'
+import type { Idea, IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
+import { DiscoveryBadgeType } from '../types'
 
 interface CreateIdeasListControllerParams {
     list: HTMLElement

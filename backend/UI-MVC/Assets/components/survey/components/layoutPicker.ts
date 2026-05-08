@@ -1,8 +1,8 @@
-import { getSurveyStrings } from '../../i18n/survey'
+import { getSurveyStrings } from '../../../i18n/survey'
 import { renderSurveyHeader } from './surveyHeader'
 
-const chatExampleImage = new URL('../../chat_example.png', import.meta.url).href
-const classicExampleImage = new URL('../../classic_example.png', import.meta.url).href
+const chatExampleImage = new URL('../../../chat_example.png', import.meta.url).href
+const classicExampleImage = new URL('../../../classic_example.png', import.meta.url).href
 
 
 interface ShowLayoutPickerParams {

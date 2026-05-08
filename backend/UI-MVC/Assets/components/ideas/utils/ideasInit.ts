@@ -1,6 +1,6 @@
-import type { Idea, IdeaTopic } from '../../models/idea'
-import type { Project } from '../../models/project'
-import { getIdeasContext, getOrCreateProjectScopedYouthId } from '../../services/ideaService'
+import type { Idea, IdeaTopic } from '../../../models/idea'
+import type { Project } from '../../../models/project'
+import { getIdeasContext, getOrCreateProjectScopedYouthId } from '../../../services/ideaService'
 
 export interface IdeasInitResult {
     allIdeas: Idea[]

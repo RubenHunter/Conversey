@@ -1,6 +1,6 @@
-import type { Idea } from '../../models/idea'
-import type { DiscoveryFeed } from './types'
-import { DiscoveryBadgeType } from './types'
+import type { Idea } from '../../../models/idea'
+import type { DiscoveryFeed } from '../types'
+import { DiscoveryBadgeType } from '../types'
 
 let suppressListScrollSyncUntil: number = 0
 
@@ -12,7 +12,7 @@ export function isScrollSyncSuppressed(): boolean {
     return performance.now() < suppressListScrollSyncUntil
 }
 
-import { IdeaAuthorType } from '../../models/idea'
+import { IdeaAuthorType } from '../../../models/idea'
 
 export function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
     return allIdeas.some((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId)

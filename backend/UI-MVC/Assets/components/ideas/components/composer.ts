@@ -1,5 +1,5 @@
-﻿import type { IdeaTopic } from '../../models/idea'
-import type { ActiveView } from './types'
+﻿import type { IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
 
 interface RenderComposerParams {
     activeView: ActiveView

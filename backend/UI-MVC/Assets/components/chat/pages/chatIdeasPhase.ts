@@ -2,9 +2,9 @@
  * Chat Ideation Phase Controller
  * Handles the ideas browsing, filtering, submission, and discovery in chat survey mode
  */
-import type {ProjectContext} from '../../main'
-import type { Project } from '../../models/project'
-import { saveYouthContactEmail, updateIdeaAfterSafetyReview } from '../../services/ideaService'
+import type {ProjectContext} from '../../../main'
+import type { Project } from '../../../models/project'
+import { saveYouthContactEmail, updateIdeaAfterSafetyReview } from '../../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -13,20 +13,20 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../services/ideaResponseService'
-import {createIdeasListController} from '../ideas/ideasListController'
-import {createSafetyReviewDialogController} from '../ideas/safetyReviewDialog'
-import {createIdeaPanelController} from '../ideas/ideaPanel'
-import {createIdeasSubmitHandler} from '../ideas/ideasSubmitHandler'
-import {createFirstIdeaContactDialogController} from '../ideas/firstIdeaContactDialog'
-import {createChatIdeaNudgeFlow} from '../ideas/chatIdeaNudgeFlow'
-import {Idea, IdeaAuthorType} from '../../models/idea'
-import {ActiveView, DiscoveryMode} from '../ideas/types'
-import type { DiscoveryFeed } from '../ideas/types'
-import {getSurveyStrings} from '../../i18n/survey'
-import {esc, wait} from './chatHelpers.ts'
-import {getVisibleIdeas, type DiscoveryOptions} from '../ideas/discoveryApi'
-import {initIdeasContext, type IdeasInitResult} from '../ideas/ideasInit'
+} from '../../../services/ideaResponseService'
+import {createIdeasListController} from '../../ideas/components/ideasListController'
+import {createSafetyReviewDialogController} from '../../ideas/components/safetyReviewDialog'
+import {createIdeaPanelController} from '../../ideas/components/ideaPanel'
+import {createIdeasSubmitHandler} from '../../ideas/components/ideasSubmitHandler'
+import {createFirstIdeaContactDialogController} from '../../ideas/components/firstIdeaContactDialog'
+import {createChatIdeaNudgeFlow} from '../../ideas/components/chatIdeaNudgeFlow'
+import {Idea, IdeaAuthorType} from '../../../models/idea'
+import {ActiveView, DiscoveryMode} from '../../ideas/types'
+import type { DiscoveryFeed } from '../../ideas/types'
+import {getSurveyStrings} from '../../../i18n/survey'
+import {esc, wait} from '../utils/chatHelpers.ts'
+import {getVisibleIdeas, type DiscoveryOptions} from '../../ideas/utils/discoveryApi'
+import {initIdeasContext, type IdeasInitResult} from '../../ideas/utils/ideasInit'
 
 interface ChatIdeationOptions {
     container: HTMLElement

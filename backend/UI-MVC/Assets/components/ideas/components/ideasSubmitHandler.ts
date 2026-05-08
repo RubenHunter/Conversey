@@ -1,7 +1,7 @@
-import type {IdeaNudgingContext} from '../../services/ideaService'
-import {submitIdea, updateIdeaAfterSafetyReview} from '../../services/ideaService'
-import {Idea, IdeaAuthorType} from '../../models/idea'
-import type {ActiveView} from './types'
+import type {IdeaNudgingContext} from '../../../services/ideaService'
+import {submitIdea, updateIdeaAfterSafetyReview} from '../../../services/ideaService'
+import {Idea, IdeaAuthorType} from '../../../models/idea'
+import type {ActiveView} from '../types'
 import type {PostSafetyDecision} from './safetyReviewDialog'
 
 interface IdeaNudgingResult {
