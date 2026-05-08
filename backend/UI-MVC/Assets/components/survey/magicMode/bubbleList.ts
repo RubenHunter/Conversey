@@ -1,7 +1,6 @@
-// Bubble interface voor tijdelijke/finale bubbels
+// Bubble interface - all bubbles are permanent (AI validated)
 interface Bubble {
     text: string;
-    isTemporary: boolean;
 }
 
 export interface BubbleListController {
@@ -35,14 +34,8 @@ export function createBubbleList(): BubbleListController {
         activeBubbles.forEach((bubble, i) => {
             const bubbleEl = document.createElement('div');
             
-            // Verschillende classes voor tijdelijk vs. final
-            if (bubble.isTemporary) {
-                // Tijdelijk: grijs, geen animatie
-                bubbleEl.className = 'badge badge-primary gap-1 cursor-default opacity-50';
-            } else {
-                // Final: normale kleur + animatie
-                bubbleEl.className = 'badge badge-primary gap-1 cursor-default magic-mode-badge-enter';
-            }
+            // All bubbles are permanent (AI validated)
+            bubbleEl.className = 'badge badge-primary gap-1 cursor-default magic-mode-badge-enter';
             
             bubbleEl.setAttribute('role', 'listitem');
 
@@ -51,7 +44,7 @@ export function createBubbleList(): BubbleListController {
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'btn btn-ghost btn-xs p-0';
-            closeBtn.setAttribute('aria-label', `Verwijder "${bubble.text}"`);
+            closeBtn.setAttribute('aria-label', `Remove "${bubble.text}"`);
             closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>';
             closeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -71,27 +64,19 @@ export function createBubbleList(): BubbleListController {
             const key = normalize(trimmed);
             if (rejectedPhrases.has(key)) continue;
             if (activeBubbles.some(b => normalize(b.text) === key)) continue;
-            activeBubbles.push({ text: trimmed, isTemporary: false });
+            activeBubbles.push({ text: trimmed });
         }
         render();
     }
 
     function addTemporaryBubbles(phrases: string[]): void {
-        for (const p of phrases) {
-            const trimmed = p.trim();
-            if (!trimmed) continue;
-            const key = normalize(trimmed);
-            if (rejectedPhrases.has(key)) continue;
-            if (activeBubbles.some(b => normalize(b.text) === key)) continue;
-            activeBubbles.push({ text: trimmed, isTemporary: true });
-        }
-        render();
+        // Fallback method - adds as permanent for now
+        // In future: can be removed when AI validation is fully reliable
+        this.addBubbles(phrases);
     }
 
     function convertTemporaryToPermanent(): void {
-        for (let i = 0; i < activeBubbles.length; i++) {
-            activeBubbles[i] = { ...activeBubbles[i], isTemporary: false };
-        }
+        // No-op: all bubbles are already permanent (AI validated)
         render();
     }
 

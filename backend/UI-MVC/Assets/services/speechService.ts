@@ -141,6 +141,9 @@ export class STTManager {
   private recorder: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
   private chunks: Blob[] = [];
+  private completeChunks: Blob[] = [];        // Full recording for final transcription
+  private temporaryChunks: Blob[] = [];     // Last 5 chunks for real-time feedback
+  private readonly TEMPORARY_WINDOW_SIZE = 5; // 5 chunks = ~10 seconds
   private language: string = getSpeechLanguage();
   private contextBias: string[] = [];
   private callbacks: SpeechCallbacks = {};
@@ -191,6 +194,8 @@ export class STTManager {
 
     this.setState('listening');
     this.chunks = [];
+    this.completeChunks = [];        // Reset full recording buffer
+    this.temporaryChunks = [];     // Reset temporary buffer
     this.isStopping = false;
     this.isTranscribing = false;
     this.startTimeMs = Date.now();
@@ -209,7 +214,16 @@ export class STTManager {
 
       this.recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
+          // Add to ALL buffers
           this.chunks.push(e.data);
+          this.completeChunks.push(e.data);
+          this.temporaryChunks.push(e.data);
+
+          // Keep temporaryChunks limited to TEMPORARY_WINDOW_SIZE
+          if (this.temporaryChunks.length > this.TEMPORARY_WINDOW_SIZE) {
+            this.temporaryChunks.shift();  // Remove oldest chunk
+          }
+
           this.totalRecordedMs += SPEECH_CONFIG.CHUNK_INTERVAL_MS;
           this.updateTextareaFeedback();
         }
@@ -344,9 +358,10 @@ export class STTManager {
   }
 
   private async processFinalTranscription(): Promise<void> {
-    if (this.chunks.length > 0) {
+    if (this.completeChunks.length > 0) {
       const mimeType = this.recorder?.mimeType || 'audio/webm';
-      const finalText = await transcribe(new Blob(this.chunks, { type: mimeType }), this.language, this.contextBias);
+      // Use ALL completeChunks for full transcription
+      const finalText = await transcribe(new Blob(this.completeChunks, { type: mimeType }), this.language, this.contextBias);
       if (finalText?.trim()) {
         this.notifyText(finalText, this.hadExistingText);
       }
@@ -354,7 +369,7 @@ export class STTManager {
   }
 
   private async transcribeWindow(): Promise<void> {
-    if (this.isTranscribing || this.isStopping || this.chunks.length === 0) return;
+    if (this.isTranscribing || this.isStopping || this.temporaryChunks.length === 0) return;
 
     const requiredMs = this.getRequiredDurationMs();
     if (this.totalRecordedMs < requiredMs) return;
@@ -364,7 +379,8 @@ export class STTManager {
     this.hasFirstTranscription = true;
 
     try {
-      const blob = new Blob(this.chunks, { type: this.recorder?.mimeType || 'audio/webm' });
+      // Use ONLY temporaryChunks (last 10s audio) for real-time feedback
+      const blob = new Blob(this.temporaryChunks, { type: this.recorder?.mimeType || 'audio/webm' });
       if (blob.size >= SPEECH_CONFIG.MIN_AUDIO_SIZE) {
         const text = await transcribe(blob, this.language, this.contextBias);
         if (text?.trim()) this.notifyText(text, false);
@@ -387,6 +403,8 @@ export class STTManager {
     this.recorder = null;
 
     this.chunks = [];
+    this.completeChunks = [];        // Reset full recording buffer
+    this.temporaryChunks = [];     // Reset temporary buffer
     this.totalRecordedMs = 0;
     this.isStopping = false;
     this.isTranscribing = false;

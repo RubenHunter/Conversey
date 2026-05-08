@@ -2,6 +2,45 @@ import { getSTTManager } from '../../../services/speechService';
 import { detectLocale } from '../../../i18n/survey';
 import { createBubbleList } from './bubbleList';
 
+// ============================================================================
+// Feedback Helper Functions
+// ============================================================================
+
+function showRejectedFeedback(rejected: Array<{phrase: string, reason: string, similarTo?: string}>): void {
+  const feedbackElement = document.createElement('div');
+  feedbackElement.className = 'magic-mode-feedback';
+  
+  // Count reasons
+  const reasonCounts: Record<string, number> = {};
+  rejected.forEach(r => {
+    reasonCounts[r.reason] = (reasonCounts[r.reason] || 0) + 1;
+  });
+
+  const reasonText = Object.entries(reasonCounts)
+    .map(([reason, count]) => `${count}x ${getReasonText(reason)}`)
+    .join(', ');
+
+  feedbackElement.textContent = `❌ ${reasonText}`;
+  document.body.appendChild(feedbackElement);
+
+  setTimeout(() => feedbackElement.remove(), 3000);
+}
+
+function getReasonText(reason: string): string {
+  const reasonMap: Record<string, string> = {
+    'WordCountTooLow': 'Too short',
+    'WordCountExceeded': 'Too long',
+    'DuplicateExact': 'Duplicate',
+    'DuplicateSemantic': 'Similar to existing',
+    'SubsetOfExisting': 'Part of existing',
+    'FillerContent': 'Filler word',
+    'TooGeneric': 'Too generic'
+  };
+  return reasonMap[reason] || reason;
+}
+
+// ============================================================================
+
 export interface MagicModeModalController {
     open(questionText: string, onClose: (text: string) => void): void;
     destroy(): void;
@@ -13,15 +52,9 @@ export function createMagicModeModal(): MagicModeModalController {
     let onCloseCallback: ((text: string) => void) | null = null;
     const bubbleList = createBubbleList();
     
-    // Stabiliteitscheck state
-    let lastTranscript: string = '';
-    let stabilityCount: number = 0;
-    let isFinalized: boolean = false;
-    const STABILITY_THRESHOLD = 2; // 2x dezelfde transcriptie = stabiel
-
-    // Optimizatie state
-    let isProcessing = false;
-    const phraseCache = new Map<string, string[]>();
+    // AI validation state
+    let pendingValidation = false;
+    const phraseCache = new Map<string, {phrases: string[], rejected: Array<{phrase: string, reason: string, similarTo?: string}>}>();
     const MAX_CACHE_SIZE = 100;
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
@@ -142,36 +175,28 @@ export function createMagicModeModal(): MagicModeModalController {
         }
     }
 
-    async function fetchAndCachePhrases(text: string, cacheKey: string): Promise<{phrases: string[], rejectedPhrases: Array<{phrase: string, reason: string, similarTo?: string}>}> {
+    async function fetchAndCachePhrases(text: string, cacheKey: string): Promise<{phrases: string[], rejected: Array<{phrase: string, reason: string, similarTo?: string}>}> {
         const result = await fetchKeyPhrases(text, bubbleList.getBubbles(), bubbleList.getRejectedPhrases());
         
         if (result.phrases.length > 0) {
-            phraseCache.set(cacheKey, result.phrases);
+            phraseCache.set(cacheKey, { phrases: result.phrases, rejected: result.rejectedPhrasesWithReasons || [] });
             cleanupCache();
         }
         
-        return result;
+        return {
+            phrases: result.phrases,
+            rejected: result.rejectedPhrasesWithReasons || []
+        };
     }
 
     async function onTranscript(text: string): Promise<void> {
         if (!text.trim()) return;
 
-        // Stabiliteitscheck: track hoevaak dezelfde transcriptie achter elkaar komt
-        // Dit doe je VOORDAT je beslist of je de transcriptie verwerkt
-        if (text === lastTranscript) {
-            stabilityCount++;
-        } else {
-            // Nieuwe transcriptie: reset counter
-            stabilityCount = 1;  // 1 omdat dit de eerste keer is dat we deze text zien
-            lastTranscript = text;
-            isFinalized = false;
-        }
+        // Debouncing: if validation is already in progress, skip
+        if (pendingValidation) return;
+        pendingValidation = true;
 
-        // Skip als er al een Mistral call bezig is
-        // We willen alleen de LAATSTE transcriptie verwerken als processing klaar is
-        if (isProcessing) return;
-
-        // Genereer cache key
+        // Generate cache key
         const cacheKey = generateCacheKey(
             text,
             detectLocale(),
@@ -182,37 +207,33 @@ export function createMagicModeModal(): MagicModeModalController {
 
         // Check cache
         if (phraseCache.has(cacheKey)) {
-            const cachedPhrases = phraseCache.get(cacheKey)!;
-            if (cachedPhrases.length > 0) {
-                bubbleList.addTemporaryBubbles(cachedPhrases);
+            const cached = phraseCache.get(cacheKey)!;
+            if (cached.phrases.length > 0) {
+                // Add accepted phrases directly as permanent bubbles
+                bubbleList.addBubbles(cached.phrases);
             }
-
-            // Stabiliteitscheck: als transcriptie 2x achter elkaar hetzelfde is, maak bubbels final
-            if (stabilityCount >= STABILITY_THRESHOLD && !isFinalized) {
-                bubbleList.convertTemporaryToPermanent();
-                isFinalized = true;
-            }
+            pendingValidation = false;
             return;
         }
-
-        // Markeer als processing
-        isProcessing = true;
 
         try {
             const result = await fetchAndCachePhrases(text, cacheKey);
 
-            // Voeg toe als tijdelijk
+            // Add ONLY accepted phrases as PERMANENT bubbles
             if (result.phrases.length > 0) {
-                bubbleList.addTemporaryBubbles(result.phrases);
+                bubbleList.addBubbles(result.phrases);
             }
 
-            // Stabiliteitscheck: als transcriptie 2x achter elkaar hetzelfde is, maak bubbels final
-            if (stabilityCount >= STABILITY_THRESHOLD && !isFinalized) {
-                bubbleList.convertTemporaryToPermanent();
-                isFinalized = true;
+            // Optional: show rejected phrases as feedback
+            if (result.rejected.length > 0) {
+                showRejectedFeedback(result.rejected);
             }
+        } catch (error) {
+            console.error('[MagicMode] Validation failed:', error);
+            // Fallback: add as temporary bubble (for emergencies)
+            bubbleList.addTemporaryBubbles([text]);
         } finally {
-            isProcessing = false;
+            pendingValidation = false;
         }
     }
 
@@ -228,10 +249,7 @@ export function createMagicModeModal(): MagicModeModalController {
         activeDialog = null;
         
         // Reset state
-        lastTranscript = '';
-        stabilityCount = 0;
-        isFinalized = false;
-        isProcessing = false;
+        pendingValidation = false;
         phraseCache.clear();
         
         onCloseCallback?.(text);
@@ -242,11 +260,8 @@ export function createMagicModeModal(): MagicModeModalController {
             onCloseCallback = onClose;
             bubbleList.reset();
             
-            // Reset state bij nieuwe modal
-            lastTranscript = '';
-            stabilityCount = 0;
-            isFinalized = false;
-            isProcessing = false;
+            // Reset state for new modal
+            pendingValidation = false;
             phraseCache.clear();
 
             const { backdrop, dialog } = buildDOM();
@@ -267,10 +282,7 @@ export function createMagicModeModal(): MagicModeModalController {
             activeDialog = null;
             
             // Reset state
-            lastTranscript = '';
-            stabilityCount = 0;
-            isFinalized = false;
-            isProcessing = false;
+            pendingValidation = false;
             phraseCache.clear();
         }
     };
@@ -280,7 +292,7 @@ async function fetchKeyPhrases(
     transcript: string,
     existingPhrases: string[],
     rejectedPhrases: string[]
-): Promise<{phrases: string[], rejectedPhrases: Array<{phrase: string, reason: string, similarTo?: string}>}> {
+): Promise<{phrases: string[], rejectedPhrasesWithReasons: Array<{phrase: string, reason: string, similarTo?: string}>}> {
     try {
         const response = await fetch('/api/magic-mode/key-phrases', {
             method: 'POST',
@@ -293,7 +305,7 @@ async function fetchKeyPhrases(
                 rejectedPhrases
             })
         });
-        if (!response.ok) return { phrases: [], rejectedPhrases: [] };
+        if (!response.ok) return { phrases: [], rejectedPhrasesWithReasons: [] };
         const data = await response.json() as {
             phrases: string[],
             rejectedPhrasesWithReasons?: Array<{phrase: string, reason: number, similarTo?: string}>
@@ -317,8 +329,8 @@ async function fetchKeyPhrases(
             similarTo: r.similarTo
         }));
         
-        return { phrases: data.phrases ?? [], rejectedPhrases: convertedRejected };
+        return { phrases: data.phrases ?? [], rejectedPhrasesWithReasons: convertedRejected };
     } catch {
-        return { phrases: [], rejectedPhrases: [] };
+        return { phrases: [], rejectedPhrasesWithReasons: [] };
     }
 }
