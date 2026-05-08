@@ -1,3 +1,4 @@
+using Conversey.BL.Domain.DTOs.MagicMode;
 using Microsoft.Extensions.AI;
 
 namespace Conversey.BL.Ai;
@@ -13,7 +14,7 @@ public interface IAiManager : IChatClient
         IReadOnlyList<string> existingCategories,
         int maxCategoriesPerIdea);
 
-    Task<IReadOnlyList<string>> ExtractKeyPhrases(
+    Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
         string language,
         int maxPhrases,

@@ -1,3 +1,4 @@
+using Conversey.BL.Domain.DTOs.MagicMode;
 using Microsoft.Extensions.AI;
 
 namespace Conversey.BL.Ai;
@@ -193,12 +194,19 @@ public sealed class NoopAiManager : IAiManager
             .ToArray());
     }
 
-    public Task<IReadOnlyList<string>> ExtractKeyPhrases(
+    public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
         string language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases = null,
         IReadOnlyList<string> rejectedPhrases = null)
-        => Task.FromResult<IReadOnlyList<string>>(new[] { "noop phrase 1", "noop phrase 2", "noop phrase 3" });
+    {
+        var phrases = new List<string>();
+        for (int i = 1; i <= maxPhrases; i++)
+        {
+            phrases.Add("noop phrase " + i);
+        }
+        return Task.FromResult(new ExtractKeyPhrasesResponse(phrases, Array.Empty<RejectedPhrase>()));
+    }
 }
 

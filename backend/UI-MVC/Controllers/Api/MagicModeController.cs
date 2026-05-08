@@ -1,6 +1,6 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Domain.DTOs.MagicMode;
 using Microsoft.AspNetCore.Mvc;
-using UI_MVC.DTOs.MagicMode;
 
 namespace UI_MVC.Controllers.Api;
 
@@ -14,12 +14,12 @@ public class MagicModeController(IAiManager aiManager) : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Transcript))
             return BadRequest("Transcript is required.");
 
-        var phrases = await aiManager.ExtractKeyPhrases(
+        var response = await aiManager.ExtractKeyPhrases(
             request.Transcript,
             request.Language,
             request.MaxPhrases,
             request.ExistingPhrases,
             request.RejectedPhrases);
-        return Ok(new ExtractKeyPhrasesResponse(phrases));
+        return Ok(response);
     }
 }
