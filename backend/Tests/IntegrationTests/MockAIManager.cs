@@ -2,6 +2,7 @@ using Conversey.BL.Ai;
 using Conversey.BL.Domain.Ideation;
 using Microsoft.Extensions.AI;
 using System.Runtime.CompilerServices;
+using Conversey.BL.Domain.DTOs.MagicMode;
 
 namespace Tests.IntegrationTests;
 
@@ -78,7 +79,7 @@ public class MockAiManager : IAiManager
         return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
     }
 
-    public Task<IReadOnlyList<string>> ExtractKeyPhrases(
+    public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
         string language,
         int maxPhrases,
@@ -86,7 +87,7 @@ public class MockAiManager : IAiManager
         IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
-            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+            return Task.FromResult<ExtractKeyPhrasesResponse>(new ExtractKeyPhrasesResponse([]));
 
         var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
         var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
@@ -98,6 +99,6 @@ public class MockAiManager : IAiManager
             .Take(maxPhrases)
             .ToList()
             .AsReadOnly();
-        return Task.FromResult<IReadOnlyList<string>>(sentences);
+        return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
     }
 }

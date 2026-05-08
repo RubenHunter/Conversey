@@ -16,6 +16,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using System.Runtime.CompilerServices;
 using Conversey.BL.Domain.Ai;
+using Conversey.BL.Domain.DTOs.MagicMode;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -307,7 +308,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 .ToArray());
         }
 
-        public Task<IReadOnlyList<string>> ExtractKeyPhrases(
+        public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
             string transcript,
             string language,
             int maxPhrases,
@@ -315,19 +316,19 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             IReadOnlyList<string>? rejectedPhrases = null)
         {
             if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
-                return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+                return Task.FromResult(new ExtractKeyPhrasesResponse([]));
 
-            var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
-            var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+            var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
+            var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
 
             var sentences = transcript
-                .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(['.', '!', '?'], StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
                 .Take(maxPhrases)
                 .ToList()
                 .AsReadOnly();
-            return Task.FromResult<IReadOnlyList<string>>(sentences);
+            return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
         }
     }
 
