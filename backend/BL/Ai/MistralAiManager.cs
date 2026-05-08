@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Conversey.BL.Domain.Ai;
+using Conversey.BL.Domain.DTOs.MagicMode;
 using Conversey.BL.Domain.Ideation;
 using Microsoft.Extensions.AI;
 
@@ -542,7 +543,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
                info.Pii;
     }
 
-    public async Task<IReadOnlyList<string>> ExtractKeyPhrases(
+    public async Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
         string language,
         int maxPhrases,
@@ -550,7 +551,10 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
-            return Array.Empty<string>();
+            return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
+
+        // Build rejection context for AI learning
+        var rejectionContext = BuildRejectionContext(existingPhrases, rejectedPhrases);
 
         // Build user prompt using StringBuilder to avoid raw string literal issues
         var userPrompt = new StringBuilder();
@@ -618,7 +622,35 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
         var body = await response.Content.ReadAsStringAsync();
 
-        if (!response.IsSuccessStatusCode)
+        // Handle rate limiting (429 Too Many Requests) with retry logic
+        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MagicMode] Mistral API rate limited. Retrying...");
+            const int maxRetries = 3;
+            
+            for (int retry = 1; retry <= maxRetries; retry++)
+            {
+                var delay = TimeSpan.FromSeconds(retry);
+                System.Diagnostics.Debug.WriteLine($"[MagicMode] Retry {retry}/{maxRetries} after {delay.TotalSeconds}s delay");
+                await Task.Delay(delay);
+                
+                var retryResponse = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+                var retryBody = await retryResponse.Content.ReadAsStringAsync();
+                
+                if (retryResponse.IsSuccessStatusCode)
+                {
+                    body = retryBody;
+                    System.Diagnostics.Debug.WriteLine($"[MagicMode] Mistral API response (retry {retry}): {body}");
+                    break;
+                }
+                else if (retry == maxRetries)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MagicMode] Mistral API failed after {maxRetries} retries");
+                    throw new AiException($"Mistral key phrase extraction failed after retries ({(int)retryResponse.StatusCode}): {retryBody}", null);
+                }
+            }
+        }
+        else if (!response.IsSuccessStatusCode)
         {
             throw new AiException($"Mistral key phrase extraction failed ({(int)response.StatusCode}): {body}", null);
         }
@@ -628,7 +660,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
 
         if (!root.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
         {
-            return Array.Empty<string>();
+            return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
         }
 
         // Extract content - handle both string and direct JSON object responses
@@ -640,7 +672,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         }
         catch (Exception)
         {
-            return Array.Empty<string>();
+            return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
         }
 
         // Handle JSON mode response (may already be parsed as object with phrases array)
@@ -648,14 +680,15 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
             contentElement.TryGetProperty("phrases", out var phrasesArray) &&
             phrasesArray.ValueKind == JsonValueKind.Array)
         {
-            return ParseAndCleanPhrases(phrasesArray, existingPhrases, rejectedPhrases, maxPhrases);
+            var phrases = ParseAndCleanPhrases(phrasesArray, existingPhrases, rejectedPhrases, maxPhrases, out var rejected);
+            return new ExtractKeyPhrasesResponse(phrases, rejected);
         }
 
         // Handle string response (fallback for non-JSON mode or older Mistral versions)
         var contentString = contentElement.GetString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(contentString))
         {
-            return Array.Empty<string>();
+            return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
         }
 
         // Strip markdown code fences if present
@@ -674,29 +707,33 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
                 innerDoc.RootElement.TryGetProperty("phrases", out var phrasesProp) &&
                 phrasesProp.ValueKind == JsonValueKind.Array)
             {
-                return ParseAndCleanPhrases(phrasesProp, existingPhrases, rejectedPhrases, maxPhrases);
+                var phrases = ParseAndCleanPhrases(phrasesProp, existingPhrases, rejectedPhrases, maxPhrases, out var rejected);
+                return new ExtractKeyPhrasesResponse(phrases, rejected);
             }
             // Direct array format fallback
             if (innerDoc.RootElement.ValueKind == JsonValueKind.Array)
             {
-                return ParseAndCleanPhrases(innerDoc.RootElement, existingPhrases, rejectedPhrases, maxPhrases);
+                var phrases = ParseAndCleanPhrases(innerDoc.RootElement, existingPhrases, rejectedPhrases, maxPhrases, out var rejected);
+                return new ExtractKeyPhrasesResponse(phrases, rejected);
             }
         }
         catch (JsonException)
         {
-            return Array.Empty<string>();
+            return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
         }
 
-        return Array.Empty<string>();
+        return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
     }
 
     private IReadOnlyList<string> ParseAndCleanPhrases(
         JsonElement phrasesArray,
         IReadOnlyList<string> existingPhrases,
         IReadOnlyList<string> rejectedPhrases,
-        int maxPhrases)
+        int maxPhrases,
+        out IReadOnlyList<RejectedPhrase> rejectedPhrasesWithReasons)
     {
         var phrases = new List<string>();
+        var rejectedList = new List<RejectedPhrase>();
 
         foreach (var element in phrasesArray.EnumerateArray())
         {
@@ -711,30 +748,242 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         }
 
         // Post-processing for quality and constraints
-        // 1. Filter by word count (2-5 words)
-        var cleaned = phrases
-            .Where(p => p.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length is >= 2 and <= 5)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var cleaned = new List<string>();
+        var existingPhrasesSet = new HashSet<string>(existingPhrases ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+        var rejectedPhrasesSet = new HashSet<string>(rejectedPhrases ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
 
-        // 2. Filter out existing and rejected phrases
-        if (existingPhrases?.Count > 0)
+        foreach (var phrase in phrases)
         {
-            cleaned = cleaned
-                .Where(p => !existingPhrases.Any(ep => string.Equals(p, ep, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            var wordCount = phrase.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+            // Check word count
+            if (wordCount < 2)
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.WordCountTooLow));
+                continue;
+            }
+            if (wordCount > 5)
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.WordCountExceeded));
+                continue;
+            }
+
+            // Check exact duplicates
+            if (existingPhrasesSet.Contains(phrase) || rejectedPhrasesSet.Contains(phrase))
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateExact));
+                continue;
+            }
+
+            // Check subset of existing (e.g., "spoor" when "spoornetwerk" exists)
+            var isSubset = false;
+            var similarTo = "";
+            foreach (var existing in existingPhrasesSet)
+            {
+                if (IsSubset(phrase, existing))
+                {
+                    isSubset = true;
+                    similarTo = existing;
+                    break;
+                }
+                if (IsSubset(existing, phrase))
+                {
+                    // The existing phrase is a subset of the new one, so reject the new one
+                    isSubset = true;
+                    similarTo = existing;
+                    break;
+                }
+            }
+            if (isSubset)
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.SubsetOfExisting, similarTo));
+                continue;
+            }
+
+            // Check semantic duplicates using Jaccard similarity
+            var isSemanticDuplicate = false;
+            foreach (var existing in existingPhrasesSet)
+            {
+                if (JaccardSimilarity(phrase, existing) > 0.6)
+                {
+                    isSemanticDuplicate = true;
+                    similarTo = existing;
+                    break;
+                }
+            }
+            if (isSemanticDuplicate)
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic, similarTo));
+                continue;
+            }
+
+            // Check for filler content
+            if (ContainsFillerWords(phrase))
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.FillerContent));
+                continue;
+            }
+
+            // Check if too generic
+            if (IsTooGeneric(phrase))
+            {
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.TooGeneric));
+                continue;
+            }
+
+            cleaned.Add(phrase);
         }
 
-        if (rejectedPhrases?.Count > 0)
+        // Apply stemming-based deduplication on cleaned list
+        cleaned = ApplyStemmingDeduplication(cleaned, rejectedList);
+
+        // Limit to maxPhrases
+        var finalPhrases = cleaned.Take(maxPhrases).ToList();
+        
+        // Add phrases that were cut due to maxPhrases limit
+        foreach (var phrase in cleaned.Skip(maxPhrases))
         {
-            cleaned = cleaned
-                .Where(p => !rejectedPhrases.Any(rp => string.Equals(p, rp, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.TooGeneric, "Exceeded max phrases limit"));
         }
 
-        return cleaned
-            .Take(maxPhrases)
-            .ToList()
-            .AsReadOnly();
+        rejectedPhrasesWithReasons = rejectedList.AsReadOnly();
+        return finalPhrases.AsReadOnly();
+    }
+
+    private bool IsSubset(string phraseA, string phraseB)
+    {
+        var wordsA = phraseA.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var wordsB = phraseB.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        if (wordsA.Length >= wordsB.Length) return false;
+        
+        var setB = new HashSet<string>(wordsB, StringComparer.OrdinalIgnoreCase);
+        return wordsA.All(w => setB.Contains(w));
+    }
+
+    private double JaccardSimilarity(string phraseA, string phraseB)
+    {
+        var wordsA = phraseA.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var wordsB = phraseB.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        var setA = new HashSet<string>(wordsA, StringComparer.OrdinalIgnoreCase);
+        var setB = new HashSet<string>(wordsB, StringComparer.OrdinalIgnoreCase);
+        
+        var intersection = setA.Count(w => setB.Contains(w));
+        var union = setA.Count + setB.Count - intersection;
+        
+        return union == 0 ? 0 : (double)intersection / union;
+    }
+
+    private bool ContainsFillerWords(string phrase)
+    {
+        var fillerWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "enkele", "enkelei", "enkele", "enige", "sommige", "verschillende",
+            "hier", "daar", "dit", "dat", "deze", "die", "het", "een",
+            "van", "in", "op", "te", "voor", "met", "door", "bij", "uit",
+            "als", "dat", "wat", "die", "die", "welke", "waar",
+            "is", "zijn", "was", "waren", "wordt", "worden",
+            "heeft", "hebben", "had", "hadden",
+            "zeer", "erg", "heel", "veel", "meeste"
+        };
+        
+        var words = phrase.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        // If more than 30% of words are fillers, reject
+        if (words.Length == 0) return false;
+        var fillerCount = words.Count(w => fillerWords.Contains(w));
+        return (double)fillerCount / words.Length > 0.3;
+    }
+
+    private bool IsTooGeneric(string phrase)
+    {
+        var genericPhrases = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "enige voorbeelden",
+            "verschillende dingen",
+            "diverse zaken",
+            "veel dingen",
+            "dergelijke",
+            "en dergelijke",
+            "etc",
+            "enzovoort",
+            "enzovoorts"
+        };
+        
+        return genericPhrases.Contains(phrase.ToLower());
+    }
+
+    private List<string> ApplyStemmingDeduplication(List<string> phrases, List<RejectedPhrase> rejectedList)
+    {
+        var result = new List<string>();
+        var seenStems = new HashSet<string>();
+        
+        foreach (var phrase in phrases)
+        {
+            var stem = StemPhrase(phrase);
+            if (seenStems.Contains(stem))
+            {
+                // Find which phrase this is a stem duplicate of
+                var similarTo = result.FirstOrDefault(p => StemPhrase(p) == stem);
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic, similarTo));
+            }
+            else
+            {
+                seenStems.Add(stem);
+                result.Add(phrase);
+            }
+        }
+        
+        return result;
+    }
+
+    private string StemPhrase(string phrase)
+    {
+        var words = phrase.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var stemmedWords = words.Select(StemWord).ToArray();
+        return string.Join(" ", stemmedWords);
+    }
+
+    private string StemWord(string word)
+    {
+        var lowerWord = word.ToLower();
+        
+        // Dutch stemming rules (simplified)
+        // Remove common prefixes/suffixes for Dutch
+        if (lowerWord.EndsWith("ing") && lowerWord.Length > 4)
+            return lowerWord.Substring(0, lowerWord.Length - 3);
+        if (lowerWord.EndsWith("en") && lowerWord.Length > 3)
+            return lowerWord.Substring(0, lowerWord.Length - 2);
+        if (lowerWord.EndsWith("s") && lowerWord.Length > 3)
+            return lowerWord.Substring(0, lowerWord.Length - 1);
+        if (lowerWord.EndsWith("te") && lowerWord.Length > 4)
+            return lowerWord.Substring(0, lowerWord.Length - 2);
+        if (lowerWord.EndsWith("de") && lowerWord.Length > 4)
+            return lowerWord.Substring(0, lowerWord.Length - 2);
+        if (lowerWord.EndsWith("heid") && lowerWord.Length > 5)
+            return lowerWord.Substring(0, lowerWord.Length - 4);
+        if (lowerWord.EndsWith("atie") && lowerWord.Length > 5)
+            return lowerWord.Substring(0, lowerWord.Length - 3);
+        if (lowerWord.EndsWith("tion") && lowerWord.Length > 5)
+            return lowerWord.Substring(0, lowerWord.Length - 4);
+        
+        return lowerWord;
+    }
+
+    private string BuildRejectionContext(IReadOnlyList<string> existingPhrases, IReadOnlyList<string> rejectedPhrases)
+    {
+        // For now, we don't have session-level tracking of rejected phrases with reasons
+        // This can be extended in the future by maintaining a session state
+        // For example, you could pass rejectedPhrasesWithReasons from the client
+        // and format them here for the AI to learn from
+        
+        // If you want to implement this, you would:
+        // 1. Track rejected phrases with reasons in the session/client
+        // 2. Pass them to the API
+        // 3. Format them here like:
+        //    "- [REJECTED: word_count_exceeded] 'some long phrase here'"
+        
+        return string.Empty;
     }
 }
