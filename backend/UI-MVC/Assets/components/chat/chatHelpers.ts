@@ -1,14 +1,9 @@
 import { QuestionType } from '../../models/question'
 import type { Question } from '../../models/question'
 import type { QuestionAnswer } from '../survey/singleChoiceQuestion'
+import { esc } from '../survey/shared'
 
-export function esc(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-}
+export { esc }
 
 export function wait(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))

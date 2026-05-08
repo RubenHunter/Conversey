@@ -15,6 +15,7 @@ import {InteractionType} from '../../models/project'
 import {showLayoutPicker} from './layoutPicker.ts'
 import {getSurveyStrings} from '../../i18n/survey'
 import {renderScrollNav} from '../shared/scrollNav'
+import {hasAnswer} from '../chat/chatHelpers'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
@@ -136,10 +137,6 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     })
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
-
-    function hasAnswer(answer: QuestionAnswer): boolean {
-        return Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
-    }
 
     function syncAnsweredState(): void {
         components.forEach((component, index) => {

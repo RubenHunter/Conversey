@@ -37,8 +37,9 @@ import { createTopicModalController } from '../ideas/topicModal'
 import { createChatIdeaNudgeFlow } from '../ideas/chatIdeaNudgeFlow'
 import {Idea, IdeaAuthorType, IdeaTopic} from '../../models/idea'
 import type {IdeaNudgingContext} from '../../services/ideaService'
-import type { ActiveView } from '../ideas/types'
+import type { ActiveView, DiscoveryFeed } from '../ideas/types'
 import { DiscoveryMode, DiscoveryBadgeType } from '../ideas/types'
+import { buildBroadFeed, createDiscoveryFeed, createPostPreviewFeed } from '../ideas/ideasDiscovery'
 import { getSurveyStrings } from '../../i18n/survey'
 import { formatAnswerForDisplay, hasAnswer, wait, esc } from './chatHelpers.ts'
 import {
@@ -56,65 +57,6 @@ interface OpenTextState {
 
 const IDEAS_BATCH_SIZE = 7
 const LOAD_MORE_SCROLL_THRESHOLD = 150
-
-interface DiscoveryFeed {
-    ideas: Idea[]
-    badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>
-}
-
-function createDiscoveryFeed(ideas: Idea[], badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>): DiscoveryFeed {
-    return {
-        ideas,
-        badgesByIdeaId,
-    }
-}
-
-function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
-    const byCategory = new Map<string, Idea[]>()
-    const withoutCategories: Idea[] = []
-
-    topicIdeas.forEach((idea) => {
-        if (idea.semanticCategories.length === 0) {
-            withoutCategories.push(idea)
-            return
-        }
-        idea.semanticCategories.forEach((category) => {
-            const bucket = byCategory.get(category) ?? []
-            bucket.push(idea)
-            byCategory.set(category, bucket)
-        })
-    })
-
-    const broad: Idea[] = []
-    const seen = new Set<number>()
-    const categories = [...byCategory.keys()]
-    let added = true
-    while (added) {
-        added = false
-        categories.forEach((category) => {
-            const bucket = byCategory.get(category)
-            if (!bucket || bucket.length === 0) return
-            const nextIdea = bucket.shift()!
-            if (seen.has(nextIdea.id)) return
-            seen.add(nextIdea.id)
-            broad.push(nextIdea)
-            added = true
-        })
-    }
-    withoutCategories.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-    topicIdeas.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-
-    return broad
-}
-
 
 export async function renderChatSurveyPage(
     container: HTMLElement,
@@ -1192,28 +1134,6 @@ export async function renderChatSurveyPage(
             return [...categories].sort((a, b) => a.localeCompare(b))
         }
 
-        function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
-            const previewIdeas: Idea[] = []
-            const previewBadges = new Map<number, DiscoveryBadgeType>()
-            const seen = new Set<number>()
-
-            const addIdea = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): boolean => {
-                if (!idea || seen.has(idea.id)) return false
-                seen.add(idea.id)
-                previewIdeas.push(idea)
-                if (badge && previewBadges.size < 2) previewBadges.set(idea.id, badge)
-                return true
-            }
-
-            addIdea(similarIdeas[0], DiscoveryBadgeType.Similar)
-                for (const idea of differentIdeas) {
-                    if (addIdea(idea, DiscoveryBadgeType.Different)) break
-            }
-            addIdea(submittedIdea)
-
-            return createDiscoveryFeed(previewIdeas, previewBadges)
-        }
-
         function renderDiscoveryMenuOptions(): void {
             if (activeView.type !== 'topic') {
                 discoveryMenu.innerHTML = ''
@@ -1314,7 +1234,7 @@ export async function renderChatSurveyPage(
 
                     if (showPostPreviewPair) {
                         const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === IdeaAuthorType.Self && idea.topicId === topicId) ?? null
-                        discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea)
+                        discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea, new Map())
                     } else {
                         const pinnedIdeas: Idea[] = []
                         const pinnedBadges = new Map<number, DiscoveryBadgeType>()
