@@ -16,8 +16,6 @@ export interface ApiIdeaResponseDto {
     CreatedAt?: string
     youthId?: string
     YouthId?: string
-    youthToken?: string
-    YouthToken?: string
     status?: string | number
     Status?: string | number
     reactions?: ApiResponseReactionSummaryDto[]

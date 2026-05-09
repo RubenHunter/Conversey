@@ -1,15 +1,12 @@
-import '../../styles/pages/ideas.css'
-//import type { RouteParams } from '../../utils/router.ts'
-import { getProject } from '../../services/projectService'
+import '../../../styles/pages/ideas.css'
+//import type { RouteParams } from '../../utils/router'
+import { getProject } from '../../../services/projectService'
 import {
-    getDiscoveredIdeasForTopic,
-    IDEA_DISCOVERY_MAX_RESULTS,
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
     saveYouthContactEmail,
     updateIdeaAfterSafetyReview,
-    type IdeaDiscoveryCategory,
-} from '../../services/ideaService'
+} from '../../../services/ideaService'
 import {
     addIdeaReaction,
     addIdeaResponse,
@@ -18,111 +15,51 @@ import {
     removeIdeaReaction,
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
-} from '../../services/ideaResponseService'
-import type { Idea, IdeaTopic } from '../../models/idea'
-import { resolveInitialIdeasView } from './initialView'
-import { createIdeaPanelController } from './ideaPanel'
-import { createSafetyReviewDialogController } from './safetyReviewDialog'
-import {createFirstIdeaContactDialogController} from './firstIdeaContactDialog'
-import { renderIdeasComposer } from './composer'
-import type { ActiveView } from './types.ts'
-import { renderIdeasHeader } from './ideasHeader'
-import { createTopicModalController } from './topicModal'
-import { createIdeasListController } from './ideasListController'
-import { createIdeasSubmitHandler } from './ideasSubmitHandler'
-import {ProjectContext, render} from "../../main";
+} from '../../../services/ideaResponseService'
+import type { Idea, IdeaTopic } from '../../../models/idea'
+import { resolveInitialIdeasView } from '../utils/initialView'
+import { createIdeaPanelController } from '../components/ideaPanel'
+import { createSafetyReviewDialogController } from '../components/safetyReviewDialog'
+import {createFirstIdeaContactDialogController} from '../components/firstIdeaContactDialog'
+import {createIdeaNudgeDialogController} from '../components/ideaNudgeDialog'
+import { renderIdeasComposer } from '../components/composer'
+import { renderIdeasHeader } from "../utils/ideasHeader"
+import {createTopicModalController} from "../components/topicModal";
+import {createIdeasListController} from "../components/ideasListController";
+import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
+import type { ActiveView } from '../types'
+import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
+import { IdeaAuthorType } from '../../../models/idea'
+import { getSurveyStrings } from '../../../i18n/survey'
+import { hasOwnIdeaInTopic, getTopicSemanticCategories, createDiscoveryFeed } from '../utils/ideasDiscovery'
+import { getVisibleIdeas, type DiscoveryOptions } from '../utils/discoveryApi'
+import {ProjectContext, render} from "../../../main";
 
-type DiscoveryBadgeType = 'similar' | 'different'
 
 // Get label for active ideas view
-function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[]): string {
-    if (activeView.type === 'my-ideas') return 'My ideas'
+function getActiveIdeasLabel(activeView: ActiveView, topics: IdeaTopic[], t: any): string {
+    if (activeView.type === 'my-ideas') return t.myIdeas
     const topic = topics.find((item) => item.id === activeView.topicId)
-    return topic ? topic.title : 'Select a topic'
+    return topic ? topic.title : t.selectTopic
 }
-
-type DiscoveryMode = 'all' | 'similar' | 'different'
 
 const IDEAS_BATCH_SIZE = 7
-const LOAD_MORE_SCROLL_THRESHOLD = 24
+const LOAD_MORE_SCROLL_THRESHOLD = 150
 
-const DISCOVERY_LABELS: Record<DiscoveryMode, string> = {
-    all: 'All ideas',
-    similar: 'Similar ideas',
-    different: 'Differing ideas',
-}
+const getDiscoveryLabels = (t: any): Record<DiscoveryMode, string> => ({
+    all: t.allIdeas,
+    similar: t.similarIdeas,
+    different: t.differingIdeas,
+    random: '',
+})
 
-interface DiscoveryFeed {
-    ideas: Idea[]
-    badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>
-}
 
-function hasOwnIdeaInTopic(allIdeas: Idea[], topicId: number): boolean {
-    return allIdeas.some((idea) => idea.authorType === 'self' && idea.topicId === topicId)
-}
 
-function getTopicSemanticCategories(allIdeas: Idea[], topicId: number): string[] {
-    const categories = new Set<string>()
-    allIdeas
-        .filter((idea) => idea.topicId === topicId)
-        .forEach((idea) => {
-            idea.semanticCategories.forEach((category) => {
-                if (category.trim().length > 0) {
-                    categories.add(category)
-                }
-            })
-        })
-
-    return [...categories].sort((a, b) => a.localeCompare(b))
-}
-
-function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
-    const byCategory = new Map<string, Idea[]>()
-    const withoutCategories: Idea[] = []
-
-    topicIdeas.forEach((idea) => {
-        if (idea.semanticCategories.length === 0) {
-            withoutCategories.push(idea)
-            return
-        }
-        idea.semanticCategories.forEach((category) => {
-            const bucket = byCategory.get(category) ?? []
-            bucket.push(idea)
-            byCategory.set(category, bucket)
-        })
-    })
-
-    const broad: Idea[] = []
-    const seen = new Set<number>()
-    const categories = [...byCategory.keys()]
-    let added = true
-    while (added) {
-        added = false
-        categories.forEach((category) => {
-            const bucket = byCategory.get(category)
-            if (!bucket || bucket.length === 0) return
-            const nextIdea = bucket.shift()!
-            if (seen.has(nextIdea.id)) return
-            seen.add(nextIdea.id)
-            broad.push(nextIdea)
-            added = true
-        })
-    }
-    withoutCategories.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-    topicIdeas.forEach((idea) => {
-        if (seen.has(idea.id)) return
-        seen.add(idea.id)
-        broad.push(idea)
-    })
-    return broad
-}
 
 
 export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+    const t = getSurveyStrings()
+    let discoveryRequestToken = 0
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
@@ -130,19 +67,32 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const organizationName = project.organizationName?.trim() || project.organizationSlug
     const topics = context.topics
     const allIdeas = [...context.ideas]
+    let suppressListScrollSyncUntil: number = 0
 
     let activeView: ActiveView = resolveInitialIdeasView(topics, allIdeas)
     const flaggedIdeaIds = new Set<number>()
 
+    let extraLoadsUsed: number = 0
+    let isLoadingMoreIdeas: boolean = false
+    let autoLoadArmed: boolean = true
+    let discoveryMode: DiscoveryMode = DiscoveryMode.All
+    let selectedSemanticCategory: string | null = null
+    let showPostPreviewPair: boolean = false
+    let discoveryCache: Map<string, DiscoveryFeed> = new Map()
+    let latestSubmittedIdea: Idea | null = null
+    let visibleIdeasCache: Idea[] = []
+    let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
+    let lastScrollTop: number = 0
+
     const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug })
 
     container.innerHTML = `
-        <div class="ideas-shell">
+        <div class="ideas-shell h-svh w-full self-stretch overflow-hidden flex flex-col bg-[var(--color-bg)]">
             ${headerHTML}
 
-            <div class="ideas-body">
-                <div class="ideas-grid">
-                    <section class="ideas-community" aria-label="Ideas list">
+            <div class="ideas-body flex-1 min-h-0 w-[min(100%,1000px)] mx-auto flex flex-col overflow-hidden px-[var(--spacing-sm)] pb-[var(--spacing-md)] gap-[var(--spacing-sm)]">
+                <div class="ideas-grid flex-1 min-h-0 min-w-0 w-full grid grid-rows-[minmax(0,1fr)_auto] gap-[var(--spacing-md)]">
+                    <section class="ideas-community min-h-0 flex flex-col overflow-hidden overscroll-contain relative" aria-label="Ideas list">
                         <div id="ideas-discovery" class="ideas-discovery" hidden>
                             <button
                                 id="ideas-discovery-trigger"
@@ -151,16 +101,16 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 aria-haspopup="menu"
                                 aria-expanded="false"
                             >
-                                <span id="ideas-discovery-label">Explore ideas</span>
+                                <span id="ideas-discovery-label">${t.exploreIdeas}</span>
                                 <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                             </button>
                             <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden>
-                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
                             </div>
                         </div>
-                        <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
+                        <div id="ideas-list" class="ideas-list flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none" aria-live="polite"></div>
                         <button id="ideas-load-more" class="ideas-load-more" type="button" hidden>
                             <span class="ideas-load-more-icon" aria-hidden="true">
                                 <svg class="ideas-load-more-ring" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -169,7 +119,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 </svg>
                                 <span class="ideas-load-more-arrow">↓</span>
                             </span>
-                            <span id="ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 7 more ideas</span>
+                            <span id="ideas-load-more-text" class="ideas-load-more-text">${t.loadMoreIdeas}</span>
                         </button>
                     </section>
 
@@ -187,7 +137,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea" placeholder="Share your idea for this topic..."></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="Share your idea for this topic..."></textarea>
                             <div class="survey-textarea-actions">
                                 <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -227,8 +177,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         <div id="topic-modal-backdrop" class="modal-backdrop" hidden aria-hidden="true"></div>
         <div id="topic-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="topic-modal-title" hidden>
             <div class="modal-header">
-                <h3 id="topic-modal-title">Select a Topic</h3>
-                <button id="topic-modal-close" class="modal-close" aria-label="Close">&times;</button>
+                <h3 id="topic-modal-title">${t.selectTopicTitle}</h3>
+                <button id="topic-modal-close" class="modal-close" aria-label="${t.cancel}">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="topic-modal-list" class="modal-list"></div>
@@ -236,27 +186,27 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         </div>
 
         <div id="idea-panel-backdrop" class="idea-panel-backdrop" hidden aria-hidden="true"></div>
-        <div id="idea-panel" class="idea-panel" role="dialog" aria-modal="true" aria-label="Idea detail" hidden>
+        <div id="idea-panel" class="idea-panel" role="dialog" aria-modal="true" aria-label="${t.ideaDetail}" hidden>
             <div class="idea-panel-header">
-                <h3 class="idea-panel-title">Idea</h3>
-                <button id="idea-panel-close" class="idea-panel-close" aria-label="Close">&times;</button>
+                <h3 class="idea-panel-title">${t.ideaDetail}</h3>
+                <button id="idea-panel-close" class="idea-panel-close" aria-label="${t.cancel}">&times;</button>
             </div>
             <div class="idea-panel-body">
                 <div id="idea-panel-pinned" class="idea-panel-pinned" hidden></div>
                 <div class="idea-panel-section idea-panel-section--idea">
-                    <p class="idea-panel-section-label">Original idea</p>
+                    <p class="idea-panel-section-label">${t.originalIdea}</p>
                     <div id="idea-panel-post" class="idea-panel-post">
                         <div id="idea-panel-badges" class="idea-panel-badges"></div>
                         <p id="idea-panel-text" class="idea-panel-text"></p>
                         <div id="idea-panel-edit-region" hidden>
-                            <textarea id="idea-panel-edit-input" class="idea-panel-input idea-panel-edit-input" rows="4" placeholder="Edit your idea..."></textarea>
+                            <textarea id="idea-panel-edit-input" class="idea-panel-input idea-panel-edit-input" rows="4" placeholder="${t.editIdea}..."></textarea>
                             <div class="idea-panel-edit-actions">
-                                <button id="idea-panel-edit-cancel" class="idea-panel-send idea-panel-send--secondary" type="button">Cancel</button>
-                                <button id="idea-panel-edit-save" class="idea-panel-send" type="button" disabled>Save changes</button>
+                                <button id="idea-panel-edit-cancel" class="idea-panel-send idea-panel-send--secondary" type="button">${t.cancel}</button>
+                                <button id="idea-panel-edit-save" class="idea-panel-send" type="button" disabled>${t.saveChanges}</button>
                             </div>
                         </div>
                         <div class="idea-panel-post-actions">
-                            <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="Add reaction">
+                            <button id="idea-panel-emoji" class="idea-panel-emoji-btn" type="button" title="${t.addReaction}">
                                 <span aria-hidden="true">+</span>
                                 <span aria-hidden="true">:)</span>
                             </button>
@@ -264,109 +214,147 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 id="idea-panel-copy"
                                 class="idea-panel-copy-btn"
                                 type="button"
-                                aria-label="Use this idea as a starting point"
-                                title="Use this idea as a starting point"
+                                aria-label="${t.useAsStartingPoint}"
+                                title="${t.useAsStartingPoint}"
                                 hidden
                             >
                                 <svg class="idea-panel-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                 </svg>
-                                <span>Use as starter</span>
+                                <span>${t.useAsStartingPoint}</span>
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
                                 class="survey-magic-btn idea-panel-edit-cta"
                                 type="button"
-                                aria-label="Edit idea before publish"
-                                title="Edit idea before publish"
+                                aria-label="${t.editIdea}"
+                                title="${t.editIdea}"
                                 hidden
                             >
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">Edit idea before publish</span>
+                                <span class="survey-magic-btn-text">${t.editIdea}</span>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="idea-panel-section idea-panel-section--responses">
-                    <p class="idea-panel-section-label">Responses</p>
+                    <p class="idea-panel-section-label">${t.responses}</p>
                     <div id="idea-panel-comments" class="idea-panel-comments"></div>
                 </div>
             </div>
             <div class="idea-panel-footer">
-                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="Write a comment..." rows="2"></textarea>
-                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>Post</button>
+                <textarea id="idea-panel-input" class="idea-panel-input" placeholder="${t.writeComment}" rows="2"></textarea>
+                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
             </div>
         </div>
 
         <div id="safety-review-backdrop" class="safety-review-backdrop" hidden aria-hidden="true"></div>
-        <div id="safety-review-dialog" class="safety-review-dialog" role="dialog" aria-modal="true" aria-label="Content safety review" hidden>
+        <div id="safety-review-dialog" class="safety-review-dialog" role="dialog" aria-modal="true" aria-label="${t.safetyReviewTitle}" hidden>
             <div class="safety-review-header">
-                <h3>Let's keep this space safe</h3>
+                <h3>${t.safetyReviewTitle}</h3>
             </div>
             <div class="safety-review-body">
-                <p class="safety-review-copy">Our AI flagged your text as potentially offensive. You can use the suggestion, edit it, or continue with your original text.</p>
+                <p class="safety-review-copy">${t.safetyReviewCopy}</p>
                 <div class="safety-review-block">
                     <div class="safety-review-block-head">
-                        <span class="safety-review-label">Your original message</span>
-                        <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="Edit your response" title="Edit your response">
+                        <span class="safety-review-label">${t.yourOriginalMessage}</span>
+                        <button id="safety-review-edit-original" class="safety-review-edit-icon" type="button" aria-label="${t.editYourResponse}" title="${t.editYourResponse}">
                             <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
                             </svg>
-                            <span>Edit your response</span>
+                            <span>${t.editYourResponse}</span>
                         </button>
                     </div>
                     <textarea id="safety-review-original" class="safety-review-original" rows="4" readonly></textarea>
                 </div>
                 <div class="safety-review-block">
                     <div class="safety-review-block-head">
-                        <span class="safety-review-label">AI suggestion</span>
-                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="Edit the AI suggestion" title="Edit the AI suggestion">
+                        <span class="safety-review-label">${t.aiSuggestion}</span>
+                        <button id="safety-review-edit-suggestion" class="safety-review-edit-icon" type="button" aria-label="${t.editAiSuggestion}" title="${t.editAiSuggestion}">
                             <svg class="safety-review-edit-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/>
                             </svg>
-                            <span>Edit the AI suggestion</span>
+                            <span>${t.editAiSuggestion}</span>
                         </button>
                     </div>
                     <textarea id="safety-review-suggestion" class="safety-review-suggestion" rows="4" readonly></textarea>
                 </div>
             </div>
             <div class="safety-review-actions">
-                <button id="safety-review-accept-suggestion" class="safety-review-btn safety-review-btn--primary" type="button">Accept suggestion</button>
-                <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">Post original anyway</button>
+                <button id="safety-review-accept-suggestion" class="safety-review-btn safety-review-btn--primary" type="button">${t.acceptSuggestion}</button>
+                <button id="safety-review-post-anyway" class="safety-review-btn safety-review-btn--warn" type="button">${t.postOriginalAnyway}</button>
+            </div>
+        </div>
+
+        <div id="idea-nudge-backdrop" class="modal-backdrop idea-nudge-backdrop" hidden aria-hidden="true"></div>
+        <div id="idea-nudge-dialog" class="modal idea-nudge-dialog max-[720px]:w-[calc(100vw-1rem)]" role="dialog" aria-modal="true" aria-labelledby="idea-nudge-title" hidden>
+            <div class="modal-header">
+                <h3 id="idea-nudge-title">${t.nudgeTitle}</h3>
+                <button id="idea-nudge-close" class="modal-close" aria-label="${t.cancel}">&times;</button>
+            </div>
+            <div class="modal-body idea-nudge-body">
+                <p id="idea-nudge-context" class="idea-nudge-context"></p>
+                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeStatus}</p>
+                <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
+                <label class="idea-nudge-input-wrap" for="idea-nudge-input">
+                    <span class="idea-nudge-input-label">${t.yourAnswer}</span>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>
+                </label>
+            </div>
+            <div class="first-idea-contact-actions idea-nudge-actions">
+                <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">${t.answerContinue}</button>
+            </div>
+        </div>
+        
+        <div id="first-idea-contact-gate-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
+        <div id="first-idea-contact-gate-dialog" class="modal first-idea-contact-gate-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-gate-title" hidden>
+            <div class="modal-header">
+                <h3 id="first-idea-contact-gate-title">${t.wantStayInTouch}</h3>
+            </div>
+            <div class="modal-body">
+                <p class="first-idea-contact-copy">${t.stayInTouchCopy}</p>
+                <label class="first-idea-contact-check first-idea-contact-check--remember">
+                    <input id="first-idea-contact-gate-remember" class="first-idea-contact-checkbox" type="checkbox" />
+                    <span>${t.dontAskAgain}</span>
+                </label>
+            </div>
+            <div class="first-idea-contact-actions">
+                <button id="first-idea-contact-gate-deny" class="safety-review-btn first-idea-contact-deny" type="button">${t.noThanks}</button>
+                <button id="first-idea-contact-gate-accept" class="safety-review-btn safety-review-btn--primary" type="button">${t.leaveMyEmail}</button>
             </div>
         </div>
 
         <div id="first-idea-contact-backdrop" class="modal-backdrop first-idea-contact-backdrop" hidden aria-hidden="true"></div>
         <div id="first-idea-contact-dialog" class="modal first-idea-contact-dialog" role="dialog" aria-modal="true" aria-labelledby="first-idea-contact-title" hidden>
             <div class="modal-header">
-                <h3 id="first-idea-contact-title">Stay in touch about your idea</h3>
+                <h3 id="first-idea-contact-title">${t.stayInTouchTitle}</h3>
             </div>
             <div class="modal-body first-idea-contact-body">
-                <p class="first-idea-contact-copy">You can leave your email if you want us to contact you about your ideas.</p>
+                <p class="first-idea-contact-copy">${t.leaveEmailCopy} <a class="first-idea-contact-privacy-link" href="https://treecompany.be/privacyverklaring/" target="_blank" rel="noopener noreferrer">${t.leaveEmailCopy}</a></p>
                 <label class="first-idea-contact-field" for="first-idea-contact-email">
-                    <span class="first-idea-contact-label">Email address</span>
+                    <span class="first-idea-contact-label">${t.emailAddress}</span>
                     <input id="first-idea-contact-email" class="first-idea-contact-input" type="email" autocomplete="email" placeholder="you@example.com" />
                 </label>
                 <label class="first-idea-contact-check">
                     <input id="first-idea-contact-permission" class="first-idea-contact-checkbox" type="checkbox" />
-                    <span>I agree to be contacted about this idea.</span>
+                    <span>${t.agreeContact}</span>
                 </label>
-                <a class="first-idea-contact-privacy-link" href="https://treecompany.be/privacyverklaring/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
                 <label class="first-idea-contact-check first-idea-contact-check--remember">
                     <input id="first-idea-contact-remember" class="first-idea-contact-checkbox" type="checkbox" />
-                    <span>Remember my choice</span>
+                    <span>${t.rememberChoice}</span>
                 </label>
             </div>
             <div class="first-idea-contact-actions">
-                <button id="first-idea-contact-deny" class="safety-review-btn first-idea-contact-deny" type="button">Deny</button>
-                <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>Allow contact</button>
+                <button id="first-idea-contact-deny" class="safety-review-btn first-idea-contact-deny" type="button">${t.deny}</button>
+                <button id="first-idea-contact-accept" class="safety-review-btn safety-review-btn--primary first-idea-contact-accept" type="button" disabled>${t.allowContact}</button>
             </div>
+        </div>
         </div>
     `
 
@@ -393,26 +381,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const discoveryLabel = container.querySelector<HTMLSpanElement>('#ideas-discovery-label')!
     const discoveryMenu = container.querySelector<HTMLDivElement>('#ideas-discovery-menu')!
     const firstIdeaContactStorageKey = `ideas-contact-consent:${params.organizationSlug}:${params.projectSlug}`
-
-    let discoveryMode: DiscoveryMode = 'all'
-    let selectedSemanticCategory: string | null = null
-    let discoveryRequestToken = 0
-    const discoveryCache = new Map<string, DiscoveryFeed>()
-    let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
-    let suppressListScrollSyncUntil = 0
-    let extraLoadsUsed = 0
-    let showPostPreviewPair = false
-    let latestSubmittedIdea: Idea | null = null
-    let isLoadingMoreIdeas = false
-    let autoLoadArmed = true
-
-    const firstIdeaContactDialog = createFirstIdeaContactDialogController({
+    let firstIdeaContactDialog = createFirstIdeaContactDialogController({
         root: container,
         storageKey: firstIdeaContactStorageKey,
     })
 
     function resetIdeasListToTop(): void {
-        list.scrollTo({top: 0, behavior: 'auto'})
+        list.scrollTop = 0
     }
 
     function suppressListScrollSync(durationMs: number): void {
@@ -445,30 +420,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             })
     }
 
-    function createPostPreviewFeed(similarIdeas: Idea[], differentIdeas: Idea[], submittedIdea: Idea | null): DiscoveryFeed {
-        const previewIdeas: Idea[] = []
-        const previewBadges = new Map<number, DiscoveryBadgeType>()
-        const seen = new Set<number>()
 
-        const addIdea = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): boolean => {
-            if (!idea || seen.has(idea.id)) return false
-            seen.add(idea.id)
-            previewIdeas.push(idea)
-            if (badge && previewBadges.size < 2) {
-                previewBadges.set(idea.id, badge)
-            }
-            return true
-        }
-
-        addIdea(similarIdeas[0], 'similar')
-        // Find first different idea that hasn't already been shown as similar
-        for (const idea of differentIdeas) {
-            if (addIdea(idea, 'different')) break
-        }
-        addIdea(submittedIdea)
-
-        return createDiscoveryFeed(previewIdeas, previewBadges)
-    }
 
     function renderDiscoveryMenuOptions(): void {
         if (activeView.type !== 'topic') {
@@ -481,31 +433,24 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             const semanticButtons = categories
                 .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
                 .join('')
-            const categoriesSection = categories.length > 0
-                ? `<hr class="ideas-discovery-separator" role="separator">
-                   <p class="ideas-discovery-section-label">Idea categories</p>
-                   ${semanticButtons}`
-                : ''
+                const categoriesSection = categories.length > 0
+                    ? `<hr class="ideas-discovery-separator" role="separator">
+                       <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
+                       ${semanticButtons}`
+                    : ''
 
             discoveryMenu.innerHTML = `
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">Broad selection</button>
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.broadSelection}</button>
                 ${categoriesSection}
             `
             return
         }
 
         discoveryMenu.innerHTML = `
-            <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-            <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+            <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
+            <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
+            <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
         `
-    }
-
-    function createDiscoveryFeed(ideas: Idea[], badgesByIdeaId: ReadonlyMap<number, DiscoveryBadgeType>): DiscoveryFeed {
-        return {
-            ideas,
-            badgesByIdeaId,
-        }
     }
 
     function closeDiscoveryMenu(): void {
@@ -529,7 +474,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         discoveryRoot.hidden = false
         renderDiscoveryMenuOptions()
 
-        discoveryLabel.textContent = ownIdeaExists ? DISCOVERY_LABELS[discoveryMode] : (selectedSemanticCategory ?? 'Broad selection')
+        const discoveryLabels = getDiscoveryLabels(t)
+        discoveryLabel.textContent = ownIdeaExists ? discoveryLabels[discoveryMode] : (selectedSemanticCategory ?? t.broadSelection)
 
         const options = discoveryMenu.querySelectorAll<HTMLButtonElement>('.ideas-discovery-option')
         options.forEach((option) => {
@@ -544,144 +490,23 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     async function getVisibleIdeasForCurrentMode(): Promise<DiscoveryFeed> {
         if (activeView.type === 'my-ideas') {
-            const myIdeas = allIdeas.filter((idea) => idea.authorType === 'self')
+            const myIdeas = allIdeas.filter((idea) => idea.authorType === IdeaAuthorType.Self)
             return createDiscoveryFeed(myIdeas, new Map())
         }
 
-        const topicId = activeView.topicId
-        const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, topicId)
-        const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
-        const cacheSuffix = discoveryMode === 'all' && showPostPreviewPair ? 'preview' : 'full'
-        const cacheKey = `${topicId}:${discoveryMode}:${categorySuffix}:${cacheSuffix}`
-        const cached = discoveryCache.get(cacheKey)
-        if (cached) {
-            return cached
+        const options: DiscoveryOptions = {
+            allIdeas,
+            topicId: activeView.topicId,
+            discoveryMode,
+            showPostPreviewPair,
+            youthToken,
+            organizationSlug: params.organizationSlug,
+            projectSlug: params.projectSlug,
+            selectedSemanticCategory,
+            latestSubmittedIdea,
+            discoveryCache,
         }
-
-        try {
-            let discovered: DiscoveryFeed
-
-            if (!ownIdeaExists) {
-                const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-
-                if (!selectedSemanticCategory) {
-                    discovered = createDiscoveryFeed(buildBroadFeed(topicIdeas), new Map())
-                } else {
-                    const categoryFilter = selectedSemanticCategory.toLowerCase()
-                    const filtered = topicIdeas.filter((idea) =>
-                        idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
-                    )
-                    discovered = createDiscoveryFeed(filtered, new Map())
-                }
-            } else if (discoveryMode === 'all') {
-                const [similarIdeas, rawDifferentIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        'similar',
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        'different',
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-                const similarIds = new Set(similarIdeas.map((idea) => idea.id))
-                const oppositeIdeas = rawDifferentIdeas.filter((idea) => !similarIds.has(idea.id))
-
-                // Pre-populate individual mode caches so switching modes uses consistent deduplicated data
-                const similarCacheKey = `${topicId}:similar:${categorySuffix}:full`
-                const differentCacheKey = `${topicId}:different:${categorySuffix}:full`
-                if (!discoveryCache.has(similarCacheKey)) {
-                    discoveryCache.set(similarCacheKey, createDiscoveryFeed(similarIdeas, new Map()))
-                }
-                if (!discoveryCache.has(differentCacheKey)) {
-                    discoveryCache.set(differentCacheKey, createDiscoveryFeed(oppositeIdeas, new Map()))
-                }
-
-                if (showPostPreviewPair) {
-                    const submittedIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
-                    // Use rawDifferentIdeas for the preview so we always find a unique "differing" pick
-                    discovered = createPostPreviewFeed(similarIdeas, rawDifferentIdeas, submittedIdea)
-                } else {
-                    // Pinned top 3: most similar, most different, then user's own idea
-                    const pinnedIdeas: Idea[] = []
-                    const pinnedBadges = new Map<number, DiscoveryBadgeType>()
-                    const pinnedIds = new Set<number>()
-
-                    const addPinned = (idea: Idea | null | undefined, badge?: DiscoveryBadgeType): void => {
-                        if (!idea || pinnedIds.has(idea.id)) return
-                        pinnedIds.add(idea.id)
-                        pinnedIdeas.push(idea)
-                        if (badge) pinnedBadges.set(idea.id, badge)
-                    }
-
-                    addPinned(similarIdeas[0], 'similar')
-                    for (const idea of oppositeIdeas) {
-                        if (!pinnedIds.has(idea.id)) {
-                            addPinned(idea, 'different');
-                            break
-                        }
-                    }
-                    const userIdea = latestSubmittedIdea ?? allIdeas.find((idea) => idea.authorType === 'self' && idea.topicId === topicId) ?? null
-                    addPinned(userIdea)
-
-                    // Remaining topic ideas in broad category-interleaved order
-                    const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
-                    const broadRemainder = buildBroadFeed(topicIdeas).filter((idea) => !pinnedIds.has(idea.id))
-                    discovered = createDiscoveryFeed([...pinnedIdeas, ...broadRemainder], pinnedBadges)
-                }
-            } else {
-                // Fetch both modes in parallel and deduplicate to prevent overlap between lists
-                const otherMode: IdeaDiscoveryCategory = discoveryMode === 'similar' ? 'different' : 'similar'
-                const [modeIdeas, otherIdeas] = await Promise.all([
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        discoveryMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                    getDiscoveredIdeasForTopic(
-                        params.organizationSlug,
-                        params.projectSlug,
-                        topicId,
-                        youthToken,
-                        otherMode,
-                        IDEA_DISCOVERY_MAX_RESULTS,
-                    ),
-                ])
-
-                const similarList = discoveryMode === 'similar' ? modeIdeas : otherIdeas
-                const rawDifferentList = discoveryMode === 'different' ? modeIdeas : otherIdeas
-                const simIds = new Set(similarList.map((idea) => idea.id))
-                const deduplicatedDifferent = rawDifferentList.filter((idea) => !simIds.has(idea.id))
-
-                // Cache the other mode so switching back uses consistent data
-                const otherCacheKey = `${topicId}:${otherMode}:${categorySuffix}:full`
-                if (!discoveryCache.has(otherCacheKey)) {
-                    discoveryCache.set(
-                        otherCacheKey,
-                        createDiscoveryFeed(discoveryMode === 'similar' ? deduplicatedDifferent : similarList, new Map()),
-                    )
-                }
-
-                discovered = createDiscoveryFeed(discoveryMode === 'similar' ? similarList : deduplicatedDifferent, new Map())
-            }
-
-            discoveryCache.set(cacheKey, discovered)
-            return discovered
-        } catch (error) {
-            console.warn('Could not load idea discovery suggestions, falling back to all ideas.', error)
-            return createDiscoveryFeed(allIdeas.filter((idea) => idea.topicId === topicId).slice(0, IDEA_DISCOVERY_MAX_RESULTS), new Map())
-        }
+        return getVisibleIdeas(options)
     }
 
     let copyPulseTimeout: number | null = null
@@ -705,8 +530,27 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         }, 850)
     }
 
+    function getNudgingContext(view: ActiveView) {
+        if (view.type !== 'topic') return null
+        const topic = topics.find((item) => item.id === view.topicId)
+        if (!topic) return null
+        return {
+            projectTitle: project.title,
+            projectDescription: project.description,
+            topicTitle: topic.title,
+            topicPrompt: topic.prompt,
+        }
+    }
+
     // Create controllers
     const safetyReviewDialog = createSafetyReviewDialogController({root: container})
+    const ideaNudgeDialog = createIdeaNudgeDialogController({
+        root: container,
+        workspaceSlug: params.organizationSlug,
+        projectSlug: params.projectSlug,
+        isCurrentView: () => activeView,
+        getContext: getNudgingContext,
+    })
     const ideaPanel = createIdeaPanelController({
         root: container,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
@@ -749,15 +593,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         },
     })
 
-    let visibleIdeasCache: Idea[] = []
-
     const topicModal = createTopicModalController({
         root: container,
         topics,
         onSelect: (nextView) => {
             activeView = nextView
             if (nextView.type === 'topic') {
-                discoveryMode = 'all'
+                discoveryMode = DiscoveryMode.All
                 selectedSemanticCategory = null
                 showPostPreviewPair = false
             }
@@ -775,13 +617,15 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         projectId: project.id,
         reviewBeforePost: (input) => safetyReviewDialog.reviewBeforePost(input),
         reviewWithSuggestion: (original, suggestion) => safetyReviewDialog.reviewWithSuggestion(original, suggestion),
+        getNudgingContext,
+        runNudgingFlow: (input, view) => ideaNudgeDialog.run(input, view),
         onIdeaSubmitted: (idea, isFlagged) => {
             allIdeas.unshift(idea)
             latestSubmittedIdea = idea
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = 'all'
+            discoveryMode = DiscoveryMode.All
             selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
@@ -792,7 +636,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     })
 
     function updateTopicLabels(): void {
-        const label = getActiveIdeasLabel(activeView, topics)
+        const label = getActiveIdeasLabel(activeView, topics, t)
         topicTriggerValue.textContent = label
         topicFloatingTriggerValue.textContent = label
         topicFloatingTrigger.hidden = activeView.type !== 'my-ideas'
@@ -838,7 +682,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             flaggedIdeaIds,
             discoveryBadgeByIdeaId,
             onDiscoveryBadgeClick: (badge) => {
-                discoveryMode = badge === 'similar' ? 'similar' : 'different'
+                discoveryMode = badge === 'similar' ? DiscoveryMode.Similar : DiscoveryMode.Different
                 showPostPreviewPair = false
                 resetPaging()
                 closeDiscoveryMenu()
@@ -887,12 +731,12 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     }
 
     function getEmptyStateMessage(): string {
-        if (activeView.type !== 'topic') return 'No ideas here yet.'
+        if (activeView.type !== 'topic') return t.noIdeasHere
         const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, activeView.topicId)
-        if (!ownIdeaExists) return 'No ideas have been shared yet. Be the first!'
-        if (discoveryMode === 'similar') return 'Your idea seems super original — no similar ideas found yet.'
-        if (discoveryMode === 'different') return 'No clearly contrasting ideas found yet.'
-        return 'No ideas here yet.'
+        if (!ownIdeaExists) return t.noIdeasYetBeFirst
+        if (discoveryMode === DiscoveryMode.Similar) return t.noSimilarIdeasFound
+        if (discoveryMode === DiscoveryMode.Different) return t.noContrastingIdeasFound
+        return t.noIdeasHere
     }
 
     function updateLoadMoreButton(): void {
@@ -903,8 +747,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         loadMoreBtn.classList.toggle('ideas-load-more--loading', isLoadingMoreIdeas)
         loadMoreBtn.setAttribute('aria-busy', String(isLoadingMoreIdeas))
         loadMoreText.textContent = isLoadingMoreIdeas
-            ? 'Loading 7 more ideas...'
-            : 'Click or scroll down to load 7 more ideas'
+            ? t.loadingMoreIdeas
+            : t.loadMoreIdeas
 
         // Extra bottom space so the button is visible before the load triggers
         list.classList.toggle('ideas-list--has-more', hasMoreIdeas)
@@ -930,16 +774,29 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         isLoadingMoreIdeas = true
         updateLoadMoreButton()
 
-        // Scroll the button into center view and briefly pause auto-scroll while it activates
-        suppressListScrollSync(1000)
+        if (loadMoreBtn.parentElement !== list) {
+            list.appendChild(loadMoreBtn)
+        }
+        suppressListScrollSync(2500)
         loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
         const firstNewIndex = getVisibleLimit()
 
         try {
             await new Promise<void>((resolve) => {
-                window.setTimeout(resolve, 2000)
+                const timeout = window.setTimeout(resolve, 2000)
+                const checkCancel = () => {
+                    if (!isLoadingMoreIdeas) {
+                        window.clearTimeout(timeout)
+                        resolve()
+                    } else {
+                        requestAnimationFrame(checkCancel)
+                    }
+                }
+                requestAnimationFrame(checkCancel)
             })
+
+            if (!isLoadingMoreIdeas) return
 
             extraLoadsUsed += 1
             showPostPreviewPair = false
@@ -985,7 +842,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             selectedSemanticCategory = null
             showPostPreviewPair = false
         } else {
-            discoveryMode = 'all'
+            discoveryMode = DiscoveryMode.All
             selectedSemanticCategory = semanticCategory ?? null
             showPostPreviewPair = false
         }
@@ -1034,18 +891,33 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     document.addEventListener('keydown', handleKeyDown)
 
     list.addEventListener('scroll', () => {
-        if (performance.now() < suppressListScrollSyncUntil) return
+        const isSuppressed = performance.now() < suppressListScrollSyncUntil
         listController?.updateFromScroll()
+
+        const currentScrollTop = list.scrollTop
+        const isScrollingUp = currentScrollTop < lastScrollTop
+        lastScrollTop = currentScrollTop
+
+        if (isScrollingUp && isLoadingMoreIdeas) {
+            isLoadingMoreIdeas = false
+            updateLoadMoreButton()
+            if (!isSuppressed) return
+        }
+
+        if (isSuppressed) return
+
         const distanceFromBottom = list.scrollHeight - list.clientHeight - list.scrollTop
         if (distanceFromBottom <= LOAD_MORE_SCROLL_THRESHOLD) {
-            if (autoLoadArmed && hasMoreIdeasToLoad()) {
+            if (autoLoadArmed && !isLoadingMoreIdeas && hasMoreIdeasToLoad()) {
                 autoLoadArmed = false
                 void loadMoreIdeas()
             }
         } else {
             autoLoadArmed = true
         }
-        updateLoadMoreButton()
+        if (!isLoadingMoreIdeas) {
+            updateLoadMoreButton()
+        }
     }, { passive: true })
 
 
@@ -1116,7 +988,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         try {
             await submitHandler.submit(body, activeView)
         } finally {
-            submitBtn.textContent = 'Submit Idea'
+            submitBtn.textContent = t.submitIdea
             submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
         }
     })

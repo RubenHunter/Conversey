@@ -1,5 +1,5 @@
-import type { ApiSurveyResponseRequestDto } from '../api/dtos/responseDto.ts'
-import type { SurveyResponse } from '../models/response.ts'
+import type { ApiSurveyResponseRequestDto } from '../api/dtos/responseDto'
+import type { SurveyResponse } from '../models/response'
 
 export function mapSurveyResponseToApiResponseDto(response: SurveyResponse, youthId: string): ApiSurveyResponseRequestDto {
     return {

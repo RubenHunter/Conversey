@@ -1,4 +1,4 @@
-import { createWorkspace, getWorkspaces } from '../services/workspaceService'
+import { createWorkspace, getWorkspaces } from '../../services/workspaceService'
 
 export async function renderWorkspaceTestPage(container: HTMLElement): Promise<void> {
     container.innerHTML = `
