@@ -9,6 +9,7 @@ export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
 export const InteractionType = {
     Chat: 'Chat',
     VerticalScroll: 'Vertical_Scroll',
+    UserDefined: 'UserDefined',
 } as const
 
 export type InteractionType = (typeof InteractionType)[keyof typeof InteractionType]
@@ -18,11 +19,6 @@ export interface ProjectTopic {
     name: string
     context: string
     maxBroadSelectionLoads: number
-}
-
-export interface ProjectStyle {
-    // Backend currently exposes Color[]; string tokens keep frontend transport-safe.
-    primaryColors: string[]
 }
 
 export interface Project {
@@ -37,9 +33,9 @@ export interface Project {
     startDate?: string
     endDate?: string
     interactionType?: InteractionType
+    nudgingStrength: number
     topic?: ProjectTopic
     topics?: ProjectTopic[]
-    style?: ProjectStyle
 }
 
 /* will need changes: like organizationslug and projectslug are just edited version of the titles.

@@ -1,19 +1,24 @@
-import {getProject} from '../../services/projectService'
-import {getQuestions, submitAnswers} from '../../services/surveyService'
-import {QuestionType} from '../../models/question'
-import type {ResponseAnswer} from '../../models/response'
-import type {QuestionAnswer, QuestionComponent} from './singleChoiceQuestion'
-import {renderSingleChoiceQuestion} from './singleChoiceQuestion'
-import {renderMultipleChoiceQuestion} from './multipleChoiceQuestion'
-import {renderOpenTextQuestion} from './openTextQuestion'
-import {renderScaleQuestion} from './scaleQuestion'
-import type {ScrollNav} from '../scrollNav'
-import {renderScrollNav} from '../scrollNav'
-import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../services/surveyProgressService'
-import {renderSurveyHeader, createSurveyHeaderController} from './surveyHeader'
-import {navigate, ProjectContext, render} from "../../main";
+import {getProject} from '../../../services/projectService'
+import {getQuestions, submitAnswers} from '../../../services/surveyService'
+import {QuestionType} from '../../../models/question'
+import type {ResponseAnswer} from '../../../models/response'
+import type {QuestionAnswer, QuestionComponent} from '../components/singleChoiceQuestion'
+import {renderSingleChoiceQuestion} from '../components/singleChoiceQuestion'
+import {renderMultipleChoiceQuestion} from '../components/multipleChoiceQuestion'
+import {renderOpenTextQuestion} from '../components/openTextQuestion'
+import {renderScaleQuestion} from '../components/scaleQuestion'
+import type {ScrollNav} from '../../shared/scrollNav'
+import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../../services/surveyProgressService'
+import {renderSurveyHeader, createSurveyHeaderController} from '../components/surveyHeader'
+import {navigate, ProjectContext, render} from "../../../main";
+import {InteractionType} from '../../../models/project'
+import {showLayoutPicker} from '../components/layoutPicker'
+import {getSurveyStrings} from '../../../i18n/survey'
+import {renderScrollNav} from '../../shared/scrollNav'
+import {hasAnswer} from '../../chat/utils/chatHelpers'
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+    const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
@@ -24,8 +29,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-redirect-wrap screen-height">
                 <div class="survey-redirect-card">
                     <div class="survey-redirect-check">✓</div>
-                    <h2>Survey already completed</h2>
-                    <p>Redirecting you to ideas...</p>
+                    <h2>${t.surveyAlreadyCompleted}</h2>
+                    <p>${t.redirectingToIdeas}</p>
                     <div class="survey-confetti" aria-hidden="true"></div>
                 </div>
             </div>
@@ -62,7 +67,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
             <section class="survey-hero" id="survey-hero">
                 <img src="${project.imageUrl}" alt="${project.title}" class="survey-hero-image" />
-                <div class="survey-hero-content">
+                <div class="survey-hero-content lg:top-[28%]">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
                 </div>
@@ -83,7 +88,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             <div class="survey-content">
                 <div id="questions-container"></div>
                 <div class="survey-action-bar" id="survey-action-bar">
-                    <button id="btn-submit" class="survey-submit-btn">Submit Survey</button>
+                    <button id="btn-submit" class="survey-submit-btn">${t.submitSurvey}</button>
                 </div>
             </div>
         </div>
@@ -97,6 +102,20 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
     const headerController = createSurveyHeaderController({ root: container })
 
+    function hasRequiredQuestionBefore(index: number): boolean {
+        for (let i = index - 1; i >= 0; i--) {
+            if (questions[i].isRequired) return true
+        }
+        return false
+    }
+
+    function hasUnansweredRequiredBefore(index: number): boolean {
+        for (let i = index - 1; i >= 0; i--) {
+            if (questions[i].isRequired && !answeredState[i]) return true
+        }
+        return false
+    }
+
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
@@ -109,8 +128,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
         questionsContainer.appendChild(component.getElement())
 
-        // Lock next questions only if current question is required
-        if (index > 0 && questions[index - 1].isRequired) {
+        // Lock by required-gate: a question is blocked only while the last required question before it is unanswered.
+        if (hasRequiredQuestionBefore(index)) {
             component.lock()
         }
 
@@ -118,10 +137,6 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     })
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
-
-    function hasAnswer(answer: QuestionAnswer): boolean {
-        return Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
-    }
 
     function syncAnsweredState(): void {
         components.forEach((component, index) => {
@@ -136,9 +151,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 return
             }
 
-            const previousIndex = index - 1
-            const shouldLock = questions[previousIndex].isRequired && !answeredState[previousIndex]
-            if (shouldLock) {
+            const shouldLockByRequiredGate = hasUnansweredRequiredBefore(index)
+            if (shouldLockByRequiredGate) {
                 component.lock()
             } else {
                 component.unlock()
@@ -218,6 +232,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         })
 
         currentQuestionIndex = index
+        syncQuestionLocks()
         scrollNav?.update(currentQuestionIndex, questions.length)
         persistProgress()
 
@@ -308,6 +323,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         // Update only if the index has actually changed to avoid unnecessary updates
         if (currentQuestionIndex !== closestIndex) {
             currentQuestionIndex = closestIndex
+            syncQuestionLocks()
             scrollNav?.update(currentQuestionIndex, questions.length)
             persistProgress()
         }
@@ -359,7 +375,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             if (question.type === QuestionType.SingleChoice) {
                 const selectedOptionId = answer as number
                 if (selectedOptionId == null) return []
-                return { questionId: question.id, selectedOptionId, value: selectedOptionId }
+                return { questionId: question.id, selectedOptionId }
             }
             if (question.type === QuestionType.MultipleChoice) {
                 const selectedOptionIds = Array.isArray(answer) ? answer : []
@@ -367,21 +383,20 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 return selectedOptionIds.map((selectedOptionId) => ({
                     questionId: question.id,
                     selectedOptionId,
-                    value: selectedOptionId,
                 }))
             }
             if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
                 if (scaleValue == null) return []
-                return { questionId: question.id, selectedOptionId: scaleValue, value: scaleValue }
+                return { questionId: question.id, selectedOptionId: scaleValue }
             }
             const openTextValue = answer as string
             if (openTextValue == null || openTextValue === '') return []
-            return { questionId: question.id, openTextValue, value: openTextValue }
+            return { questionId: question.id, openTextValue }
         }).flat()
         
-        submitBtn.textContent = 'Submitting...'
-
+        submitBtn.textContent = t.submitting
+        
         try {
             await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')
@@ -389,10 +404,52 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             cleanupSurveyPage()
             navigate("completed");
         } catch {
-            submitBtn.textContent = 'Submit Survey'
-            alert('Failed to submit survey. Please try again.')
+            submitBtn.textContent = t.submitSurvey
+            alert(t.submitFailed)
         }
     })
 }
 
-render(renderSurveyPage)
+
+render(async (container, params) => {
+    const project = await getProject(params.organizationSlug, params.projectSlug)
+
+    if (project.interactionType === InteractionType.Chat) {
+        const { renderChatSurveyPage } = await import("../../chat/pages/chatSurveyPage")
+        await renderChatSurveyPage(container, params, project)
+        return
+    }
+
+    if (project.interactionType === InteractionType.UserDefined) {
+        const layoutKey = `survey-layout-${params.projectSlug}`
+        const savedLayout = localStorage.getItem(layoutKey)
+
+        if (savedLayout === 'chat') {
+            const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
+            await renderChatSurveyPage(container, params, project)
+            return
+        }
+
+        if (savedLayout === 'classic') {
+            await renderSurveyPage(container, params)
+            return
+        }
+
+        const organizationName = project.organizationName?.trim() || project.organizationSlug
+        const choice = await showLayoutPicker({
+            container,
+            storageKey: layoutKey,
+            organizationName,
+            organizationSlug: project.organizationSlug,
+        })
+        if (choice === 'chat') {
+            const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
+            await renderChatSurveyPage(container, params, project)
+        } else {
+            await renderSurveyPage(container, params)
+        }
+        return
+    }
+
+    await renderSurveyPage(container, params)
+})

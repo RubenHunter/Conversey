@@ -1,4 +1,4 @@
-import { apiFetch } from './apiService.ts'
+import { apiFetch } from './apiService'
 
 export interface Workspace {
     name: string

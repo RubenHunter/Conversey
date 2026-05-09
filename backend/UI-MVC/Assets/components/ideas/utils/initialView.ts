@@ -1,5 +1,5 @@
-﻿import type { Idea, IdeaTopic } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
+﻿import type { Idea, IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
 
 export function resolveInitialIdeasView(topics: IdeaTopic[], allIdeas: Idea[]): ActiveView {
     if (topics.length === 0) {

@@ -1,4 +1,4 @@
-import { getOrganizationBranding } from '../organizationBranding.ts'
+import { getOrganizationBranding } from '../../shared/organizationBranding'
 
 interface RenderIdeasHeaderParams {
     organizationName: string
@@ -11,7 +11,7 @@ export function renderIdeasHeader({ organizationName, organizationSlug }: Render
     return `
         <div class="survey-topbar">
             <div class="survey-topbar-left">
-                <div class="survey-topbar-logo"><img src="/images/Conversey_logo.png" alt="Conversey" /></div>
+                <div class="survey-topbar-logo"><img src="/Assets/Conversey_logo.png" alt="Conversey" /></div>
                 <div class="survey-topbar-logo-title">CONVERSEY</div>
             </div>
             <div class="survey-topbar-brand">

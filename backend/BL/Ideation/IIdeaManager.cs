@@ -1,3 +1,4 @@
+using Conversey.BL.Ai;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
@@ -20,7 +21,8 @@ public interface IIdeaManager
    /// <param name="youthId">The <see cref="Domain.Administration.Youth">Youth</see> who wrote the idea.</param>
    /// <param name="ideaContent">The content of the idea.</param>
    /// <returns>Whether the idea is <see cref="SubmissionResponse.Pending">Pending</see> or <see cref="SubmissionResponse.Approved">Approved</see>.</returns>
-    SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent);
+    SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false);
+    IdeaNudgeDecision AssessIdeaNudge(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation);
     Idea GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     Idea GetIdea(Topic topic, int ideaId);
     Idea GetIdeaByIdWithProjectAndResponses(Slug workspaceId, Slug projectId, int topicId, int ideaId);

@@ -1,9 +1,20 @@
-import type { Question } from '../../models/question.ts'
-import type { QuestionComponent } from './singleChoiceQuestion.ts'
-import { generateQuestionHeader } from './shared'
+import type { Question } from '../../../models/question'
+import { generateQuestionHeader } from '../utils/surveyUtils'
 
-export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
-    let selectedOptionIds: number[] = []
+export type QuestionAnswer = number | string | number[] | null
+
+export interface QuestionComponent {
+    getAnswer(): QuestionAnswer
+    validate(): boolean
+    lock(): void
+    unlock(): void
+    onAnswer(callback: () => void): void
+    setAnswer(answer: QuestionAnswer): void
+    getElement(): HTMLElement
+}
+
+export function renderSingleChoiceQuestion(question: Question, index: number): QuestionComponent {
+    let selectedOptionId: number | null = null
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
@@ -20,7 +31,7 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             ${(question.options ?? [])
                 .map(
                     (option) => `
-                <label class="survey-option-label multiple-choice" data-option-id="${option.id}">
+                <label class="survey-option-label" data-option-id="${option.id}">
                     <div class="survey-radio-circle">
                         <div class="survey-radio-dot"></div>
                     </div>
@@ -39,18 +50,22 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')
 
-    const validOptionIds = new Set<number>(
-        [...labels].map((label) => Number(label.getAttribute('data-option-id'))),
-    )
+    function applySelectedState(nextSelectedOptionId: number | null): void {
+        selectedOptionId = nextSelectedOptionId
 
-    function applySelectedState(nextSelectedOptionIds: number[]): void {
-        selectedOptionIds = nextSelectedOptionIds
-
-        labels.forEach((label) => {
-            const optionId = Number(label.getAttribute('data-option-id'))
-            label.classList.toggle('selected', selectedOptionIds.includes(optionId))
-            label.classList.remove('disabled')
-        })
+        if (selectedOptionId === null) {
+            labels.forEach((label) => {
+                label.classList.remove('selected')
+                label.classList.remove('disabled')
+            })
+        } else {
+            labels.forEach((label) => {
+                const optionId = Number(label.getAttribute('data-option-id'))
+                const isSelected = optionId === selectedOptionId
+                label.classList.toggle('selected', isSelected)
+                label.classList.toggle('disabled', !isSelected)
+            })
+        }
 
         const errorEl = wrapper.querySelector(`#error-${question.id}`)
         errorEl?.classList.remove('show')
@@ -61,21 +76,16 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             if (isLocked) return
 
             const optionId = Number(label.getAttribute('data-option-id'))
-
-            if (selectedOptionIds.includes(optionId)) {
-                applySelectedState(selectedOptionIds.filter((id) => id !== optionId))
-            } else {
-                applySelectedState([...selectedOptionIds, optionId])
-            }
+            applySelectedState(selectedOptionId === optionId ? null : optionId)
 
             answerCallback?.()
         })
     })
 
     return {
-        getAnswer: () => selectedOptionIds,
+        getAnswer: () => selectedOptionId,
         validate: () => {
-            if (question.isRequired && selectedOptionIds.length === 0) {
+            if (question.isRequired && selectedOptionId === null) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false
@@ -96,13 +106,15 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             answerCallback = cb
         },
         setAnswer: (answer) => {
-            const restoredIds = Array.isArray(answer)
-                ? [...new Set(answer.filter((value): value is number => Number.isFinite(value) && validOptionIds.has(value)))]
-                : []
-            applySelectedState(restoredIds)
+            const nextSelected = typeof answer === 'number' && Number.isFinite(answer) ? answer : null
+            const hasMatchingOption = [...labels].some(
+                (label) => Number(label.getAttribute('data-option-id')) === nextSelected,
+            )
+            applySelectedState(hasMatchingOption ? nextSelected : null)
         },
         getElement: () => wrapper,
     }
 }
+
 
 

@@ -7,11 +7,11 @@ import type {
     ApiResponseReactionSummaryDto,
     ApiResponseSubmissionResultDto,
     ApiUpdateResponseAfterSafetyReviewRequestDto,
-} from '../api/dtos/ideaResponseDto.ts'
-import { mapApiIdeaResponseToIdeaResponse, mapApiReactionSummaryToReactionSummary } from '../mappers/ideaResponseMapper.ts'
-import type { Idea } from '../models/idea.ts'
-import type { IdeaResponse, ResponseReactionSummary } from '../models/ideaResponse.ts'
-import { apiFetch } from './apiService.ts'
+} from '../api/dtos/ideaResponseDto'
+import { mapApiIdeaResponseToIdeaResponse, mapApiReactionSummaryToReactionSummary } from '../mappers/ideaResponseMapper'
+import type { Idea } from '../models/idea'
+import type { IdeaResponse, ResponseReactionSummary } from '../models/ideaResponse'
+import { apiFetch } from './apiService'
 
 const responseReactionIds = new Map<string, number>()
 const ideaReactionIds = new Map<string, number>()

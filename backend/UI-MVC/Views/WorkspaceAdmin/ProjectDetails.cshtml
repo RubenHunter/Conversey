@@ -72,6 +72,11 @@
                     </div>
 
                     <div>
+                        <h3 class="text-xs font-semibold uppercase text-gray-500">AI Nudging Strength</h3>
+                        <p class="mt-1 text-sm text-gray-800">@Model.NudgingStrength</p>
+                    </div>
+
+                    <div>
                         <h3 class="text-xs font-semibold uppercase text-gray-500">Start Date</h3>
                         <p class="mt-1 text-sm text-gray-800">
                             @(Model.StartDate == default ? "-" : Model.StartDate.ToString("yyyy-MM-dd"))
