@@ -435,12 +435,6 @@
     box-shadow: 0 var(--spacing-xl) calc(var(--spacing-xl) * 2) var(--color-bg);
 }
 
-@media (min-width: 1024px) {
-    .survey-hero-content {
-        top: 28%;
-    }
-}
-
 .survey-hero-title {
     font-size: clamp(var(--font-size-xl), 4vw, var(--font-size-3xl));
     font-weight: 700;
@@ -650,23 +644,6 @@
     border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
     white-space: nowrap;
-}
-
-@media (max-width: 600px) {
-    .layout-picker-body {
-        flex-direction: column;
-    }
-
-    .layout-picker-divider {
-        left: 0;
-        right: 0;
-        top: 50%;
-        bottom: auto;
-        width: auto;
-        height: 0;
-        border-left: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
 }
 
 /* ── Footer toggle ── */

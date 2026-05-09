@@ -831,7 +831,7 @@ export async function renderChatSurveyPage(
                     </span>
                 </button>
             </div>
-            <section class="ideas-community" aria-label="Ideas list">
+            <section class="ideas-community min-h-0 flex flex-col overflow-hidden overscroll-contain relative" aria-label="Ideas list">
                 <div id="ideas-discovery" class="ideas-discovery" hidden>
                     <button id="ideas-discovery-trigger" class="ideas-discovery-trigger" type="button" aria-haspopup="menu" aria-expanded="false">
                         <span id="ideas-discovery-label">${esc(t.exploreIdeas)}</span>
@@ -839,7 +839,7 @@ export async function renderChatSurveyPage(
                     </button>
                     <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden></div>
                 </div>
-                <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>
+                <div class="ideas-list flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none" id="chat-ideas-list" aria-live="polite"></div>
             </section>`
 
         chatShell.classList.add('chat-shell--ideas')
@@ -996,7 +996,7 @@ export async function renderChatSurveyPage(
             e.stopPropagation()
             const opening = discoveryMenu.hidden
             if (opening) {
-                renderDiscoveryMenuOptions()
+                updateDiscoveryUi()
             }
             discoveryMenu.hidden = !opening
             discoveryTrigger.setAttribute('aria-expanded', String(opening))

@@ -1,15 +1,7 @@
 /* Shared styles imported via TypeScript */
 
 .ideas-shell {
-  height: 100vh;
-  height: 100svh;
-  /* #app has items-center which would shrink this — force full width */
-  width: 100%;
-  align-self: stretch;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--color-bg);
+  /* Layout classes moved to Tailwind: h-svh w-full self-stretch overflow-hidden flex flex-col bg-[var(--color-bg)] */
 }
 
 /* Shell is now truly full-width so the topbar vw-bleed resolves to zero shift.
@@ -27,141 +19,14 @@
 }
 
 .ideas-body {
-  flex: 1;
-  min-height: 0;
-  /* Cap content width and center — shell is full-width so this is safe */
-  width: min(100%, 1000px);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0 var(--spacing-sm) var(--spacing-md);
-  gap: var(--spacing-sm);
+  /* Layout classes moved to Tailwind: flex-1 min-h-0 w-[min(100%,1000px)] mx-auto flex flex-col overflow-hidden px-[var(--spacing-sm)] pb-[var(--spacing-md)] gap-[var(--spacing-sm)] */
 }
 
 .ideas-shell--my-ideas .ideas-body {
   padding-bottom: calc(var(--spacing-xl) * 3 + env(safe-area-inset-bottom));
 }
 
-.ideas-topic-switcher {
-  position: relative;
-  width: 100%;
-  align-self: stretch;
-}
-
-.ideas-topic-label {
-  display: block;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.ideas-topic-trigger {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  min-height: calc(var(--spacing-xl) * 1.425);
-  padding: var(--spacing-sm) var(--spacing-md);
-  text-align: left;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  transition: border-color var(--transition-base), box-shadow var(--transition-base), background-color var(--transition-base);
-}
-
-.ideas-topic-trigger:focus-visible,
-.ideas-topic-trigger.open {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
-}
-
-.ideas-topic-trigger-copy {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.ideas-topic-trigger-kicker {
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary);
-}
-
-.ideas-topic-trigger-value {
-  font-size: var(--font-size-sm);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ideas-topic-chevron {
-  font-size: var(--font-size-base);
-  color: var(--color-primary);
-  transition: transform var(--animation-fast) ease;
-}
-
-.ideas-topic-trigger.open .ideas-topic-chevron {
-  transform: rotate(180deg);
-}
-
-.ideas-topic-hint {
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  margin-top: var(--spacing-xs);
-  line-height: 1.35;
-}
-
-.ideas-topic-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 70;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-top: none;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  max-height: calc(var(--spacing-xl) * 7.5);
-  overflow-y: auto;
-  opacity: 0;
-  transform: translateY(var(--transform-translate-card)) scale(var(--transform-scale-down));
-  pointer-events: none;
-  transition: opacity var(--transition-base), transform var(--transition-base);
-}
-
-.ideas-topic-menu.open {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.ideas-topic-option {
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  background: transparent;
-  text-align: left;
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--color-text);
-  font-family: var(--font-primary), sans-serif;
-  font-size: var(--font-size-base);
-}
-
-.ideas-topic-option:last-child {
-  border-bottom: none;
-}
-
-/* ============================================
-   New Topic Switcher Modal Styles
-   ============================================ */
+/* New Topic Switcher Modal Styles */
 
 /* Topic selector button in compose area */
 .ideas-compose-topic-button {
@@ -451,17 +316,6 @@
   justify-content: flex-end;
 }
 
-/* Replaced with Tailwind: max-[720px]:w-[calc(100vw-1rem)] max-[720px]:max-h-[220px] */
-@media (max-width: 720px) {
-  .idea-nudge-dialog {
-    width: calc(100vw - 1rem);
-  }
-
-  .idea-nudge-thread {
-    max-height: 220px;
-  }
-}
-
 .first-idea-contact-field {
   display: grid;
   gap: calc(var(--spacing-xs) * 0.75);
@@ -602,23 +456,8 @@
   box-shadow: 0 0 0 var(--spacing-sm) color-mix(in srgb, var(--color-primary-light) 35%, transparent);
 }
 
-.ideas-topic-option.active {
-  background-color: color-mix(in srgb, var(--color-primary-light) 25%, white);
-}
-
-.ideas-topic-option--my-ideas {
-  color: var(--color-secondary);
-  font-weight: 700;
-}
-
 .ideas-grid {
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  width: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: var(--spacing-md);
+  /* Layout moved to Tailwind: flex-1 min-h-0 min-w-0 w-full grid grid-rows-[minmax(0,1fr)_auto] gap-[var(--spacing-md)] */
 }
 
 .ideas-grid.ideas-grid--my-ideas {
@@ -626,12 +465,7 @@
 }
 
 .ideas-community {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  overscroll-behavior: contain;
-  position: relative;
+  /* Layout moved to Tailwind: min-h-0 flex flex-col overflow-hidden overscroll-contain relative */
 }
 
 .ideas-discovery {
@@ -761,15 +595,7 @@
 }
 
 .ideas-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--spacing-sm) var(--spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  overscroll-behavior: contain;
-  scroll-snap-type: none;
+  /* Layout moved to Tailwind: flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none */
 }
 
 .ideas-list--has-more {
@@ -1025,12 +851,6 @@
   min-height: calc(var(--spacing-xl) * 8.5);
 }
 
-@media (max-width: 370px) {
-  .ideas-compose .survey-textarea {
-    min-height: calc(var(--spacing-xl) * 3.4);
-  }
-}
-
 .ideas-compose-topic {
   font-size: var(--font-size-xs);
   font-weight: 700;
@@ -1115,32 +935,6 @@
 .ideas-compose .survey-textarea-wrapper.ideas-compose-copied .survey-textarea {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 30%, transparent);
-}
-
-@media (max-width: 640px) {
-  .ideas-topic-trigger {
-    border-left: none;
-    border-right: none;
-    border-radius: 0;
-    padding-inline: var(--spacing-md);
-    margin-left: calc(var(--spacing-sm) * -1);
-    margin-right: calc(var(--spacing-sm) * -1);
-    width: calc(100% + var(--spacing-xl));
-  }
-
-  .ideas-topic-menu {
-    left: calc(var(--spacing-sm) * -1);
-    right: calc(var(--spacing-sm) * -1);
-    border-left: none;
-    border-right: none;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-}
-
-@media (max-width: 370px) {
-  .ideas-topic-trigger {
-    padding-inline: var(--spacing-sm);
-  }
 }
 
 /* ── Idea detail panel ─────────────────────────────────────────────────── */

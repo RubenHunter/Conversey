@@ -31,7 +31,7 @@ export async function showLayoutPicker({
                     <h1 class="layout-picker-title">${t.layoutPickerTitle}</h1>
                 </div>
 
-                <div class="layout-picker-body">
+                <div class="layout-picker-body max-[600px]:flex-col">
                     <button class="layout-picker-side layout-picker-side--chat" data-layout="chat" type="button">
                         <div class="layout-picker-bg" style="background-image: url('${chatExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
@@ -41,7 +41,7 @@ export async function showLayoutPicker({
                         </div>
                     </button>
 
-                    <div class="layout-picker-divider">
+                    <div class="layout-picker-divider max-[600px]:left-0 max-[600px]:right-0 max-[600px]:top-1/2 max-[600px]:bottom-auto max-[600px]:w-auto max-[600px]:h-0 max-[600px]:border-l-0 max-[600px]:border-t max-[600px]:border-t-[rgba(255,255,255,0.2)]">
                         <span class="layout-picker-or">or</span>
                     </div>
 

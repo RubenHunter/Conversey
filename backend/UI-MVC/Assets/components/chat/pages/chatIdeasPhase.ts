@@ -128,7 +128,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
                 <div class="ideas-discovery-menu chat-discovery-menu" id="chat-discovery-menu" role="menu" hidden></div>
             </div>
         </div>
-        <div class="ideas-list" id="chat-ideas-list" aria-live="polite"></div>`
+        <div class="ideas-list flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none" id="chat-ideas-list" aria-live="polite"></div>`
 
     chatShell.classList.add('chat-shell--ideas')
     chatShell.insertBefore(topicSelectorEl, scrollAreaEl)

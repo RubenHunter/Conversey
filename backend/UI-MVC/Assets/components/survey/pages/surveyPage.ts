@@ -67,7 +67,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
             <section class="survey-hero" id="survey-hero">
                 <img src="${project.imageUrl}" alt="${project.title}" class="survey-hero-image" />
-                <div class="survey-hero-content">
+                <div class="survey-hero-content lg:top-[28%]">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
                 </div>

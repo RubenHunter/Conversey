@@ -87,12 +87,12 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug })
 
     container.innerHTML = `
-        <div class="ideas-shell">
+        <div class="ideas-shell h-svh w-full self-stretch overflow-hidden flex flex-col bg-[var(--color-bg)]">
             ${headerHTML}
 
-            <div class="ideas-body">
-                <div class="ideas-grid">
-                    <section class="ideas-community" aria-label="Ideas list">
+            <div class="ideas-body flex-1 min-h-0 w-[min(100%,1000px)] mx-auto flex flex-col overflow-hidden px-[var(--spacing-sm)] pb-[var(--spacing-md)] gap-[var(--spacing-sm)]">
+                <div class="ideas-grid flex-1 min-h-0 min-w-0 w-full grid grid-rows-[minmax(0,1fr)_auto] gap-[var(--spacing-md)]">
+                    <section class="ideas-community min-h-0 flex flex-col overflow-hidden overscroll-contain relative" aria-label="Ideas list">
                         <div id="ideas-discovery" class="ideas-discovery" hidden>
                             <button
                                 id="ideas-discovery-trigger"
@@ -110,7 +110,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
                             </div>
                         </div>
-                        <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
+                        <div id="ideas-list" class="ideas-list flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none" aria-live="polite"></div>
                         <button id="ideas-load-more" class="ideas-load-more" type="button" hidden>
                             <span class="ideas-load-more-icon" aria-hidden="true">
                                 <svg class="ideas-load-more-ring" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -137,7 +137,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea" placeholder="Share your idea for this topic..."></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="Share your idea for this topic..."></textarea>
                             <div class="survey-textarea-actions">
                                 <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -293,7 +293,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         </div>
 
         <div id="idea-nudge-backdrop" class="modal-backdrop idea-nudge-backdrop" hidden aria-hidden="true"></div>
-        <div id="idea-nudge-dialog" class="modal idea-nudge-dialog" role="dialog" aria-modal="true" aria-labelledby="idea-nudge-title" hidden>
+        <div id="idea-nudge-dialog" class="modal idea-nudge-dialog max-[720px]:w-[calc(100vw-1rem)]" role="dialog" aria-modal="true" aria-labelledby="idea-nudge-title" hidden>
             <div class="modal-header">
                 <h3 id="idea-nudge-title">${t.nudgeTitle}</h3>
                 <button id="idea-nudge-close" class="modal-close" aria-label="${t.cancel}">&times;</button>
@@ -301,7 +301,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             <div class="modal-body idea-nudge-body">
                 <p id="idea-nudge-context" class="idea-nudge-context"></p>
                 <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeStatus}</p>
-                <div id="idea-nudge-thread" class="idea-nudge-thread" aria-live="polite"></div>
+                <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
                 <label class="idea-nudge-input-wrap" for="idea-nudge-input">
                     <span class="idea-nudge-input-label">${t.yourAnswer}</span>
                     <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>

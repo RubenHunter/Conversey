@@ -218,7 +218,7 @@ export function renderChatShellTemplate({
                         </div>
                     </div>
                 </div>
-                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-messages min-[832px]:px-[var(--spacing-xl)]" id="chat-messages"></div>
             </div>
             <div class="chat-input-wrap">
                 <div class="chat-input-bar">
