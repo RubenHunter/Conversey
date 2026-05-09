@@ -6,7 +6,7 @@ import type { SurveyResponse } from '../models/response'
 import { apiFetch } from './apiService.ts'
 import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'
 
-export function getOrCreateProjectScopedYouthId(projectSlug: string): string {
+function getOrCreateProjectScopedYouthId(projectSlug: string): string {
     return getOrCreateProjectYouthId(projectSlug)
 }
 

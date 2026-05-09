@@ -1,5 +1,5 @@
-﻿import type { ApiIdeaDto, ApiIdeaTopicDto, ApiSubmitIdeaRequestDto } from '../api/dtos/ideaDto'
-import type { Idea, IdeaReactionSummary, IdeaTopic, SubmitIdeaRequest } from '../models/idea'
+﻿import type { ApiIdeaDto, ApiSubmitIdeaRequestDto } from '../api/dtos/ideaDto'
+import type { Idea, IdeaReactionSummary, SubmitIdeaRequest } from '../models/idea'
 import { IdeaAuthorType } from '../models/idea'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
@@ -48,19 +48,6 @@ function mapProjectId(value: unknown): number {
     return slug ? slugToStableNumber(slug) : 0
 }
 
-export function mapApiIdeaTopicToIdeaTopic(dto: ApiIdeaTopicDto): IdeaTopic {
-    const id = pickNumber(dto.id, dto.Id) ?? 0
-
-    return {
-        id,
-        projectId: mapProjectId(dto.projectId ?? dto.ProjectId),
-        title: pickString(dto.title, dto.Title) ?? `Topic ${id}`,
-        prompt: pickString(dto.prompt, dto.Prompt) ?? '',
-        order: pickNumber(dto.order, dto.Order),
-        maxBroadSelectionLoads: 3,
-    }
-}
-
 function isPendingStatus(status: unknown): boolean {
     if (typeof status === 'number') {
         // C# enum IdeaStatus: Pending=0, Approved=1, Rejected=2
@@ -76,7 +63,7 @@ function isPendingStatus(status: unknown): boolean {
 }
 
 export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): Idea {
-    const youthToken = pickString(dto.youthId, dto.YouthId, dto.youthToken, dto.YouthToken)
+    const youthToken = pickString(dto.youthId, dto.YouthId)
     const rawReactions = dto.reactions ?? dto.Reactions ?? []
     const reactions: IdeaReactionSummary[] = rawReactions
         .map((reaction) => ({
@@ -89,9 +76,9 @@ export function mapApiIdeaToIdea(dto: ApiIdeaDto, currentYouthToken?: string): I
         id: pickNumber(dto.id, dto.Id) ?? 0,
         projectId: mapProjectId(dto.projectId ?? dto.ProjectId),
         topicId: pickNumber(dto.topicId, dto.TopicId) ?? 0,
-        body: pickString(dto.body, dto.Body, dto.content, dto.Content) ?? '',
-        authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? IdeaAuthorType.Self : dto.authorType ?? dto.AuthorType ?? IdeaAuthorType.Other,
-        createdAt: pickString(dto.createdAt, dto.CreatedAt, dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
+        body: pickString(dto.content, dto.Content) ?? '',
+        authorType: youthToken && currentYouthToken && youthToken === currentYouthToken ? IdeaAuthorType.Self : IdeaAuthorType.Other,
+        createdAt: pickString(dto.submissionDate, dto.SubmissionDate) ?? new Date().toISOString(),
         reactions,
         pendingReview: isPendingStatus(dto.status ?? dto.Status),
         qualityNudgeBypassed: Boolean(dto.qualityNudgeBypassed ?? dto.QualityNudgeBypassed),

@@ -1,5 +1,4 @@
-﻿import type { IdeaAuthorType } from '../../models/idea'
-type ApiSlugValue = string | { text?: string; Text?: string }
+﻿type ApiSlugValue = string | { text?: string; Text?: string }
 
 export interface ApiIdeaTopicDto {
     id?: number
@@ -21,26 +20,18 @@ export interface ApiIdeaDto {
     ProjectId?: number | ApiSlugValue
     topicId?: number
     TopicId?: number
-    body?: string
-    Body?: string
     content?: string
     Content?: string
     status?: string | number
     Status?: string | number
-    authorType?: IdeaAuthorType
-    AuthorType?: IdeaAuthorType
     youthId?: string
     YouthId?: string
-    youthToken?: string
-    YouthToken?: string
-    createdAt?: string
-    CreatedAt?: string
     submissionDate?: string
     SubmissionDate?: string
-    semanticCategories?: string[]
-    SemanticCategories?: string[]
     qualityNudgeBypassed?: boolean
     QualityNudgeBypassed?: boolean
+    semanticCategories?: string[]
+    SemanticCategories?: string[]
     reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
     Reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
 }

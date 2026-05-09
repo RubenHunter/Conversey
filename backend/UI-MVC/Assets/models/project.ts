@@ -21,11 +21,6 @@ export interface ProjectTopic {
     maxBroadSelectionLoads: number
 }
 
-export interface ProjectStyle {
-    // Backend currently exposes Color[]; string tokens keep frontend transport-safe.
-    primaryColors: string[]
-}
-
 export interface Project {
     id: string
     slug: string
@@ -41,7 +36,6 @@ export interface Project {
     nudgingStrength: number
     topic?: ProjectTopic
     topics?: ProjectTopic[]
-    style?: ProjectStyle
 }
 
 /* will need changes: like organizationslug and projectslug are just edited version of the titles.

@@ -633,27 +633,27 @@ export async function renderChatSurveyPage(
                 if (q.type === QuestionType.SingleChoice) {
                     const id = answer as number
                     if (id != null) {
-                        acc.push({ questionId: q.id, selectedOptionId: id, value: id })
+                        acc.push({ questionId: q.id, selectedOptionId: id })
                     }
                     return acc
                 }
                 if (q.type === QuestionType.MultipleChoice) {
                     const ids = Array.isArray(answer) ? answer : []
                     ids.forEach((id) => {
-                        acc.push({ questionId: q.id, selectedOptionId: id, value: id })
+                        acc.push({ questionId: q.id, selectedOptionId: id })
                     })
                     return acc
                 }
                 if (q.type === QuestionType.Scale) {
                     const val = answer as number
                     if (val != null) {
-                        acc.push({ questionId: q.id, selectedOptionId: val, value: val })
+                        acc.push({ questionId: q.id, selectedOptionId: val })
                     }
                     return acc
                 }
                 const text = answer as string
                 if (text?.trim()) {
-                    acc.push({ questionId: q.id, openTextValue: text, value: text })
+                    acc.push({ questionId: q.id, openTextValue: text })
                 }
                 return acc
             }, [])

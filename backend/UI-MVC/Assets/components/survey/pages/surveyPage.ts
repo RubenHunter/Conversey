@@ -375,7 +375,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             if (question.type === QuestionType.SingleChoice) {
                 const selectedOptionId = answer as number
                 if (selectedOptionId == null) return []
-                return { questionId: question.id, selectedOptionId, value: selectedOptionId }
+                return { questionId: question.id, selectedOptionId }
             }
             if (question.type === QuestionType.MultipleChoice) {
                 const selectedOptionIds = Array.isArray(answer) ? answer : []
@@ -383,17 +383,16 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 return selectedOptionIds.map((selectedOptionId) => ({
                     questionId: question.id,
                     selectedOptionId,
-                    value: selectedOptionId,
                 }))
             }
             if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
                 if (scaleValue == null) return []
-                return { questionId: question.id, selectedOptionId: scaleValue, value: scaleValue }
+                return { questionId: question.id, selectedOptionId: scaleValue }
             }
             const openTextValue = answer as string
             if (openTextValue == null || openTextValue === '') return []
-            return { questionId: question.id, openTextValue, value: openTextValue }
+            return { questionId: question.id, openTextValue }
         }).flat()
         
         submitBtn.textContent = t.submitting

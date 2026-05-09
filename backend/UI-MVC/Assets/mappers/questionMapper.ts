@@ -54,7 +54,7 @@ function mapAnswerOption(dto: ApiAnswerOptionDto, questionId: number): AnswerOpt
     }
 }
 
-export function mapApiQuestionToQuestion(dto: ApiQuestionDto): Question {
+function mapApiQuestionToQuestion(dto: ApiQuestionDto): Question {
     const id = pickNumber(dto.id, dto.Id) ?? 0
     const projectSlug = pickString(dto.projectSlug, dto.ProjectSlug)
     const projectId = pickNumber(dto.projectId, dto.ProjectId) ?? (projectSlug ? toStableNumericId(projectSlug) : 0)
