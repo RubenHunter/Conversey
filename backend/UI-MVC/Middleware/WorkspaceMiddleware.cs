@@ -15,8 +15,12 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         // bypass voor statische bestanden en health check
         if (path.StartsWith("/health") || 
             path.Contains(".") || 
-            path.StartsWith("/lib/") || 
-            path.StartsWith("/Assets/"))
+            path.StartsWith("/lib/", StringComparison.OrdinalIgnoreCase) || 
+            path.StartsWith("/Assets/", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
         {
             await next(context);
             return;
@@ -32,21 +36,16 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         }
 
         var subdomain = parts.First();
-        
-        // GEBRUIK DE REEDS GEVONDEN WORKSPACE - GEEN DUBBELE CALLS
         var workspace = workspaceRepository.ReadWorkspaceBySlug(Slug.FromName(subdomain));
 
         if (workspace == null)
         {
-            // Als de workspace niet bestaat, toon een duidelijke 404 melding
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync($"Workspace '{subdomain}' niet gevonden.");
             return;
         }
 
-        // Zet de context direct
         workspaceContext.CurrentWorkspace = workspace;
-
         await next(context);
     }
 }

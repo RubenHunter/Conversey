@@ -24,10 +24,11 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Google Cloud Logging in Production
+// Configure Google Cloud Logging and WebRoot in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
+    builder.WebHost.UseWebRoot("/app/wwwroot");
 }
 
 // Add services to the container.
