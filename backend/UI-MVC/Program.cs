@@ -41,12 +41,8 @@ builder.Services.AddRazorPages()
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
     });
 
-builder.Services.AddViteServices(options =>
-{
-	options.Server.Port = 4173;
-    options.Server.AutoRun = true;
-    options.Server.PackageManager = "pnpm";
-});
+builder.Services.AddViteServices();
+
 // Voorkom 500 errors als manifest niet klopt in productie
 builder.Services.Configure<ViteOptions>(options => {
     options.Base = "/";
@@ -245,6 +241,8 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 // Verwijder de oude MapGet redirect die we onderaan hadden staan
+
+app.MapGet("/health", () => Results.Ok("Healthy"));
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
 //app.MapFallbackToController("Index", "Home");
