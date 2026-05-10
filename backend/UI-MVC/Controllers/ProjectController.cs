@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers;
 
-[Route("p/{projectId}")]
+[Route("{projectId:regex(^(?!login|identity|admin|logout|health|api).*$)}")]
 public class ProjectController : Controller
 {
-    [HttpGet("")]
+    [HttpGet]
     public IActionResult Survey(Slug projectId)
     {
         return View();

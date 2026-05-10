@@ -32,38 +32,20 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         }
 
         var subdomain = parts.First();
+        
+        // GEBRUIK DE REEDS GEVONDEN WORKSPACE - GEEN DUBBELE CALLS
         var workspace = workspaceRepository.ReadWorkspaceBySlug(Slug.FromName(subdomain));
 
         if (workspace == null)
         {
-            // Geen loop meer, maar een duidelijke melding
+            // Als de workspace niet bestaat, toon een duidelijke 404 melding
             context.Response.StatusCode = 404;
-            await context.Response.WriteAsync($"Workspace '{subdomain}' not found.");
+            await context.Response.WriteAsync($"Workspace '{subdomain}' niet gevonden.");
             return;
         }
 
-        try 
-        {
-            workspaceContext.CurrentWorkspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[ERROR] Error reading workspace for {subdomain}: {ex.Message}");
-            context.Response.Redirect("https://conversey.be/login");
-            return;
-        }
-
-        if (workspaceContext.CurrentWorkspace == null)
-        {
-            if (context.Request.Path.StartsWithSegments("/login", StringComparison.OrdinalIgnoreCase))
-            {
-                await next(context);
-                return;
-            }
-
-            context.Response.Redirect("https://conversey.be/login");
-            return;
-        }
+        // Zet de context direct
+        workspaceContext.CurrentWorkspace = workspace;
 
         await next(context);
     }

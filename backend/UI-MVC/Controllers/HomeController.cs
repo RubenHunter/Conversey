@@ -38,7 +38,7 @@ public class HomeController : Controller
             var firstProject = projects.FirstOrDefault();
             if (firstProject != null)
             {
-                return Redirect($"/p/{firstProject.Id.Text}");
+                return Redirect($"/{firstProject.Id.Text}");
             }
         }
 
