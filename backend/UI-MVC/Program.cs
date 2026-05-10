@@ -41,6 +41,14 @@ builder.Services.AddRazorPages()
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
     });
 
+// Configure Forwarded Headers for Google Cloud Load Balancer
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddViteServices();
 
 // Voorkom 500 errors als manifest niet klopt in productie
@@ -184,6 +192,8 @@ TypeDescriptor.AddAttributes(
 );
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // --- NOOD REDIRECT (HELEMAAL BOVENAAN) ---
 app.Use(async (context, next) =>
