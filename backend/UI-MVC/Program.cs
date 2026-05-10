@@ -268,10 +268,16 @@ void InitializeDatabase(bool drop)
         // Then seed Identity and Roles
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        SeedIdentity(userManager, roleManager);
-        if (created || !dbCtx.Workspaces.Any())
+        Console.WriteLine("Checking if database needs seeding...");
+        if (!dbCtx.Workspaces.Any())
         {
+            Console.WriteLine("Database is empty! Starting DataSeeder...");
             DataSeeder.Seed(dbCtx);
+            Console.WriteLine("DataSeeder finished successfully.");
+        }
+        else
+        {
+            Console.WriteLine($"Database already contains {dbCtx.Workspaces.Count()} workspaces. Skipping seed.");
         }
     }
 }

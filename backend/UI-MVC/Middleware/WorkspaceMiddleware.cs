@@ -25,7 +25,18 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
             return next(context);
         }
 
-        workspaceContext.CurrentWorkspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
+        try 
+        {
+            workspaceContext.CurrentWorkspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error reading workspace for {subdomain}: {ex.Message}");
+            // Redirect to root domain if we can't find the workspace
+            context.Response.Redirect("https://conversey.be/login");
+            return Task.CompletedTask;
+        }
+
         if (workspaceContext.CurrentWorkspace == null)
         {
             var path = context.Request.Path;
@@ -34,8 +45,9 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
                 return next(context);
             }
 
-            context.Response.StatusCode = StatusCodes.Status404NotFound;
-            return context.Response.WriteAsync($"Workspace not found for subdomain: {subdomain}. Check your database and Slug names.");
+            // Redirect back to root portal if subdomain is invalid
+            context.Response.Redirect("https://conversey.be/login");
+            return Task.CompletedTask;
         }
 
         return next(context);
