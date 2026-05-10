@@ -29,7 +29,6 @@ if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
 }
-// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -122,22 +121,6 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy(viteDevCorsPolicy, policy =>
-//     {
-//         policy.WithOrigins(
-//                 "http://localhost:4173",
-//                 "https://localhost:4173",
-//                 "http://localhost:4180",
-//                 "https://localhost:7093")
-//             .AllowAnyHeader()
-//             .AllowAnyMethod()
-//             .AllowCredentials();
-//     });
-// });
-
-
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
@@ -177,8 +160,6 @@ builder.Services.AddScoped<IAiManager>(provider =>
             NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
         };
 
-        provider.GetRequiredService<AiManagerConfig>();
-
         var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
         return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
     }
@@ -203,7 +184,6 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
-
 TypeDescriptor.AddAttributes(
     typeof(Slug),
     new TypeConverterAttribute(typeof(SlugTypeConverter))
@@ -213,18 +193,17 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-// app.UseHttpsRedirection(); // Uitgeschakeld voor Google Load Balancer
-app.UseStaticFiles(); // Essentieel voor productie CSS/JS in wwwroot
+// app.UseHttpsRedirection(); // DISABLED FOR GOOGLE LOAD BALANCER
+app.UseStaticFiles(); 
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
@@ -245,16 +224,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-    
-    // Voor subdomeinen: stuur door naar Landing
-    context.Response.Redirect("/Project/Landing");
-    return Task.CompletedTask;
-});
-
-app.MapGet("/health", () => Results.Ok("Healthy"));
-
-// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
-//app.MapFallbackToController("Index", "Home");
 
 if (app.Environment.IsDevelopment())
 {
@@ -270,38 +239,22 @@ void InitializeDatabase(bool drop)
     {
         var services = scope.ServiceProvider;
         var dbCtx = services.GetRequiredService<ConverseyDbContext>();
-        // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
-        // Then seed Identity and Roles
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
         
-        Console.WriteLine("Checking if database needs seeding...");
         if (!dbCtx.Workspaces.Any())
         {
-            Console.WriteLine("Database is empty! Starting DataSeeder...");
             DataSeeder.Seed(dbCtx);
-            Console.WriteLine("DataSeeder finished successfully.");
-        }
-        else
-        {
-            Console.WriteLine($"Database already contains {dbCtx.Workspaces.Count()} workspaces. Skipping seed.");
         }
     }
 }
 
 void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
 {
-    // Create roles if they don't exist
-    if (!roleManager.RoleExistsAsync("User").Result)
-    {
-        roleManager.CreateAsync(new IdentityRole("User")).Wait();
-    }
-    if (!roleManager.RoleExistsAsync("Admin").Result)
-    {
-        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
-    }
+    if (!roleManager.RoleExistsAsync("User").Result) roleManager.CreateAsync(new IdentityRole("User")).Wait();
+    if (!roleManager.RoleExistsAsync("Admin").Result) roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
 
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
     EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
@@ -324,34 +277,8 @@ void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, stri
     }
     else
     {
-        var changed = false;
-        if (user.UserName != email)
-        {
-            user.UserName = email;
-            changed = true;
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            changed = true;
-        }
-        
-        if (user.WorkspaceId != normalizedWorkspaceId)
-        {
-            user.WorkspaceId = normalizedWorkspaceId;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            userManager.UpdateAsync(user).Wait();
-        }
-
-        if (!userManager.HasPasswordAsync(user).Result)
-        {
-            userManager.AddPasswordAsync(user, "Test123!").Wait();
-        }
+        user.WorkspaceId = normalizedWorkspaceId;
+        userManager.UpdateAsync(user).Wait();
     }
 
     if (!userManager.IsInRoleAsync(user, "Admin").Result)
