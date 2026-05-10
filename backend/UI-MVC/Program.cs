@@ -189,6 +189,22 @@ TypeDescriptor.AddAttributes(
 
 var app = builder.Build();
 
+// --- NOOD REDIRECT (HELEMAAL BOVENAAN) ---
+app.Use(async (context, next) =>
+{
+    var host = context.Request.Host.Host;
+    if (context.Request.Path == "/" && 
+        (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
+         host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.WriteLine($"[REDIRECT] Root access on {host}. Redirecting to /login");
+        context.Response.Redirect("/login");
+        return;
+    }
+    await next();
+});
+// ----------------------------------------
+
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
@@ -228,20 +244,7 @@ app.MapControllerRoute(
     pattern: "{controller=Project}/{action=Landing}/{id?}")
     .WithStaticAssets();
 
-app.MapGet("/", context => 
-{
-    var host = context.Request.Host.Host;
-    if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
-        host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
-    {
-        context.Response.Redirect("/login");
-        return Task.CompletedTask;
-    }
-    
-    // Voor subdomeinen: als we op / zitten, stuur door naar Landing
-    context.Response.Redirect("/Project/Landing");
-    return Task.CompletedTask;
-});
+// Verwijder de oude MapGet redirect die we onderaan hadden staan
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
 //app.MapFallbackToController("Index", "Home");
