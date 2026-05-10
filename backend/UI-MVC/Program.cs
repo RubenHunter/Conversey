@@ -24,11 +24,14 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure WebRoot for Production environment (STYLING FIX)
+// Configure WebRoot for absolute stability (STYLING FIX)
+var webRootPath = builder.Environment.IsDevelopment() ? "wwwroot" : "/app/wwwroot";
+builder.WebHost.UseWebRoot(webRootPath);
+
+// Configure Google Cloud Logging in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
-    builder.WebHost.UseWebRoot("/app/wwwroot");
 }
 
 // Add services to the container.
@@ -53,23 +56,33 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// ROBUUST MANIFEST SYSTEEM - CRASHT NOOIT
+// MULTI-LOCATION MANIFEST LOADER (Vite 4 & 5 support)
 var viteManifest = new Dictionary<string, string>();
-var manifestPath = Path.Combine("/app/wwwroot", "manifest.json");
-if (File.Exists(manifestPath))
+var possibleManifestPaths = new[] 
+{ 
+    Path.Combine(webRootPath, "manifest.json"),
+    Path.Combine(webRootPath, ".vite", "manifest.json")
+};
+
+foreach (var path in possibleManifestPaths)
 {
-    try 
+    if (File.Exists(path))
     {
-        var json = File.ReadAllText(manifestPath);
-        using var doc = System.Text.Json.JsonDocument.Parse(json);
-        foreach (var property in doc.RootElement.EnumerateObject())
+        try 
         {
-            if (property.Value.TryGetProperty("file", out var fileProp))
+            var json = File.ReadAllText(path);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            foreach (var property in doc.RootElement.EnumerateObject())
             {
-                viteManifest[property.Name] = fileProp.GetString() ?? "";
+                if (property.Value.TryGetProperty("file", out var fileProp))
+                {
+                    viteManifest[property.Name] = fileProp.GetString() ?? "";
+                }
             }
-        }
-    } catch { /* Failsafe */ }
+            Console.WriteLine($"--- VITE MANIFEST LOADED FROM: {path} ---");
+            break; // Stop after finding the first valid manifest
+        } catch { /* Try next path */ }
+    }
 }
 builder.Services.AddSingleton(viteManifest);
 
