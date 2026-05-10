@@ -24,12 +24,10 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure WebRoot and ContentRoot for absolute stability in Production
+// Configure Google Cloud Logging in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
-    // FORCEER WEBROOT NAAR DE MAP WAAR DOCKER DE BESTANDEN ZET
-    builder.WebHost.UseWebRoot("wwwroot");
 }
 
 // Add services to the container.
@@ -37,7 +35,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages()
     .AddRazorPagesOptions(options =>
     {
-        // BRENG DEZE TERUG - ZE ZIJN NU VEILIG DOOR DE REGEX IN DE CONTROLLER
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
@@ -204,15 +201,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// app.UseHttpsRedirection(); // DISABLED FOR GOOGLE LOAD BALANCER
-
-// STATISCHE BESTANDEN MOETEN ALS ALLEREERSTE
 app.UseStaticFiles(); 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "Assets")),
-    RequestPath = "/Assets"
-});
 
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
