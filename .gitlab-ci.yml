@@ -10,4 +10,4 @@ build-and-push:
     - gcloud config set project $GCP_PROJECT_ID
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
-    - gcloud builds submit --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest backend/ --quiet
+    - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --quiet
