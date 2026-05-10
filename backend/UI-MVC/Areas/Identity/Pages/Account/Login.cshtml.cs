@@ -123,7 +123,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 }
 
                 // Check if user is a ConverseyAdmin
-                if (user is ConverseyAdminUser converseyAdmin)
+                if (await _userManager.IsInRoleAsync(user, "Admin") && user.WorkspaceId == null)
                 {
                     if (_workspaceContext.CurrentWorkspace == null)
                     {
@@ -142,19 +142,16 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                         return Page();
                     }
-                    
-
                 }
 
                 // Check if user is a WorkspaceAdmin
-                if (user is WorkspaceAdminUser workspaceAdmin)
+                if (await _userManager.IsInRoleAsync(user, "Admin") && user.WorkspaceId != null)
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
                     
                     if (workspace == null || 
-                        workspaceAdmin.Workspace == null ||
-                        string.IsNullOrWhiteSpace(workspaceAdmin.Workspace.Id.Text) ||
-                        workspaceAdmin.Workspace.Id != workspace.Id)
+                        user.WorkspaceId == null ||
+                        user.WorkspaceId != workspace.Id)
                     {
                         _logger.LogWarning("Workspace mismatch for login attempt.");
                         await _signInManager.SignOutAsync();

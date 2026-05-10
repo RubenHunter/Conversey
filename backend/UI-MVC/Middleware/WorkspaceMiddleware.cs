@@ -32,7 +32,7 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         }
 
         var subdomain = parts.First();
-        var workspace = workspaceRepository.GetWorkspaceWithProjects(subdomain);
+        var workspace = workspaceRepository.ReadWorkspaceBySlug(Slug.FromName(subdomain));
 
         if (workspace == null)
         {
