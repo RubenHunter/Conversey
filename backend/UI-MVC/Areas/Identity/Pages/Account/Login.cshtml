@@ -1,9 +1,11 @@
 @page
+@using Conversey.UI_MVC.Models
 @model LoginModel
+@inject WorkspaceContext WorkspaceContext
 
 @{
     ViewData["Title"] = "Log in";
-    var workspaceName = "Conversey Portal";
+    var workspaceName = WorkspaceContext.CurrentWorkspace?.Name ?? "Conversey Portal";
 }
 
 <div class="min-h-screen flex items-center justify-center px-4 py-12 bg-cover bg-center bg-no-repeat relative overflow-hidden" 
