@@ -19,8 +19,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
+using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Google Cloud Logging in Production
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddGoogleCloudConsole();
+}
 // const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
@@ -240,7 +247,7 @@ void InitializeDatabase(bool drop)
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
-        if (created)
+        if (created || !dbCtx.Workspaces.Any())
         {
             DataSeeder.Seed(dbCtx);
         }

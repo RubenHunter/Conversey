@@ -33,8 +33,8 @@ COPY --from=client-build /src/UI-MVC/wwwroot ./UI-MVC/wwwroot
 RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClientBuild=true
 
 # 3. Final Image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+RUN apk add --no-cache curl
 WORKDIR /app
 COPY --from=build /app/publish .
 
