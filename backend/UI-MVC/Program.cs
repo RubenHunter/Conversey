@@ -243,7 +243,13 @@ void InitializeDatabase(bool drop)
     {
         var services = scope.ServiceProvider;
         var dbCtx = services.GetRequiredService<ConverseyDbContext>();
-        var created = dbCtx.CreateDatabase(drop);
+        
+        if (drop)
+        {
+            dbCtx.Database.EnsureDeleted();
+        }
+        dbCtx.Database.EnsureCreated();
+
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedIdentity(userManager, roleManager);
