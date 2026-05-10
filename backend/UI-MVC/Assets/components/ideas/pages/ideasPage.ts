@@ -1,4 +1,4 @@
-import '../../../styles/pages/ideas.css'
+// CSS imported globally in main.css
 //import type { RouteParams } from '../../utils/router'
 import { getProject } from '../../../services/projectService'
 import {
