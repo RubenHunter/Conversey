@@ -224,6 +224,16 @@ app.MapControllerRoute(
     pattern: "{controller=Project}/{action=Landing}/{id?}")
     .WithStaticAssets();
 
+app.MapGet("/", context => 
+{
+    if (context.Request.Host.Host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/login");
+        return Task.CompletedTask;
+    }
+    return Task.CompletedTask;
+});
+
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
 //app.MapFallbackToController("Index", "Home");
 
