@@ -54,10 +54,9 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// Voorkom 500 errors als manifest niet klopt in productie
+// Configureer Vite voor productie op Google Cloud
 builder.Services.Configure<ViteOptions>(options => {
     options.Base = "/";
-    // Forceer dat we niet crashen op missende bestanden
 });
 
 // Add repositories
