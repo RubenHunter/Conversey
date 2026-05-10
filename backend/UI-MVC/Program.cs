@@ -54,10 +54,25 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// Configureer Vite voor productie op Google Cloud
-builder.Services.Configure<ViteOptions>(options => {
-    options.Base = "/";
-});
+// NUCLEAR OPTION: Handmatig manifest inladen voor 100% stabiliteit
+var manifestPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "manifest.json");
+var viteManifest = new Dictionary<string, string>();
+if (File.Exists(manifestPath))
+{
+    try 
+    {
+        var json = File.ReadAllText(manifestPath);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        foreach (var property in doc.RootElement.EnumerateObject())
+        {
+            if (property.Value.TryGetProperty("file", out var fileProp))
+            {
+                viteManifest[property.Name] = fileProp.GetString() ?? "";
+            }
+        }
+    } catch { /* Failsafe */ }
+}
+builder.Services.AddSingleton(viteManifest);
 
 // Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();

@@ -6,13 +6,13 @@
     <title>@ViewData["Title"]</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Conversey_logo.png" />
 
-    <script type="module" vite-src="~/main.ts"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-    
-    
-
-    <script type="module" vite-src="~/main.ts" asp-append-version="true"></script>
-    <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
+    @inject Dictionary<string, string> Manifest
+    @{
+        var cssFile = Manifest.GetValueOrDefault("main.css", "main.css");
+        var jsFile = Manifest.GetValueOrDefault("main.ts", "main.ts");
+    }
+    <link rel="stylesheet" href="/@cssFile" />
+    <script type="module" src="/@jsFile"></script>
 </head>
 <body>
 	<div id="app" class="min-h-screen flex flex-col items-center justify-center gap-8">
