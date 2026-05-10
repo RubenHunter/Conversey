@@ -24,7 +24,7 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure WebRoot for absolute stability (STYLING FIX)
+// Configure WebRoot for absolute stability
 var webRootPath = builder.Environment.IsDevelopment() ? "wwwroot" : "/app/wwwroot";
 builder.WebHost.UseWebRoot(webRootPath);
 
@@ -56,33 +56,49 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// MULTI-LOCATION MANIFEST LOADER (Vite 4 & 5 support)
+// DEEP SEARCH MANIFEST LOADER (Nuclear Option)
 var viteManifest = new Dictionary<string, string>();
-var possibleManifestPaths = new[] 
-{ 
-    Path.Combine(webRootPath, "manifest.json"),
-    Path.Combine(webRootPath, ".vite", "manifest.json")
-};
+string? foundManifestPath = null;
 
-foreach (var path in possibleManifestPaths)
+void SearchForManifest(string dir)
 {
-    if (File.Exists(path))
+    if (foundManifestPath != null) return;
+    try 
     {
-        try 
+        var files = Directory.GetFiles(dir, "manifest.json", SearchOption.AllDirectories);
+        if (files.Length > 0)
         {
-            var json = File.ReadAllText(path);
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            foreach (var property in doc.RootElement.EnumerateObject())
+            foundManifestPath = files[0];
+            return;
+        }
+    } catch { }
+}
+
+// Check common root paths
+SearchForManifest("/app");
+if (foundManifestPath == null) SearchForManifest(Directory.GetCurrentDirectory());
+
+if (foundManifestPath != null)
+{
+    try 
+    {
+        var json = File.ReadAllText(foundManifestPath);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        foreach (var property in doc.RootElement.EnumerateObject())
+        {
+            if (property.Value.TryGetProperty("file", out var fileProp))
             {
-                if (property.Value.TryGetProperty("file", out var fileProp))
-                {
-                    viteManifest[property.Name] = fileProp.GetString() ?? "";
-                }
+                viteManifest[property.Name] = fileProp.GetString() ?? "";
             }
-            Console.WriteLine($"--- VITE MANIFEST LOADED FROM: {path} ---");
-            break; // Stop after finding the first valid manifest
-        } catch { /* Try next path */ }
+        }
+        Console.WriteLine($"--- SUCCESS: VITE MANIFEST LOADED FROM {foundManifestPath} ---");
+    } catch (Exception ex) {
+        Console.WriteLine($"--- ERROR LOADING MANIFEST: {ex.Message} ---");
     }
+}
+else 
+{
+    Console.WriteLine("--- CRITICAL: NO manifest.json FOUND IN /app OR SUBDIRECTORIES ---");
 }
 builder.Services.AddSingleton(viteManifest);
 
