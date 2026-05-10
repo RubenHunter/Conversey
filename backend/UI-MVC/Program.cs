@@ -50,7 +50,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-builder.Services.AddViteServices();
+builder.Services.AddViteServices(options => {
+    options.Server.AutoRun = false; // Forceer uit in productie
+});
 
 // Voorkom 500 errors als manifest niet klopt in productie
 builder.Services.Configure<ViteOptions>(options => {
