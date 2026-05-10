@@ -222,8 +222,9 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+Console.WriteLine("--- SERVER STARTED SUCCESSFULLY ---");
 
 if (app.Environment.IsDevelopment())
 {
