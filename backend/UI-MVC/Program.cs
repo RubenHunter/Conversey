@@ -196,9 +196,11 @@ app.UseForwardedHeaders();
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
+// TIJDELIJK AAN VOOR DIAGNOSE OP PRODUCTION
+app.UseDeveloperExceptionPage();
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    // app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
