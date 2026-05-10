@@ -67,4 +67,8 @@
     <!-- Build the final assets -->
     <Exec Command="pnpm run build" />
   </Target>
+  <ItemGroup>
+    <Content Include="wwwroot\**" CopyToPublishDirectory="Always" />
+    <Content Include="Assets\**" CopyToPublishDirectory="Always" />
+  </ItemGroup>
 </Project>

@@ -24,19 +24,12 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Google Cloud Logging first
+// Configure Google Cloud Logging in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
+    builder.WebHost.UseWebRoot("/app/wwwroot");
 }
-
-// DYNAMISCHE WEBROOT DETECTIE
-var webRootPath = builder.Environment.ContentRootPath;
-if (Directory.Exists("/app/wwwroot")) webRootPath = "/app/wwwroot";
-else if (Directory.Exists("wwwroot")) webRootPath = Path.GetFullPath("wwwroot");
-
-builder.WebHost.UseWebRoot(webRootPath);
-Console.WriteLine($"--- ACTIVE WEBROOT: {webRootPath} ---");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -48,6 +41,7 @@ builder.Services.AddRazorPages()
         options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
     });
 
+// Configure Forwarded Headers for Google Cloud Load Balancer
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -59,89 +53,111 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// NUCLEAR FILE LISTING (For debugging only)
-try 
-{
-    Console.WriteLine("--- LISTING FILES IN /app ---");
-    var files = Directory.GetFiles("/app", "*.*", SearchOption.AllDirectories).Take(50);
-    foreach (var f in files) Console.WriteLine($"FILE: {f}");
-} catch { }
-
-// ROBUUST MANIFEST LOADER
+// ROBUUST MANIFEST LOADER (Supports Vite 4 & 5)
 var viteManifest = new Dictionary<string, string>();
-string? manifestFile = null;
-try 
-{
-    var candidates = Directory.GetFiles("/app", "manifest.json", SearchOption.AllDirectories);
-    if (candidates.Length > 0) manifestFile = candidates[0];
-} catch { }
+var webRoot = builder.Environment.WebRootPath ?? "wwwroot";
+var possiblePaths = new[] 
+{ 
+    Path.Combine(webRoot, "manifest.json"),
+    Path.Combine(webRoot, ".vite", "manifest.json")
+};
 
-if (manifestFile != null)
+foreach (var path in possiblePaths)
 {
-    try 
+    if (File.Exists(path))
     {
-        var json = File.ReadAllText(manifestFile);
-        using var doc = System.Text.Json.JsonDocument.Parse(json);
-        foreach (var property in doc.RootElement.EnumerateObject())
+        try 
         {
-            if (property.Value.TryGetProperty("file", out var fileProp))
+            var json = File.ReadAllText(path);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            foreach (var property in doc.RootElement.EnumerateObject())
             {
-                viteManifest[property.Name] = fileProp.GetString() ?? "";
+                if (property.Value.TryGetProperty("file", out var fileProp))
+                {
+                    viteManifest[property.Name] = fileProp.GetString() ?? "";
+                }
             }
-        }
-        Console.WriteLine($"--- SUCCESS: MANIFEST LOADED FROM {manifestFile} ---");
-    } catch { }
+            Console.WriteLine($"--- VITE MANIFEST LOADED FROM: {path} ---");
+            break; 
+        } catch { }
+    }
 }
 builder.Services.AddSingleton(viteManifest);
 
-// Repositories & Managers
+// Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+
+// Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default") ?? "Host=localhost;Database=devdb;Username=devuser;Password=devpass")
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default")
+        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
+// Add health checks for Docker
 builder.Services.AddHealthChecks();
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+{
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequiredLength = 6;
-}).AddRoles<IdentityRole>().AddEntityFrameworkStores<ConverseyDbContext>();
+})
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ConverseyDbContext>();
 
-builder.Services.ConfigureApplicationCookie(options => {
+builder.Services.ConfigureApplicationCookie(options =>
+{
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/access-denied";
     options.LogoutPath = "/logout";
 });
 
 builder.Services.AddAuthentication();
-builder.Services.AddAuthorization(options => {
-    options.AddPolicy(WorkspaceAdminPolicy.Name, policy => {
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
+    {
         policy.RequireAuthenticatedUser();
         policy.RequireRole("Admin");
         policy.AddRequirements(new WorkspaceAdminRequirement());
     });
 });
 
-builder.Services.AddHttpClient("MistralAPI", (sp, client) => {
+builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
+{
     var config = sp.GetRequiredService<IConfiguration>();
     client.BaseAddress = new Uri("https://api.mistral.ai/v1/");
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
     var apiKey = config["AI:Mistral:ApiKey"];
-    if (!string.IsNullOrWhiteSpace(apiKey)) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+    if (!string.IsNullOrWhiteSpace(apiKey))
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+    }
 });
 
-builder.Services.AddScoped<IAiManager>(provider => {
+builder.Services.AddScoped<IAiManager>(provider =>
+{
     var config = provider.GetRequiredService<IConfiguration>();
     var providerName = (config["AI:Provider"] ?? "Noop").Trim();
-    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase)) {
-        var aiConfig = new AiManagerConfig { ApiKey = config["AI:Mistral:ApiKey"], CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest" };
+
+    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        var apiKey = config["AI:Mistral:ApiKey"];
+        var aiConfig = new AiManagerConfig
+        {
+            ApiKey = apiKey,
+            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest"
+        };
         return new MistralAiManager(provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI"), aiConfig);
     }
     return new NoopAiManager();
@@ -152,46 +168,72 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 
-TypeDescriptor.AddAttributes(typeof(Slug), new TypeConverterAttribute(typeof(SlugTypeConverter)));
+TypeDescriptor.AddAttributes(
+    typeof(Slug),
+    new TypeConverterAttribute(typeof(SlugTypeConverter))
+);
 
 var app = builder.Build();
+
 app.UseForwardedHeaders();
 
 InitializeDatabase(builder.Configuration.GetValue<bool>("Database:ResetOnStart"));
 
-if (!app.Environment.IsDevelopment()) {
+if (!app.Environment.IsDevelopment())
+{
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
 app.UseStaticFiles(); 
+
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapRazorPages();
 app.MapHealthChecks("/health");
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+Console.WriteLine("--- SERVER STARTED SUCCESSFULLY ---");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebSockets();
+    app.UseViteDevelopmentServer(useMiddleware: false);
+}
 
 app.Run();
 
-void InitializeDatabase(bool drop) {
-    using var scope = app.Services.CreateScope();
-    var dbCtx = scope.ServiceProvider.GetRequiredService<ConverseyDbContext>();
-    if (drop) dbCtx.Database.EnsureDeleted();
-    dbCtx.Database.EnsureCreated();
-    SeedIdentity(scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(), scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>());
-    if (!dbCtx.Workspaces.Any()) DataSeeder.Seed(dbCtx);
+void InitializeDatabase(bool drop)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var dbCtx = services.GetRequiredService<ConverseyDbContext>();
+        if (drop) dbCtx.Database.EnsureDeleted();
+        dbCtx.Database.EnsureCreated();
+        SeedIdentity(services.GetRequiredService<UserManager<ApplicationUser>>(), services.GetRequiredService<RoleManager<IdentityRole>>());
+        if (!dbCtx.Workspaces.Any()) DataSeeder.Seed(dbCtx);
+    }
 }
 
-void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager) {
+void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+{
     if (!roleManager.RoleExistsAsync("Admin").Result) roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
 }
 
-void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId) {
+void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
+{
     var user = userManager.FindByEmailAsync(email).Result;
-    if (user == null) {
+    if (user == null)
+    {
         user = new ApplicationUser { Email = email, UserName = email, EmailConfirmed = true, WorkspaceId = Slug.FromName(workspaceId) };
         userManager.CreateAsync(user, "Test123!").Wait();
     }
