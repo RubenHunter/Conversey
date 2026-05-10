@@ -41,8 +41,6 @@
     <Content Remove="Assets\*.jpg" />
     <Content Remove="Assets\*.gif" />
     <None Update="Assets\*.ico;Assets\*.svg;Assets\*.png;Assets\*.jpg;Assets\*.gif">
-      <Link>wwwroot\%(Filename)%(Extension)</Link>
-      <TargetPath>wwwroot\%(Filename)%(Extension)</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>

@@ -32,7 +32,8 @@ public static class DataSeeder
             Status = Status.Active,
             StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
-            InteractionForm = InteractionType.Chat,
+            NudgingStrength = 3,
+            InteractionForm = InteractionType.UserDefined,
             Workspace = hogeschool
         };
         mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
@@ -287,6 +288,114 @@ public static class DataSeeder
         Topic = topics[0],
         Youth = students[2],
         SemanticCategories = new[] { "curriculum-design", "study-load", "transparency" }
+    },
+    new()
+    {
+        Content = "Introduceer een 'mentaal welzijn buddy' systeem waarbij eerstejaars gekoppeld worden aan ervaren studenten.",
+        Summary = "Buddy systeem mentaal welzijn",
+        SubmissionDate = now.AddDays(-2),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[3],
+        SemanticCategories = new[] { "study-load", "campus-community", "support-services" }
+    },
+    new()
+    {
+        Content = "Zorg voor meer fysieke activiteit op school door werkstations met loopbanden op strategische plekken.",
+        Summary = "Loopbanden werkstations",
+        SubmissionDate = now.AddDays(-1),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[0],
+        SemanticCategories = new[] { "mental-health", "campus-community", "focus-productivity" }
+    },
+    new()
+    {
+        Content = "Maak meditatie en mindfulness apps beschikbaar met korte sessies die passen in lunchmomenten.",
+        Summary = "Mindfulness apps beschikbaar",
+        SubmissionDate = now.AddDays(1),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[4],
+        SemanticCategories = new[] { "digital-learning", "mental-health", "stress-reduction" }
+    },
+    new()
+    {
+        Content = "Organiseer 'stress-free lijstjes' waar studenten hun learning goals kunnen uploaden en feedback krijgen van docenten.",
+        Summary = "Stress-free lijstjes feedback",
+        SubmissionDate = now.AddDays(2),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[5],
+        SemanticCategories = new[] { "curriculum-design", "study-load", "support-services" }
+    },
+    new()
+    {
+        Content = "Creëer anonieme 'stress-o-meter' waar studenten kunnen aangeven hoe ze zich voelen zonder gegevens in te vullen.",
+        Summary = "Anonieme stress-o-meter",
+        SubmissionDate = now.AddDays(3),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[6],
+        SemanticCategories = new[] { "mental-health", "campus-community", "transparency" }
+    },
+    new()
+    {
+        Content = "Bied financiële ondersteuning of kortingen voor mentale gezondheidsapps en wellnessprogramma's voor studenten.",
+        Summary = "Financiële ondersteuning wellness",
+        SubmissionDate = now.AddDays(4),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[7],
+        SemanticCategories = new[] { "support-services", "mental-health", "work-life-balance" }
+    },
+    new()
+    {
+        Content = "Start een studentenresearchproject waarbij jongeren zelf onderzoeken wat hun welzijn verbetert.",
+        Summary = "Studentenresearch welzijn",
+        SubmissionDate = now.AddDays(5),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[1],
+        SemanticCategories = new[] { "curriculum-design", "campus-community", "transparency" }
+    },
+    new()
+    {
+        Content = "Maak doelgerichte workshops beschikbaar over slaaphygiëne, voeding en andere factoren die mentaal welzijn beïnvloeden.",
+        Summary = "Workshops slaap en voeding",
+        SubmissionDate = now.AddDays(6),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[2],
+        SemanticCategories = new[] { "mental-health", "support-services", "work-life-balance" }
+    },
+    new()
+    {
+        Content = "Introduceer een 'mentale gezondheidsweek' elk semester met diverse activiteiten en laagdrempelige hulpaanbiedingen.",
+        Summary = "Jaarlijkse mentale gezondheidsweek",
+        SubmissionDate = now.AddDays(7),
+        Status = ModerationStatus.Approved,
+        ModerationInfo = new ModerationInfo(),
+        Project = mentaalWelzijnActieplan,
+        Topic = topics[0],
+        Youth = students[3],
+        SemanticCategories = new[] { "mental-health", "campus-community", "support-services" }
     }
 };
 
@@ -428,7 +537,8 @@ public static class DataSeeder
             Status = Status.Active,
             StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
-            InteractionForm = InteractionType.Chat,
+            NudgingStrength = 4,
+            InteractionForm = InteractionType.UserDefined,
             Workspace = stadLinden
         };
         vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
