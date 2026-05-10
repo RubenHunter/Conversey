@@ -198,19 +198,6 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// --- ROOT REDIRECT (BOVENAAN) ---
-app.Use(async (context, next) =>
-{
-    var host = context.Request.Host.Host;
-    if (context.Request.Path == "/" && 
-        (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
-         host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase)))
-    {
-        context.Response.Redirect("/login");
-        return;
-    }
-    await next();
-});
 InitializeDatabase(resetDatabaseOnStart);
 
 // Configure the HTTP request pipeline.
