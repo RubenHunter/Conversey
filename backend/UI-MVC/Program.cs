@@ -196,21 +196,7 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// --- NOOD REDIRECT (HELEMAAL BOVENAAN) ---
-app.Use(async (context, next) =>
-{
-    var host = context.Request.Host.Host;
-    if (context.Request.Path == "/" && 
-        (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
-         host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase)))
-    {
-        Console.WriteLine($"[REDIRECT] Root access on {host}. Redirecting to /login");
-        context.Response.Redirect("/login");
-        return;
-    }
-    await next();
-});
-// ----------------------------------------
+// Verwijder de nood-redirect, HomeController handelt dit nu af
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);

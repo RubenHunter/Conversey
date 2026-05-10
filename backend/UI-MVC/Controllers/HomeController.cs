@@ -1,25 +1,22 @@
-using Conversey.UI_MVC.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers;
 
-public class HomeController(WorkspaceContext workspaceContext) : Controller
+public class HomeController : Controller
 {
-    [HttpGet("/")]
+    [Route("/")]
     public IActionResult Index()
     {
-        var workspace = workspaceContext.CurrentWorkspace;
-        if (workspace == null)
+        string host = Request.Host.Host;
+        
+        // Als we op het hoofddomein zijn, ga naar login
+        if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
+            host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound("Workspace not found.");
+            return RedirectToAction("Login", "Account", new { area = "Identity" });
         }
 
-        var firstProject = workspace.Projects?.FirstOrDefault();
-        if (firstProject == null)
-        {
-            return NotFound($"No projects found for workspace: {workspace.Name}");
-        }
-
-        return RedirectToAction("Survey", "Project", new { projectId = firstProject.Id.Text });
+        // Anders (subdomein), ga naar de landing pagina
+        return RedirectToAction("Landing", "Project");
     }
 }
