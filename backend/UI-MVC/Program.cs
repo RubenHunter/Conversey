@@ -49,6 +49,8 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IPromptRepository, PromptRepository>();
+builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -56,6 +58,7 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
+builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -124,14 +127,23 @@ builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 builder.Services.AddScoped<IAiManager>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
-    var providerName = (config["AI:Provider"] ?? "Noop").Trim();
+    var appsettingsProviderName = (config["AI:Provider"] ?? "Noop").Trim();
 
-    if (providerName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var activeDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled);
+
+    if (activeDbConfig != null)
+    {
+        return BuildAiManagerFromDbConfig(provider, activeDbConfig);
+    }
+
+    if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
     {
         return new NoopAiManager();
     }
 
-    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -139,33 +151,18 @@ builder.Services.AddScoped<IAiManager>(provider =>
             throw new InvalidOperationException("AI provider is set to Mistral but AI:Mistral:ApiKey is missing.");
         }
 
-        var aiConfig = new AiManagerConfig
-        {
-            ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-            NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
-        };
+        var completionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest";
+        var moderationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest";
 
-        provider.GetRequiredService<AiManagerConfig>();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
+        var promptRepo = provider.GetRequiredService<IPromptRepository>();
+        var auditRepo = provider.GetRequiredService<IAuditRepository>();
 
-        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
+        return new AiManager(mistralProvider, promptRepo, auditRepo, completionsModel, moderationModel);
     }
 
-    throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
-});
-
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    return new AiManagerConfig
-    {
-        ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
-        CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-        ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-        NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
-    };
+    throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
@@ -334,4 +331,51 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
     {
         userManager.AddToRoleAsync(user, role).Wait();
     }
+}
+
+static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = string.IsNullOrWhiteSpace(config.BaseUrl)
+        ? new Uri("https://api.mistral.ai/v1/")
+        : new Uri(config.BaseUrl);
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    IAiProvider aiProvider;
+
+    if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+
+        aiProvider = new AzureOpenAiProvider(httpClient, config.CompletionsModel, config.ApiVersion);
+    }
+    else if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new MistralAiProvider(httpClient);
+    }
+    else
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new OpenAiCompatibleProvider(httpClient, config.ProviderName);
+    }
+
+    var promptRepo = provider.GetRequiredService<IPromptRepository>();
+    var auditRepo = provider.GetRequiredService<IAuditRepository>();
+    var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
+    var moderationModel = string.IsNullOrWhiteSpace(config.ModerationModel) ? "mistral-moderation-latest" : config.ModerationModel;
+
+    return new AiManager(aiProvider, promptRepo, auditRepo, completionsModel, moderationModel, config.Temperature);
 }

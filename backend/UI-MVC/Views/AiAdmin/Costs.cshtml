@@ -1,0 +1,89 @@
+@model IReadOnlyCollection<Conversey.BL.Domain.Ai.AiAuditLog>
+@{
+    ViewData["Title"] = "AI Costs &amp; Audit Log";
+    var totalCost = Model.Sum(log => log.Cost);
+    var totalCalls = Model.Count;
+    var totalInputTokens = Model.Sum(log => log.InputTokens);
+    var totalOutputTokens = Model.Sum(log => log.OutputTokens);
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">AI Costs &amp; Audit Log</h1>
+                <p class="mt-1 text-sm text-gray-500">Monitor AI API usage, token consumption, and costs.</p>
+            </div>
+            <a href="@Url.Action("Index")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to AI Management</a>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <h3 class="text-xs font-semibold uppercase text-gray-500">Total Cost</h3>
+                <p class="mt-1 text-xl font-bold text-gray-900">@totalCost.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("nl-BE"))</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <h3 class="text-xs font-semibold uppercase text-gray-500">Total Calls</h3>
+                <p class="mt-1 text-xl font-bold text-gray-900">@totalCalls</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <h3 class="text-xs font-semibold uppercase text-gray-500">Input Tokens</h3>
+                <p class="mt-1 text-xl font-bold text-gray-900">@totalInputTokens.ToString("N0")</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <h3 class="text-xs font-semibold uppercase text-gray-500">Output Tokens</h3>
+                <p class="mt-1 text-xl font-bold text-gray-900">@totalOutputTokens.ToString("N0")</p>
+            </div>
+        </div>
+
+        <div class="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 px-6 py-4">
+                <h2 class="text-sm font-semibold text-gray-900">Audit Log</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Model</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Prompt</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Input Tokens</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Output Tokens</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Cost</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">No AI calls recorded yet.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model)
+                            {
+                                <tr class="hover:bg-gray-50">
+                                    <td class="whitespace-nowrap px-6 py-3 text-gray-700">
+                                        <div class="text-xs">@log.StartTime.ToString("yyyy-MM-dd HH:mm")</div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-gray-700">
+                                        <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono">@log.ModelName</span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-gray-500">@log.ModelType</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-gray-500">@log.PromptName</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-gray-500">@log.InputTokens.ToString("N0")</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-gray-500">@log.OutputTokens.ToString("N0")</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-gray-500">@log.Cost.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("nl-BE"))</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-gray-500">@(log.Duration.TotalSeconds < 1 ? "< 1s" : $"{log.Duration.TotalSeconds:F1}s")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

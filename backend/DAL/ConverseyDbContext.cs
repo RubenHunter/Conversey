@@ -28,6 +28,8 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<Answer> Answers { get; set; }
     public DbSet<AiAuditLog>  AiAuditLogs { get; set; }
+    public DbSet<AiPrompt>  AiPrompts { get; set; }
+    public DbSet<AiProviderConfig>  AiProviderConfigs { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {

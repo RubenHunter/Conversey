@@ -1,116 +1,63 @@
-using Microsoft.Extensions.AI;
+using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.BL.Ai;
 
 public sealed class NoopAiManager : IAiManager
 {
-    private static readonly string[] UnsafeTerms =
+    private static readonly HashSet<string> UnsafeTerms = new(StringComparer.OrdinalIgnoreCase)
     {
-        "retarded",
-        "moron",
-        "dumbass",
-        "dumb ass",
-        "fucking"
+        "retarded", "moron", "dumbass", "dumb ass", "fucking"
     };
 
-    public void Dispose()
+    private static readonly Dictionary<string, (int minWords, string placeholder)> NudgeThresholds = new()
     {
-    }
+        ["Minimal"] = (0, "Can you say a bit more about this idea?"),
+        ["Light"] = (4, "Can you make this idea a bit more specific for this topic?"),
+        ["Medium"] = (8, "Can you elaborate on why this matters and who would benefit?"),
+        ["Strong"] = (10, "What is the concrete impact of this idea and who exactly would it help?"),
+        ["Deep"] = (14, "Can you provide specific details, evidence, or a concrete scenario that supports this idea?"),
+    };
 
-    public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-        CancellationToken cancellationToken = default)
-    {
-        var response = new ChatResponse(new ChatMessage(ChatRole.Assistant, "AI integration is currently disabled."));
-        return Task.FromResult(response);
-    }
-
-    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages,
-        ChatOptions options = null, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        await Task.CompletedTask;
-        yield break;
-    }
-
-    public object GetService(Type serviceType, object serviceKey = null)
-    {
-        return null;
-    }
-
-    public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
+    public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
     {
         return Task.FromResult("Please rephrase your message in a respectful way.");
     }
 
-    public Task<ModerationDecision> ModerateContent(string content)
+    public Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        var normalized = (content ?? string.Empty).Trim().ToLowerInvariant();
-        var containsUnsafeLanguage = UnsafeTerms.Any(term => normalized.Contains(term));
+        var unsafeTerm = UnsafeTerms.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        var isAllowed = unsafeTerm == null;
 
         return Task.FromResult(new ModerationDecision
         {
-            IsAllowed = !containsUnsafeLanguage,
-            Suggestion = containsUnsafeLanguage ? "Please rephrase your idea in a respectful and constructive way." : null
+            IsAllowed = isAllowed,
+            Categories = new ModerationInfo()
         });
     }
 
-    public Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+    public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
     {
-        var ideaText = (request.IdeaText ?? string.Empty).Trim();
-        var mode = (request.NudgingMode ?? string.Empty).Trim().ToLowerInvariant();
-        var wordCount = ideaText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
-        var isPlaceholder = string.IsNullOrWhiteSpace(ideaText)
-            || ideaText.Equals("idk", StringComparison.OrdinalIgnoreCase)
-            || ideaText.Equals("test123", StringComparison.OrdinalIgnoreCase);
-        var hasConcreteSubject = wordCount >= 4;
-        var hasWhatAndWhy = wordCount >= 8;
-        var hasContextOrImpact = wordCount >= 10;
-        var hasDeepElaboration = wordCount >= 14;
-
-        var minimalApproval = mode is "minimal" or "lenient" or "verylenient" or "acceptable";
-        if (!isPlaceholder && minimalApproval)
+        var mode = (request.NudgingMode ?? "Medium").Trim();
+        if (!NudgeThresholds.TryGetValue(mode, out var threshold))
         {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
+            threshold = NudgeThresholds["Medium"];
         }
 
-        if (!isPlaceholder && mode is "light" or "gentle")
-        {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = hasConcreteSubject });
-        }
+        var wordCount = (request.IdeaText ?? string.Empty)
+            .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+            .Length;
 
-        if (!isPlaceholder && mode is "medium" or "balanced" or "guided")
-        {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = hasWhatAndWhy });
-        }
-
-        if (!isPlaceholder && mode is "strong" or "strict" or "thorough")
-        {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = hasContextOrImpact });
-        }
-
-        if (!isPlaceholder && mode is "deep" or "relentless")
-        {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = hasDeepElaboration });
-        }
-
-        var topicTitle = string.IsNullOrWhiteSpace(request.TopicTitle) ? "this topic" : request.TopicTitle.Trim();
-        var projectTitle = string.IsNullOrWhiteSpace(request.ProjectTitle) ? "this project" : request.ProjectTitle.Trim();
-        var question = mode switch
-        {
-            "deep" or "relentless" => $"What evidence, example, or concrete scenario shows your idea would improve {topicTitle} in {projectTitle}?",
-            "strong" or "strict" or "thorough" => $"What concrete impact do you expect from this idea for {topicTitle}, and for whom?",
-            "medium" or "balanced" or "guided" => $"Can you explain what exactly should change and why that would help for {topicTitle}?",
-            "light" or "gentle" => $"What concrete part of {topicTitle} are you proposing to improve?",
-            _ => $"Could you make this idea a bit more specific for {topicTitle}?"
-        };
+        var isApproved = wordCount >= threshold.minWords;
+        var question = isApproved ? null : threshold.placeholder;
 
         return Task.FromResult(new IdeaNudgeDecision
         {
-            IsApproved = false,
-            Question = question,
+            IsApproved = isApproved,
+            Question = question
         });
     }
 
-    public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
@@ -126,12 +73,12 @@ public sealed class NoopAiManager : IAiManager
         return Task.FromResult(ordered.Take(limit));
     }
 
-    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
     {
         var result = new Dictionary<int, IReadOnlyList<string>>();
         var canonicalExisting = existingCategories
-            .Select(category => (category ?? string.Empty).Trim())
-            .Where(category => category.Length > 0)
+            .Select(c => (c ?? string.Empty).Trim())
+            .Where(c => c.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -141,7 +88,7 @@ public sealed class NoopAiManager : IAiManager
             var categories = new List<string>();
 
             if (text.Contains("stress") || text.Contains("druk") || text.Contains("exam") || text.Contains("deadline"))
-                categories.Add("Study pressure");
+                categories.Add("Study Pressure");
             if (text.Contains("coach") || text.Contains("support") || text.Contains("psych") || text.Contains("help"))
                 categories.Add("Support services");
             if (text.Contains("campus") || text.Contains("group") || text.Contains("peer") || text.Contains("connected"))
@@ -161,25 +108,13 @@ public sealed class NoopAiManager : IAiManager
                 }
             }
 
-            if (canonicalExisting.Count > 0)
-            {
-                var reused = canonicalExisting
-                    .Where(existing => categories.Any(category => NormalizeCategoryKey(category) == NormalizeCategoryKey(existing)))
-                    .Take(Math.Max(1, maxCategoriesPerIdea))
-                    .ToList();
-
-                if (reused.Count > 0)
-                {
-                    result[index] = reused.AsReadOnly();
-                    continue;
-                }
-            }
-
-            result[index] = categories
+            var normalized = categories
+                .Select(c => canonicalExisting.FirstOrDefault(existing => NormalizeCategoryKey(existing) == NormalizeCategoryKey(c)) ?? c)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(Math.Max(1, maxCategoriesPerIdea))
-                .ToList()
-                .AsReadOnly();
+                .ToList();
+
+            result[index] = normalized.AsReadOnly();
         }
 
         return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
@@ -193,4 +128,3 @@ public sealed class NoopAiManager : IAiManager
             .ToArray());
     }
 }
-

@@ -1,4 +1,5 @@
 using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
@@ -863,6 +864,85 @@ public static class DataSeeder
 
         context.ResponseReactions.AddRange(cityReactions);
 
+        SeedAiPrompts(context, now);
+
         context.SaveChanges();
+    }
+
+    private static void SeedAiPrompts(ConverseyDbContext context, DateTime now)
+    {
+        if (context.AiPrompts.Any())
+        {
+            return;
+        }
+
+        var prompts = new List<AiPrompt>
+        {
+            new()
+            {
+                Name = "ModerationGenerateAlternative",
+                SystemPrompt = "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text.",
+                UserPromptTemplate = "{{IdeaText}}",
+                Description = "System prompt for generating a respectful alternative when content is flagged by moderation.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingSystem",
+                SystemPrompt = "You help youth improve the quality of their idea before publishing. Ask exactly one concrete follow-up question when the idea is too shallow, vague, or underspecified. If the idea is already acceptable for the configured nudging strength, approve it. Never invent multiple questions. Return strict JSON only with the shape {\"isApproved\":true} or {\"isApproved\":false,\"question\":\"...\"}. Nudging strength: {{NudgingModeDescription}}.",
+                UserPromptTemplate = "",
+                Description = "System prompt for the idea quality nudging assessment. NudgingModeDescription is injected based on the project's nudging strength setting.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Project title: {{ProjectTitle}}\nProject description: {{ProjectDescription}}\nTopic title: {{TopicTitle}}\nTopic prompt/question: {{TopicPrompt}}\n\nCurrent idea draft:\n{{IdeaText}}\n\nConversation so far:\n{{Conversation}}\n\nDecide whether the draft is ready. If not, ask one follow-up question that is specific to this idea and helps deepen it using the project and topic context.",
+                Description = "User prompt template for idea nudging. Contains the idea draft, project/topic context, and previous conversation turns.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingSystem",
+                SystemPrompt = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive.",
+                UserPromptTemplate = "",
+                Description = "System prompt for ranking ideas by semantic similarity or difference.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Reference idea:\n{{ReferenceIdea}}\n\nCandidate ideas (use only these indexes):\n{{Candidates}}\n\nTask:\n- {{RelationGoal}}\n- Return up to {{Limit}} indexes, ordered from best to least fitting for this relation.\n- Do not invent indexes.\n- Return strict JSON only with this schema:\n{\"rankedIndexes\":[0,1,2]}",
+                Description = "User prompt template for ranking ideas. Contains reference idea, candidates with indexes, relation goal, and limit.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationSystem",
+                SystemPrompt = "You assign semantic categories to youth ideas. Return only strict JSON.",
+                UserPromptTemplate = "",
+                Description = "System prompt for assigning semantic category labels to ideas.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Categorize each idea semantically. One idea may belong to multiple categories.\n\nThese are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:\n{{ExistingCategories}}\n\nIdeas:\n{{Ideas}}\n\nRules:\n- Use short, human-readable category names.\n- Max {{MaxCategoriesPerIdea}} categories per idea.\n- Prefer reusing an existing category label when it is semantically close enough.\n- Avoid near-duplicate labels when an existing category already covers the same meaning.\n- Do not invent idea indexes.\n- Avoid creating near-duplicate labels if an existing category already fits.\n- Return strict JSON only in this shape:\n{\"items\":[{\"index\":0,\"categories\":[\"Category A\",\"Category B\"]}]}",
+                Description = "User prompt template for idea categorization. Contains index-labeled ideas, existing category labels, and max categories per idea.",
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.AiPrompts.AddRange(prompts);
     }
 }

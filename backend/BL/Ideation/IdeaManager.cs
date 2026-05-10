@@ -94,7 +94,7 @@ public class IdeaManager: IIdeaManager
                 NudgingMode = MapStrengthToNudgingMode(nudgingStrength),
             };
 
-            var decision = _aiManager.AssessIdeaNudge(request).GetAwaiter().GetResult();
+            var decision = _aiManager.AssessIdeaNudgeAsync(request).GetAwaiter().GetResult();
             if (decision == null)
             {
                 return new IdeaNudgeDecision { IsApproved = true };
@@ -253,7 +253,7 @@ public class IdeaManager: IIdeaManager
         bool aiCallFailed = false;
         try
         {
-            rankedIndexes = _aiManager.RankIdeasByRelation(
+            rankedIndexes = _aiManager.RankIdeasByRelationAsync(
                 referenceIdea,
                 candidates.Select(idea => idea.Content).ToList().AsReadOnly(),
                 category == IdeaDiscoveryCategory.Different,
@@ -529,7 +529,7 @@ public class IdeaManager: IIdeaManager
         {
             var existingCategories = LoadTopicSemanticCategories(topicId);
             var categorization = _aiManager
-                .CategorizeIdeas(
+                .CategorizeIdeasAsync(
                     new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
                     existingCategories,
                     MaxCategoriesPerIdea)
@@ -580,7 +580,7 @@ public class IdeaManager: IIdeaManager
             try
             {
                 categorizedByIndex = _aiManager
-                    .CategorizeIdeas(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea)
+                    .CategorizeIdeasAsync(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea)
                     .GetAwaiter()
                     .GetResult();
             }
@@ -693,7 +693,7 @@ public class IdeaManager: IIdeaManager
         
         try
         {
-            var decision = _aiManager.ModerateContent(content).Result;
+            var decision = _aiManager.ModerateContentAsync(content).Result;
 
             if (decision.IsAllowed)
             {
@@ -702,7 +702,7 @@ public class IdeaManager: IIdeaManager
 
             try
             {
-                decision.Suggestion = _aiManager.GenerateAiAlternative(content, decision).Result;
+                decision.Suggestion = _aiManager.GenerateAlternativeAsync(content, decision).Result;
             }
             catch (Exception ex)
             {

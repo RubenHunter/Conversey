@@ -18,6 +18,12 @@ public class AiAuditLog
 
     public decimal Cost { get; set; }
 
+    [MaxLength(50)]
+    public string ProviderName { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string PromptName { get; set; } = string.Empty;
+
     public DateTime StartTime { get; set; }
 
     public TimeSpan Duration { get; set; }
