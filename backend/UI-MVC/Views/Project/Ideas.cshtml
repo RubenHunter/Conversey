@@ -4,8 +4,17 @@
     </div>
 </div>
 
+@inject Dictionary<string, string> Manifest
 @section Scripts
 {
-    <script type="module" vite-src="~/components/ideas/pages/ideasPage.ts"></script>
+    @{
+        var jsFile = Manifest.GetValueOrDefault("components/ideas/pages/ideasPage.ts", "components/ideas/pages/ideasPage.ts");
+        var cssFile = Manifest.GetValueOrDefault("components/ideas/pages/ideasPage.css", "");
+    }
+    @if (!string.IsNullOrEmpty(cssFile))
+    {
+        <link rel="stylesheet" href="/@cssFile" />
+    }
+    <script type="module" src="/@jsFile"></script>
 }
 

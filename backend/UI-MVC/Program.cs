@@ -207,7 +207,9 @@ InitializeDatabase(builder.Configuration.GetValue<bool>("Database:ResetOnStart")
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    // TIJDELIJK AANGEZET OM DE 500 ERROR OP /LOGIN TE ZIEN
+    app.UseDeveloperExceptionPage();
+    // app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
