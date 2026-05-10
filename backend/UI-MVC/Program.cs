@@ -51,12 +51,13 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 builder.Services.AddViteServices(options => {
-    options.Server.AutoRun = false; // Forceer uit in productie
+    options.Server.AutoRun = false;
 });
 
 // Voorkom 500 errors als manifest niet klopt in productie
 builder.Services.Configure<ViteOptions>(options => {
     options.Base = "/";
+    // Forceer dat we niet crashen op missende bestanden
 });
 
 // Add repositories
