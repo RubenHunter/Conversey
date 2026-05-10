@@ -199,9 +199,19 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-// Verwijder de nood-redirect, HomeController handelt dit nu af
-
-var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
+// --- ROOT REDIRECT (BOVENAAN) ---
+app.Use(async (context, next) =>
+{
+    var host = context.Request.Host.Host;
+    if (context.Request.Path == "/" && 
+        (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
+         host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase)))
+    {
+        context.Response.Redirect("/login");
+        return;
+    }
+    await next();
+});
 InitializeDatabase(resetDatabaseOnStart);
 
 // Configure the HTTP request pipeline.
