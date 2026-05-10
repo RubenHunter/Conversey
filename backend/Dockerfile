@@ -34,7 +34,7 @@ RUN dotnet publish UI-MVC/UI-MVC.csproj -c Release -o /app/publish /p:SkipClient
 
 # 3. Final Image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl krb5-libs icu-libs libintl
 WORKDIR /app
 COPY --from=build /app/publish .
 
