@@ -42,13 +42,7 @@ Console.WriteLine($"--- ACTIVE WEBROOT: {webRoot} ---");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages()
-    .AddRazorPagesOptions(options =>
-    {
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-    });
+builder.Services.AddRazorPages();
 
 // Configure Forwarded Headers for Google Cloud Load Balancer
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
