@@ -93,6 +93,12 @@ if (manifestPath != null)
             {
                 viteManifest[property.Name] = fileProp.GetString() ?? "";
             }
+            if (property.Value.TryGetProperty("css", out var cssArray) && cssArray.ValueKind == System.Text.Json.JsonValueKind.Array && cssArray.GetArrayLength() > 0)
+            {
+                // Create a synthetic key for the CSS file based on the TS filename
+                var cssKey = property.Name.Replace(".ts", ".css");
+                viteManifest[cssKey] = cssArray[0].GetString() ?? "";
+            }
         }
         Console.WriteLine($"--- SUCCESS: MANIFEST LOADED FROM {manifestPath} ---");
     } catch { }
