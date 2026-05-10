@@ -69,6 +69,7 @@
   </Target>
   <ItemGroup>
     <Content Include="wwwroot\**" CopyToPublishDirectory="Always" />
+    <Content Include="wwwroot\**\*.json" CopyToPublishDirectory="Always" />
     <Content Include="Assets\**" CopyToPublishDirectory="Always" />
   </ItemGroup>
 </Project>

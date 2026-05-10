@@ -28,8 +28,17 @@ var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
-    builder.WebHost.UseWebRoot("/app/wwwroot");
 }
+
+// FORCEER WEBROOT VOOR PRODUCTIE (DOCKER-VRIENDELIJK)
+string webRoot = builder.Environment.IsDevelopment() ? "wwwroot" : "/app/wwwroot";
+if (!builder.Environment.IsDevelopment() && !Directory.Exists(webRoot))
+{
+    // Fallback naar de huidige map als /app/wwwroot niet bestaat
+    webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+}
+builder.WebHost.UseWebRoot(webRoot);
+Console.WriteLine($"--- ACTIVE WEBROOT: {webRoot} ---");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -53,34 +62,44 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// ROBUUST MANIFEST LOADER (Supports Vite 4 & 5)
+// TOTAL RECOVERY MANIFEST LOADER (Nuclear Search)
 var viteManifest = new Dictionary<string, string>();
-var webRoot = builder.Environment.WebRootPath ?? "wwwroot";
-var possiblePaths = new[] 
-{ 
-    Path.Combine(webRoot, "manifest.json"),
-    Path.Combine(webRoot, ".vite", "manifest.json")
-};
+string? manifestPath = null;
 
-foreach (var path in possiblePaths)
+try 
 {
-    if (File.Exists(path))
+    // Scrol door alle JSON bestanden om de boosdoener te vinden
+    var jsonFiles = Directory.GetFiles("/app", "*.json", SearchOption.AllDirectories);
+    foreach (var file in jsonFiles)
     {
-        try 
+        Console.WriteLine($"JSON FOUND: {file}");
+        if (file.EndsWith("manifest.json"))
         {
-            var json = File.ReadAllText(path);
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            foreach (var property in doc.RootElement.EnumerateObject())
-            {
-                if (property.Value.TryGetProperty("file", out var fileProp))
-                {
-                    viteManifest[property.Name] = fileProp.GetString() ?? "";
-                }
-            }
-            Console.WriteLine($"--- VITE MANIFEST LOADED FROM: {path} ---");
-            break; 
-        } catch { }
+            manifestPath = file;
+            break;
+        }
     }
+} catch { }
+
+if (manifestPath != null)
+{
+    try 
+    {
+        var json = File.ReadAllText(manifestPath);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        foreach (var property in doc.RootElement.EnumerateObject())
+        {
+            if (property.Value.TryGetProperty("file", out var fileProp))
+            {
+                viteManifest[property.Name] = fileProp.GetString() ?? "";
+            }
+        }
+        Console.WriteLine($"--- SUCCESS: MANIFEST LOADED FROM {manifestPath} ---");
+    } catch { }
+}
+else 
+{
+    Console.WriteLine("--- CRITICAL: NO manifest.json FOUND ANYWHERE IN /app ---");
 }
 builder.Services.AddSingleton(viteManifest);
 
@@ -158,7 +177,8 @@ builder.Services.AddScoped<IAiManager>(provider =>
             ApiKey = apiKey,
             CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest"
         };
-        return new MistralAiManager(provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI"), aiConfig);
+        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+        return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
     }
     return new NoopAiManager();
 });
