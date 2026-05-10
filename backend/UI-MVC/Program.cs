@@ -47,6 +47,10 @@ builder.Services.AddViteServices(options =>
     options.Server.AutoRun = true;
     options.Server.PackageManager = "pnpm";
 });
+// Voorkom 500 errors als manifest niet klopt in productie
+builder.Services.Configure<ViteOptions>(options => {
+    options.Base = "/";
+});
 
 // Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
@@ -226,11 +230,16 @@ app.MapControllerRoute(
 
 app.MapGet("/", context => 
 {
-    if (context.Request.Host.Host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase))
+    var host = context.Request.Host.Host;
+    if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
+        host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
     {
         context.Response.Redirect("/login");
         return Task.CompletedTask;
     }
+    
+    // Voor subdomeinen: als we op / zitten, stuur door naar Landing
+    context.Response.Redirect("/Project/Landing");
     return Task.CompletedTask;
 });
 
