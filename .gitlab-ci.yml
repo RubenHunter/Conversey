@@ -1,7 +1,8 @@
 stages:
   - build
+  - deploy
 
-build-and-push:
+build-backend:
   stage: build
   image: google/cloud-sdk:alpine
   before_script:
@@ -12,3 +13,17 @@ build-and-push:
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
     - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --quiet
+
+deploy-to-cloud:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  before_script:
+    - echo "$GCP_SERVICE_KEY" > gcp-key.json
+    - gcloud auth activate-service-account --key-file=gcp-key.json
+    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
+    - gcloud config set project $GCP_PROJECT_ID
+  script:
+    - echo "🔄 Rolling update van de Managed Instance Group..."
+    - gcloud compute instance-groups managed rolling-action restart conversey-mig --zone=europe-west1-b --project=$GCP_PROJECT_ID --quiet
+  only:
+    - main
