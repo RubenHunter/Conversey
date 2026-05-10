@@ -123,7 +123,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 }
 
                 // Check if user is a ConverseyAdmin
-                if (await _userManager.IsInRoleAsync(user, "Admin") && user.WorkspaceId == null)
+                if (await _userManager.IsInRoleAsync(user, "Admin") && string.IsNullOrEmpty(user.WorkspaceId.Text))
                 {
                     if (_workspaceContext.CurrentWorkspace == null)
                     {
@@ -145,12 +145,12 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 }
 
                 // Check if user is a WorkspaceAdmin
-                if (await _userManager.IsInRoleAsync(user, "Admin") && user.WorkspaceId != null)
+                if (await _userManager.IsInRoleAsync(user, "Admin") && !string.IsNullOrEmpty(user.WorkspaceId.Text))
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
                     
                     if (workspace == null || 
-                        user.WorkspaceId == null ||
+                        string.IsNullOrEmpty(user.WorkspaceId.Text) ||
                         user.WorkspaceId != workspace.Id)
                     {
                         _logger.LogWarning("Workspace mismatch for login attempt.");

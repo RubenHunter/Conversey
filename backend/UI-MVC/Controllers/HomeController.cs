@@ -34,7 +34,7 @@ public class HomeController : Controller
         var workspace = _workspaceContext.CurrentWorkspace;
         if (workspace != null)
         {
-            var projects = _projectRepository.ReadProjectsByWorkspace(workspace.Id);
+            var projects = _projectRepository.ReadAllProjectsFromWorkspaceId(workspace.Id);
             var firstProject = projects.FirstOrDefault();
             if (firstProject != null)
             {
