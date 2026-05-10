@@ -56,7 +56,7 @@ builder.Services.AddViteServices(options => {
 
 // Configureer Vite voor productie op Google Cloud
 builder.Services.Configure<ViteOptions>(options => {
-    // Gebruik geen Base in productie, laat de helper het zelf vinden in wwwroot
+    options.Base = "/";
 });
 
 // Add repositories
