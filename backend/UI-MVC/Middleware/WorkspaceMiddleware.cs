@@ -24,18 +24,22 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
 
         var parts = host.Split('.');
         
-        // Skip if it's the root domain (e.g., conversey.be or localhost)
-        if (parts.Length <= 2 && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        // Skip if it's the root domain (e.g., conversey.be or localhost or www.conversey.be)
+        if (parts.Length <= 2 || host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) || host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
         {
             await next(context);
             return;
         }
 
         var subdomain = parts.First();
-        // If the first part is the domain name itself (e.g. conversey.be), skip
-        if (subdomain.Equals("conversey", StringComparison.OrdinalIgnoreCase))
+        var workspace = workspaceRepository.GetWorkspaceWithProjects(subdomain);
+
+        if (workspace == null)
         {
-            return next(context);
+            // Geen loop meer, maar een duidelijke melding
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsync($"Workspace '{subdomain}' not found.");
+            return;
         }
 
         try 
