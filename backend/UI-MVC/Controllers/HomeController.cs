@@ -44,4 +44,11 @@ public class HomeController : Controller
 
         return Content("Geen projecten gevonden voor deze workspace.");
     }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    [Route("/Home/Error")]
+    public IActionResult Error()
+    {
+        return View();
+    }
 }
