@@ -208,45 +208,28 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Uitgeschakeld voor Google Load Balancer
+app.UseStaticFiles(); // Essentieel voor productie CSS/JS in wwwroot
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
     RequestPath = "/Assets"
 });
+
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
-
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseCors(viteDevCorsPolicy);
-// }
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
-
 app.MapHealthChecks("/health");
-
 app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Project}/{action=Landing}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
-// Verwijder de oude MapGet redirect die we onderaan hadden staan
-
-app.MapGet("/", context => 
-{
-    var host = context.Request.Host.Host;
-    if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
-        host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
-    {
-        context.Response.Redirect("/login");
-        return Task.CompletedTask;
-    }
     
     // Voor subdomeinen: stuur door naar Landing
     context.Response.Redirect("/Project/Landing");
