@@ -32,14 +32,7 @@ if (!builder.Environment.IsDevelopment())
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages()
-    .AddRazorPagesOptions(options =>
-    {
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
-    });
+builder.Services.AddRazorPages();
 
 // Configure Forwarded Headers for Google Cloud Load Balancer
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -105,9 +98,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/login";
-    options.AccessDeniedPath = "/access-denied";
-    options.LogoutPath = "/logout";
+    options.LoginPath = "/Identity/Account/Login";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.LogoutPath = "/Identity/Account/Logout";
 });
 
 builder.Services.AddAuthentication();

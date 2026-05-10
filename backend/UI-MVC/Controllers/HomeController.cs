@@ -27,7 +27,7 @@ public class HomeController : Controller
         if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
             host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
         {
-            return Redirect("/login");
+            return Redirect("/Identity/Account/Login");
         }
 
         // Anders (subdomein), ga naar het eerste project
