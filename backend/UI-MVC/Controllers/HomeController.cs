@@ -13,7 +13,7 @@ public class HomeController : Controller
         if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
             host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
         {
-            return RedirectToAction("Login", "Account", new { area = "Identity" });
+            return Redirect("/login");
         }
 
         // Anders (subdomein), ga naar de landing pagina
