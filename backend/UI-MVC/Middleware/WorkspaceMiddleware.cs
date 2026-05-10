@@ -9,13 +9,21 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
 {
     public Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        bool hasSubdomain = context.Request.Host.Host.Contains('.');
-        if (!hasSubdomain)
+        string host = context.Request.Host.Host;
+        var parts = host.Split('.');
+        
+        // Skip if it's the root domain (e.g., conversey.be or localhost)
+        if (parts.Length <= 2 && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
         {
             return next(context);
         }
-        
-        var subdomain = context.Request.Host.Host.Split('.').First();
+
+        var subdomain = parts.First();
+        // If the first part is the domain name itself (e.g. conversey.be), skip
+        if (subdomain.Equals("conversey", StringComparison.OrdinalIgnoreCase))
+        {
+            return next(context);
+        }
 
         workspaceContext.CurrentWorkspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
         if (workspaceContext.CurrentWorkspace == null)
