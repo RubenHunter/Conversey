@@ -7,15 +7,28 @@ namespace Conversey.UI_MVC.Middleware;
 
 public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRepository workspaceRepository) : IMiddleware
 {
-    public Task InvokeAsync(HttpContext context, RequestDelegate next)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        string host = context.Request.Host.Host;
+        var host = context.Request.Host.Host;
+        var path = context.Request.Path.Value ?? "";
+
+        // bypass voor statische bestanden en health check
+        if (path.StartsWith("/health") || 
+            path.Contains(".") || 
+            path.StartsWith("/lib/") || 
+            path.StartsWith("/Assets/"))
+        {
+            await next(context);
+            return;
+        }
+
         var parts = host.Split('.');
         
         // Skip if it's the root domain (e.g., conversey.be or localhost)
         if (parts.Length <= 2 && !host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
         {
-            return next(context);
+            await next(context);
+            return;
         }
 
         var subdomain = parts.First();
