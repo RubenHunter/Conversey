@@ -17,7 +17,8 @@ export default defineConfig(async () => {
     const inputEntries = allFiles
         .filter(file => 
             file.endsWith('main.ts') || 
-            file.endsWith('Page.ts')
+            file.endsWith('Page.ts') ||
+            file.endsWith('adminDeleteModal.ts')
         )
         .reduce((acc, file) => {
             const relativePath = path.relative('./Assets', file);
