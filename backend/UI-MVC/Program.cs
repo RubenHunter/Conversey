@@ -11,6 +11,7 @@ using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
+using Microsoft.AspNetCore.HttpOverrides;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
@@ -45,7 +46,7 @@ builder.Services.AddRazorPages()
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
@@ -276,6 +277,8 @@ void InitializeDatabase(bool drop)
         // Then seed Identity and Roles
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        SeedIdentity(userManager, roleManager);
+        
         Console.WriteLine("Checking if database needs seeding...");
         if (!dbCtx.Workspaces.Any())
         {
