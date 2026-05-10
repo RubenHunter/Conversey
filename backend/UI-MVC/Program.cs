@@ -242,6 +242,21 @@ app.MapControllerRoute(
 
 // Verwijder de oude MapGet redirect die we onderaan hadden staan
 
+app.MapGet("/", context => 
+{
+    var host = context.Request.Host.Host;
+    if (host.Equals("conversey.be", StringComparison.OrdinalIgnoreCase) || 
+        host.Equals("www.conversey.be", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/login");
+        return Task.CompletedTask;
+    }
+    
+    // Voor subdomeinen: stuur door naar Landing
+    context.Response.Redirect("/Project/Landing");
+    return Task.CompletedTask;
+});
+
 app.MapGet("/health", () => Results.Ok("Healthy"));
 
 // Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
