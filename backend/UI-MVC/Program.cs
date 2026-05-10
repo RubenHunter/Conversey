@@ -24,10 +24,11 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Google Cloud Logging in Production
+// Configure WebRoot for Production environment (STYLING FIX)
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
+    builder.WebHost.UseWebRoot("/app/wwwroot");
 }
 
 // Add services to the container.
@@ -52,9 +53,9 @@ builder.Services.AddViteServices(options => {
     options.Server.AutoRun = false;
 });
 
-// NUCLEAR OPTION: Handmatig manifest inladen voor 100% stabiliteit
-var manifestPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "manifest.json");
+// ROBUUST MANIFEST SYSTEEM - CRASHT NOOIT
 var viteManifest = new Dictionary<string, string>();
+var manifestPath = Path.Combine("/app/wwwroot", "manifest.json");
 if (File.Exists(manifestPath))
 {
     try 
