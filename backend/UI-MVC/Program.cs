@@ -24,16 +24,24 @@ using Google.Cloud.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Google Cloud Logging and WebRoot in Production
+// Configure WebRoot and ContentRoot for absolute stability in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
-    builder.WebHost.UseWebRoot("/app/wwwroot");
+    // FORCEER WEBROOT NAAR DE MAP WAAR DOCKER DE BESTANDEN ZET
+    builder.WebHost.UseWebRoot("wwwroot");
 }
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages()
+    .AddRazorPagesOptions(options =>
+    {
+        // BRENG DEZE TERUG - ZE ZIJN NU VEILIG DOOR DE REGEX IN DE CONTROLLER
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
+    });
 
 // Configure Forwarded Headers for Google Cloud Load Balancer
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -99,9 +107,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Identity/Account/Login";
-    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
-    options.LogoutPath = "/Identity/Account/Logout";
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/access-denied";
+    options.LogoutPath = "/logout";
 });
 
 builder.Services.AddAuthentication();
@@ -197,10 +205,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection(); // DISABLED FOR GOOGLE LOAD BALANCER
+
+// STATISCHE BESTANDEN MOETEN ALS ALLEREERSTE
 app.UseStaticFiles(); 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "Assets")),
     RequestPath = "/Assets"
 });
 
@@ -212,7 +222,6 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapHealthChecks("/health");
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
