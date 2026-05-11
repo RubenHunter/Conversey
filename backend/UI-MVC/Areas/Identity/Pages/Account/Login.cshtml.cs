@@ -149,13 +149,12 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
                     
-                    if (workspace == null || 
-                        string.IsNullOrEmpty(user.WorkspaceId.Text) ||
-                        user.WorkspaceId != workspace.Id)
+                    // Als we op het hoofddomein zijn (workspace == null), staan we inloggen toe en redirecten we naar het subdomein
+                    if (workspace != null && user.WorkspaceId != workspace.Id)
                     {
                         _logger.LogWarning("Workspace mismatch for login attempt.");
                         await _signInManager.SignOutAsync();
-                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        ModelState.AddModelError(string.Empty, "Je hebt geen toegang tot deze specifieke omgeving.");
                         return Page();
                     }
 
@@ -164,6 +163,12 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                     {
                         await _signInManager.SignInAsync(user, Input.RememberMe);
                         _logger.LogInformation("WorkspaceAdmin logged in.");
+                        
+                        // Redirect naar het juiste subdomein als dat nodig is
+                        if (workspace == null) {
+                             return Redirect($"https://{user.WorkspaceId}.conversey.be/admin/workspace");
+                        }
+                        
                         return LocalRedirect(Url.Content("~/admin/workspace"));
                     }
                 }

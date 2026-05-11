@@ -8,91 +8,83 @@
     var workspaceName = WorkspaceContext.CurrentWorkspace?.Name ?? "Conversey Portal";
 }
 
-<div class="min-h-screen flex items-center justify-center px-4 py-12 bg-cover bg-center bg-no-repeat relative overflow-hidden" 
-     style="background-image: url('/images/login_bg.png');">
-    
-    <!-- Subtle Overlay for contrast -->
-    <div class="absolute inset-0 bg-black/10 backdrop-blur-[2px]"></div>
-
-    <div class="w-full max-w-md relative z-10">
-        <!-- Logo / Brand Header -->
-        <div class="text-center mb-10 animate-fade-in">
-            <div class="inline-flex items-center justify-center p-3 mb-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/30">
-                <span class="text-2xl font-black text-white tracking-tighter">CONVERSEY</span>
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="flex justify-center mb-6">
+            <div class="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                <span class="text-xl font-black text-white tracking-tighter">CONVERSEY</span>
             </div>
-            <h1 class="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                @ViewData["Title"]
-            </h1>
-            <p class="text-white/80 mt-2 font-medium">@workspaceName</p>
         </div>
+        <h2 class="text-center text-3xl font-extrabold text-gray-900 tracking-tight">
+            Log in
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600 font-medium">
+            @workspaceName
+        </p>
+    </div>
 
-        <!-- Login Card with Glassmorphism -->
-        <section class="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/40 transform transition-all hover:scale-[1.01]">
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-10 px-6 shadow-2xl shadow-gray-200/50 sm:rounded-3xl sm:px-10 border border-gray-100">
+            <div class="text-center mb-8">
+                <h3 class="text-lg font-bold text-gray-800">Welkom terug</h3>
+                <p class="text-sm text-gray-500">Voer je gegevens in om toegang te krijgen</p>
+            </div>
+
             <form id="account" method="post" class="space-y-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-xl font-bold text-gray-800">Welkom terug</h2>
-                    <p class="text-sm text-gray-500">Voer je gegevens in om toegang te krijgen</p>
-                </div>
-
-                <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-100/80 p-4 rounded-xl text-sm border border-red-200" role="alert"></div>
+                <div asp-validation-summary="ModelOnly" class="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium" role="alert"></div>
 
                 <div>
-                    <label asp-for="Input.Email" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 ml-1">E-mailadres</label>
-                    <div class="relative group">
+                    <label asp-for="Input.Email" class="block text-sm font-semibold text-gray-700 mb-1">E-MAILADRES</label>
+                    <div class="mt-1">
                         <input asp-for="Input.Email" 
-                               class="block w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all duration-200" 
-                               autocomplete="username" aria-required="true" placeholder="naam@voorbeeld.be" />
+                               class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                               placeholder="naam@voorbeeld.be" />
                     </div>
-                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs mt-2 ml-1 block"></span>
+                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs mt-1 block font-medium"></span>
                 </div>
 
                 <div>
-                    <label asp-for="Input.Password" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 ml-1">Wachtwoord</label>
-                    <div class="relative">
+                    <label asp-for="Input.Password" class="block text-sm font-semibold text-gray-700 mb-1">WACHTWOORD</label>
+                    <div class="mt-1">
                         <input asp-for="Input.Password" 
-                               class="block w-full px-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white outline-none transition-all duration-200" 
-                               autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+                               class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                               placeholder="••••••••" />
                     </div>
-                    <span asp-validation-for="Input.Password" class="text-red-500 text-xs mt-2 ml-1 block"></span>
+                    <span asp-validation-for="Input.Password" class="text-red-500 text-xs mt-1 block font-medium"></span>
                 </div>
 
-                <div class="flex items-center justify-between px-1">
+                <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <input class="w-4 h-4 text-blue-600 rounded-lg border-gray-300 focus:ring-blue-500 cursor-pointer" type="checkbox" asp-for="Input.RememberMe" />
-                        <label asp-for="Input.RememberMe" class="ml-2 text-sm text-gray-600 cursor-pointer select-none">
+                        <input id="remember-me" name="remember-me" type="checkbox" asp-for="Input.RememberMe"
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer">
+                        <label asp-for="Input.RememberMe" class="ml-2 block text-sm text-gray-600 cursor-pointer select-none">
                             Onthoud mij
                         </label>
                     </div>
-                    <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Wachtwoord vergeten?</a>
+
+                    <div class="text-sm">
+                        <a href="#" class="font-bold text-blue-600 hover:text-blue-500">
+                            Wachtwoord vergeten?
+                        </a>
+                    </div>
                 </div>
 
-                <div class="pt-2">
+                <div>
                     <button id="login-submit" type="submit" 
-                            class="w-full px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] transition-all duration-200">
+                            class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-200 text-sm font-black text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-[0.98] transition-all duration-200 uppercase tracking-widest">
                         Inloggen
                     </button>
                 </div>
             </form>
-        </section>
-
-        <!-- Footer -->
-        <div class="text-center mt-8">
-            <p class="text-white/60 text-sm">
+        </div>
+        
+        <div class="mt-8 text-center">
+            <p class="text-xs text-gray-400 font-medium">
                 &copy; @DateTime.Now.Year Conversey. Alle rechten voorbehouden.
             </p>
         </div>
     </div>
 </div>
-
-<style>
-    @@keyframes fade-in {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fade-in 0.8s ease-out forwards;
-    }
-</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
