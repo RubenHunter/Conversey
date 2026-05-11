@@ -24,39 +24,48 @@ public sealed class WorkspaceAdminHandler(
         AuthorizationHandlerContext context,
         WorkspaceAdminRequirement requirement)
     {
-        logger.LogInformation("--- WorkspaceAdminHandler started ---");
-
-        if (context.User.Identity?.IsAuthenticated != true)
+        try 
         {
-            logger.LogWarning("User is not authenticated.");
-            return;
+            logger.LogInformation("--- WorkspaceAdminHandler started for User: {UserIdentity} ---", context.User.Identity?.Name);
+
+            if (context.User.Identity?.IsAuthenticated != true)
+            {
+                logger.LogWarning("User is not authenticated.");
+                return;
+            }
+
+            if (workspaceContext.CurrentWorkspace == null)
+            {
+                logger.LogWarning("CurrentWorkspace is null. Access denied for workspace-specific area.");
+                return;
+            }
+
+            var user = await userManager.GetUserAsync(context.User);
+            if (user == null)
+            {
+                logger.LogError("UserManager.GetUserAsync returned null for authenticated user {UserName}.", context.User.Identity?.Name);
+                return;
+            }
+
+            var userWorkspaceId = user.WorkspaceId.Text ?? "NULL";
+            var currentWorkspaceId = workspaceContext.CurrentWorkspace.Id.Text ?? "NULL";
+
+            logger.LogInformation("Comparing Workspace IDs - User: {UserWS}, Current: {CurrentWS}", userWorkspaceId, currentWorkspaceId);
+
+            if (user.WorkspaceId == workspaceContext.CurrentWorkspace.Id)
+            {
+                logger.LogInformation("Access granted: IDs match.");
+                context.Succeed(requirement);
+            }
+            else
+            {
+                logger.LogWarning("Access denied: User WorkspaceId '{UserWS}' does not match Current WorkspaceId '{CurrentWS}'.", userWorkspaceId, currentWorkspaceId);
+            }
         }
-
-        if (workspaceContext.CurrentWorkspace == null)
+        catch (Exception ex)
         {
-            logger.LogWarning("CurrentWorkspace is null in WorkspaceContext.");
-            return;
-        }
-
-        var user = await userManager.GetUserAsync(context.User);
-        if (user == null)
-        {
-            logger.LogError("UserManager returned null for the current user.");
-            return;
-        }
-
-        logger.LogInformation("Checking access for User: {UserEmail}, UserWorkspaceId: {UserWorkspaceId}, CurrentWorkspaceId: {CurrentWorkspaceId}", 
-            user.Email, user.WorkspaceId.Text, workspaceContext.CurrentWorkspace.Id.Text);
-
-        // Check if user is a WorkspaceAdmin for the CURRENT workspace
-        if (user.WorkspaceId == workspaceContext.CurrentWorkspace.Id)
-        {
-            logger.LogInformation("Access granted for workspace admin.");
-            context.Succeed(requirement);
-        }
-        else
-        {
-            logger.LogWarning("Access denied: WorkspaceId mismatch.");
+            logger.LogError(ex, "CRITICAL ERROR in WorkspaceAdminHandler: {Message}", ex.Message);
+            // We don't rethrow here to prevent a 500, but the requirement won't be met (access denied)
         }
     }
 }
