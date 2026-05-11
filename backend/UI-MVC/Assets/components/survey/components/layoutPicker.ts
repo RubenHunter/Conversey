@@ -1,7 +1,7 @@
 import { getSurveyStrings } from '../../../i18n/survey'
 import { renderSurveyHeader } from './surveyHeader'
 
-const chatExampleImage = '/images/chatmode.png'
+const chatExampleImage = '/images/chat_example.png'
 const classicExampleImage = '/images/Screenshot 2026-05-11 105048.png'
 
 

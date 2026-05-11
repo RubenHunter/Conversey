@@ -713,7 +713,7 @@
     }
 
     .layout-picker-bg {
-        background-size: cover;
+        background-size: cover !important;
         background-position: center center;
     }
 
