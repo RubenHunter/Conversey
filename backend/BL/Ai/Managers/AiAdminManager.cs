@@ -159,6 +159,11 @@ public sealed class AiAdminManager : IAiAdminManager
             config.Temperature = 1.0m;
         }
 
+        if (config.IsEnabled && config.ApiKeyExpiresAt.HasValue && config.ApiKeyExpiresAt.Value <= DateTime.UtcNow)
+        {
+            throw new InvalidOperationException("Cannot enable a provider whose API key has expired.");
+        }
+
         if (config.IsEnabled)
         {
             var allConfigs = await _providerConfigRepository.GetAllConfigsAsync();

@@ -17,6 +17,7 @@ using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.RateLimiting;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -83,6 +84,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/access-denied";
     options.LogoutPath = "/logout";
 });
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>

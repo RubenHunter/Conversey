@@ -113,9 +113,21 @@ public class AiAdminController : Controller
 
         existing.ProviderName = model.ProviderName;
         existing.BaseUrl = model.BaseUrl;
-        existing.ApiKey = model.ApiKey;
+        if (!string.IsNullOrWhiteSpace(model.ApiKey))
+        {
+            existing.ApiKey = model.ApiKey;
+        }
         existing.ApiVersion = model.ApiVersion;
+        existing.ApiKeyExpiresAt = model.ApiKeyExpiresAt.HasValue
+            ? DateTime.SpecifyKind(model.ApiKeyExpiresAt.Value, DateTimeKind.Utc)
+            : null;
         existing.IsEnabled = model.IsEnabled;
+
+        if (existing.IsEnabled && existing.ApiKeyExpiresAt.HasValue && existing.ApiKeyExpiresAt.Value <= DateTime.UtcNow)
+        {
+            ModelState.AddModelError(nameof(model.ApiKeyExpiresAt), "Cannot enable a provider whose API key has expired. Update the expiry date or disable the provider.");
+            return View("EditProvider", model);
+        }
 
         await _aiAdminManager.SaveProviderConfigAsync(existing);
         return RedirectToAction(nameof(ConfigureModels), new { id });
@@ -131,6 +143,15 @@ public class AiAdminController : Controller
         }
 
         model.Id = 0;
+        model.ApiKeyExpiresAt = model.ApiKeyExpiresAt.HasValue
+            ? DateTime.SpecifyKind(model.ApiKeyExpiresAt.Value, DateTimeKind.Utc)
+            : null;
+
+        if (model.IsEnabled && model.ApiKeyExpiresAt.HasValue && model.ApiKeyExpiresAt.Value <= DateTime.UtcNow)
+        {
+            ModelState.AddModelError(nameof(model.ApiKeyExpiresAt), "Cannot enable a provider whose API key has expired. Choose a future date or disable the provider.");
+            return View("EditProvider", model);
+        }
         await _aiAdminManager.SaveProviderConfigAsync(model);
         return RedirectToAction(nameof(ConfigureModels), new { id = model.Id });
     }

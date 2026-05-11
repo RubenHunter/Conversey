@@ -29,6 +29,8 @@ public class AiProviderConfig
 
     public bool IsEnabled { get; set; }
 
+    public DateTime? ApiKeyExpiresAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
