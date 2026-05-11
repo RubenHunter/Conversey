@@ -22,23 +22,27 @@ using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Google.Cloud.Logging.Console;
 
-var builder = WebApplication.CreateBuilder(args);
+// FORCEER WEBROOT VOOR PRODUCTIE (DOCKER-VRIENDELIJK)
+string webRoot = "wwwroot";
+if (!Directory.Exists(webRoot))
+{
+    // Fallback naar de absolute map als relatieve wwwroot niet gevonden wordt
+    webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+}
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    WebRootPath = webRoot
+});
+
+Console.WriteLine($"--- ACTIVE WEBROOT: {builder.Environment.WebRootPath} ---");
 
 // Configure Google Cloud Logging in Production
 if (!builder.Environment.IsDevelopment())
 {
     builder.Logging.AddGoogleCloudConsole();
 }
-
-// FORCEER WEBROOT VOOR PRODUCTIE (DOCKER-VRIENDELIJK)
-string webRoot = builder.Environment.IsDevelopment() ? "wwwroot" : "/app/wwwroot";
-if (!builder.Environment.IsDevelopment() && !Directory.Exists(webRoot))
-{
-    // Fallback naar de huidige map als /app/wwwroot niet bestaat
-    webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-}
-builder.WebHost.UseWebRoot(webRoot);
-Console.WriteLine($"--- ACTIVE WEBROOT: {webRoot} ---");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
