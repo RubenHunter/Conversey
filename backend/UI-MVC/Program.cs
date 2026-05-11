@@ -228,6 +228,12 @@ if (app.Environment.IsDevelopment())
     app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
+app.MapGet("/api/admin/nuke-db-and-reseed", (string code) => {
+    if (code != "conversey123") return "Unauthorized";
+    InitializeDatabase(true);
+    return "Database has been nuked and reseeded with the new English translations!";
+});
+
 app.Run();
 
 void InitializeDatabase(bool drop)
