@@ -11,6 +11,7 @@ public sealed class AiAdminManager : IAiAdminManager
     private readonly IPromptRepository _promptRepository;
     private readonly IProviderConfigRepository _providerConfigRepository;
     private readonly IRateLimitConfigRepository _rateLimitConfigRepository;
+    private readonly IModerationKeywordRepository _moderationKeywordRepository;
     private readonly IAiManager _aiManager;
     private readonly IConfiguration _configuration;
     private readonly RateLimitConfigCache _rateLimitCache;
@@ -20,6 +21,7 @@ public sealed class AiAdminManager : IAiAdminManager
         IPromptRepository promptRepository,
         IProviderConfigRepository providerConfigRepository,
         IRateLimitConfigRepository rateLimitConfigRepository,
+        IModerationKeywordRepository moderationKeywordRepository,
         IAiManager aiManager,
         IConfiguration configuration,
         RateLimitConfigCache rateLimitCache)
@@ -28,6 +30,7 @@ public sealed class AiAdminManager : IAiAdminManager
         _promptRepository = promptRepository;
         _providerConfigRepository = providerConfigRepository;
         _rateLimitConfigRepository = rateLimitConfigRepository;
+        _moderationKeywordRepository = moderationKeywordRepository;
         _aiManager = aiManager;
         _configuration = configuration;
         _rateLimitCache = rateLimitCache;
@@ -286,5 +289,27 @@ public sealed class AiAdminManager : IAiAdminManager
         config.UpdatedAt = DateTime.UtcNow;
         await _rateLimitConfigRepository.SaveConfigAsync(config);
         await _rateLimitCache.ReloadAsync();
+    }
+
+    public Task<IReadOnlyList<ModerationKeyword>> GetAllModerationKeywordsAsync()
+    {
+        return Task.FromResult(_moderationKeywordRepository.GetAll());
+    }
+
+    public Task SaveModerationKeywordAsync(ModerationKeyword keyword)
+    {
+        keyword.Keyword = (keyword.Keyword ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(keyword.Keyword))
+        {
+            throw new ArgumentException("Keyword cannot be empty.");
+        }
+        _moderationKeywordRepository.Save(keyword);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteModerationKeywordAsync(int id)
+    {
+        _moderationKeywordRepository.Delete(id);
+        return Task.CompletedTask;
     }
 }

@@ -19,6 +19,9 @@ public interface IAiAdminManager
     Task<IReadOnlyList<RateLimitConfig>> GetAllRateLimitConfigsAsync();
     Task<RateLimitConfig> GetRateLimitConfigByIdAsync(int id);
     Task SaveRateLimitConfigAsync(RateLimitConfig config);
+    Task<IReadOnlyList<ModerationKeyword>> GetAllModerationKeywordsAsync();
+    Task SaveModerationKeywordAsync(ModerationKeyword keyword);
+    Task DeleteModerationKeywordAsync(int id);
 }
 
 public class AiHealthInfo

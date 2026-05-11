@@ -10,6 +10,7 @@ public sealed class AiManager : IAiManager
     private readonly IAiProvider _provider;
     private readonly IPromptRepository _promptRepository;
     private readonly IAuditRepository _auditRepository;
+    private readonly IModerationKeywordRepository _moderationKeywordRepository;
     private readonly string _completionsModel;
     private readonly string _moderationModel;
     private readonly decimal _temperature;
@@ -17,24 +18,19 @@ public sealed class AiManager : IAiManager
     private const string CompletionsModelType = "Completions";
     private const string ModerationModelType = "Moderation";
 
-    private static readonly HashSet<string> UnsafeTerms = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "retarded", "moron", "dumbass", "dumb ass", "fucking",
-        "faggot", "fag ", "nigger", "nigga"
-    };
-
     //all specific moderation models work differently, this is a static list to catch its response instead of model specific code.
     private static readonly HashSet<string> ModelSafetyIndicators = new(StringComparer.OrdinalIgnoreCase)
     {
-        "unsafe", "not safe", "hate", "toxic", "violant", "harassment",
+        "unsafe", "not safe", "hate", "toxic", "violent", "harassment",
         "inappropriate", "offensive", "flag", "harmful", "abuse", "dangerous"
     };
 
-    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, string completionsModel, string moderationModel, decimal temperature = 1.0m)
+    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, IModerationKeywordRepository moderationKeywordRepository, string completionsModel, string moderationModel, decimal temperature = 1.0m)
     {
         _provider = provider;
         _promptRepository = promptRepository;
         _auditRepository = auditRepository;
+        _moderationKeywordRepository = moderationKeywordRepository;
         _completionsModel = string.IsNullOrWhiteSpace(completionsModel) ? "mistral-small-latest" : completionsModel;
         _moderationModel = moderationModel;
         _temperature = temperature == 0m ? 1.0m : temperature;
@@ -42,7 +38,8 @@ public sealed class AiManager : IAiManager
 
     public async Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        var unsafeTerm = UnsafeTerms.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        var keywordSet = _moderationKeywordRepository.GetKeywordSet();
+        var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         if (unsafeTerm != null)
         {
             var preview = (content ?? string.Empty).Length > 120 ? (content ?? string.Empty)[..120] + "..." : content;

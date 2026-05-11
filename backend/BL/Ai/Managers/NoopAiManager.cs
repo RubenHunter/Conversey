@@ -1,13 +1,11 @@
 using Conversey.BL.Domain.Ideation;
+using Conversey.DAL.Subplatform.Ai;
 
 namespace Conversey.BL.Ai;
 
 public sealed class NoopAiManager : IAiManager
 {
-    private static readonly HashSet<string> UnsafeTerms = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "retarded", "moron", "dumbass", "dumb ass", "fucking"
-    };
+    private readonly IModerationKeywordRepository _moderationKeywordRepository;
 
     private static readonly Dictionary<string, (int minWords, string placeholder)> NudgeThresholds = new()
     {
@@ -18,6 +16,11 @@ public sealed class NoopAiManager : IAiManager
         ["Deep"] = (14, "Can you provide specific details, evidence, or a concrete scenario that supports this idea?"),
     };
 
+    public NoopAiManager(IModerationKeywordRepository moderationKeywordRepository)
+    {
+        _moderationKeywordRepository = moderationKeywordRepository;
+    }
+
     public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
     {
         return Task.FromResult("Please rephrase your message in a respectful way.");
@@ -25,7 +28,8 @@ public sealed class NoopAiManager : IAiManager
 
     public Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        var unsafeTerm = UnsafeTerms.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        var keywordSet = _moderationKeywordRepository.GetKeywordSet();
+        var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         var isAllowed = unsafeTerm == null;
 
         return Task.FromResult(new ModerationDecision

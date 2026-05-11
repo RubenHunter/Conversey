@@ -866,6 +866,7 @@ public static class DataSeeder
 
         SeedAiPrompts(context, now);
         SeedAiRateLimits(context, now);
+        SeedModerationKeywords(context, now);
 
         context.SaveChanges();
     }
@@ -986,5 +987,28 @@ public static class DataSeeder
         };
 
         context.RateLimitConfigs.AddRange(configs);
+    }
+
+    private static void SeedModerationKeywords(ConverseyDbContext context, DateTime now)
+    {
+        if (context.ModerationKeywords.Any())
+        {
+            return;
+        }
+
+        var keywords = new List<ModerationKeyword>
+        {
+            new() { Keyword = "retarded", CreatedAt = now },
+            new() { Keyword = "moron", CreatedAt = now },
+            new() { Keyword = "dumbass", CreatedAt = now },
+            new() { Keyword = "dumb ass", CreatedAt = now },
+            new() { Keyword = "fucking", CreatedAt = now },
+            new() { Keyword = "faggot", CreatedAt = now },
+            new() { Keyword = "fag", CreatedAt = now },
+            new() { Keyword = "nigger", CreatedAt = now },
+            new() { Keyword = "nigga", CreatedAt = now },
+        };
+
+        context.ModerationKeywords.AddRange(keywords);
     }
 }

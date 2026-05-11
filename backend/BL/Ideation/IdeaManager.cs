@@ -6,7 +6,6 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Ideation;
-using System.Linq;
 
 namespace Conversey.BL.Ideation;
 

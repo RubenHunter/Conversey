@@ -262,4 +262,35 @@ public class AiAdminController : Controller
         await _aiAdminManager.SaveRateLimitConfigAsync(existing);
         return RedirectToAction(nameof(RateLimits));
     }
+
+    [HttpGet("keywords")]
+    public async Task<IActionResult> Keywords()
+    {
+        var keywords = await _aiAdminManager.GetAllModerationKeywordsAsync();
+        return View(keywords);
+    }
+
+    [HttpPost("keywords/create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateKeyword(ModerationKeyword model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Keyword))
+        {
+            ModelState.AddModelError(nameof(model.Keyword), "Keyword is required.");
+            var keywords = await _aiAdminManager.GetAllModerationKeywordsAsync();
+            return View("Keywords", keywords);
+        }
+
+        model.Id = 0;
+        await _aiAdminManager.SaveModerationKeywordAsync(model);
+        return RedirectToAction(nameof(Keywords));
+    }
+
+    [HttpPost("keywords/delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteKeyword(int id)
+    {
+        await _aiAdminManager.DeleteModerationKeywordAsync(id);
+        return RedirectToAction(nameof(Keywords));
+    }
 }

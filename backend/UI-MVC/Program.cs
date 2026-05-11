@@ -55,6 +55,7 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
 builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
+builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -147,7 +148,8 @@ builder.Services.AddScoped<IAiManager>(provider =>
 
     if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
     {
-        return new NoopAiManager();
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        return new NoopAiManager(keywordRepo);
     }
 
     if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
@@ -165,8 +167,9 @@ builder.Services.AddScoped<IAiManager>(provider =>
         var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
         var promptRepo = provider.GetRequiredService<IPromptRepository>();
         var auditRepo = provider.GetRequiredService<IAuditRepository>();
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
 
-        return new AiManager(mistralProvider, promptRepo, auditRepo, completionsModel, moderationModel);
+        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel);
     }
 
     throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
@@ -399,8 +402,9 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
 
     var promptRepo = provider.GetRequiredService<IPromptRepository>();
     var auditRepo = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
     var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
     var moderationModel = config.ModerationModel;
 
-    return new AiManager(aiProvider, promptRepo, auditRepo, completionsModel, moderationModel, config.Temperature);
+    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel, config.Temperature);
 }
