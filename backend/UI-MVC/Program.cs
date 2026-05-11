@@ -1,4 +1,6 @@
+#nullable enable
 using System.ComponentModel;
+
 using Microsoft.AspNetCore.DataProtection;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
