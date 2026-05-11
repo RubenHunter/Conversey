@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Microsoft.AspNetCore.DataProtection;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
@@ -47,6 +48,22 @@ if (!builder.Environment.IsDevelopment())
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+// Persist Data Protection keys so antiforgery tokens survive server restarts
+// This fixes HTTP 400 Bad Request errors on login in cloud/Docker environments
+var keysDir = Path.Combine(Directory.GetCurrentDirectory(), "dataprotection-keys");
+Directory.CreateDirectory(keysDir);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
+    .SetApplicationName("Conversey");
+
+// Ensure antiforgery cookies work across subdomains
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "conversey-af";
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 // Configure Forwarded Headers for Google Cloud Load Balancer
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
