@@ -139,10 +139,13 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 
+// Configure Database
+var connectionString = builder.Configuration.GetConnectionString("Default") 
+                      ?? builder.Configuration.GetConnectionString("DefaultConnection")
+                      ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass";
+
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("Default")
-        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
+    options.UseNpgsql(connectionString)
 );
 
 // Add health checks for Docker
