@@ -620,18 +620,20 @@
 }
 
 /* ── Vertical divider + OR badge ── */
-.layout-picker-divider {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
+@layer components {
+    .layout-picker-divider {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 1px solid rgba(255, 255, 255, 0.2);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
 }
 
 .layout-picker-or {
