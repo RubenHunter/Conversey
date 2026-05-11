@@ -15,7 +15,23 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
     {
-        return View();
+        try 
+        {
+            return View();
+        }
+        catch (Exception ex)
+        {
+            return Content($"DIAGNOSTIC ERROR: {ex.Message}\n\nSTACK TRACE: {ex.StackTrace}", "text/plain");
+        }
+    }
+    
+    [HttpGet("/admin/diag")]
+    public IActionResult Diag()
+    {
+        var dbStatus = "Unknown";
+        try { dbStatus = projectManager.GetAllProjectsFromWorkspaceId(workspaceContext.CurrentWorkspace.Id).Count().ToString() + " projects found"; } catch (Exception e) { dbStatus = "Error: " + e.Message; }
+        
+        return Content($"Workspace: {workspaceContext.CurrentWorkspace?.Name ?? "NULL"}\nDB Status: {dbStatus}", "text/plain");
     }
 
     [HttpGet("/admin/projects")]
