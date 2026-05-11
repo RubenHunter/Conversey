@@ -709,40 +709,41 @@
     }
 
     .layout-picker-side {
-        min-height: 42vh;
+        min-height: 40vh;
+        background-color: #f9fafb; /* Light gray to match screenshots */
     }
 
     .layout-picker-bg {
-        background-size: cover;
-        background-position: center 20%;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center center;
     }
 
     .layout-picker-overlay {
-        background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%);
+        background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.4) 100%);
     }
 
     .layout-picker-side:hover .layout-picker-overlay {
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(0, 0, 0, 0.2);
     }
 
     .layout-picker-label {
-        padding: var(--spacing-md) var(--spacing-xl);
-        backdrop-filter: blur(10px);
-        background-color: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: var(--radius-2xl);
-        margin: 0 var(--spacing-md);
+        padding: var(--spacing-sm) var(--spacing-md);
+        backdrop-filter: blur(6px);
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: var(--radius-xl);
+        margin: 0 var(--spacing-sm) var(--spacing-md);
     }
 
     .layout-picker-label-title {
-        font-size: var(--font-size-2xl);
-        margin-bottom: var(--spacing-xs);
+        font-size: var(--font-size-xl);
+        margin-bottom: 2px;
     }
 
     .layout-picker-label-desc {
-        font-size: var(--font-size-sm);
-        max-width: 280px;
-        color: rgba(255, 255, 255, 0.9);
+        font-size: 11px;
+        max-width: 220px;
+        color: rgba(255, 255, 255, 0.95);
     }
 
     .layout-picker-divider {
@@ -753,8 +754,10 @@
         width: 100%;
         height: 0;
         border-left: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        border-top: 1px solid var(--color-border);
         justify-content: center;
-        margin: -1px 0;
+        margin: 0;
+        background: var(--color-surface);
+        padding: 4px 0;
     }
 }
