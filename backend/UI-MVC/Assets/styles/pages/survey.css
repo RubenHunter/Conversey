@@ -710,17 +710,36 @@
     }
 
     .layout-picker-side {
-        min-height: 35vh;
+        min-height: 40vh;
     }
 
     .layout-picker-bg {
         background-size: cover;
+        background-position: top center;
+    }
+
+    .layout-picker-overlay {
+        background: rgba(0, 0, 0, 0.72);
+    }
+
+    .layout-picker-side:hover .layout-picker-overlay {
+        background: rgba(0, 0, 0, 0.55);
     }
 
     .layout-picker-label {
-        padding: var(--spacing-sm) var(--spacing-md);
-        backdrop-filter: blur(6px);
-        background-color: rgba(0, 0, 0, 0.5);
+        padding: var(--spacing-md) var(--spacing-lg);
+        backdrop-filter: blur(8px);
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: var(--radius-xl);
+    }
+
+    .layout-picker-label-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .layout-picker-label-desc {
+        font-size: var(--font-size-sm);
+        max-width: 260px;
     }
 
     .layout-picker-divider {
