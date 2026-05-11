@@ -1,4 +1,4 @@
-﻿/* Survey Page Styles */
+/* Survey Page Styles */
 /* Shared styles imported via TypeScript */
 
 .survey-header {
@@ -549,8 +549,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    padding-bottom: clamp(var(--spacing-xl), 5vh, calc(var(--spacing-xl) * 2));
+    justify-content: center;
     cursor: pointer;
     border: none;
     background: none;
@@ -562,7 +561,8 @@
 .layout-picker-bg {
     position: absolute;
     inset: 0;
-    background-size: cover;
+    background-size: contain;
+    background-repeat: no-repeat;
     background-position: center;
     transition: transform 0.35s ease;
 }
