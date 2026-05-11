@@ -8,6 +8,8 @@ public sealed class OpenAiCompatibleProvider : IAiProvider
     private readonly HttpClient _httpClient;
     public string ProviderName { get; }
 
+    public bool SupportsNativeModeration => false;
+
     public OpenAiCompatibleProvider(HttpClient httpClient, string providerName)
     {
         _httpClient = httpClient;

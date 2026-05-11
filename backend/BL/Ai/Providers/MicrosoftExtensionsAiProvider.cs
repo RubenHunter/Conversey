@@ -8,6 +8,8 @@ public sealed class MicrosoftExtensionsAiProvider : IAiProvider
     private readonly IChatClient _chatClient;
     public string ProviderName { get; }
 
+    public bool SupportsNativeModeration => false;
+
     public MicrosoftExtensionsAiProvider(IChatClient chatClient, string providerName)
     {
         _chatClient = chatClient;

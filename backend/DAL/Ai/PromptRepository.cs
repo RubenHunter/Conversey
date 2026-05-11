@@ -27,7 +27,6 @@ public class PromptRepository : IPromptRepository
         var existing = await _dbContext.AiPrompts.FirstOrDefaultAsync(p => p.Id == prompt.Id);
         if (existing != null)
         {
-            existing.Name = prompt.Name;
             existing.SystemPrompt = prompt.SystemPrompt;
             existing.UserPromptTemplate = prompt.UserPromptTemplate;
             existing.Description = prompt.Description;

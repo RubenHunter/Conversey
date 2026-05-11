@@ -9,6 +9,8 @@ public sealed class MistralAiProvider : IAiProvider
 
     public string ProviderName => "Mistral";
 
+    public bool SupportsNativeModeration => true;
+
     public MistralAiProvider(HttpClient httpClient)
     {
         _httpClient = httpClient;

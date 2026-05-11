@@ -10,6 +10,8 @@ public sealed class AzureOpenAiProvider : IAiProvider
     private readonly string _apiVersion;
     public string ProviderName => "Azure";
 
+    public bool SupportsNativeModeration => false;
+
     public AzureOpenAiProvider(HttpClient httpClient, string deploymentName, string apiVersion)
     {
         _httpClient = httpClient;

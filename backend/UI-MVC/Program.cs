@@ -400,7 +400,7 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
     var promptRepo = provider.GetRequiredService<IPromptRepository>();
     var auditRepo = provider.GetRequiredService<IAuditRepository>();
     var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
-    var moderationModel = string.IsNullOrWhiteSpace(config.ModerationModel) ? "mistral-moderation-latest" : config.ModerationModel;
+    var moderationModel = config.ModerationModel;
 
     return new AiManager(aiProvider, promptRepo, auditRepo, completionsModel, moderationModel, config.Temperature);
 }

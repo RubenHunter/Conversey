@@ -19,7 +19,15 @@ public sealed class AiManager : IAiManager
 
     private static readonly HashSet<string> UnsafeTerms = new(StringComparer.OrdinalIgnoreCase)
     {
-        "retarded", "moron", "dumbass", "dumb ass", "fucking"
+        "retarded", "moron", "dumbass", "dumb ass", "fucking",
+        "faggot", "fag ", "nigger", "nigga"
+    };
+
+    //all specific moderation models work differently, this is a static list to catch its response instead of model specific code.
+    private static readonly HashSet<string> ModelSafetyIndicators = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "unsafe", "not safe", "hate", "toxic", "violant", "harassment",
+        "inappropriate", "offensive", "flag", "harmful", "abuse", "dangerous"
     };
 
     public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, string completionsModel, string moderationModel, decimal temperature = 1.0m)
@@ -34,12 +42,29 @@ public sealed class AiManager : IAiManager
 
     public async Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        if (string.IsNullOrWhiteSpace(_moderationModel))
+        var unsafeTerm = UnsafeTerms.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
+        if (unsafeTerm != null)
         {
-            var unsafeTerm = UnsafeTerms.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
-            return new ModerationDecision { IsAllowed = unsafeTerm == null };
+            var preview = (content ?? string.Empty).Length > 120 ? (content ?? string.Empty)[..120] + "..." : content;
+            Console.WriteLine($"[AiManager] Keyword filter rejected content (matched: \"{unsafeTerm}\"): \"{preview}\"");
+            return new ModerationDecision { IsAllowed = false };
         }
 
+        Console.WriteLine($"[AiManager] Keywords passed. Provider={_provider.ProviderName}, NativeModeration={_provider.SupportsNativeModeration}, ModerationModel=\"{_moderationModel}\", CompletionsModel=\"{_completionsModel}\"");
+
+        if (_provider.SupportsNativeModeration && !string.IsNullOrWhiteSpace(_moderationModel))
+        {
+            Console.WriteLine($"[AiManager] → Native moderation endpoint (/{_moderationModel})");
+            return await ModerateViaNativeEndpointAsync(content);
+        }
+
+        var effectiveModel = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
+        Console.WriteLine($"[AiManager] → Prompt-based moderation (model: \"{effectiveModel}\")");
+        return await ModerateViaPromptAsync(content);
+    }
+
+    private async Task<ModerationDecision> ModerateViaNativeEndpointAsync(string content)
+    {
         var startTime = DateTime.UtcNow;
         try
         {
@@ -60,6 +85,41 @@ public sealed class AiManager : IAiManager
         catch (Exception ex)
         {
             throw new AiException("Moderation failed", ex);
+        }
+    }
+
+    private async Task<ModerationDecision> ModerateViaPromptAsync(string content)
+    {
+        var startTime = DateTime.UtcNow;
+        try
+        {
+            var prompt = await LoadPromptAsync("ModerationPrompt");
+            var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
+                ? BuildDefaultModerationSystemPrompt()
+                : prompt.SystemPrompt;
+
+            var model = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
+            var result = await _provider.CompleteAsync(systemPrompt, content, model, 0m);
+            var duration = DateTime.UtcNow - startTime;
+
+            await _auditRepository.LogAiCallAsync(model, ModerationModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationPrompt");
+
+            if (string.IsNullOrWhiteSpace(result.Content))
+            {
+                return new ModerationDecision { IsAllowed = true };
+            }
+
+            Console.WriteLine($"[AiManager] Moderation prompt response ({result.CompletionTokens} tokens): \"{result.Content.Trim()}\"");
+            var parsed = ParseModerationPromptResponse(result.Content);
+            return parsed;
+        }
+        catch (AiException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new AiException("Prompt-based moderation failed", ex);
         }
     }
 
@@ -388,6 +448,95 @@ Rules:
                info.DangerousAndCriminalContent ||
                info.SelfHarm ||
                info.Pii;
+    }
+
+    private static string BuildDefaultModerationSystemPrompt()
+    {
+        return """
+You are a strict content safety classifier for a youth platform. Your task is to flag ANY harmful, toxic, or unsafe content.
+
+Analyze the text against these categories:
+- sexual: sexually explicit content, sexual harassment, or sexualized language
+- hate_and_discrimination: slurs, hate speech, racism, homophobia, transphobia, bigotry, or discrimination based on identity
+- violence_and_threats: threats of violence, encouragement of violence, or glorification of harm
+- dangerous_and_criminal_content: illegal activity, self-harm instructions, or dangerous pranks
+- self_harm: content promoting or encouraging self-harm or suicide
+- pii: personal identifiable information like phone numbers, addresses, or full names
+
+Also mark hate_and_discrimination as true for: personal insults involving slurs, name-calling with protected characteristics, profanity-laced harassment, hostile derogatory language, or general offensive/crude language targeting others.
+
+CRITICAL: Be conservative. If you are unsure whether content violates a category, mark it as violating. False positives are safer than false negatives.
+
+Return ONLY a JSON object with this exact schema:
+{"flagged":true,"categories":{"sexual":false,"hate_and_discrimination":true,"violence_and_threats":false,"dangerous_and_criminal_content":false,"self_harm":false,"pii":false}}
+
+No markdown, no code blocks, no explanation — just the raw JSON.
+""";
+    }
+
+    private static ModerationDecision ParseModerationPromptResponse(string rawContent)
+    {
+        string json = rawContent.Trim();
+
+        int fenceStart = json.IndexOf("```json", StringComparison.OrdinalIgnoreCase);
+        if (fenceStart >= 0)
+        {
+            int fenceEnd = json.IndexOf("```", fenceStart + 7);
+            if (fenceEnd > fenceStart)
+            {
+                json = json.Substring(fenceStart + 7, fenceEnd - fenceStart - 7).Trim();
+            }
+        }
+        else if (json.StartsWith("```"))
+        {
+            int fenceEnd = json.IndexOf("```", 3);
+            if (fenceEnd > 0)
+            {
+                json = json.Substring(3, fenceEnd - 3).Trim();
+            }
+        }
+
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        try
+        {
+            using var parsed = JsonDocument.Parse(json);
+            var root = parsed.RootElement;
+
+            var flagged = root.TryGetProperty("flagged", out var flaggedElement) && flaggedElement.ValueKind == JsonValueKind.True;
+
+            var categories = new Dictionary<string, bool>();
+            if (root.TryGetProperty("categories", out var cats) && cats.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var cat in cats.EnumerateObject())
+                {
+                    categories[cat.Name] = cat.Value.ValueKind == JsonValueKind.True;
+                }
+            }
+
+            var info = ParseModerationInfo(categories);
+            var isAllowed = !flagged && !HasAnyModerationFlag(info);
+
+            return new ModerationDecision { IsAllowed = isAllowed, Categories = info };
+        }
+        catch (JsonException)
+        {
+            Console.WriteLine($"[AiManager] Moderation prompt response was not valid JSON. Raw: \"{rawContent.Trim()}\"");
+
+            var hasUnsafeKeyword = ModelSafetyIndicators.Any(term =>
+                rawContent.Contains(term, StringComparison.OrdinalIgnoreCase));
+            if (hasUnsafeKeyword)
+            {
+                return new ModerationDecision { IsAllowed = false };
+            }
+
+            return new ModerationDecision { IsAllowed = true };
+        }
     }
 
     private static IdeaNudgeDecision ParseNudgeDecision(string rawContent)
