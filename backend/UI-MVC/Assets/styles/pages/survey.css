@@ -566,7 +566,9 @@
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-
+.layout-picker-bg--classic {
+    background-position: center 30% !important;
+}
 /* Dark overlay */
 .layout-picker-overlay {
     position: absolute;

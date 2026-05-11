@@ -46,7 +46,7 @@ export async function showLayoutPicker({
                     </div>
 
                     <button class="layout-picker-side layout-picker-side--classic" data-layout="classic" type="button">
-                        <div class="layout-picker-bg" style="background-image: url('${classicExampleImage}')"></div>
+                        <div class="layout-picker-bg layout-picker-bg--classic" style="background-image: url('${classicExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
                         <div class="layout-picker-label">
                             <span class="layout-picker-label-title">${t.layoutPickerClassic}</span>
