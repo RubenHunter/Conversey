@@ -137,6 +137,12 @@ builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
+builder.Services.AddScoped<IProjectManager, ProjectManager>();
+builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
+builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
 // Configure Database
 var connectionString = builder.Configuration.GetConnectionString("Default") 
@@ -283,10 +289,19 @@ void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<Identity
 void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
 {
     var user = userManager.FindByEmailAsync(email).Result;
+    var targetWorkspaceId = Slug.FromName(workspaceId);
+    
     if (user == null)
     {
-        user = new ApplicationUser { Email = email, UserName = email, EmailConfirmed = true, WorkspaceId = Slug.FromName(workspaceId) };
+        user = new ApplicationUser { Email = email, UserName = email, EmailConfirmed = true, WorkspaceId = targetWorkspaceId };
         userManager.CreateAsync(user, "Test123!").Wait();
     }
+    else if (string.IsNullOrEmpty(user.WorkspaceId.Text) || user.WorkspaceId != targetWorkspaceId)
+    {
+        // Update existing user if WorkspaceId is missing or wrong
+        user.WorkspaceId = targetWorkspaceId;
+        userManager.UpdateAsync(user).Wait();
+    }
+    
     if (!userManager.IsInRoleAsync(user, "Admin").Result) userManager.AddToRoleAsync(user, "Admin").Wait();
 }
