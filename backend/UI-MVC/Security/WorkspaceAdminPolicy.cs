@@ -15,7 +15,7 @@ public sealed class WorkspaceAdminRequirement : IAuthorizationRequirement;
 
 public sealed class WorkspaceAdminHandler(
     WorkspaceContext workspaceContext,
-    UserManager<IdentityUser> userManager)
+    UserManager<ApplicationUser> userManager)
     : AuthorizationHandler<WorkspaceAdminRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -33,14 +33,10 @@ public sealed class WorkspaceAdminHandler(
             return;
         }
 
-        // Check if user is a WorkspaceAdmin (has WorkspaceId property)
-        if (user is WorkspaceAdminUser workspaceAdmin)
+        // Check if user is a WorkspaceAdmin for the CURRENT workspace
+        if (user.WorkspaceId == workspaceContext.CurrentWorkspace.Id)
         {
-            if (workspaceAdmin.Workspace.Id == workspaceContext.CurrentWorkspace.Id)
-            {
-                context.Succeed(requirement);
-            }
+            context.Succeed(requirement);
         }
-        
     }
 }
