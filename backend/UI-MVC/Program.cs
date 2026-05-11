@@ -2,6 +2,7 @@
 using System.ComponentModel;
 
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
@@ -51,12 +52,10 @@ if (!builder.Environment.IsDevelopment())
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// Persist Data Protection keys so antiforgery tokens survive server restarts
-// This fixes HTTP 400 Bad Request errors on login in cloud/Docker environments
-var keysDir = Path.Combine(Directory.GetCurrentDirectory(), "dataprotection-keys");
-Directory.CreateDirectory(keysDir);
+// Persist Data Protection keys so antiforgery tokens survive server restarts and work across multiple instances
+// This fixes HTTP 400/500 errors in load-balanced cloud environments
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
+    .PersistKeysToDbContext<ConverseyDbContext>()
     .SetApplicationName("Conversey");
 
 // Ensure antiforgery cookies work across subdomains

@@ -7,14 +7,16 @@ using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Survey;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-public class ConverseyDbContext : IdentityDbContext<ApplicationUser>
+public class ConverseyDbContext : IdentityDbContext<ApplicationUser>, IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
     public DbSet<WorkspaceAdminUser> WorkspaceAdmins { get; set; }
