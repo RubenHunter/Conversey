@@ -702,3 +702,36 @@
     font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
     color: var(--color-text-secondary);
 }
+
+/* ── Mobile layout picker ── */
+@media (max-width: 600px) {
+    .layout-picker-body {
+        flex-direction: column;
+    }
+
+    .layout-picker-side {
+        min-height: 35vh;
+    }
+
+    .layout-picker-bg {
+        background-size: cover;
+    }
+
+    .layout-picker-label {
+        padding: var(--spacing-sm) var(--spacing-md);
+        backdrop-filter: blur(6px);
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .layout-picker-divider {
+        position: relative;
+        left: 0;
+        top: auto;
+        bottom: auto;
+        width: 100%;
+        height: 0;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        justify-content: center;
+    }
+}
