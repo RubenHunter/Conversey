@@ -865,6 +865,7 @@ public static class DataSeeder
         context.ResponseReactions.AddRange(cityReactions);
 
         SeedAiPrompts(context, now);
+        SeedAiRateLimits(context, now);
 
         context.SaveChanges();
     }
@@ -944,5 +945,37 @@ public static class DataSeeder
         };
 
         context.AiPrompts.AddRange(prompts);
+    }
+
+    private static void SeedAiRateLimits(ConverseyDbContext context, DateTime now)
+    {
+        if (context.RateLimitConfigs.Any())
+        {
+            return;
+        }
+
+        var configs = new List<RateLimitConfig>
+        {
+            new()
+            {
+                PolicyName = "AiFixedPolicy",
+                PermitLimit = 30,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                PolicyName = "AiAdminPolicy",
+                PermitLimit = 60,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.RateLimitConfigs.AddRange(configs);
     }
 }

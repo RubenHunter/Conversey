@@ -199,4 +199,46 @@ public class AiAdminController : Controller
         await _aiAdminManager.SaveProviderConfigAsync(config);
         return RedirectToAction(nameof(Providers));
     }
+
+    [HttpGet("rate-limits")]
+    public async Task<IActionResult> RateLimits()
+    {
+        var configs = await _aiAdminManager.GetAllRateLimitConfigsAsync();
+        return View(configs);
+    }
+
+    [HttpGet("rate-limits/{id:int}")]
+    public async Task<IActionResult> EditRateLimit(int id)
+    {
+        var config = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
+        if (config == null)
+        {
+            return NotFound();
+        }
+
+        return View(config);
+    }
+
+    [HttpPost("rate-limits/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditRateLimit(int id, RateLimitConfig model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var existing = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        existing.PermitLimit = model.PermitLimit;
+        existing.WindowSeconds = model.WindowSeconds;
+        existing.QueueLimit = model.QueueLimit;
+
+        await _aiAdminManager.SaveRateLimitConfigAsync(existing);
+        return RedirectToAction(nameof(RateLimits));
+    }
 }

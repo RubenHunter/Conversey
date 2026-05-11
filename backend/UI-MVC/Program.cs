@@ -14,8 +14,10 @@ using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.RateLimiting;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Vite.AspNetCore;
@@ -51,6 +53,7 @@ builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
+builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -171,6 +174,16 @@ builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
 
+builder.Services.AddSingleton<RateLimitConfigCache>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy<string, AiUserRateLimiterPolicy>("AiFixedPolicy");
+    options.AddPolicy<string, AiAdminRateLimiterPolicy>("AiAdminPolicy");
+});
+
 
 TypeDescriptor.AddAttributes(
     typeof(Slug),
@@ -181,6 +194,9 @@ var app = builder.Build();
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
+
+var rateLimitCache = app.Services.GetRequiredService<RateLimitConfigCache>();
+await rateLimitCache.InitializeAsync();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -198,6 +214,8 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
+
+app.UseRateLimiter();
 
 // if (app.Environment.IsDevelopment())
 // {
@@ -335,11 +353,14 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
 
 static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
 {
+    if (string.IsNullOrWhiteSpace(config.BaseUrl))
+    {
+        throw new InvalidOperationException($"AI provider '{config.ProviderName}' is enabled but has no BaseUrl configured.");
+    }
+
     var factory = provider.GetRequiredService<IHttpClientFactory>();
     var httpClient = factory.CreateClient();
-    httpClient.BaseAddress = string.IsNullOrWhiteSpace(config.BaseUrl)
-        ? new Uri("https://api.mistral.ai/v1/")
-        : new Uri(config.BaseUrl);
+    httpClient.BaseAddress = new Uri(config.BaseUrl);
     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
     IAiProvider aiProvider;

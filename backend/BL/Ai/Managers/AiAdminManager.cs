@@ -10,21 +10,27 @@ public sealed class AiAdminManager : IAiAdminManager
     private readonly IAuditRepository _auditRepository;
     private readonly IPromptRepository _promptRepository;
     private readonly IProviderConfigRepository _providerConfigRepository;
+    private readonly IRateLimitConfigRepository _rateLimitConfigRepository;
     private readonly IAiManager _aiManager;
     private readonly IConfiguration _configuration;
+    private readonly RateLimitConfigCache _rateLimitCache;
 
     public AiAdminManager(
         IAuditRepository auditRepository,
         IPromptRepository promptRepository,
         IProviderConfigRepository providerConfigRepository,
+        IRateLimitConfigRepository rateLimitConfigRepository,
         IAiManager aiManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        RateLimitConfigCache rateLimitCache)
     {
         _auditRepository = auditRepository;
         _promptRepository = promptRepository;
         _providerConfigRepository = providerConfigRepository;
+        _rateLimitConfigRepository = rateLimitConfigRepository;
         _aiManager = aiManager;
         _configuration = configuration;
+        _rateLimitCache = rateLimitCache;
     }
 
     public async Task<AiHealthInfo> GetHealthAsync()
@@ -153,6 +159,20 @@ public sealed class AiAdminManager : IAiAdminManager
             config.Temperature = 1.0m;
         }
 
+        if (config.IsEnabled)
+        {
+            var allConfigs = await _providerConfigRepository.GetAllConfigsAsync();
+            foreach (var other in allConfigs)
+            {
+                if (other.Id != config.Id && other.IsEnabled)
+                {
+                    other.IsEnabled = false;
+                    other.UpdatedAt = DateTime.UtcNow;
+                    await _providerConfigRepository.SaveConfigAsync(other);
+                }
+            }
+        }
+
         config.UpdatedAt = DateTime.UtcNow;
         await _providerConfigRepository.SaveConfigAsync(config);
     }
@@ -243,5 +263,23 @@ public sealed class AiAdminManager : IAiAdminManager
 
         probe.DurationMs = (int)(DateTime.UtcNow - start).TotalMilliseconds;
         return probe;
+    }
+
+    public Task<IReadOnlyList<RateLimitConfig>> GetAllRateLimitConfigsAsync()
+    {
+        return _rateLimitConfigRepository.GetAllConfigsAsync();
+    }
+
+    public async Task<RateLimitConfig> GetRateLimitConfigByIdAsync(int id)
+    {
+        var configs = await _rateLimitConfigRepository.GetAllConfigsAsync();
+        return configs.FirstOrDefault(c => c.Id == id);
+    }
+
+    public async Task SaveRateLimitConfigAsync(RateLimitConfig config)
+    {
+        config.UpdatedAt = DateTime.UtcNow;
+        await _rateLimitConfigRepository.SaveConfigAsync(config);
+        await _rateLimitCache.ReloadAsync();
     }
 }

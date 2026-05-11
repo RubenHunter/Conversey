@@ -2,6 +2,7 @@ using Microsoft.Extensions.AI;
 
 namespace Conversey.BL.Ai;
 
+//wordt nu niet gebruikt maar is de buildingblock voor implementing de MS stack voor bvb locale modellen en ingebouwde telemetry etc te hebben.
 public sealed class MicrosoftExtensionsAiProvider : IAiProvider
 {
     private readonly IChatClient _chatClient;

@@ -31,8 +31,10 @@ public class ProviderConfigRepository : IProviderConfigRepository
             existing.ProviderName = config.ProviderName;
             existing.BaseUrl = config.BaseUrl;
             existing.ApiKey = config.ApiKey;
+            existing.ApiVersion = config.ApiVersion;
             existing.CompletionsModel = config.CompletionsModel;
             existing.ModerationModel = config.ModerationModel;
+            existing.Temperature = config.Temperature;
             existing.IsEnabled = config.IsEnabled;
             existing.UpdatedAt = DateTime.UtcNow;
         }

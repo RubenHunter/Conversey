@@ -3,12 +3,14 @@ using Conversey.BL.Domain.Ai;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
 [ApiController]
 [Route("api/ai")]
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
+[EnableRateLimiting("AiAdminPolicy")]
 public class AiController : ControllerBase
 {
     private readonly IAiAdminManager _aiAdminManager;

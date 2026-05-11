@@ -1,0 +1,57 @@
+@model Conversey.BL.Domain.Ai.RateLimitConfig
+@{
+    ViewData["Title"] = $"Edit Rate Limit: {Model.PolicyName}";
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-2xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Rate Limit: <span class="rounded bg-indigo-50 px-2 py-0.5 font-mono text-lg text-indigo-700">@Model.PolicyName</span></h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    @(Model.PolicyName == "AiFixedPolicy" ? "Controls rate limiting for user-facing AI endpoints (idea submission, nudging, discovery)." : "Controls rate limiting for admin AI endpoints (health checks, cost queries, model listing).")
+                </p>
+            </div>
+            <a href="@Url.Action("RateLimits")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to Rate Limits</a>
+        </div>
+
+        <form asp-action="EditRateLimit" asp-route-id="@Model.Id" method="post" class="mt-6 space-y-6">
+            @Html.AntiForgeryToken()
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Limits</h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label asp-for="PermitLimit" class="block text-xs font-semibold uppercase text-gray-500">Permit Limit</label>
+                        <input asp-for="PermitLimit" type="number" min="1" max="10000" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <p class="mt-1 text-xs text-gray-400">Maximum number of requests allowed within the configured time window. Range: 1-10000.</p>
+                        <span asp-validation-for="PermitLimit" class="text-xs text-red-500"></span>
+                    </div>
+                    <div>
+                        <label asp-for="WindowSeconds" class="block text-xs font-semibold uppercase text-gray-500">Window (seconds)</label>
+                        <input asp-for="WindowSeconds" type="number" min="1" max="3600" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <p class="mt-1 text-xs text-gray-400">Time window in seconds over which the permit limit is enforced. Range: 1-3600 (1 hour).</p>
+                        <span asp-validation-for="WindowSeconds" class="text-xs text-red-500"></span>
+                    </div>
+                    <div>
+                        <label asp-for="QueueLimit" class="block text-xs font-semibold uppercase text-gray-500">Queue Limit</label>
+                        <input asp-for="QueueLimit" type="number" min="0" max="100" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <p class="mt-1 text-xs text-gray-400">Number of requests that can be queued when the limit is reached. 0 = reject immediately (recommended). Range: 0-100.</p>
+                        <span asp-validation-for="QueueLimit" class="text-xs text-red-500"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a href="@Url.Action("RateLimits")" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

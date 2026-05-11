@@ -30,6 +30,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<AiAuditLog>  AiAuditLogs { get; set; }
     public DbSet<AiPrompt>  AiPrompts { get; set; }
     public DbSet<AiProviderConfig>  AiProviderConfigs { get; set; }
+    public DbSet<RateLimitConfig>  RateLimitConfigs { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {

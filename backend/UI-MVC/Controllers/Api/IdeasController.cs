@@ -4,11 +4,13 @@ using Conversey.BL.Ai;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
 [ApiController]
 [Route("api/workspaces/{workspaceId}/projects/{projectId}/topics/{topicId:int}/ideas")]
+[EnableRateLimiting("AiFixedPolicy")]
 public class IdeasController : ControllerBase
 {
     private readonly IIdeaManager _manager;
