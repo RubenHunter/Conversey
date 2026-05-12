@@ -91,6 +91,7 @@ public class ProjectRepository : IProjectRepository
         var projects = ReadAllProjectsFromWorkspaceId(workspaceId);
         _dbContext.Projects.RemoveRange(projects);
     }
+
 }
 
 #region ProjectConfig

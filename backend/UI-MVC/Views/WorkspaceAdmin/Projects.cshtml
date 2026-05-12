@@ -1,163 +1,125 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
 @using Microsoft.AspNetCore.Html
 @using Microsoft.AspNetCore.Mvc.Rendering
-@model IEnumerable<Conversey.BL.Domain.Administration.Project>
+@model IEnumerable<Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectCardViewModel>
 @Html.AntiForgeryToken()
-
+@inject WorkspaceContext WorkspaceContext
 @{
-    ViewData["Title"] = "Projects";
-    var projects = Model ?? Array.Empty<Project>();
-
-    var tableModel = new AdminTableViewModel<Project>
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        SectionTitle = "All Projects",
-        TableDescription = "Manage all projects from one place.",
-        CreateUrl = Url.Action("CreateProject", "WorkspaceAdmin") ?? "#",
-        CreateButtonLabel = "Create new project",
-        EmptyState = "Projects will show up here once they are created.",
-        RowId = p => p.Id.Text,
-        
-        Items = projects.ToList(),
-
-        Columns =
-        [
-            new()
-            {
-                Header = "Name",
-                Template = p =>
-                {
-                    var link = new TagBuilder("a")
-                    {
-                        Attributes =
-                        {
-                            ["href"] = Url.Action("ProjectDetails", "WorkspaceAdmin", new { id = p.Id.Text })!
-                        }
-                    };
-                    link.AddCssClass("text-indigo-600 hover:underline");
-                    link.InnerHtml.Append(p.Name ?? "-");
-                    return link;
-                }
-            },
-            new()
-            {
-                Header = "Status",
-                Template = p =>
-                {
-                    var span = new TagBuilder("span");
-                    span.InnerHtml.Append(p.Status.ToString());
-                    return span;
-                }
-            },
-            new()
-            {
-                Header = "Interaction Form",
-                Template = p =>
-                {
-                    var span = new TagBuilder("span");
-                    span.InnerHtml.Append(p.InteractionForm.ToString());
-                    return span;
-                }
-            },
-            new()
-            {
-                Header = "AI Nudging",
-                Template = p =>
-                {
-                    var span = new TagBuilder("span");
-                    span.InnerHtml.Append(p.NudgingStrength.ToString());
-                    return span;
-                }
-            },
-            new()
-            {
-                Header = "Start Date",
-                Template = p =>
-                {
-                    var span = new TagBuilder("span");
-
-                    var text = p.StartDate == default
-                        ? "-"
-                        : p.StartDate.ToString("yyyy-MM-dd");
-
-                    span.InnerHtml.Append(text);
-                    return span;
-                }
-            },
-            new()
-            {
-                Header = "End Date",
-                Template = p =>
-                {
-                    var span = new TagBuilder("span");
-
-                    var text = p.StartDate == default
-                        ? "-"
-                        : p.EndDate.ToString("yyyy-MM-dd");
-
-                    span.InnerHtml.Append(text);
-                    return span;
-                }
-            },
-            new()
-            {
-                Header = "Actions",
-                Template = p =>
-                {
-                    var container = new TagBuilder("div");
-                    container.AddCssClass("flex gap-3");
-
-                    // EDIT BUTTON
-                    var edit = new TagBuilder("a")
-                    {
-                        Attributes =
-                        {
-                            ["href"] = Url.Action("EditProject", "WorkspaceAdmin", new { id = p.Id.Text })!
-                        }
-                    };
-                    edit.AddCssClass("text-blue-600 hover:underline");
-                    edit.InnerHtml.Append("Edit");
-
-                    var divider = new TagBuilder("p");
-                    divider.InnerHtml.Append("|");
-                    
-                    // DELETE BUTTON
-                    var delete = new TagBuilder("button")
-                    {
-                        Attributes =
-                        {
-                            ["type"] = "button",
-                            ["data-delete-id"] = p.Id.Text,
-                            ["data-delete-name"] = p.Name ?? "-",
-                            ["data-delete-endpoint"] = $"/admin/project/delete/{p.Id.Text}"
-                        }
-                    };
-
-                    delete.AddCssClass("text-red-600 hover:underline");
-                    delete.InnerHtml.Append("Delete");
-
-                    container.InnerHtml.AppendHtml(edit);
-                    container.InnerHtml.AppendHtml(divider);
-                    container.InnerHtml.AppendHtml(delete);
-
-                    return container;
-                }
-            }
-        ]
+        ("Projects", null, true)
     };
 }
 
-<div class="min-h-screen bg-gray-50 px-4 py-10">
-    <div class="mx-auto max-w-5xl">
-        <div class="mb-6">
-            <a
-                href="@Url.Action("Index", "WorkspaceAdmin")"
-                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                ← Back to admin panel
+<div class="min-h-screen bg-background font-sans text-text">
+    
+    @await Html.PartialAsync("_AdminHeader")
+
+    <!-- Container widened to w-full with a max-width of 1600px for ultra-wide screens -->
+    <main class="p-8 w-full max-w-400 mx-auto">
+        
+        <!-- Top Stats Row: Occupies horizontal space and adds immediate utility -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block">Total Projects</span>
+                    <div class="text-2xl font-bold text-text">@Model.Count()</div>
+                </div>
+                <div class="p-2 bg-primary/5 rounded-lg text-primary">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="relative w-80">
+                    <input type="text" placeholder="Search projects..." 
+                           class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm" />
+                    <span class="absolute left-3 top-2.5 text-secondary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-accent transition-colors">Delete</button>
+                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-primary transition-colors">Select all</button>
+                </div>
+            </div>
+            
+            <div class="text-sm text-text/50">
+                Showing <strong>@Model.Count()</strong> projects
+            </div>
+        </div>
+
+        <!-- Project Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            @foreach (var project in Model)
+            {
+                <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative">
+                @* The main link covers the whole card *@
+                <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id" aria-label="View project @project.Title"></a>
+                
+                @* TOP SECTION: Now includes the image variable and the custom class *@
+                <div class="project-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden"
+                     style="--card-image: url('@project.ImageUrl');">
+                    
+                    <div class="text-center px-4 relative z-0">
+                        <span class="block font-bold text-xl text-primary tracking-tight">@project.Title</span>
+                        <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">Project Workspace</span>
+                    </div>
+                    
+                    @* Hover tint overlay *@
+                    <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
+                </div>
+
+                @* FOOTER SECTION: Restored to original layout *@
+                <div class="p-4 flex items-center justify-between border-t border-secondary/10 relative z-20">
+                    @* Avatars *@
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JD</div>
+                        <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
+                    </div>
+
+                    @* Action Buttons *@
+                    <div class="flex items-center space-x-1">
+                        <a title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id" aria-label="Edit project @project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </a>
+                        <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </button>
+                        <button title="Share" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- Persistent "Add New" Card: Ensures the layout never looks empty -->
+            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" aria-label="Create new project">
+                <div class="w-12 h-12 rounded-full bg-white shadow-sm border border-secondary/10 flex items-center justify-center text-secondary group-hover:text-primary group-hover:scale-110 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </div>
+                <span class="mt-4 font-bold text-sm text-secondary group-hover:text-primary">Create New Project</span>
             </a>
         </div>
-        @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
-    </div>
+    </main>
+
+    <!-- Floating Action Button remains for quick access -->
+    <a class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" href="/admin/projects/new" aria-label="New project">
+        <svg class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        <span>New Project</span>
+    </a>
 </div>
+
 
 @await Html.PartialAsync("_DeleteModal")

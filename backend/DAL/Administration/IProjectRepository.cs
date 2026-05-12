@@ -18,4 +18,5 @@ public interface IProjectRepository
     void UpdateProject(Project project);
     void DeleteProject(Slug projectId, Slug workspaceId);
     void DeleteAllProjectsFromWorkspaceId(Slug workspaceId);
+
 }

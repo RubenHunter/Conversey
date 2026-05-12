@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Conversey.UI_MVC.Middleware;
 
-public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRepository workspaceRepository, UserManager<IdentityUser> userManager) : IMiddleware
+public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRepository workspaceRepository) : IMiddleware
 {
     public Task InvokeAsync(HttpContext context, RequestDelegate next)
     {

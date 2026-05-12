@@ -10,7 +10,6 @@ public record struct Slug
 
     //TODO vraag docent
     public override string ToString() => Text;
-
     
     public static Slug FromName(string name)
     {

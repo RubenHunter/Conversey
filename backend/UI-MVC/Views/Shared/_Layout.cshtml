@@ -9,6 +9,8 @@
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
+    <script type="module" vite-src="~/components/shared//universalStepper.ts"></script>
+
     <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
     
     <environment include="Development">
@@ -19,7 +21,7 @@
     </environment>
 </head>
 <body>
-	<div id="app" class="min-h-screen flex flex-col items-center justify-center gap-8">
+	<div id="app" class="min-h-screen flex flex-col">
 		@RenderBody()
 	</div>
 </body>

@@ -4,6 +4,7 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     public IActionResult Projects()
     {
         var projects = projectManager.GetAllProjectsFromWorkspaceId(workspaceContext.CurrentWorkspace.Id);
-        return View(projects);
+        return View(projects.Select(p => new ProjectCardViewModel()
+        {
+            Id = p.Id,
+            Title = p.Name,
+            ImageUrl = p.ImageUrl
+        }).ToList());
     }
 
     [HttpGet("/admin/projects/new")]
@@ -130,13 +136,49 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
-    private AdminFormViewModel<Project> CreateFormVm(Project project)
+    private ProjectViewModel CreateFormVm(Project project)
     {
-        return new AdminFormViewModel<Project>
+        return new ProjectViewModel
         {
-            FormItem = project,
-            FormAction = "CreateProject",
-            SubmitLabel = "Create Project",
+            AdminFormViewModel = new AdminFormViewModel<Project>
+            {
+                FormItem = project,
+                FormAction = "CreateProject",
+                SubmitLabel = "Create Project",
+            },
+            StepperViewModel = new StepperViewModel
+            {
+                Title = "Creating a Project",
+                EntityName = "Project",
+                Steps =
+                [
+                    new StepItem
+                    {
+                        Label = "Intro & Presentation",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Survey",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Ideation",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "AI Configuration",
+                        PartialViewName = "_ProjectForm"
+                    },
+                    new StepItem
+                    {
+                        Label = "Done",
+                        PartialViewName = "_ProjectForm"
+                    }
+                ]
+            }
         };
     }
     

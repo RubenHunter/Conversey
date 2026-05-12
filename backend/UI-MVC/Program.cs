@@ -56,6 +56,7 @@ builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
 builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
 builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
+builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -177,6 +178,8 @@ builder.Services.AddScoped<IAiManager>(provider =>
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
+builder.Services.AddSingleton<AdminContext>();
+builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();

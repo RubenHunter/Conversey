@@ -1,0 +1,22 @@
+:root {
+    --card-image: none;
+}
+.project-card-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* Use the variable if it exists, otherwise it's transparent */
+    background-image: var(--card-image);
+    background-size: cover;
+    background-position: center;
+    /* Optional: Add a light overlay to keep text readable over images */
+    background-color: rgba(255, 255, 255, 0.7);
+    background-blend-mode: overlay;
+    transition: transform 0.3s ease;
+    z-index: 0;
+}
+
+/* Zoom effect on hover */
+.group:hover .project-card-header::before {
+    transform: scale(1.05);
+}

@@ -1,7 +1,18 @@
-@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
     ViewData["Title"] = "Create Project";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Projects", "/admin/projects", false),
+        ("Create", null, true)
+    };
 }
 
-@await Html.PartialAsync("_ProjectForm", Model)
+<div class="min-h-screen bg-background">
+    @await Html.PartialAsync("_AdminHeader")
+    
+    <!-- Render the stepper and it handles the content partials internally -->
+    @await Html.PartialAsync("_Stepper", Model)
+</div>
+    
