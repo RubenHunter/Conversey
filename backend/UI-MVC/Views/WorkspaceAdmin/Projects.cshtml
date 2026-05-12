@@ -60,34 +60,44 @@
             @foreach (var project in Model)
             {
                 <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative">
-                    <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id" aria-label="View project @project.Title"></a>
-                    <div class="h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden">
-                        <div class="text-center px-4 relative z-0">
-                            <span class="block font-bold text-xl text-primary tracking-tight">@project.Title</span>
-                            <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">Project Workspace</span>
-                        </div>
-                        <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
+                @* The main link covers the whole card *@
+                <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id" aria-label="View project @project.Title"></a>
+                
+                @* TOP SECTION: Now includes the image variable and the custom class *@
+                <div class="project-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden"
+                     style="--card-image: url('@project.ImageUrl');">
+                    
+                    <div class="text-center px-4 relative z-0">
+                        <span class="block font-bold text-xl text-primary tracking-tight">@project.Title</span>
+                        <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">Project Workspace</span>
+                    </div>
+                    
+                    @* Hover tint overlay *@
+                    <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
+                </div>
+
+                @* FOOTER SECTION: Restored to original layout *@
+                <div class="p-4 flex items-center justify-between border-t border-secondary/10 relative z-20">
+                    @* Avatars *@
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JD</div>
+                        <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
                     </div>
 
-                    <div class="p-4 flex items-center justify-between border-t border-secondary/10 relative z-20">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JD</div>
-                            <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
-                        </div>
-
-                        <div class="flex items-center space-x-1">
-                            <a title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id" aria-label="Edit project @project.Title">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </a>
-                            <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                            </button>
-                            <button title="Share" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                            </button>
-                        </div>
+                    @* Action Buttons *@
+                    <div class="flex items-center space-x-1">
+                        <a title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id" aria-label="Edit project @project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </a>
+                        <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </button>
+                        <button title="Share" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                        </button>
                     </div>
                 </div>
+            </div>
             }
 
             <!-- Persistent "Add New" Card: Ensures the layout never looks empty -->

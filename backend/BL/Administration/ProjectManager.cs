@@ -10,11 +10,13 @@ public class ProjectManager: IProjectManager
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IWorkspaceManager _workspaceManager;
+    private readonly ICloudStorageRepository _cloudStorageRepository;
 
-    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager)
+    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager, ICloudStorageRepository cloudStorageRepository)
     {
         _projectRepository = projectRepository;
         _workspaceManager = workspaceManager;
+        _cloudStorageRepository = cloudStorageRepository;
     }
 
     public Project GetProject(Workspace workspace, Slug projectId)
@@ -133,6 +135,16 @@ public class ProjectManager: IProjectManager
     public void RemoveProject(Slug projectId, Slug workspaceId)
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
+    }
+
+    public async Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType)
+    {
+        // TODO image file validation
+        var imageUrl = await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
+        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, worspaceId);
+        project.ImageUrl = imageUrl;
+        Validate(project);
+        _projectRepository.UpdateProject(project);
     }
 
     private static bool ShouldReplaceEmail(string currentEmail, string newEmail)

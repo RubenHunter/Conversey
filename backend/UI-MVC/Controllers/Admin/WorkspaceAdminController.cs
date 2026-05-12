@@ -27,7 +27,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         {
             Id = p.Id,
             Title = p.Name,
-            ImageUrl = "https://placehold.co/600x400/EEE/31343C"
+            ImageUrl = p.ImageUrl
         }).ToList());
     }
 
