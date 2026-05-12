@@ -9,7 +9,7 @@ public class CloudStorageRepository : ICloudStorageRepository
     private readonly StorageClient _storageClient;
     private readonly string _bucketName;
 
-    public CloudStorageRepository(IConfiguration config)
+    /*public CloudStorageRepository(IConfiguration config)
     {
         _bucketName = config["GoogleCloud:BucketName"] 
                       ?? throw new InvalidOperationException("GoogleCloud:BucketName is missing from configuration.");
@@ -23,7 +23,7 @@ public class CloudStorageRepository : ICloudStorageRepository
         var credential = serviceAccount.ToGoogleCredential();
 
         _storageClient = StorageClient.Create(credential);
-    }
+    }*/
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {
