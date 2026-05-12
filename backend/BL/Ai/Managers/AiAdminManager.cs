@@ -230,7 +230,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         try
         {
-            var decision = await _aiManager.ModerateContentAsync("health-check: keep this sentence respectful");
+            var decision = _aiManager.ModerateContent("health-check: keep this sentence respectful");
             probe.Ok = true;
             probe.IsAllowed = decision.IsAllowed;
         }
@@ -255,7 +255,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         try
         {
-            var alternative = await _aiManager.GenerateAlternativeAsync("test", null);
+            var alternative = _aiManager.GenerateAlternative("test", null);
             probe.Ok = true;
             probe.ResponsePreview = (alternative ?? "").Length > 80 ? alternative[..80] + "..." : alternative;
         }

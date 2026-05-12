@@ -93,7 +93,7 @@ public class IdeaManager: IIdeaManager
                 NudgingMode = MapStrengthToNudgingMode(nudgingStrength),
             };
 
-            var decision = _aiManager.AssessIdeaNudgeAsync(request).GetAwaiter().GetResult();
+            var decision = _aiManager.AssessIdeaNudge(request);
             if (decision == null)
             {
                 return new IdeaNudgeDecision { IsApproved = true };
@@ -252,11 +252,11 @@ public class IdeaManager: IIdeaManager
         bool aiCallFailed = false;
         try
         {
-            rankedIndexes = _aiManager.RankIdeasByRelationAsync(
+            rankedIndexes = _aiManager.RankIdeasByRelation(
                 referenceIdea,
                 candidates.Select(idea => idea.Content).ToList().AsReadOnly(),
                 category == IdeaDiscoveryCategory.Different,
-                cappedLimit).GetAwaiter().GetResult();
+                cappedLimit);
         }
         catch (Exception ex)
         {
@@ -528,12 +528,10 @@ public class IdeaManager: IIdeaManager
         {
             var existingCategories = LoadTopicSemanticCategories(topicId);
             var categorization = _aiManager
-                .CategorizeIdeasAsync(
+                .CategorizeIdeas(
                     new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
                     existingCategories,
-                    MaxCategoriesPerIdea)
-                .GetAwaiter()
-                .GetResult();
+                    MaxCategoriesPerIdea);
 
             var rawCategories = categorization.TryGetValue(0, out var assigned)
                 ? assigned
@@ -579,9 +577,7 @@ public class IdeaManager: IIdeaManager
             try
             {
                 categorizedByIndex = _aiManager
-                    .CategorizeIdeasAsync(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea)
-                    .GetAwaiter()
-                    .GetResult();
+                    .CategorizeIdeas(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea);
             }
             catch (Exception ex)
             {
@@ -692,7 +688,7 @@ public class IdeaManager: IIdeaManager
         
         try
         {
-            var decision = _aiManager.ModerateContentAsync(content).Result;
+            var decision = _aiManager.ModerateContent(content);
 
             if (decision.IsAllowed)
             {
@@ -701,7 +697,7 @@ public class IdeaManager: IIdeaManager
 
             try
             {
-                decision.Suggestion = _aiManager.GenerateAlternativeAsync(content, decision).Result;
+                decision.Suggestion = _aiManager.GenerateAlternative(content, decision);
             }
             catch (Exception ex)
             {

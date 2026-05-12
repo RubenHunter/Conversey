@@ -21,25 +21,25 @@ public sealed class NoopAiManager : IAiManager
         _moderationKeywordRepository = moderationKeywordRepository;
     }
 
-    public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
+    public string GenerateAlternative(string content, ModerationDecision decision = null)
     {
-        return Task.FromResult("Please rephrase your message in a respectful way.");
+        return "Please rephrase your message in a respectful way.";
     }
 
-    public Task<ModerationDecision> ModerateContentAsync(string content)
+    public ModerationDecision ModerateContent(string content)
     {
         var keywordSet = _moderationKeywordRepository.GetKeywordSet();
         var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
         var isAllowed = unsafeTerm == null;
 
-        return Task.FromResult(new ModerationDecision
+        return new ModerationDecision
         {
             IsAllowed = isAllowed,
             Categories = new ModerationInfo()
-        });
+        };
     }
 
-    public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
+    public IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
     {
         var mode = (request.NudgingMode ?? "Medium").Trim();
         if (!NudgeThresholds.TryGetValue(mode, out var threshold))
@@ -54,18 +54,18 @@ public sealed class NoopAiManager : IAiManager
         var isApproved = wordCount >= threshold.minWords;
         var question = isApproved ? null : threshold.placeholder;
 
-        return Task.FromResult(new IdeaNudgeDecision
+        return new IdeaNudgeDecision
         {
             IsApproved = isApproved,
             Question = question
-        });
+        };
     }
 
-    public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
-            return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
+            return Array.Empty<int>();
         }
 
         var ordered = Enumerable.Range(0, candidateIdeas.Count);
@@ -74,10 +74,10 @@ public sealed class NoopAiManager : IAiManager
             ordered = ordered.Reverse();
         }
 
-        return Task.FromResult(ordered.Take(limit));
+        return ordered.Take(limit);
     }
 
-    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    public IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
     {
         var result = new Dictionary<int, IReadOnlyList<string>>();
         var canonicalExisting = existingCategories
@@ -121,7 +121,7 @@ public sealed class NoopAiManager : IAiManager
             result[index] = normalized.AsReadOnly();
         }
 
-        return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
+        return result;
     }
 
     private static string NormalizeCategoryKey(string value)
