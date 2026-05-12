@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <link rel="icon" type="image/x-icon" href="/Conversey_logo.png" asp-append-version="true" />
+    <link rel="icon" type="image/x-icon" href="/Assets/Conversey_logo.png" />
 
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
-    <script type="module" vite-src="~/components/adminDeleteModal.ts"></script>
+    @* <script type="module" vite-src="~/components/adminDeleteModal.ts"></script> *@
     <script type="module" vite-src="~/components/universalStepper.ts"></script>
 
+    <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
     
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />

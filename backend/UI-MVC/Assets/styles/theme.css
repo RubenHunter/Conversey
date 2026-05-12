@@ -29,6 +29,8 @@
   /* Backdrop/Overlay */
   --backdrop-bg: rgba(0, 0, 0, 0.35);
   --backdrop-blur: 4px;
+  --backdrop-blur-light: 3px;
+  
 
   /* Typography */
   --font-primary: 'Inter', system-ui, -apple-system, sans-serif;

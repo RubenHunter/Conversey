@@ -1,7 +1,7 @@
-﻿import type { Idea, IdeaTopic } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
-
-type DiscoveryBadgeType = 'similar' | 'different'
+﻿import type { Idea, IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
+import { DiscoveryBadgeType } from '../types'
+import { getSurveyStrings } from '../../../i18n/survey'
 
 interface RenderCommunityListParams {
     list: HTMLDivElement
@@ -15,18 +15,19 @@ interface RenderCommunityListParams {
 }
 
 function formatDate(isoString: string): string {
+    const t = getSurveyStrings()
     const date = new Date(isoString)
     const now = new Date()
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
     
-    if (diffInMinutes < 1) return 'Just now'
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1) return t.justNow
+    if (diffInMinutes < 60) return t.minutesAgo.replace('{n}', String(diffInMinutes))
     
     const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `${diffInHours}h ago`
+    if (diffInHours < 24) return t.hoursAgo.replace('{n}', String(diffInHours))
     
     const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d ago`
+    if (diffInDays < 7) return t.daysAgo.replace('{n}', String(diffInDays))
     
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
@@ -54,7 +55,8 @@ function createUserInfoElement(_authorType: Idea['authorType'], createdAt: strin
 }
 
 function getDiscoveryBadgeLabel(badge: DiscoveryBadgeType): string {
-    return badge === 'similar' ? 'Most similar' : 'Least similar'
+    const t = getSurveyStrings()
+    return badge === 'similar' ? t.mostSimilar : t.leastSimilar
 }
 
 function createDiscoveryBadgeElement(
@@ -62,11 +64,12 @@ function createDiscoveryBadgeElement(
     badge: DiscoveryBadgeType,
     onDiscoveryBadgeClick?: (badge: DiscoveryBadgeType) => void,
 ): HTMLButtonElement {
+    const t = getSurveyStrings()
     const button = document.createElement('button')
     button.type = 'button'
     button.className = `ideas-discovery-badge ideas-discovery-badge--${badge}`
     button.textContent = getDiscoveryBadgeLabel(badge)
-    button.title = `Show only ${badge === 'similar' ? 'most similar' : 'least similar'} ideas`
+    button.title = `Show ${badge === 'similar' ? t.mostSimilarIdeas.toLowerCase() : t.leastSimilarIdeas.toLowerCase()} ideas`
     button.setAttribute('data-discovery-badge', badge)
     button.setAttribute('data-idea-id', String(ideaId))
     button.addEventListener('click', (event) => {
@@ -86,10 +89,11 @@ export function renderCommunityIdeasList({
     discoveryBadgeByIdeaId,
     onDiscoveryBadgeClick,
 }: RenderCommunityListParams): void {
+    const t = getSurveyStrings()
     list.innerHTML = ''
 
     if (ideas.length === 0) {
-        list.innerHTML = `<p class="ideas-empty">${activeView.type === 'my-ideas' ? 'You have not submitted any ideas yet.' : 'No ideas yet for this view.'}</p>`
+        list.innerHTML = `<p class="ideas-empty">${activeView.type === 'my-ideas' ? t.noIdeasMyIdeas : t.noIdeasForView}</p>`
         return
     }
 
@@ -123,7 +127,7 @@ export function renderCommunityIdeasList({
             badgesWrapper.style.gap = '0.25rem'
             badgesWrapper.style.alignItems = 'center'
             
-            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || idea.qualityNudgeBypassed || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'
@@ -153,7 +157,7 @@ export function renderCommunityIdeasList({
                 badgesWrapper.appendChild(yoursBadge)
             }
 
-            if (idea.pendingReview || flaggedIdeaIds.has(idea.id)) {
+            if (idea.pendingReview || idea.qualityNudgeBypassed || flaggedIdeaIds.has(idea.id)) {
                 const flagged = document.createElement('span')
                 flagged.className = 'ideas-review-flag'
                 flagged.textContent = 'Marked for review'

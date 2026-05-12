@@ -1,16 +1,16 @@
-﻿import type { ApiIdeaDto } from '../api/dtos/ideaDto.ts'
-import { mapApiIdeaToIdea, mapSubmitIdeaRequestToApiSubmitIdeaRequest } from '../mappers/ideaMapper.ts'
-import type { Idea, IdeaTopic, SubmitIdeaRequest } from '../models/idea.ts'
-import type { Project } from '../models/project.ts'
-import { apiFetch } from './apiService.ts'
-import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'
+﻿import type { ApiIdeaDto } from '../api/dtos/ideaDto'
+import { mapApiIdeaToIdea, mapSubmitIdeaRequestToApiSubmitIdeaRequest } from '../mappers/ideaMapper'
+import type { Idea, IdeaTopic, SubmitIdeaRequest } from '../models/idea'
+import type { Project } from '../models/project'
+import { apiFetch } from './apiService'
+import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService'
+import { DiscoveryMode } from '../components/ideas/types'
 
 interface IdeasContext {
     topics: IdeaTopic[]
     ideas: Idea[]
 }
 
-export type IdeaDiscoveryCategory = 'similar' | 'different' | 'random'
 export const IDEA_DISCOVERY_MAX_RESULTS = 30
 
 export function getOrCreateProjectScopedYouthId(projectSlug: string): string {
@@ -81,6 +81,23 @@ export interface IdeaSubmitResult {
     requiresSafetyReview: boolean
 }
 
+export interface IdeaNudgingTurn {
+    question: string
+    answer: string
+}
+
+export interface IdeaNudgingContext {
+    projectTitle: string
+    projectDescription: string
+    topicTitle: string
+    topicPrompt: string
+}
+
+export interface IdeaNudgingDecision {
+    isApproved: boolean
+    question: string | null
+}
+
 export async function submitIdea(workspaceSlug: string, projectSlug: string, request: SubmitIdeaRequest): Promise<IdeaSubmitResult> {
     const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
     const youthToken = getOrCreateProjectScopedYouthId(normalizedProjectSlug)
@@ -125,7 +142,7 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
     const trimmedSuggestion = aiSuggestion && aiSuggestion.trim().length > 0 ? aiSuggestion.trim() : null
     const isAllowed = decision?.isAllowed ?? decision?.IsAllowed
     const mappedIdea = mapApiIdeaToIdea(ideaDto, youthToken)
-    const requiresSafetyReview = isAllowed === false || mappedIdea.pendingReview
+    const requiresSafetyReview = isAllowed === false || Boolean(trimmedSuggestion)
 
     if (trimmedSuggestion) {
         console.log('[AI moderation] ⚠️ content flagged by AI moderation')
@@ -133,6 +150,8 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
         console.log('[AI moderation] idea saved as Pending in DB, awaiting user decision')
     } else if (isAllowed === false) {
         console.log('[AI moderation] ⚠️ content flagged by moderation and saved as Pending')
+    } else if (mappedIdea.pendingReview && mappedIdea.qualityNudgeBypassed) {
+        console.log('[AI nudging] idea posted without completing nudging — saved as Pending for moderation')
     } else {
         console.log('[AI moderation] ✅ content approved by AI moderation — idea saved as Approved')
     }
@@ -141,6 +160,38 @@ export async function submitIdea(workspaceSlug: string, projectSlug: string, req
         idea: mappedIdea,
         aiSuggestion: trimmedSuggestion,
         requiresSafetyReview,
+    }
+}
+
+export async function assessIdeaNudging(
+    workspaceSlug: string,
+    projectSlug: string,
+    topicId: number,
+    ideaText: string,
+    context: IdeaNudgingContext,
+    conversation: IdeaNudgingTurn[] = [],
+): Promise<IdeaNudgingDecision> {
+    const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
+    const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/topics/${topicId}/ideas/nudge`
+
+    const result = await apiFetch<{ isApproved?: boolean; IsApproved?: boolean; question?: string; Question?: string }>(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+            ideaText,
+            projectTitle: context.projectTitle,
+            projectDescription: context.projectDescription,
+            topicTitle: context.topicTitle,
+            topicPrompt: context.topicPrompt,
+            conversation,
+        }),
+    })
+
+    const isApproved = result.isApproved ?? result.IsApproved ?? true
+    const question = result.question ?? result.Question ?? null
+
+    return {
+        isApproved,
+        question: question && question.trim().length > 0 ? question.trim() : null,
     }
 }
 
@@ -182,7 +233,7 @@ export async function getDiscoveredIdeasForTopic(
     projectSlug: string,
     topicId: number,
     youthToken: string,
-    category: IdeaDiscoveryCategory,
+    category: DiscoveryMode,
     limit = IDEA_DISCOVERY_MAX_RESULTS,
 ): Promise<Idea[]> {
     const normalizedProjectSlug = normalizeSlugForClient(projectSlug)

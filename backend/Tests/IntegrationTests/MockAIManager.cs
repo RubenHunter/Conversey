@@ -43,6 +43,14 @@ public class MockAiManager : IAiManager
         });
     }
 
+    public Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+    {
+        return Task.FromResult(new IdeaNudgeDecision
+        {
+            IsApproved = true
+        });
+    }
+
     public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)

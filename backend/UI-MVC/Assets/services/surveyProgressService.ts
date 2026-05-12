@@ -1,5 +1,5 @@
-import type { Question } from '../models/question.ts'
-import type { QuestionAnswer } from '../components/survey/singleChoiceQuestion.ts'
+import type { Question } from '../models/question'
+import type { QuestionAnswer } from '../components/survey/components/singleChoiceQuestion'
 
 const SURVEY_PROGRESS_KEY_PREFIX = 'conversey-survey-progress'
 const SURVEY_PROGRESS_VERSION = 1
@@ -9,11 +9,17 @@ interface SurveyProgressSnapshot {
     questionSignature: string
     currentQuestionIndex: number
     answersByQuestionId: Record<string, QuestionAnswer>
+    openTextDraftsByQuestionId?: Record<string, string[]>
 }
 
 export interface LoadedSurveyProgress {
     currentQuestionIndex: number
     answersByQuestionId: Map<number, QuestionAnswer>
+    openTextDraftsByQuestionId: Map<number, string[]>
+}
+
+interface SaveSurveyProgressOptions {
+    openTextDraftsByQuestionId?: Map<number, string[]>
 }
 
 function getSurveyProgressKey(projectId: string): string {
@@ -50,9 +56,20 @@ export function loadSurveyProgress(projectId: string, questions: Question[]): Lo
             }
         })
 
+        const openTextDraftsByQuestionId = new Map<number, string[]>()
+        if (parsed.openTextDraftsByQuestionId && typeof parsed.openTextDraftsByQuestionId === 'object') {
+            Object.entries(parsed.openTextDraftsByQuestionId).forEach(([questionId, drafts]) => {
+                const id = Number(questionId)
+                if (!Number.isInteger(id) || !Array.isArray(drafts)) return
+                const sanitizedDrafts = drafts.filter((draft): draft is string => typeof draft === 'string')
+                openTextDraftsByQuestionId.set(id, sanitizedDrafts)
+            })
+        }
+
         return {
             currentQuestionIndex: parsed.currentQuestionIndex,
             answersByQuestionId,
+            openTextDraftsByQuestionId,
         }
     } catch {
         return null
@@ -64,10 +81,16 @@ export function saveSurveyProgress(
     questions: Question[],
     currentQuestionIndex: number,
     answersByQuestionId: Map<number, QuestionAnswer>,
+    options?: SaveSurveyProgressOptions,
 ): void {
     const serializedAnswers: Record<string, QuestionAnswer> = {}
     answersByQuestionId.forEach((answer, questionId) => {
         serializedAnswers[String(questionId)] = answer
+    })
+
+    const serializedOpenTextDrafts: Record<string, string[]> = {}
+    options?.openTextDraftsByQuestionId?.forEach((drafts, questionId) => {
+        serializedOpenTextDrafts[String(questionId)] = drafts
     })
 
     const snapshot: SurveyProgressSnapshot = {
@@ -75,6 +98,7 @@ export function saveSurveyProgress(
         questionSignature: getQuestionSignature(questions),
         currentQuestionIndex,
         answersByQuestionId: serializedAnswers,
+        ...(Object.keys(serializedOpenTextDrafts).length > 0 ? { openTextDraftsByQuestionId: serializedOpenTextDrafts } : {}),
     }
 
     localStorage.setItem(getSurveyProgressKey(projectId), JSON.stringify(snapshot))
@@ -83,4 +107,3 @@ export function saveSurveyProgress(
 export function clearSurveyProgress(projectId: string): void {
     localStorage.removeItem(getSurveyProgressKey(projectId))
 }
-

@@ -124,6 +124,10 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .Property(p => p.ImageUrl)
             .HasMaxLength(2048);
 
+        builder
+            .Property(p => p.NudgingStrength)
+            .HasDefaultValue(3);
+
         #endregion
 
 
@@ -176,4 +180,3 @@ public class YouthConfig : IEntityTypeConfiguration<Youth>
     }
 }
 #endregion
-

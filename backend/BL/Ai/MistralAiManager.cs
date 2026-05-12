@@ -79,6 +79,50 @@ public sealed class MistralAiManager : IAiManager
         };
     }
 
+    public async Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+    {
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.2,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = BuildNudgingSystemPrompt(request.NudgingMode)
+                },
+                new
+                {
+                    role = "user",
+                    content = BuildNudgingUserPrompt(request)
+                }
+            }
+        };
+
+        using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiException($"Mistral idea nudging failed ({(int)response.StatusCode}): {body}", null);
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!document.RootElement.TryGetProperty("choices", out var choices) || choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+        {
+            return new IdeaNudgeDecision { IsApproved = true };
+        }
+
+        var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new IdeaNudgeDecision { IsApproved = true };
+        }
+
+        return ParseNudgeDecision(content);
+    }
+
     public async Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
     {
         var payload = new
@@ -379,6 +423,88 @@ Task:
         }
     }
 
+    private static string BuildNudgingSystemPrompt(string nudgingMode)
+    {
+        return $"You help youth improve the quality of their idea before publishing. Ask exactly one concrete follow-up question when the idea is too shallow, vague, or underspecified. If the idea is already acceptable for the configured nudging strength, approve it. Never invent multiple questions. Return strict JSON only with the shape {{\"isApproved\":true}} or {{\"isApproved\":false,\"question\":\"...\"}}. Nudging strength: {DescribeNudgingMode(nudgingMode)}.";
+    }
+
+    private static string BuildNudgingUserPrompt(IdeaNudgeAssessmentRequest request)
+    {
+        var conversation = request.Conversation.Count == 0
+            ? "(no previous nudge questions yet)"
+            : string.Join("\n", request.Conversation.Select((turn, index) => $"Turn {index + 1} question: {turn.Question}\nTurn {index + 1} answer: {turn.Answer}"));
+
+        return $$"""
+Project title: {{request.ProjectTitle}}
+Project description: {{request.ProjectDescription}}
+Topic title: {{request.TopicTitle}}
+Topic prompt/question: {{request.TopicPrompt}}
+
+Current idea draft:
+{{request.IdeaText}}
+
+Conversation so far:
+{{conversation}}
+
+Decide whether the draft is ready. If not, ask one follow-up question that is specific to this idea and helps deepen it using the project and topic context.
+""";
+    }
+
+    private static string DescribeNudgingMode(string nudgingMode)
+    {
+        return (nudgingMode ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "minimal" or "verylenient" or "lenient" or "acceptable" => "Minimal: accept anything that is a real sentence; reject empty or obvious placeholder text.",
+            "light" or "gentle" => "Light: require a concrete subject; ask at most one clarifying question when needed.",
+            "medium" or "balanced" or "guided" => "Medium: require what + why; ask focused follow-ups when depth is missing.",
+            "strong" or "strict" or "thorough" => "Strong: require context or impact and concrete relevance to topic.",
+            "deep" or "relentless" => "Deep: challenge assumptions and ask for evidence or concrete elaboration.",
+            _ => "Medium: require what + why; ask focused follow-ups when depth is missing."
+        };
+    }
+
+    private static IdeaNudgeDecision ParseNudgeDecision(string rawContent)
+    {
+        string json = rawContent.Trim();
+        int firstBrace = json.IndexOf('{');
+        int lastBrace = json.LastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            json = json.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        try
+        {
+            using var parsed = JsonDocument.Parse(json);
+            var root = parsed.RootElement;
+            var decision = new IdeaNudgeDecision
+            {
+                IsApproved = GetBoolean(root, "isApproved") || GetBoolean(root, "approved")
+            };
+
+            if (!decision.IsApproved && root.TryGetProperty("question", out var questionElement) && questionElement.ValueKind == JsonValueKind.String)
+            {
+                decision.Question = questionElement.GetString()?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(decision.Question) && !decision.IsApproved)
+            {
+                decision.Question = "Can you make this idea more specific for this topic?";
+            }
+
+            if (decision.IsApproved)
+            {
+                decision.Question = null;
+            }
+
+            return decision;
+        }
+        catch (JsonException ex)
+        {
+            throw new AiException("Invalid AI response for idea nudging", ex);
+        }
+    }
+
     private static ModerationInfo ParseModerationInfo(JsonElement result)
     {
         if (!result.TryGetProperty("categories", out var categories) || categories.ValueKind != JsonValueKind.Object)
@@ -413,5 +539,3 @@ Task:
                info.Pii;
     }
 }
-
-

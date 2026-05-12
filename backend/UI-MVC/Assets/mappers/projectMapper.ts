@@ -1,5 +1,5 @@
-import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto, ApiProjectStyleDto } from '../api/dtos/projectDto.ts'
-import { InteractionType, ProjectStatus, type Project, type ProjectStyle, type ProjectTopic } from '../models/project.ts'
+import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto } from '../api/dtos/projectDto'
+import { InteractionType, ProjectStatus, type Project, type ProjectTopic } from '../models/project'
 
 function pickString(...values: Array<string | undefined>): string | undefined {
     return values.find((value) => typeof value === 'string' && value.length > 0)
@@ -54,10 +54,12 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
     if (typeof rawType === 'number') {
         if (rawType === 0) return InteractionType.Chat
         if (rawType === 1) return InteractionType.VerticalScroll
+        if (rawType === 2) return InteractionType.UserDefined
         return undefined
     }
 
     if (rawType === InteractionType.Chat || rawType.toLowerCase() === 'chat') return InteractionType.Chat
+    if (rawType === InteractionType.UserDefined || rawType.toLowerCase() === 'userdefined') return InteractionType.UserDefined
 
     const normalized = rawType.replace(/\s|-/g, '_').toLowerCase()
     if (normalized === 'vertical_scroll' || normalized === 'verticalscroll') {
@@ -90,22 +92,16 @@ function mapTopics(topicDtos: ApiTopicDto[] | undefined): ProjectTopic[] | undef
     return topics.length > 0 ? topics : undefined
 }
 
-function mapStyle(styleDto: ApiProjectStyleDto | undefined): ProjectStyle | undefined {
-    if (!styleDto) return undefined
-
-    const primaryColors = styleDto.primaryColor ?? styleDto.PrimaryColor
-    if (!primaryColors || primaryColors.length === 0) return undefined
-
-    return { primaryColors }
+function mapNudgingStrength(rawValue: number | undefined): number {
+    if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) return 3
+    return Math.min(5, Math.max(1, Math.trunc(rawValue)))
 }
 
 export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint: string, projectSlugHint: string): Project {
-    const title = pickString(dto.title, dto.Title) ?? projectSlugHint
+    const name = pickString(dto.name, dto.Name) ?? projectSlugHint
     const idSlug = extractSlugText(dto.id ?? dto.Id)
-    const slug = pickString(dto.slug, dto.Slug) ?? idSlug ?? toSlug(title)
-    const organizationSlug = pickString(dto.organizationSlug, dto.OrganizationSlug)
-        ?? extractSlugText(dto.organizationId ?? dto.OrganizationId)
-        ?? organizationSlugHint
+    const slug = idSlug ?? toSlug(name)
+    const organizationSlug = extractSlugText(dto.organizationId ?? dto.OrganizationId) ?? organizationSlugHint
     const topics = mapTopics(dto.topics ?? dto.Topics)
 
     return {
@@ -113,15 +109,15 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         slug,
         organizationSlug,
         organizationName: pickString(dto.organizationName, dto.OrganizationName),
-        title,
+        title: name,
         description: pickString(dto.description, dto.Description) ?? '',
         imageUrl: pickString(dto.imageUrl, dto.ImageUrl) ?? '',
         status: mapStatus(dto.status ?? dto.Status),
         startDate: pickString(dto.startDate, dto.StartDate),
         endDate: pickString(dto.endDate, dto.EndDate),
-        interactionType: mapInteractionType(dto.interactionType ?? dto.InteractionType ?? dto.interactionForm ?? dto.InteractionForm),
+        interactionType: mapInteractionType(dto.interactionForm ?? dto.InteractionForm),
+        nudgingStrength: mapNudgingStrength(dto.nudgingStrength ?? dto.NudgingStrength),
         topic: mapTopic(dto.topic ?? dto.Topic) ?? topics?.[0],
         topics,
-        style: mapStyle(dto.style ?? dto.Style),
     }
 }

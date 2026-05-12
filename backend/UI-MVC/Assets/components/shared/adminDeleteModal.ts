@@ -1,3 +1,7 @@
+import { getSurveyStrings } from "../../i18n/survey";
+
+const t = getSurveyStrings();
+
 class DeleteModal {
     private modal = document.getElementById("deleteModal")!;
     private nameEl = document.getElementById("deleteItemName")!;
@@ -17,8 +21,8 @@ class DeleteModal {
             btn.addEventListener("click", (e) => {
                 const el = e.currentTarget as HTMLButtonElement;
 
-                this.currentId = el.dataset.deleteId!;
-                this.endpoint = el.dataset.deleteEndpoint;
+                this.currentId = el.dataset.deleteId ?? null;
+                this.endpoint = el.dataset.deleteEndpoint ?? null;
 
                 const name = el.dataset.deleteName || "this item";
 
@@ -61,7 +65,7 @@ class DeleteModal {
             });
 
             if (!res.ok) {
-                this.showToast(await res.text() || "Delete failed", false);
+                this.showToast(await res.text() || t.deleteFailed, false);
                 return;
             }
 
@@ -70,11 +74,11 @@ class DeleteModal {
                 ?.closest("tr")
                 ?.remove();
 
-            this.showToast("Deleted successfully", true);
+            this.showToast(t.deletedSuccessfully, true);
             this.close();
 
         } catch {
-            this.showToast("Network error", false);
+            this.showToast(t.networkError, false);
         }
     }
 

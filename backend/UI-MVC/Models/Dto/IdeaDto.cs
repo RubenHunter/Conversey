@@ -12,6 +12,7 @@ public class IdeaDto
     public Guid YouthId { get; set; }
     public DateTime SubmissionDate { get; set; }
     public ModerationStatus Status { get; set; }
+    public bool QualityNudgeBypassed { get; set; }
     public IEnumerable<ReactionDto> Reactions { get; set; }
     public IEnumerable<string> SemanticCategories { get; set; } = Array.Empty<string>();
 
@@ -26,6 +27,7 @@ public class IdeaDto
             YouthId = idea.Youth.Id,
             SubmissionDate = idea.SubmissionDate,
             Status = idea.Status,
+            QualityNudgeBypassed = idea.QualityNudgeBypassed,
             SemanticCategories = idea.SemanticCategories ?? Array.Empty<string>(),
             Reactions = (idea.Reactions ?? Array.Empty<IdeaReaction>())
                 .GroupBy(r => r.Emoji)
@@ -33,3 +35,4 @@ public class IdeaDto
         };
     }
 }
+

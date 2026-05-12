@@ -1,5 +1,5 @@
-import type { IdeaTopic } from '../../models/idea.ts'
-import type { ActiveView } from './types.ts'
+import type { IdeaTopic } from '../../../models/idea'
+import type { ActiveView } from '../types'
 
 interface CreateTopicModalParams {
     root: HTMLElement
@@ -19,24 +19,42 @@ export function createTopicModalController({
     topics,
     onSelect,
 }: CreateTopicModalParams): TopicModalController {
-    const modal = root.querySelector<HTMLDivElement>('#topic-modal')!
-    const backdrop = root.querySelector<HTMLDivElement>('#topic-modal-backdrop')!
-    const list = root.querySelector<HTMLDivElement>('#topic-modal-list')!
-    const closeBtn = root.querySelector<HTMLButtonElement>('#topic-modal-close')!
-    const topicTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger')!
-    const topicFloatingTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')!
+    const modal = root.querySelector<HTMLDivElement>('#topic-modal')
+    const backdrop = root.querySelector<HTMLDivElement>('#topic-modal-backdrop')
+    const list = root.querySelector<HTMLDivElement>('#topic-modal-list')
+    const closeBtn = root.querySelector<HTMLButtonElement>('#topic-modal-close')
+    const topicTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger')
+    const topicFloatingTrigger = root.querySelector<HTMLButtonElement>('#ideas-topic-trigger-floating')
+
+    if (!modal || !backdrop || !list || !closeBtn || !topicTrigger || !topicFloatingTrigger) {
+        console.warn('[topicModal] Required modal elements are missing. Topic modal is disabled for this view.')
+        return {
+            open: () => {},
+            close: () => {},
+            isOpen: () => false,
+            renderTopics: () => {},
+        }
+    }
+
+    // Non-null assertions after guard clause
+    const modalEl = modal!
+    const backdropEl = backdrop!
+    const listEl = list!
+    const closeBtnEl = closeBtn!
+    const topicTriggerEl = topicTrigger!
+    const topicFloatingTriggerEl = topicFloatingTrigger!
 
     let isOpen = false
-    let currentInvoker: HTMLButtonElement = topicTrigger
+    let currentInvoker: HTMLButtonElement = topicTriggerEl
 
     function setExpanded(value: boolean): void {
         const ariaValue = value ? 'true' : 'false'
-        topicTrigger.setAttribute('aria-expanded', ariaValue)
-        topicFloatingTrigger.setAttribute('aria-expanded', ariaValue)
+        topicTriggerEl.setAttribute('aria-expanded', ariaValue)
+        topicFloatingTriggerEl.setAttribute('aria-expanded', ariaValue)
     }
 
     function focusTrap(): void {
-        const focusableElements = modal.querySelectorAll<HTMLElement>(
+        const focusableElements = modalEl.querySelectorAll<HTMLElement>(
             'button, [tabindex]:not([tabindex="-1"])'
         )
         if (focusableElements.length > 0) {
@@ -44,13 +62,13 @@ export function createTopicModalController({
         }
     }
 
-    function open(invoker: HTMLButtonElement = topicTrigger): void {
+    function open(invoker: HTMLButtonElement = topicTriggerEl): void {
         if (isOpen) return
 
         isOpen = true
         currentInvoker = invoker
-        modal.hidden = false
-        backdrop.hidden = false
+        modalEl.hidden = false
+        backdropEl.hidden = false
         setExpanded(true)
 
         focusTrap()
@@ -60,20 +78,20 @@ export function createTopicModalController({
         if (!isOpen) return
 
         isOpen = false
-        modal.hidden = true
-        backdrop.hidden = true
+        modalEl.hidden = true
+        backdropEl.hidden = true
         setExpanded(false)
 
         // Restore focus to the trigger that opened the modal
         if (!currentInvoker.hidden) {
             currentInvoker.focus()
         } else {
-            topicTrigger.focus()
+            topicTriggerEl.focus()
         }
     }
 
     function renderTopics(activeView: ActiveView): void {
-        list.innerHTML = ''
+        listEl.innerHTML = ''
 
         // Topic options
         topics.forEach((topic) => {
@@ -88,14 +106,14 @@ export function createTopicModalController({
                 onSelect({ type: 'topic', topicId: topic.id })
                 close()
             })
-            list.appendChild(option)
+            listEl.appendChild(option)
         })
 
         const divider = document.createElement('div')
         divider.className = 'modal-list-divider'
         divider.setAttribute('role', 'separator')
         //divider.textContent = 'Other views'
-        list.appendChild(divider)
+        listEl.appendChild(divider)
 
         const myIdeasOption = document.createElement('button')
         myIdeasOption.className = 'modal-option modal-option--my-ideas'
@@ -108,12 +126,12 @@ export function createTopicModalController({
             onSelect({ type: 'my-ideas' })
             close()
         })
-        list.appendChild(myIdeasOption)
+        listEl.appendChild(myIdeasOption)
     }
 
     // Wire up event listeners
-    closeBtn.addEventListener('click', close)
-    backdrop.addEventListener('click', close)
+    closeBtnEl.addEventListener('click', close)
+    backdropEl.addEventListener('click', close)
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && isOpen) {
@@ -128,4 +146,3 @@ export function createTopicModalController({
         renderTopics,
     }
 }
-
