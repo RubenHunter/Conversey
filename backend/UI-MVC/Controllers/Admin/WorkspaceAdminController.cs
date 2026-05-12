@@ -34,17 +34,32 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     [HttpGet("/admin/projects/new")]
     public IActionResult CreateProject()
     {
-        return View(CreateFormVm(new Project{StartDate = DateTime.Today, EndDate = DateTime.Today}));
+        return View(CreateFormVm(new CreateProjectStepOneViewModel()));
     }
 
     [HttpPost("/admin/projects/new")]
-    public IActionResult CreateProject(AdminFormViewModel<Project> projectFormViewModel)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateProject(ProjectViewModel projectViewModel)
     {
+        var projectStep1 = projectViewModel.CreateStep1ViewModel;
+
+        if (!ModelState.IsValid)
+        {
+            return View(CreateFormVm(projectStep1));
+        }
+
         try
         {
-            var project = projectFormViewModel.FormItem;
-            projectManager.AddProject(workspaceContext.CurrentWorkspace.Id, project.Name, project.Description,
-                project.Status, project.StartDate, project.EndDate, project.InteractionForm, project.NudgingStrength);
+            var imageUrl = await ResolveProjectImageUrl(projectStep1);
+            projectManager.AddProject(
+                workspaceContext.CurrentWorkspace.Id,
+                projectStep1.Name,
+                projectStep1.Description,
+                projectStep1.StartDate,
+                projectStep1.EndDate,
+                projectStep1.InteractionForm,
+                imageUrl
+            );
 
             return RedirectToAction("Projects");
         }
@@ -55,10 +70,30 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ApplyValidationExceptionToModelState(ex, "CreateStep1ViewModel");
         }
 
-        return View(CreateFormVm(projectFormViewModel.FormItem));
+        return View(CreateFormVm(projectStep1));
+    }
+
+    [HttpPost("/admin/projects/new/upload-image")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadCreateProjectImage(IFormFile imageFile)
+    {
+        if (imageFile == null || imageFile.Length == 0)
+        {
+            return BadRequest(new { error = "Please select an image file." });
+        }
+
+        if (string.IsNullOrWhiteSpace(imageFile.ContentType) ||
+            !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { error = "Only image files are allowed." });
+        }
+
+        await using var stream = imageFile.OpenReadStream();
+        var imageUrl = await projectManager.UploadProjectImage(stream, imageFile.FileName, imageFile.ContentType);
+        return Json(new { imageUrl });
     }
 
     [HttpGet("/admin/projects/{id}")]
@@ -136,46 +171,57 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
-    private ProjectViewModel CreateFormVm(Project project)
+    private ProjectViewModel CreateFormVm(CreateProjectStepOneViewModel projectStep1)
     {
         return new ProjectViewModel
         {
             AdminFormViewModel = new AdminFormViewModel<Project>
             {
-                FormItem = project,
+                FormItem = new Project
+                {
+                    Name = projectStep1.Name,
+                    Description = projectStep1.Description,
+                    ImageUrl = projectStep1.ImageUrl,
+                    InteractionForm = projectStep1.InteractionForm,
+                    StartDate = projectStep1.StartDate,
+                    EndDate = projectStep1.EndDate
+                },
                 FormAction = "CreateProject",
                 SubmitLabel = "Create Project",
             },
+            CreateStep1ViewModel = projectStep1,
             StepperViewModel = new StepperViewModel
             {
                 Title = "Creating a Project",
                 EntityName = "Project",
+                DraftStoragePrefix = $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-create",
+                ImageUploadUrl = Url.Action(nameof(UploadCreateProjectImage)) ?? "/admin/projects/new/upload-image",
                 Steps =
                 [
                     new StepItem
                     {
                         Label = "Intro & Presentation",
-                        PartialViewName = "_ProjectForm"
+                        PartialViewName = "_ProjectStep1Form"
                     },
                     new StepItem
                     {
                         Label = "Survey",
-                        PartialViewName = "_ProjectForm"
+                        PartialViewName = "_ProjectStepPlaceholder"
                     },
                     new StepItem
                     {
                         Label = "Ideation",
-                        PartialViewName = "_ProjectForm"
+                        PartialViewName = "_ProjectStepPlaceholder"
                     },
                     new StepItem
                     {
                         Label = "AI Configuration",
-                        PartialViewName = "_ProjectForm"
+                        PartialViewName = "_ProjectStepPlaceholder"
                     },
                     new StepItem
                     {
                         Label = "Done",
-                        PartialViewName = "_ProjectForm"
+                        PartialViewName = "_ProjectStepPlaceholder"
                     }
                 ]
             }
@@ -192,7 +238,18 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         };
     }
     
-    private void ApplyValidationExceptionToModelState(ValidationException ex)
+    private async Task<string> ResolveProjectImageUrl(CreateProjectStepOneViewModel projectStep1)
+    {
+        if (projectStep1.ImageFile == null || projectStep1.ImageFile.Length == 0)
+        {
+            return projectStep1.ImageUrl ?? string.Empty;
+        }
+
+        await using var stream = projectStep1.ImageFile.OpenReadStream();
+        return await projectManager.UploadProjectImage(stream, projectStep1.ImageFile.FileName, projectStep1.ImageFile.ContentType);
+    }
+
+    private void ApplyValidationExceptionToModelState(ValidationException ex, string memberPrefix = "Project")
     {
         if (ex.Data["ValidationResults"] is List<ValidationResult> results)
         {
@@ -204,7 +261,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 {
                     foreach (var member in result.MemberNames)
                     {
-                        ModelState.AddModelError($"Project.{member}", message);
+                        ModelState.AddModelError($"{memberPrefix}.{member}", message);
                     }
                 }
                 else

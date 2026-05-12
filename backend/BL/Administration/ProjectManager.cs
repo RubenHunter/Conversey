@@ -76,8 +76,8 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }
 
-    public Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3)
+    public Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
         
@@ -98,7 +98,8 @@ public class ProjectManager: IProjectManager
             Id = Slug.FromName(name),
             Name = name,
             Description = description,
-            Status = status,
+            ImageUrl = imageUrl?.Trim() ?? string.Empty,
+            Status = Status.Draft,
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
             InteractionForm = interactionForm,
@@ -142,11 +143,16 @@ public class ProjectManager: IProjectManager
     public async Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType)
     {
         // TODO image file validation
-        var imageUrl = await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
+        var imageUrl = await UploadProjectImage(stream, fileName, contentType);
         var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, worspaceId);
         project.ImageUrl = imageUrl;
         Validate(project);
         _projectRepository.UpdateProject(project);
+    }
+
+    public async Task<string> UploadProjectImage(Stream stream, string fileName, string contentType)
+    {
+        return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
 
     private static bool ShouldReplaceEmail(string currentEmail, string newEmail)

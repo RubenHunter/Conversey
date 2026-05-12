@@ -5,6 +5,7 @@ namespace Conversey.UI_MVC.Models.WorkspaceAdmin;
 
 public class ProjectViewModel
 {
-    public AdminFormViewModel<Project> AdminFormViewModel { get; set; }
-    public StepperViewModel StepperViewModel { get; set; }
+    public AdminFormViewModel<Project> AdminFormViewModel { get; set; } = null!;
+    public StepperViewModel StepperViewModel { get; set; } = null!;
+    public CreateProjectStepOneViewModel CreateStep1ViewModel { get; set; } = new();
 }

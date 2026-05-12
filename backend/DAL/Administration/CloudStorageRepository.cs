@@ -1,6 +1,7 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
+using System.Text.RegularExpressions;
 
 namespace Conversey.DAL.Administration;
 
@@ -27,7 +28,7 @@ public class CloudStorageRepository : ICloudStorageRepository
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {
-        var objectName = $"project-images/{Guid.NewGuid()}-{fileName}";
+        var objectName = $"project-images/{Guid.NewGuid()}-{NormalizeFileName(fileName)}";
         
         // Makes sure that the stream is at the beginning
         if (fileStream.CanSeek) fileStream.Position = 0;
@@ -41,4 +42,18 @@ public class CloudStorageRepository : ICloudStorageRepository
         
         return $"https://storage.googleapis.com/{_bucketName}/{data.Name}";
     }
+
+    private static string NormalizeFileName(string fileName)
+    {
+        var rawName = Path.GetFileName(fileName ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(rawName))
+        {
+            return "upload";
+        }
+
+        var normalized = Regex.Replace(rawName.Trim(), @"\s+", "-");
+        normalized = Regex.Replace(normalized, @"[^A-Za-z0-9._-]", string.Empty);
+        return normalized.Length == 0 ? "upload" : normalized;
+    }
+
 }

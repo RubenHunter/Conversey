@@ -14,12 +14,13 @@ public interface IProjectManager
     
     IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
 
-    Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3);
+    Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3);
 
     void EditProject(Project updatedProject);
     void RemoveProject(Slug projectId, Slug workspaceId);
     
+    Task<string> UploadProjectImage(Stream stream, string fileName, string contentType);
     Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType);
 
 }

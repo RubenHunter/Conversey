@@ -2,14 +2,16 @@
 
 <div id="dynamic-stepper" class="w-full max-w-5xl mx-auto p-6 bg-background text-text" 
      data-total-steps="@Model.StepperViewModel.Steps.Count" 
-     data-entity="@Model.StepperViewModel.EntityName">
+     data-entity="@Model.StepperViewModel.EntityName"
+     data-draft-storage-prefix="@Model.StepperViewModel.DraftStoragePrefix"
+     data-image-upload-url="@Model.StepperViewModel.ImageUploadUrl">
     
     @* Header Section *@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
         <h1 class="text-4xl font-bold tracking-tight">@Model.StepperViewModel.Title</h1>
         
         <div class="flex items-center gap-3">
-            <button type="button" class="px-6 py-2 border border-text/20 rounded-lg hover:bg-text/5 transition-colors">
+            <button id="saveDraftBtn" type="button" class="px-6 py-2 border border-text/20 rounded-lg hover:bg-text/5 transition-colors">
                 Save as draft
             </button>
             <div class="flex gap-2">
@@ -57,9 +59,8 @@
         @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
         {
             <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model.AdminFormViewModel)
+                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
             </div>
         }
     </div>
 </div>
-
