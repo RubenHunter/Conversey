@@ -32,6 +32,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<AiProviderConfig>  AiProviderConfigs { get; set; }
     public DbSet<RateLimitConfig>  RateLimitConfigs { get; set; }
     public DbSet<ModerationKeyword>  ModerationKeywords { get; set; }
+    public DbSet<AiCostLimit> AiCostLimits { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
@@ -84,6 +85,30 @@ public class ConverseyDbContext : IdentityDbContext
             .WithMany()
             .HasForeignKey("WorkspaceId")
             .IsRequired();
+
+        modelBuilder.Entity<AiAuditLog>()
+            .HasOne(a => a.Workspace)
+            .WithMany()
+            .HasForeignKey(a => a.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AiAuditLog>()
+            .HasOne(a => a.Project)
+            .WithMany()
+            .HasForeignKey(a => a.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AiCostLimit>()
+            .HasOne(c => c.Workspace)
+            .WithMany()
+            .HasForeignKey(c => c.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<AiCostLimit>()
+            .HasOne(c => c.Project)
+            .WithMany()
+            .HasForeignKey(c => c.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         
    

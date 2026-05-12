@@ -1,0 +1,156 @@
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-text mb-2">Select models</h2>
+        <div id="modelsStatus" class="text-xs text-text/50 mb-4">Loading models from provider...</div>
+
+        <div class="space-y-5">
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Completions Model</label>
+                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
+                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="font-semibold text-sm">Completions Model</h3>
+                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </div>
+                                <p class="text-xs text-text/60">The model used for text generation tasks. This powers: idea nudging (quality checks), idea ranking, idea categorization, and generating constructive alternatives for flagged content. Prefer a fast, cost-effective model like <code class="bg-background px-1 rounded text-[11px]">mistral-small-latest</code>.</p>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <select id="setupCompletionsModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Moderation Model</label>
+                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
+                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="font-semibold text-sm">Moderation Model</h3>
+                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </div>
+                                <p class="text-xs text-text/60">The model used for content moderation. This checks submitted ideas for harmful content before they are published. Mistral, Azure, and OpenAI provide dedicated moderation endpoints (e.g. <code class="bg-background px-1 rounded text-[11px]">mistral-moderation-latest</code>).</p>
+                                <p class="text-xs text-text/60 mt-2">If you leave this empty, the completions model will be used for moderation via a prompt-based fallback — less reliable but works with any provider.</p>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <select id="setupModerationModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Temperature</label>
+                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
+                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="font-semibold text-sm">Temperature</h3>
+                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </div>
+                                <p class="text-xs text-text/60"><strong>0</strong> = deterministic (same input → same output, best for moderation/categorization).</p>
+                                <p class="text-xs text-text/60"><strong>1</strong> = balanced (some creativity, good for nudging questions).</p>
+                                <p class="text-xs text-text/60"><strong>2</strong> = maximum creativity (may produce unexpected results).</p>
+                                <p class="text-xs text-text/60 mt-2">Recommended: 0.1–0.2 for structured tasks like moderation and categorization.</p>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <input id="setupTemperature" type="number" min="0" max="2" step="0.1" value="0.2" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var statusEl = document.getElementById('modelsStatus');
+    var compSelect = document.getElementById('setupCompletionsModel');
+    var modSelect = document.getElementById('setupModerationModel');
+
+    function showError(html) {
+        statusEl.innerHTML = html;
+        statusEl.className = 'text-xs mb-4';
+    }
+
+    function loadModels() {
+        var provider = document.getElementById('setupProvider')?.value || '';
+        var baseUrl = document.getElementById('setupBaseUrl')?.value || '';
+        var apiKey = document.getElementById('setupApiKey')?.value || '';
+
+        if (!baseUrl) {
+            showError('<span class="text-amber-600">Enter provider details in step 1 first.</span>');
+            compSelect.innerHTML = '<option value="">No base URL</option>';
+            modSelect.innerHTML = '<option value="">No base URL</option>';
+            return;
+        }
+
+        statusEl.textContent = 'Testing connection to ' + provider + '...';
+        statusEl.className = 'text-xs text-text/50 mb-4';
+
+        fetch('/admin/ai/providers/test-models', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ providerName: provider, baseUrl: baseUrl, apiKey: apiKey })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                var isAuth = data.error.toLowerCase().indexOf('unauthorized') !== -1
+                    || data.error.toLowerCase().indexOf('401') !== -1
+                    || data.error.toLowerCase().indexOf('api key') !== -1
+                    || data.error.toLowerCase().indexOf('key') !== -1;
+                var extra = isAuth
+                    ? ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">Go back to step 1 to fix your credentials.</button>'
+                    : ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-text/40 hover:text-text/60 font-medium text-[11px]">Go back to step 1.</button>';
+                showError('<span class="text-red-600">Connection failed: ' + data.error + '.</span><br><span class="text-text/50">Select a model from the dropdown or type one manually below.</span>' + extra);
+                compSelect.innerHTML = '<option value="">Could not load from API — select below</option>';
+                modSelect.innerHTML = '<option value="">None (skip moderation)</option>';
+                return;
+            }
+            var models = data.models || [];
+            statusEl.textContent = 'Found ' + models.length + ' model(s). Select from the dropdowns below.';
+            statusEl.className = 'text-xs text-green-600 mb-4';
+
+            var prevComp = compSelect.value;
+            var prevMod = modSelect.value;
+
+            compSelect.innerHTML = '<option value="">Select a model...</option>';
+            modSelect.innerHTML = '<option value="">None (completions model will be used for moderation)</option>';
+            models.forEach(function(m) {
+                var opt1 = document.createElement('option');
+                opt1.value = m;
+                opt1.textContent = m;
+                if (m === prevComp) opt1.selected = true;
+                compSelect.appendChild(opt1);
+                var opt2 = document.createElement('option');
+                opt2.value = m;
+                opt2.textContent = m;
+                if (m === prevMod) opt2.selected = true;
+                modSelect.appendChild(opt2);
+            });
+        })
+        .catch(function(e) {
+            showError('<span class="text-red-600">Connection failed: ' + e.message + '.</span><br><span class="text-text/50">Select a model from the dropdown or type one manually below.</span> <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">Go back to step 1 to fix your credentials.</button>');
+            compSelect.innerHTML = '<option value="">Failed — select below</option>';
+            modSelect.innerHTML = '<option value="">None (skip moderation)</option>';
+        });
+    }
+
+    document.addEventListener('stepper:step-enter', function(e) {
+        if (e.detail && e.detail.step === 2) {
+            loadModels();
+        }
+    });
+})();
+</script>

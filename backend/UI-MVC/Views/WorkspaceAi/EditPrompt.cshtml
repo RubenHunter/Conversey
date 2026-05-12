@@ -1,15 +1,14 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
-@model Conversey.UI_MVC.Models.AiAdmin.AiPromptEditViewModel
+@model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiPromptEditViewModel
 @inject AdminContext AdminContext
 @{
     ViewData["Title"] = $"Edit Prompt: {Model.Prompt.Name}";
-    ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", "/admin", false),
-        ("AI Settings", "/admin/ai", false),
-        ("Prompts", "/admin/ai/prompts", false),
+        ("Dashboard", $"/admin/{Model.WorkspaceId}", false),
+        ("AI Settings", $"/admin/{Model.WorkspaceId}/ai", false),
+        ("Prompts", $"/admin/{Model.WorkspaceId}/ai/prompts", false),
         (Model.Prompt.Name, null, true)
     };
 }
@@ -23,7 +22,7 @@
                 <h1 class="text-3xl font-bold text-text tracking-tight">Edit: @Model.Prompt.Name</h1>
                 <p class="mt-1 text-sm text-text/60">@(string.IsNullOrWhiteSpace(Model.Prompt.Description) ? "Modify the prompt template." : Model.Prompt.Description)</p>
             </div>
-            <a href="@Url.Action("Prompts")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+            <a href="@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId, projectId = Model.ProjectId })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Back to Prompts
             </a>
@@ -36,8 +35,9 @@
                 <div>
                     <p class="text-sm font-medium text-primary">Reset to default available</p>
                     <p class="text-xs text-text/60 mt-1">If you break this prompt, you can restore the original default values.</p>
-                    <form asp-action="ResetPrompt" asp-route-id="@Model.Prompt.Id" method="post" class="mt-2 inline">
+                    <form asp-action="ResetPrompt" asp-route-workspaceSlug="@Model.WorkspaceId" asp-route-id="@Model.Prompt.Id" method="post" class="mt-2 inline">
                         @Html.AntiForgeryToken()
+                        <input type="hidden" name="projectId" value="@Model.ProjectId" />
                         <button type="submit" class="px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-xs font-medium" onclick="return confirm('Reset this prompt to its default values? This will overwrite your changes.')">
                             Reset to Default
                         </button>
@@ -46,44 +46,27 @@
             </div>
         }
 
-        <form asp-action="SavePrompt" asp-route-id="@Model.Prompt.Id" method="post">
+        <form asp-action="SavePrompt" asp-route-workspaceSlug="@Model.WorkspaceId" asp-route-id="@Model.Prompt.Id" method="post">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@Model.ProjectId" />
             <input type="hidden" asp-for="Prompt.Id" />
             <input type="hidden" asp-for="Prompt.Name" />
 
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
                 <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
                     <div>
-                        <h2 class="text-sm font-semibold text-text">System Prompt</h2>
-                        <p class="text-xs text-text/50 mt-0.5">Instructions for the AI model. Variables like <code class="rounded bg-background px-1 text-[10px]">@("{{VariableName}}")</code> are substituted at runtime.</p>
-                    </div>
-                    <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="system-info">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </button>
-                </div>
-                <div id="system-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
-                    <p class="text-xs text-text/60">The system prompt sets the AI's behavior and role. It runs before every user message. Use <code class="rounded bg-background px-1">@("{{VariableName}}")</code> placeholders for dynamic values injected at runtime. Keep it clear and specific — vague instructions lead to unpredictable outputs.</p>
-                </div>
-                <div class="px-6 py-4">
-                    <textarea asp-for="Prompt.SystemPrompt" rows="8" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-y"></textarea>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
-                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
-                    <div>
                         <h2 class="text-sm font-semibold text-text">User Prompt Template</h2>
-                        <p class="text-xs text-text/50 mt-0.5">Template sent as the user message. Contains the actual content and context for the AI.</p>
+                        <p class="text-xs text-text/50 mt-0.5">Template sent as the user message. Variables like <code class="rounded bg-background px-1 text-[10px]">@("{{VariableName}}")</code> are substituted at runtime.</p>
                     </div>
                     <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="user-info">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </button>
                 </div>
                 <div id="user-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
-                    <p class="text-xs text-text/60">The user prompt is the actual content sent to the AI after the system prompt. Use it to provide context, data, and specific instructions for each request. Placeholders like <code class="rounded bg-background px-1">@("{{IdeaText}}")</code> or <code class="rounded bg-background px-1">@("{{ProjectTitle}}")</code> are replaced with real values when the AI is called.</p>
+                    <p class="text-xs text-text/60">The user prompt is the actual content sent to the AI. Use placeholders like <code class="rounded bg-background px-1">@("{{IdeaText}}")</code> or <code class="rounded bg-background px-1">@("{{ProjectTitle}}")</code> for dynamic values. Workspace admins can only edit user prompts — system prompts are managed by platform admins.</p>
                 </div>
                 <div class="px-6 py-4">
-                    <textarea asp-for="Prompt.UserPromptTemplate" rows="8" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-y"></textarea>
+                    <textarea asp-for="Prompt.UserPromptTemplate" rows="10" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-y"></textarea>
                 </div>
             </div>
 
@@ -98,7 +81,7 @@
             </div>
 
             <div class="flex items-center justify-end gap-3">
-                <a href="@Url.Action("Prompts")" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70">Cancel</a>
+                <a href="@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId, projectId = Model.ProjectId })" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70">Cancel</a>
                 <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">Save Changes</button>
             </div>
         </form>

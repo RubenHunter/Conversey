@@ -56,6 +56,7 @@ builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
 builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
 builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
+builder.Services.AddScoped<ICostLimitRepository, CostLimitRepository>();
 builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
 
 // Add managers
@@ -268,7 +269,8 @@ void InitializeDatabase(bool drop)
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         if (created)
         {
-            DataSeeder.Seed(dbCtx);
+            var config = services.GetRequiredService<IConfiguration>();
+            DataSeeder.Seed(dbCtx, config);
             SeedIdentity(userManager, roleManager, dbCtx);
         }
     }

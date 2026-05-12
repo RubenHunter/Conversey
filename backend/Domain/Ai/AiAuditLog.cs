@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.BL.Domain.Ai;
 
@@ -29,4 +31,10 @@ public class AiAuditLog
     public TimeSpan Duration { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public Slug? WorkspaceId { get; set; }
+    public Workspace? Workspace { get; set; }
+
+    public Slug? ProjectId { get; set; }
+    public Project? Project { get; set; }
 }

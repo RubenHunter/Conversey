@@ -52,11 +52,17 @@ public class ProviderConfigRepository : IProviderConfigRepository
             existing.ModerationModel = config.ModerationModel;
             existing.Temperature = config.Temperature;
             existing.IsEnabled = config.IsEnabled;
-            existing.ApiKeyExpiresAt = config.ApiKeyExpiresAt;
+            existing.ApiKeyExpiresAt = config.ApiKeyExpiresAt.HasValue && config.ApiKeyExpiresAt.Value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(config.ApiKeyExpiresAt.Value, DateTimeKind.Utc)
+                : config.ApiKeyExpiresAt;
             existing.UpdatedAt = DateTime.UtcNow;
         }
         else
         {
+            if (config.ApiKeyExpiresAt.HasValue && config.ApiKeyExpiresAt.Value.Kind == DateTimeKind.Unspecified)
+            {
+                config.ApiKeyExpiresAt = DateTime.SpecifyKind(config.ApiKeyExpiresAt.Value, DateTimeKind.Utc);
+            }
             config.CreatedAt = DateTime.UtcNow;
             config.UpdatedAt = DateTime.UtcNow;
             _dbContext.AiProviderConfigs.Add(config);

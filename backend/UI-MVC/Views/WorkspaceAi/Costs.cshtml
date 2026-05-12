@@ -1,16 +1,9 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
-@model Conversey.UI_MVC.Models.AiAdmin.AiCostsViewModel
+@model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiCostsViewModel
 @inject AdminContext AdminContext
 @{
     ViewData["Title"] = "AI Costs & Audit";
-    ViewData["WorkspaceName"] = "Conversey Platform";
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
-    {
-        ("Dashboard", "/admin", false),
-        ("AI Settings", "/admin/ai", false),
-        ("Costs & Audit", null, true)
-    };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
     var timelineData = Model.Timeline.DailyCosts.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), calls = d.CallCount }).ToList();
     var timelineJson = System.Text.Json.JsonSerializer.Serialize(timelineData);
@@ -23,11 +16,11 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-text tracking-tight">Costs & Audit</h1>
-                <p class="mt-1 text-sm text-text/60">AI API usage, token consumption, and costs.</p>
+                <p class="mt-1 text-sm text-text/60">AI API usage, token consumption, and costs for this workspace.</p>
             </div>
-            <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+            <a href="@Url.Action("Dashboard", new { workspaceSlug = Model.WorkspaceId })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Back to Dashboard
+                Back to AI Settings
             </a>
         </div>
 
@@ -59,15 +52,15 @@
             <div class="px-6 py-4 border-b border-secondary/10">
                 <h2 class="text-sm font-semibold text-text">Filters</h2>
             </div>
-            <form method="get" asp-action="Costs" class="p-6">
+            <form method="get" asp-action="Costs" asp-route-workspaceSlug="@Model.WorkspaceId" class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">Workspace</label>
-                        <select name="Filter.WorkspaceId" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                            <option value="">All workspaces</option>
-                            @foreach (var ws in Model.Workspaces)
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">Project</label>
+                        <select name="Filter.ProjectId" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">All projects</option>
+                            @foreach (var p in Model.Projects)
                             {
-                                <option value="@ws" selected="@(Model.Filter.WorkspaceId == ws)">@ws</option>
+                                <option value="@p.Id.ToString()" selected="@(Model.Filter.ProjectId == p.Id.ToString())">@p.Name</option>
                             }
                         </select>
                     </div>
@@ -131,13 +124,13 @@
                 </div>
                 <div class="mt-4 flex gap-3">
                     <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">Apply Filters</button>
-                    <a href="@Url.Action("Costs")" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70">Clear</a>
+                    <a href="@Url.Action("Costs", new { workspaceSlug = Model.WorkspaceId })" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70">Clear</a>
                 </div>
             </form>
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
-            <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-secondary/10">
                 <h2 class="text-sm font-semibold text-text">Audit Log (@Model.AuditLogs.Count entries)</h2>
             </div>
             <div class="overflow-x-auto">
@@ -145,7 +138,6 @@
                     <thead class="bg-background/50">
                         <tr>
                             <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Time</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Workspace</th>
                             <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Project</th>
                             <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Model</th>
                             <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Type</th>
@@ -159,16 +151,16 @@
                     <tbody class="divide-y divide-secondary/10">
                         @if (!Model.AuditLogs.Any())
                         {
-                            <tr><td colspan="10" class="px-6 py-8 text-center text-sm text-text/50">No AI calls recorded.</td></tr>
+                            <tr><td colspan="9" class="px-6 py-8 text-center text-sm text-text/50">No AI calls recorded.</td></tr>
                         }
                         else
                         {
                             @foreach (var log in Model.AuditLogs)
                             {
+                                var project = Model.Projects.FirstOrDefault(p => p.Id == log.ProjectId);
                                 <tr class="hover:bg-background/30">
                                     <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.StartTime.ToString("MM-dd HH:mm")</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.WorkspaceId</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.ProjectId</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@(project?.Name ?? log.ProjectId?.Text)</td>
                                     <td class="whitespace-nowrap px-6 py-3 font-mono text-xs text-text">@log.ModelName</td>
                                     <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@log.ModelType</td>
                                     <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@log.PromptName</td>

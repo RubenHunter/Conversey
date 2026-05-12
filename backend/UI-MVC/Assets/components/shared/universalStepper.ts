@@ -23,7 +23,16 @@ export class Stepper {
      }
 
      private init() {
-         this.nextBtn.addEventListener('click', () => this.goToStep(this.currentStep + 1));
+         this.nextBtn.addEventListener('click', () => {
+             if (this.currentStep === this.totalSteps) {
+                 const saveBtn = document.getElementById('saveProviderBtn') as HTMLButtonElement | null;
+                 if (saveBtn) {
+                     saveBtn.click();
+                 }
+                 return;
+             }
+             this.goToStep(this.currentStep + 1);
+         });
          this.prevBtn.addEventListener('click', () => this.goToStep(this.currentStep - 1));
          
          // Wait for DOM to render, then calculate and position track
@@ -58,6 +67,7 @@ export class Stepper {
         if (step < 1 || step > this.totalSteps) return;
         this.currentStep = step;
         this.updateUI();
+        this.container.dispatchEvent(new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true }));
     }
 
     private updateUI() {

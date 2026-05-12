@@ -34,4 +34,6 @@ public class AiProviderConfig
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public bool IsDefault { get; set; }
 }

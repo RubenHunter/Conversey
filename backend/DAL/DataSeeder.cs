@@ -3,12 +3,13 @@ using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
+using Microsoft.Extensions.Configuration;
 
 namespace Conversey.DAL;
 
 public static class DataSeeder
 {
-    public static void Seed(ConverseyDbContext context)
+    public static void Seed(ConverseyDbContext context, IConfiguration? configuration = null)
     {
         context.CreateDatabase(false);
 
@@ -1369,6 +1370,8 @@ public static class DataSeeder
         SeedAiPrompts(context, now);
         SeedAiRateLimits(context, now);
         SeedModerationKeywords(context, now);
+        SeedAiDefaultProvider(context, now, configuration);
+        SeedAiAuditLogs(context, now, hogeschool, mentaalWelzijnActieplan, stadLinden, vergroeningEnRecreatiePlan, collegeNova, mentalWellbeingActionPlan);
 
         context.SaveChanges();
     }
@@ -1512,5 +1515,89 @@ public static class DataSeeder
         };
 
         context.ModerationKeywords.AddRange(keywords);
+    }
+
+    private static void SeedAiDefaultProvider(ConverseyDbContext context, DateTime now, IConfiguration? configuration)
+    {
+        if (context.AiProviderConfigs.Any())
+        {
+            return;
+        }
+
+        var apiKey = configuration?["AI:Mistral:ApiKey"] ?? string.Empty;
+
+        context.AiProviderConfigs.Add(new AiProviderConfig
+        {
+            ProviderName = "Mistral",
+            BaseUrl = "https://api.mistral.ai/v1/",
+            ApiKey = apiKey,
+            CompletionsModel = configuration?["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
+            ModerationModel = configuration?["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+            ApiVersion = "",
+            Temperature = 0.2m,
+            IsEnabled = true,
+            IsDefault = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+    }
+
+    private static void SeedAiAuditLogs(ConverseyDbContext context, DateTime now,
+        Workspace hogeschool, Project mentaalWelzijnActieplan,
+        Workspace stadLinden, Project vergroeningEnRecreatiePlan,
+        Workspace collegeNova, Project mentalWellbeingActionPlan)
+    {
+        if (context.AiAuditLogs.Any())
+        {
+            return;
+        }
+
+        var rnd = new Random(42);
+        var models = new[] { "mistral-small-latest", "mistral-large-latest", "mistral-moderation-latest" };
+        var types = new[] { "Completions", "Moderation" };
+        var prompts = new[] { "IdeaNudgingSystem", "IdeaNudgingUser", "IdeaRankingSystem", "IdeaRankingUser", "IdeaCategorizationSystem", "IdeaCategorizationUser", "ModerationPrompt", "ModerationGenerateAlternative" };
+        var providers = new[] { "Mistral" };
+
+        var workspaces = new[] { hogeschool, stadLinden, collegeNova };
+        var projects = new[] { mentaalWelzijnActieplan, vergroeningEnRecreatiePlan, mentalWellbeingActionPlan };
+
+        var logs = new List<AiAuditLog>();
+
+        for (int i = 0; i < 150; i++)
+        {
+            var wsIndex = rnd.Next(0, workspaces.Length);
+            var workspace = workspaces[wsIndex];
+            var project = projects[wsIndex];
+
+            var daysAgo = rnd.Next(0, 60);
+            var startTime = now.AddDays(-daysAgo).AddHours(rnd.Next(0, 24)).AddMinutes(rnd.Next(0, 60));
+            var durationMs = rnd.Next(100, 5000);
+            var modelType = types[rnd.Next(0, types.Length)];
+            var modelName = modelType == "Moderation" ? "mistral-moderation-latest" : models[rnd.Next(0, 2)];
+            var promptName = prompts[rnd.Next(0, prompts.Length)];
+            var inputTokens = rnd.Next(200, 4000);
+            var outputTokens = modelType == "Moderation" ? rnd.Next(50, 200) : rnd.Next(100, 1500);
+            var cost = modelType == "Moderation"
+                ? (decimal)(inputTokens * 0.00000015m + outputTokens * 0.00000015m)
+                : (decimal)(inputTokens * 0.000002m + outputTokens * 0.000006m);
+
+            logs.Add(new AiAuditLog
+            {
+                ModelName = modelName,
+                ModelType = modelType,
+                InputTokens = inputTokens,
+                OutputTokens = outputTokens,
+                Cost = Math.Round(cost, 6),
+                ProviderName = providers[rnd.Next(0, providers.Length)],
+                PromptName = promptName,
+                StartTime = startTime,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                CreatedAt = startTime,
+                WorkspaceId = workspace.Id,
+                ProjectId = project.Id
+            });
+        }
+
+        context.AiAuditLogs.AddRange(logs.OrderByDescending(l => l.StartTime));
     }
 }
