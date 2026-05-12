@@ -12,9 +12,7 @@ using Conversey.DAL.Ideation;
 using Conversey.DAL.Survey;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using System.Runtime.CompilerServices;
 using Conversey.BL.Domain.Ai;
 
 namespace Tests.IntegrationTests.Infrastructure;
@@ -54,7 +52,6 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IQuestionManager, QuestionManager>();
 
-        services.AddSingleton(new AiManagerConfig());
         services.AddSingleton(_aiConfig);
         services.AddScoped<IAiManager>(_ => new TestAiManager(_aiConfig));
 
@@ -194,26 +191,26 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
     private sealed class TestAiManager( TestAiManagerConfig config) : IAiManager
     {
-        public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
+        public string GenerateAlternative(string content, ModerationDecision decision = null)
         {
-            return Task.FromResult(config.Alternative);
+            return config.Alternative;
         }
 
-        public Task<ModerationDecision> ModerateContent(string content)
+        public ModerationDecision ModerateContent(string content)
         {
-            return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
+            return new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative };
         }
 
-        public Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+        public IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
         {
-            return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
+            return new IdeaNudgeDecision { IsApproved = true };
         }
 
-        public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        public IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
         {
             if (candidateIdeas.Count == 0 || limit <= 0)
             {
-                return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
+                return Array.Empty<int>();
             }
 
             var ordered = Enumerable.Range(0, candidateIdeas.Count);
@@ -222,10 +219,10 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 ordered = ordered.Reverse();
             }
 
-            return Task.FromResult(ordered.Take(limit));
+            return ordered.Take(limit);
         }
 
-        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+        public IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
         {
             if (config.ThrowOnCategorize)
             {
@@ -274,29 +271,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 result[index] = normalized.AsReadOnly();
             }
 
-            return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "test")));
-        }
-
-        public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public object GetService(Type serviceType, object serviceKey = null)
-        {
-            return null;
+            return result;
         }
 
         private static string NormalizeCategoryKey(string value)

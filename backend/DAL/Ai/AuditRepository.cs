@@ -13,7 +13,7 @@ public class AuditRepository : IAuditRepository
     }
     
     public async Task LogAiCallAsync(string modelName, string modelType, int inputTokens, int outputTokens, decimal cost,
-        DateTime startTime, TimeSpan duration)
+        DateTime startTime, TimeSpan duration, string providerName = "", string promptName = "")
     {
         var auditLog = new AiAuditLog
         {
@@ -24,6 +24,8 @@ public class AuditRepository : IAuditRepository
             Cost = cost,
             StartTime = startTime,
             Duration = duration,
+            ProviderName = providerName,
+            PromptName = promptName,
             CreatedAt = DateTime.UtcNow
         };
 

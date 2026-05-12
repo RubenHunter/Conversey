@@ -1,4 +1,5 @@
 using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
@@ -1365,6 +1366,151 @@ public static class DataSeeder
 
         context.ResponseReactions.AddRange(collegeReactions);
 
+        SeedAiPrompts(context, now);
+        SeedAiRateLimits(context, now);
+        SeedModerationKeywords(context, now);
+
         context.SaveChanges();
+    }
+
+    private static void SeedAiPrompts(ConverseyDbContext context, DateTime now)
+    {
+        if (context.AiPrompts.Any())
+        {
+            return;
+        }
+
+        var prompts = new List<AiPrompt>
+        {
+            new()
+            {
+                Name = "ModerationGenerateAlternative",
+                SystemPrompt = "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text.",
+                UserPromptTemplate = "{{IdeaText}}",
+                Description = "System prompt for generating a respectful alternative when content is flagged by moderation.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ModerationPrompt",
+                SystemPrompt = "You are a strict content safety classifier for a youth platform. Your task is to flag ANY harmful, toxic, or unsafe content.\n\nAnalyze the text against these categories:\n- sexual: sexually explicit content, sexual harassment, or sexualized language\n- hate_and_discrimination: slurs, hate speech, racism, homophobia, transphobia, bigotry, or discrimination based on identity\n- violence_and_threats: threats of violence, encouragement of violence, or glorification of harm\n- dangerous_and_criminal_content: illegal activity, self-harm instructions, or dangerous pranks\n- self_harm: content promoting or encouraging self-harm or suicide\n- pii: personal identifiable information like phone numbers, addresses, or full names\n\nAlso mark hate_and_discrimination as true for: personal insults involving slurs, name-calling with protected characteristics, profanity-laced harassment, hostile derogatory language, or general offensive/crude language targeting others.\n\nCRITICAL: Be conservative. If you are unsure whether content violates a category, mark it as violating. False positives are safer than false negatives.\n\nReturn ONLY a JSON object with this exact schema:\n{\"flagged\":true,\"categories\":{\"sexual\":false,\"hate_and_discrimination\":true,\"violence_and_threats\":false,\"dangerous_and_criminal_content\":false,\"self_harm\":false,\"pii\":false}}\n\nNo markdown, no code blocks, no explanation — just the raw JSON.",
+                UserPromptTemplate = "",
+                Description = "Prompt-based content moderation fallback for providers without a dedicated moderation endpoint (non-Mistral). Sends content as user message, expects structured JSON response.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingSystem",
+                SystemPrompt = "You help youth improve the quality of their idea before publishing. Ask exactly one concrete follow-up question when the idea is too shallow, vague, or underspecified. If the idea is already acceptable for the configured nudging strength, approve it. Never invent multiple questions. Return strict JSON only with the shape {\"isApproved\":true} or {\"isApproved\":false,\"question\":\"...\"}. Nudging strength: {{NudgingModeDescription}}.",
+                UserPromptTemplate = "",
+                Description = "System prompt for the idea quality nudging assessment. NudgingModeDescription is injected based on the project's nudging strength setting.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Project title: {{ProjectTitle}}\nProject description: {{ProjectDescription}}\nTopic title: {{TopicTitle}}\nTopic prompt/question: {{TopicPrompt}}\n\nCurrent idea draft:\n{{IdeaText}}\n\nConversation so far:\n{{Conversation}}\n\nDecide whether the draft is ready. If not, ask one follow-up question that is specific to this idea and helps deepen it using the project and topic context.",
+                Description = "User prompt template for idea nudging. Contains the idea draft, project/topic context, and previous conversation turns.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingSystem",
+                SystemPrompt = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive.",
+                UserPromptTemplate = "",
+                Description = "System prompt for ranking ideas by semantic similarity or difference.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Reference idea:\n{{ReferenceIdea}}\n\nCandidate ideas (use only these indexes):\n{{Candidates}}\n\nTask:\n- {{RelationGoal}}\n- Return up to {{Limit}} indexes, ordered from best to least fitting for this relation.\n- Do not invent indexes.\n- Return strict JSON only with this schema:\n{\"rankedIndexes\":[0,1,2]}",
+                Description = "User prompt template for ranking ideas. Contains reference idea, candidates with indexes, relation goal, and limit.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationSystem",
+                SystemPrompt = "You assign semantic categories to youth ideas. Return only strict JSON.",
+                UserPromptTemplate = "",
+                Description = "System prompt for assigning semantic category labels to ideas.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Categorize each idea semantically. One idea may belong to multiple categories.\n\nThese are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:\n{{ExistingCategories}}\n\nIdeas:\n{{Ideas}}\n\nRules:\n- Use short, human-readable category names.\n- Max {{MaxCategoriesPerIdea}} categories per idea.\n- Prefer reusing an existing category label when it is semantically close enough.\n- Avoid near-duplicate labels when an existing category already covers the same meaning.\n- Do not invent idea indexes.\n- Avoid creating near-duplicate labels if an existing category already fits.\n- Return strict JSON only in this shape:\n{\"items\":[{\"index\":0,\"categories\":[\"Category A\",\"Category B\"]}]}",
+                Description = "User prompt template for idea categorization. Contains index-labeled ideas, existing category labels, and max categories per idea.",
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.AiPrompts.AddRange(prompts);
+    }
+
+    private static void SeedAiRateLimits(ConverseyDbContext context, DateTime now)
+    {
+        if (context.RateLimitConfigs.Any())
+        {
+            return;
+        }
+
+        var configs = new List<RateLimitConfig>
+        {
+            new()
+            {
+                PolicyName = "AiFixedPolicy",
+                PermitLimit = 30,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                PolicyName = "AiAdminPolicy",
+                PermitLimit = 60,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.RateLimitConfigs.AddRange(configs);
+    }
+
+    private static void SeedModerationKeywords(ConverseyDbContext context, DateTime now)
+    {
+        if (context.ModerationKeywords.Any())
+        {
+            return;
+        }
+
+        var keywords = new List<ModerationKeyword>
+        {
+            new() { Keyword = "retarded", CreatedAt = now },
+            new() { Keyword = "moron", CreatedAt = now },
+            new() { Keyword = "dumbass", CreatedAt = now },
+            new() { Keyword = "dumb ass", CreatedAt = now },
+            new() { Keyword = "fucking", CreatedAt = now },
+            new() { Keyword = "faggot", CreatedAt = now },
+            new() { Keyword = "fag", CreatedAt = now },
+            new() { Keyword = "nigger", CreatedAt = now },
+            new() { Keyword = "nigga", CreatedAt = now },
+        };
+
+        context.ModerationKeywords.AddRange(keywords);
     }
 }

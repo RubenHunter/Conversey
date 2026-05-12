@@ -1,0 +1,61 @@
+@model Conversey.BL.Domain.Ai.AiPrompt
+@{
+    ViewData["Title"] = $"Edit Prompt: {Model.Name}";
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Prompt: @Model.Name</h1>
+                <p class="mt-1 text-sm text-gray-500">@(string.IsNullOrWhiteSpace(Model.Description) ? "Modify the prompt template." : Model.Description)</p>
+            </div>
+            <a href="@Url.Action("Prompts")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to Prompts</a>
+        </div>
+
+        <form asp-action="EditPrompt" asp-route-id="@Model.Id" method="post" class="mt-6">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Name" />
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">System Prompt</h2>
+                    <p class="mt-1 text-xs text-gray-400">Instructions for the AI model. Variables like <code class="rounded bg-gray-100 px-1">@("{{VariableName}}")</code> are substituted at runtime.</p>
+                </div>
+                <div class="px-6 py-4">
+                    <textarea asp-for="SystemPrompt" rows="6" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">User Prompt Template</h2>
+                    <p class="mt-1 text-xs text-gray-400">Template sent as the user message. Variables like <code class="rounded bg-gray-100 px-1">@("{{VariableName}}")</code> are substituted at runtime.</p>
+                </div>
+                <div class="px-6 py-4">
+                    <textarea asp-for="UserPromptTemplate" rows="10" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Description</h2>
+                    <p class="mt-1 text-xs text-gray-400">Administrative note explaining what this prompt is used for.</p>
+                </div>
+                <div class="px-6 py-4">
+                    <input asp-for="Description" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <a href="@Url.Action("Prompts")" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

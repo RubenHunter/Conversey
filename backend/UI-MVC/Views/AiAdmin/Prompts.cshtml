@@ -1,0 +1,53 @@
+@model IReadOnlyList<Conversey.BL.Domain.Ai.AiPrompt>
+@{
+    ViewData["Title"] = "AI Prompts";
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">AI Prompts</h1>
+                <p class="mt-1 text-sm text-gray-500">Manage system and user prompt templates. Changes take effect immediately.</p>
+            </div>
+            <a href="@Url.Action("Index")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to AI Management</a>
+        </div>
+
+        <div class="mt-6 space-y-4">
+            @foreach (var prompt in Model)
+            {
+                <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div class="flex items-start justify-between border-b border-gray-200 px-6 py-4">
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-900">@prompt.Name</h2>
+                            <p class="mt-1 text-xs text-gray-500">@(string.IsNullOrWhiteSpace(prompt.Description) ? "No description" : prompt.Description)</p>
+                        </div>
+                        <a href="@Url.Action("EditPrompt", new { id = prompt.Id })" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700">
+                            Edit
+                        </a>
+                    </div>
+                    <div class="px-6 py-4">
+                        @if (!string.IsNullOrWhiteSpace(prompt.SystemPrompt))
+                        {
+                            <div class="mb-3">
+                                <h3 class="text-xs font-semibold uppercase text-gray-500">System Prompt</h3>
+                                <pre class="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-3 text-xs text-gray-700 font-mono">@prompt.SystemPrompt</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
+                        {
+                            <div>
+                                <h3 class="text-xs font-semibold uppercase text-gray-500">User Prompt Template</h3>
+                                <pre class="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-3 text-xs text-gray-700 font-mono">@prompt.UserPromptTemplate</pre>
+                            </div>
+                        }
+                        @if (string.IsNullOrWhiteSpace(prompt.SystemPrompt) && string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
+                        {
+                            <span class="text-xs text-gray-400">No custom prompt configured. The default hardcoded prompt is used.</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

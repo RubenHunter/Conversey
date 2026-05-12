@@ -1,0 +1,91 @@
+@model Conversey.BL.Domain.Ai.AiProviderConfig
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Add Provider" : $"Edit Provider: {Model.ProviderName}";
+    var isNew = Model.Id == 0;
+    var isAzure = string.Equals(Model.ProviderName, "Azure", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="min-h-screen bg-gray-50 px-4 py-10">
+    <div class="mx-auto max-w-5xl">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">@(isNew ? "Add AI Provider" : $"Edit Provider: {Model.ProviderName}")</h1>
+                <p class="mt-1 text-sm text-gray-500">Configure the connection details for this AI provider. Model selection is done separately after saving.</p>
+            </div>
+            <a href="@Url.Action("Providers")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to Providers</a>
+        </div>
+
+        <form asp-action="@(isNew ? "CreateProvider" : "EditProvider")" asp-route-id="@Model.Id" method="post" class="mt-6 space-y-6">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Provider Identity</h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label asp-for="ProviderName" class="block text-xs font-semibold uppercase text-gray-500">Provider Name</label>
+                        <input asp-for="ProviderName" type="text" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Azure, Mistral, NVIDIA, Ollama" />
+                        <p class="mt-1 text-xs text-gray-400">Use exact name: <code class="rounded bg-gray-100 px-1">Azure</code>, <code class="rounded bg-gray-100 px-1">Mistral</code>, or any name for OpenAI-compatible providers (NVIDIA, Together, Groq, Ollama).</p>
+                    </div>
+                    <div>
+                        <label asp-for="IsEnabled" class="flex items-center gap-2 text-sm text-gray-700">
+                            <input asp-for="IsEnabled" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            Enabled (active for all AI operations)
+                        </label>
+                        <p class="mt-1 text-xs text-gray-400">Only one provider should be enabled at a time. Disabling all providers falls back to <code class="rounded bg-gray-100 px-1">appsettings.json</code>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div class="border-b border-gray-200 px-6 py-4">
+                    <h2 class="text-sm font-semibold text-gray-900">Connection</h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label asp-for="BaseUrl" class="block text-xs font-semibold uppercase text-gray-500">Base URL</label>
+                        <input asp-for="BaseUrl" type="url" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="@(isAzure ? "https://my-resource.openai.azure.com" : "https://api.mistral.ai/v1/")" />
+                        @if (isAzure)
+                        {
+                            <p class="mt-1 text-xs text-gray-400">Your Azure OpenAI resource endpoint URL (without <code class="rounded bg-gray-100 px-1">/openai/deployments/...</code>).</p>
+                        }
+                        else
+                        {
+                            <p class="mt-1 text-xs text-gray-400">For Mistral: <code class="rounded bg-gray-100 px-1">https://api.mistral.ai/v1/</code>. For NVIDIA: <code class="rounded bg-gray-100 px-1">https://integrate.api.nvidia.com/v1/</code>. For Ollama: <code class="rounded bg-gray-100 px-1">http://localhost:11434/v1</code>.</p>
+                        }
+                    </div>
+                    <div>
+                        <label asp-for="ApiKey" class="block text-xs font-semibold uppercase text-gray-500">API Key</label>
+                        <input asp-for="ApiKey" type="password" autocomplete="off" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="@(isNew ? "" : "(kept unchanged if left empty)")" />
+                        @if (isAzure)
+                        {
+                            <p class="mt-1 text-xs text-gray-400">Found under: Azure Portal &rarr; your OpenAI resource &rarr; <em>Keys and Endpoint</em> &rarr; Key 1 or Key 2.</p>
+                        }
+                    </div>
+                    <div>
+                        <label asp-for="ApiVersion" class="block text-xs font-semibold uppercase text-gray-500">API Version</label>
+                        <input asp-for="ApiVersion" type="text" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="@(isAzure ? "2024-10-21" : "optional, leave empty")" />
+                        <p class="mt-1 text-xs text-gray-400">For Azure: API version date (e.g. <code class="rounded bg-gray-100 px-1">2024-10-21</code>). For all other providers: ignored.</p>
+                    </div>
+                    <div>
+                        <label asp-for="ApiKeyExpiresAt" class="block text-xs font-semibold uppercase text-gray-500">API Key Expiry Date (optional)</label>
+                        <input asp-for="ApiKeyExpiresAt" type="date" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                        <p class="mt-1 text-xs text-gray-400">Set when this API key expires. Leave empty if the key has no expiration. Expired keys cannot be activated.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a href="@Url.Action("Providers")" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    @(isNew ? "Save &amp; Configure Models" : "Save Connection &amp; Configure Models")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

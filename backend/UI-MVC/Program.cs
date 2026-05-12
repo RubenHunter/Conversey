@@ -14,8 +14,11 @@ using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.RateLimiting;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Vite.AspNetCore;
@@ -49,6 +52,10 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IPromptRepository, PromptRepository>();
+builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
+builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
+builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -56,6 +63,7 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
+builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -77,6 +85,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/access-denied";
     options.LogoutPath = "/logout";
 });
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
@@ -124,14 +135,24 @@ builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 builder.Services.AddScoped<IAiManager>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
-    var providerName = (config["AI:Provider"] ?? "Noop").Trim();
+    var appsettingsProviderName = (config["AI:Provider"] ?? "Noop").Trim();
 
-    if (providerName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var activeDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled);
+
+    if (activeDbConfig != null)
     {
-        return new NoopAiManager();
+        return BuildAiManagerFromDbConfig(provider, activeDbConfig);
     }
 
-    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        return new NoopAiManager(keywordRepo);
+    }
+
+    if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -139,33 +160,19 @@ builder.Services.AddScoped<IAiManager>(provider =>
             throw new InvalidOperationException("AI provider is set to Mistral but AI:Mistral:ApiKey is missing.");
         }
 
-        var aiConfig = new AiManagerConfig
-        {
-            ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-            NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
-        };
+        var completionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest";
+        var moderationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest";
 
-        provider.GetRequiredService<AiManagerConfig>();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
+        var promptRepo = provider.GetRequiredService<IPromptRepository>();
+        var auditRepo = provider.GetRequiredService<IAuditRepository>();
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
 
-        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
+        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel);
     }
 
-    throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
-});
-
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    return new AiManagerConfig
-    {
-        ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
-        CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-        ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-        NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
-    };
+    throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
@@ -173,6 +180,16 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
+
+builder.Services.AddSingleton<RateLimitConfigCache>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy<string, AiUserRateLimiterPolicy>("AiFixedPolicy");
+    options.AddPolicy<string, AiAdminRateLimiterPolicy>("AiAdminPolicy");
+});
 
 
 TypeDescriptor.AddAttributes(
@@ -184,6 +201,9 @@ var app = builder.Build();
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
+
+var rateLimitCache = app.Services.GetRequiredService<RateLimitConfigCache>();
+await rateLimitCache.InitializeAsync();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -201,6 +221,8 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseMiddleware<WorkspaceMiddleware>();
 app.UseRouting();
+
+app.UseRateLimiter();
 
 // if (app.Environment.IsDevelopment())
 // {
@@ -334,4 +356,55 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
     {
         userManager.AddToRoleAsync(user, role).Wait();
     }
+}
+
+static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    if (string.IsNullOrWhiteSpace(config.BaseUrl))
+    {
+        throw new InvalidOperationException($"AI provider '{config.ProviderName}' is enabled but has no BaseUrl configured.");
+    }
+
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl);
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    IAiProvider aiProvider;
+
+    if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+
+        aiProvider = new AzureOpenAiProvider(httpClient, config.CompletionsModel, config.ApiVersion);
+    }
+    else if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new MistralAiProvider(httpClient);
+    }
+    else
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new OpenAiCompatibleProvider(httpClient, config.ProviderName);
+    }
+
+    var promptRepo = provider.GetRequiredService<IPromptRepository>();
+    var auditRepo = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+    var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
+    var moderationModel = config.ModerationModel;
+
+    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel, config.Temperature);
 }
