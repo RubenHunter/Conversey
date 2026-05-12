@@ -17,6 +17,14 @@ public class ModerationKeywordRepository : IModerationKeywordRepository
         return _dbContext.ModerationKeywords.OrderBy(k => k.Keyword).ToList();
     }
 
+    public IReadOnlyList<ModerationKeyword> GetForWorkspace(string workspaceId)
+    {
+        return _dbContext.ModerationKeywords
+            .Where(k => k.WorkspaceId == null || k.WorkspaceId == workspaceId)
+            .OrderBy(k => k.Keyword)
+            .ToList();
+    }
+
     public IReadOnlySet<string> GetKeywordSet()
     {
         var keywords = _dbContext.ModerationKeywords
@@ -27,6 +35,8 @@ public class ModerationKeywordRepository : IModerationKeywordRepository
 
     public void Save(ModerationKeyword keyword)
     {
+        keyword.Keyword = (keyword.Keyword ?? string.Empty).Trim().ToLowerInvariant();
+
         var existing = _dbContext.ModerationKeywords.FirstOrDefault(k => k.Id == keyword.Id);
         if (existing != null)
         {

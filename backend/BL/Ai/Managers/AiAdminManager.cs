@@ -496,9 +496,10 @@ public sealed class AiAdminManager : IAiAdminManager
     }
 
     public Task<IReadOnlyList<ModerationKeyword>> GetAllModerationKeywordsAsync()
-    {
-        return Task.FromResult(_moderationKeywordRepository.GetAll());
-    }
+        => Task.FromResult(_moderationKeywordRepository.GetAll());
+
+    public Task<IReadOnlyList<ModerationKeyword>> GetModerationKeywordsForWorkspaceAsync(string workspaceId)
+        => Task.FromResult(_moderationKeywordRepository.GetForWorkspace(workspaceId));
 
     public Task SaveModerationKeywordAsync(ModerationKeyword keyword)
     {

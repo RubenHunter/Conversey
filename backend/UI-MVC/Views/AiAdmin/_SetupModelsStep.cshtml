@@ -7,18 +7,17 @@
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
                     <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Completions Model</label>
-                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
-                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
-                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
-                                <div class="flex items-start justify-between mb-3">
-                                    <h3 class="font-semibold text-sm">Completions Model</h3>
-                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                </div>
-                                <p class="text-xs text-text/60">The model used for text generation tasks. This powers: idea nudging (quality checks), idea ranking, idea categorization, and generating constructive alternatives for flagged content. Prefer a fast, cost-effective model like <code class="bg-background px-1 rounded text-[11px]">mistral-small-latest</code>.</p>
+                    <span class="relative cursor-pointer" onclick="var t=this.nextElementSibling;if(t)t.classList.toggle('hidden');event.stopPropagation()">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                    <div class="info-tip hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 border-l border-secondary/10 overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="p-5">
+                            <div class="flex items-start justify-between mb-3">
+                                <h3 class="font-semibold text-sm">Completions Model</h3>
+                                <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             </div>
+                            <p class="text-xs text-text/60 leading-relaxed">The model used for text generation tasks. This powers: idea nudging (quality checks), idea ranking, idea categorization, and generating constructive alternatives for flagged content. Prefer a fast, cost-effective model like <code class="bg-background px-1 rounded text-[11px]">mistral-small-latest</code>.</p>
                         </div>
-                    </span>
+                    </div>
                 </div>
                 <select id="setupCompletionsModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
                     <option value="">Loading models...</option>
@@ -28,19 +27,18 @@
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
                     <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Moderation Model</label>
-                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
-                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
-                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
-                                <div class="flex items-start justify-between mb-3">
-                                    <h3 class="font-semibold text-sm">Moderation Model</h3>
-                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                </div>
-                                <p class="text-xs text-text/60">The model used for content moderation. This checks submitted ideas for harmful content before they are published. Mistral, Azure, and OpenAI provide dedicated moderation endpoints (e.g. <code class="bg-background px-1 rounded text-[11px]">mistral-moderation-latest</code>).</p>
-                                <p class="text-xs text-text/60 mt-2">If you leave this empty, the completions model will be used for moderation via a prompt-based fallback — less reliable but works with any provider.</p>
+                    <span class="relative cursor-pointer" onclick="var t=this.nextElementSibling;if(t)t.classList.toggle('hidden');event.stopPropagation()">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                    <div class="info-tip hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 border-l border-secondary/10 overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="p-5">
+                            <div class="flex items-start justify-between mb-3">
+                                <h3 class="font-semibold text-sm">Moderation Model</h3>
+                                <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             </div>
+                            <p class="text-xs text-text/60 leading-relaxed">The model used for content moderation. This checks submitted ideas for harmful content before they are published. Mistral, Azure, and OpenAI provide dedicated moderation endpoints (e.g. <code class="bg-background px-1 rounded text-[11px]">mistral-moderation-latest</code>).</p>
+                            <p class="text-xs text-text/60 mt-2">If you leave this empty, the completions model will be used for moderation via a prompt-based fallback — less reliable but works with any provider.</p>
                         </div>
-                    </span>
+                    </div>
                 </div>
                 <select id="setupModerationModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
                     <option value="">Loading models...</option>
@@ -50,21 +48,20 @@
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
                     <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Temperature</label>
-                    <span class="relative cursor-pointer" onclick="var t=this.querySelector('.info-tip');t.classList.toggle('hidden')">
-                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <div class="info-tip hidden fixed inset-0 z-50 flex items-center justify-center bg-black/30" onclick="event.stopPropagation()">
-                            <div class="bg-white text-text rounded-xl shadow-xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
-                                <div class="flex items-start justify-between mb-3">
-                                    <h3 class="font-semibold text-sm">Temperature</h3>
-                                    <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                                </div>
-                                <p class="text-xs text-text/60"><strong>0</strong> = deterministic (same input → same output, best for moderation/categorization).</p>
-                                <p class="text-xs text-text/60"><strong>1</strong> = balanced (some creativity, good for nudging questions).</p>
-                                <p class="text-xs text-text/60"><strong>2</strong> = maximum creativity (may produce unexpected results).</p>
-                                <p class="text-xs text-text/60 mt-2">Recommended: 0.1–0.2 for structured tasks like moderation and categorization.</p>
+                    <span class="relative cursor-pointer" onclick="var t=this.nextElementSibling;if(t)t.classList.toggle('hidden');event.stopPropagation()">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                    <div class="info-tip hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 border-l border-secondary/10 overflow-y-auto" onclick="event.stopPropagation()">
+                        <div class="p-5">
+                            <div class="flex items-start justify-between mb-3">
+                                <h3 class="font-semibold text-sm">Temperature</h3>
+                                <button type="button" class="text-text/40 hover:text-text" onclick="this.closest('.info-tip').classList.add('hidden')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             </div>
+                            <p class="text-xs text-text/60 leading-relaxed"><strong>0</strong> = deterministic (same input → same output, best for moderation/categorization).</p>
+                            <p class="text-xs text-text/60"><strong>1</strong> = balanced (some creativity, good for nudging questions).</p>
+                            <p class="text-xs text-text/60"><strong>2</strong> = maximum creativity (may produce unexpected results).</p>
+                            <p class="text-xs text-text/60 mt-2">Recommended: 0.1–0.2 for structured tasks like moderation and categorization.</p>
                         </div>
-                    </span>
+                    </div>
                 </div>
                 <input id="setupTemperature" type="number" min="0" max="2" step="0.1" value="0.2" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>

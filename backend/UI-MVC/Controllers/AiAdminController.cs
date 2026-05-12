@@ -359,4 +359,31 @@ public class AiAdminController : Controller
         await _aiAdminManager.SavePromptAsync(prompt);
         return RedirectToAction("EditPrompt", new { id });
     }
+
+    [HttpGet]
+    [Route("admin/ai/keywords")]
+    public async Task<IActionResult> Keywords()
+    {
+        var keywords = await _aiAdminManager.GetAllModerationKeywordsAsync();
+        return View(keywords);
+    }
+
+    [HttpPost]
+    [Route("admin/ai/keywords/create")]
+    public async Task<IActionResult> CreateKeyword(ModerationKeyword keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword.Keyword))
+            return RedirectToAction("Keywords");
+
+        await _aiAdminManager.SaveModerationKeywordAsync(keyword);
+        return RedirectToAction("Keywords");
+    }
+
+    [HttpPost]
+    [Route("admin/ai/keywords/{id:int}/delete")]
+    public async Task<IActionResult> DeleteKeyword(int id)
+    {
+        await _aiAdminManager.DeleteModerationKeywordAsync(id);
+        return RedirectToAction("Keywords");
+    }
 }

@@ -227,7 +227,6 @@ public class WorkspaceAiController : Controller
         var existing = await _aiAdminManager.GetPromptByIdAsync(id);
         if (existing == null) return NotFound();
 
-        existing.SystemPrompt = prompt.SystemPrompt;
         existing.UserPromptTemplate = prompt.UserPromptTemplate;
         existing.Description = prompt.Description;
 
@@ -253,7 +252,6 @@ public class WorkspaceAiController : Controller
         var defaultPrompt = await _aiAdminManager.GetDefaultPromptAsync(prompt.Name);
         if (defaultPrompt == null) return BadRequest("No default available for this prompt.");
 
-        prompt.SystemPrompt = defaultPrompt.SystemPrompt;
         prompt.UserPromptTemplate = defaultPrompt.UserPromptTemplate;
         prompt.Description = defaultPrompt.Description;
 
@@ -385,5 +383,55 @@ public class WorkspaceAiController : Controller
 
         await _aiAdminManager.DeleteCostLimitAsync(limitId);
         return RedirectToAction("Limits", new { workspaceSlug });
+    }
+
+    [HttpGet]
+    [Route("admin/{workspaceSlug}/ai/keywords")]
+    public async Task<IActionResult> Keywords(string workspaceSlug)
+    {
+        var workspace = GetWorkspace(workspaceSlug);
+        if (workspace == null) return NotFound();
+
+        var keywords = await _aiAdminManager.GetModerationKeywordsForWorkspaceAsync(workspaceSlug);
+        ViewData["WorkspaceName"] = workspace.Name;
+        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        {
+            ("Dashboard", $"/admin/{workspaceSlug}", false),
+            ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
+            ("Moderation Keywords", null, true)
+        };
+        return View(keywords);
+    }
+
+    [HttpPost]
+    [Route("admin/{workspaceSlug}/ai/keywords/create")]
+    public async Task<IActionResult> CreateKeyword(string workspaceSlug, string keywordText)
+    {
+        var workspace = GetWorkspace(workspaceSlug);
+        if (workspace == null) return NotFound();
+
+        var keyword = new ModerationKeyword
+        {
+            Keyword = keywordText,
+            WorkspaceId = workspace.Id.ToString()
+        };
+        await _aiAdminManager.SaveModerationKeywordAsync(keyword);
+        return RedirectToAction("Keywords", new { workspaceSlug });
+    }
+
+    [HttpPost]
+    [Route("admin/{workspaceSlug}/ai/keywords/{id:int}/delete")]
+    public async Task<IActionResult> DeleteKeyword(string workspaceSlug, int id)
+    {
+        var workspace = GetWorkspace(workspaceSlug);
+        if (workspace == null) return NotFound();
+
+        var keywords = await _aiAdminManager.GetModerationKeywordsForWorkspaceAsync(workspaceSlug);
+        var kw = keywords.FirstOrDefault(k => k.Id == id);
+        if (kw == null || kw.WorkspaceId != workspace.Id.ToString())
+            return BadRequest("Cannot delete platform-wide keywords.");
+
+        await _aiAdminManager.DeleteModerationKeywordAsync(id);
+        return RedirectToAction("Keywords", new { workspaceSlug });
     }
 }

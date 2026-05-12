@@ -52,6 +52,21 @@
             <input type="hidden" asp-for="Prompt.Id" />
             <input type="hidden" asp-for="Prompt.Name" />
 
+            @if (!string.IsNullOrWhiteSpace(Model.Prompt.SystemPrompt))
+            {
+                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6 opacity-80">
+                    <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-semibold text-text">System Prompt</h2>
+                            <p class="text-xs text-text/50 mt-0.5">Read-only — managed by platform admins.</p>
+                        </div>
+                        <svg class="w-4 h-4 text-text/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <div class="px-6 py-4">
+                        <pre class="max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/60">@Model.Prompt.SystemPrompt</pre>
+                    </div>
+                </div>
+            }
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
                 <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
                     <div>

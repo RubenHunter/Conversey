@@ -89,9 +89,8 @@
     var input = document.getElementById('promptSearch');
     var projectSelect = document.getElementById('projectFilter');
     var items = document.querySelectorAll('.prompt-item');
-    var timeout;
 
-    function filterPrompts() {
+    input.addEventListener('input', function() {
         var query = input.value.toLowerCase().trim();
         items.forEach(function(item) {
             var name = item.getAttribute('data-name');
@@ -99,11 +98,6 @@
             var match = !query || name.indexOf(query) !== -1 || desc.indexOf(query) !== -1;
             item.style.display = match ? '' : 'none';
         });
-    }
-
-    input.addEventListener('input', function() {
-        clearTimeout(timeout);
-        timeout = setTimeout(filterPrompts, 150);
     });
 
     projectSelect.addEventListener('change', function() {

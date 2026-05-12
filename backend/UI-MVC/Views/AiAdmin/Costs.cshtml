@@ -14,6 +14,8 @@
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
     var timelineData = Model.Timeline.DailyCosts.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), calls = d.CallCount }).ToList();
     var timelineJson = System.Text.Json.JsonSerializer.Serialize(timelineData);
+    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6) }).ToList();
+    var auditDataJson = System.Text.Json.JsonSerializer.Serialize(auditData);
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -51,8 +53,15 @@
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-8 p-6">
-            <h2 class="text-sm font-semibold text-text mb-4">Cost Timeline (Last @Model.Timeline.DailyCosts.Count Days)</h2>
-            <div class="w-full h-64"><canvas id="cost-timeline-chart"></canvas></div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-text">Cost Overview</h2>
+                <div class="flex bg-secondary/5 rounded-lg p-1 gap-0.5">
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-type="line">Line</button>
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="bar">Bar</button>
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="pie">Pie</button>
+                </div>
+            </div>
+            <div class="w-full h-72"><canvas id="cost-timeline-chart"></canvas></div>
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-8">
@@ -189,37 +198,131 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var data = @Html.Raw(timelineJson);
-    var ctx = document.getElementById('cost-timeline-chart');
-    if (!ctx) return;
-    if (data.length === 0) {
-        ctx.innerHTML = '<div class="flex items-center justify-center h-full text-text/40 text-sm">No data for selected period</div>';
-        return;
+    var timeline = @Html.Raw(timelineJson);
+    var auditRaw = @Html.Raw(auditDataJson);
+    var canvas = document.getElementById('cost-timeline-chart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var currentType = 'line';
+    var chart = null;
+
+    var colors = ['#6c5ce7','#e17055','#00b894','#0984e3','#fdcb6e','#e84393','#636e72','#74b9ff','#55efc4','#fab1a0','#a29bfe','#81ecec','#ff7675','#dfe6e9','#2d3436'];
+
+    function buildBarData() {
+        var modelDates = {};
+        auditRaw.forEach(function(row) {
+            var key = row.model + '|' + row.date;
+            modelDates[key] = (modelDates[key] || 0) + row.cost;
+        });
+        var models = [];
+        var datesSet = new Set();
+        Object.keys(modelDates).forEach(function(k) {
+            var parts = k.split('|');
+            if (models.indexOf(parts[0]) === -1) models.push(parts[0]);
+            datesSet.add(parts[1]);
+        });
+        var dates = Array.from(datesSet).sort();
+        var datasets = models.map(function(model, i) {
+            return {
+                label: model,
+                data: dates.map(function(d) { return modelDates[model + '|' + d] || 0; }),
+                backgroundColor: colors[i % colors.length],
+                borderRadius: 3
+            };
+        });
+        return { labels: dates, datasets: datasets };
     }
-    new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: data.map(function(d) { return d.date; }),
+
+    function buildPieData() {
+        var modelCosts = {};
+        auditRaw.forEach(function(row) {
+            modelCosts[row.model] = (modelCosts[row.model] || 0) + row.cost;
+        });
+        var entries = Object.entries(modelCosts).sort(function(a, b) { return b[1] - a[1]; });
+        return {
+            labels: entries.map(function(e) { return e[0]; }),
             datasets: [{
-                label: 'Cost (EUR)',
-                data: data.map(function(d) { return d.cost; }),
-                borderColor: '#6c5ce7',
-                backgroundColor: 'rgba(108, 92, 231, 0.1)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 5
+                data: entries.map(function(e) { return Math.round(e[1] * 10000) / 10000; }),
+                backgroundColor: entries.map(function(_, i) { return colors[i % colors.length]; })
             }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { ticks: { maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { font: { size: 10 }, callback: function(v) { return '€' + v.toFixed(2); } }, grid: { color: 'rgba(0,0,0,0.05)' } }
-            }
+        };
+    }
+
+    function renderChart(type) {
+        if (chart) chart.destroy();
+        var isAggregate = type === 'line' && timeline.length > 0;
+        var isEmpty = !isAggregate && auditRaw.length === 0 && timeline.length === 0;
+
+        if (isEmpty) {
+            canvas.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-text/40 text-sm">No data for selected period</div>';
+            return;
         }
+
+        var config;
+        if (type === 'line') {
+            config = {
+                type: 'line',
+                data: {
+                    labels: timeline.map(function(d) { return d.date; }),
+                    datasets: [{
+                        label: 'Cost (EUR)',
+                        data: timeline.map(function(d) { return d.cost; }),
+                        borderColor: '#6c5ce7',
+                        backgroundColor: 'rgba(108,92,231,0.1)',
+                        fill: true, tension: 0.3,
+                        pointRadius: 3, pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 10, font:{size:10} }, grid: { display: false } },
+                        y: { ticks: { font:{size:10}, callback: function(v){return '€'+v.toFixed(2);} }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                    }
+                }
+            };
+        } else if (type === 'bar') {
+            var bar = buildBarData();
+            config = {
+                type: 'bar',
+                data: { labels: bar.labels, datasets: bar.datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+                    scales: {
+                        x: { stacked: true, ticks: { maxTicksLimit: 12, font:{size:10} }, grid: { display: false } },
+                        y: { stacked: true, ticks: { font:{size:10}, callback: function(v){return '€'+v.toFixed(2);} }, grid: { color: 'rgba(0,0,0,0.05)' } }
+                    }
+                }
+            };
+        } else {
+            var pie = buildPieData();
+            config = {
+                type: 'pie',
+                data: { labels: pie.labels, datasets: pie.datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 }, padding: 12 } },
+                        tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': €' + ctx.raw.toFixed(4); } } }
+                    }
+                }
+            };
+        }
+
+        chart = new Chart(ctx, config);
+    }
+
+    renderChart('line');
+
+    document.querySelectorAll('.chart-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.chart-toggle').forEach(function(b) { b.className = 'chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text'; });
+            this.className = 'chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm';
+            currentType = this.getAttribute('data-type');
+            renderChart(currentType);
+        });
     });
 });
 </script>

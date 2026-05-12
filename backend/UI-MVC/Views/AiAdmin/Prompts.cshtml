@@ -41,7 +41,7 @@
         <div class="space-y-4">
             @foreach (var prompt in Model.Prompts)
             {
-                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow">
+                <div class="prompt-item bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow" data-name="@prompt.Name.ToLowerInvariant()" data-desc="@prompt.Description.ToLowerInvariant()">
                     <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
                         <div>
                             <h2 class="text-sm font-semibold text-text">@prompt.Name</h2>
@@ -78,12 +78,16 @@
 <script>
 (function() {
     var input = document.getElementById('promptSearch');
-    var timeout;
+    var items = document.querySelectorAll('.prompt-item');
+
     input.addEventListener('input', function() {
-        clearTimeout(timeout);
-        timeout = setTimeout(function() {
-            window.location.href = '@Url.Action("Prompts")' + '?search=' + encodeURIComponent(input.value);
-        }, 400);
+        var query = input.value.toLowerCase().trim();
+        items.forEach(function(item) {
+            var name = item.getAttribute('data-name');
+            var desc = item.getAttribute('data-desc');
+            var match = !query || name.indexOf(query) !== -1 || desc.indexOf(query) !== -1;
+            item.style.display = match ? '' : 'none';
+        });
     });
 })();
 </script>

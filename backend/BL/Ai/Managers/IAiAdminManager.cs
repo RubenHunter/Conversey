@@ -33,6 +33,7 @@ public interface IAiAdminManager
     Task<RateLimitConfig> GetRateLimitConfigByIdAsync(int id);
     Task SaveRateLimitConfigAsync(RateLimitConfig config);
     Task<IReadOnlyList<ModerationKeyword>> GetAllModerationKeywordsAsync();
+    Task<IReadOnlyList<ModerationKeyword>> GetModerationKeywordsForWorkspaceAsync(string workspaceId);
     Task SaveModerationKeywordAsync(ModerationKeyword keyword);
     Task DeleteModerationKeywordAsync(int id);
     Task<AiCostLimit?> GetWorkspaceCostLimitAsync(string workspaceId);

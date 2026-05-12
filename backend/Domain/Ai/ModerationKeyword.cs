@@ -10,5 +10,8 @@ public class ModerationKeyword
     [MaxLength(200)]
     public string Keyword { get; set; } = string.Empty;
 
+    [MaxLength(200)]
+    public string? WorkspaceId { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
