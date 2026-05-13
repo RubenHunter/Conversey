@@ -45,14 +45,13 @@ public class AiAdminController : Controller
 
         var providers = await _aiAdminManager.GetAllProviderConfigsAsync();
         var prompts = await _aiAdminManager.GetAllPromptsAsync();
-        var healthCheck = await _aiAdminManager.CheckHealthAsync();
 
         var model = new AiDashboardViewModel
         {
             CostsSummary = costsSummary,
             TotalProviders = providers.Count,
             TotalPrompts = prompts.Count,
-            HealthCheck = healthCheck
+            HealthCheck = new AiHealthCheckResult { IsHealthy = true, Detail = "Checking..." }
         };
 
         return View(model);
