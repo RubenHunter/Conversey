@@ -21,12 +21,12 @@ public sealed class NoopAiManager : IAiManager
         _moderationKeywordRepository = moderationKeywordRepository;
     }
 
-    public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
+    public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null, string? workspaceId = null, string? projectId = null)
     {
         return Task.FromResult("Please rephrase your message in a respectful way.");
     }
 
-    public Task<ModerationDecision> ModerateContentAsync(string content)
+    public Task<ModerationDecision> ModerateContentAsync(string content, string? workspaceId = null, string? projectId = null)
     {
         var keywordSet = _moderationKeywordRepository.GetKeywordSet();
         var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -39,7 +39,7 @@ public sealed class NoopAiManager : IAiManager
         });
     }
 
-    public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
+    public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null)
     {
         var mode = (request.NudgingMode ?? "Medium").Trim();
         if (!NudgeThresholds.TryGetValue(mode, out var threshold))
@@ -61,7 +61,7 @@ public sealed class NoopAiManager : IAiManager
         });
     }
 
-    public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit, string? workspaceId = null, string? projectId = null)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
@@ -77,7 +77,7 @@ public sealed class NoopAiManager : IAiManager
         return Task.FromResult<IEnumerable<int>>(ordered.Take(limit).ToList());
     }
 
-    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea, string? workspaceId = null, string? projectId = null)
     {
         var result = new Dictionary<int, IReadOnlyList<string>>();
         var canonicalExisting = existingCategories

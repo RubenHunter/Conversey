@@ -11,10 +11,12 @@ namespace Conversey.UI_MVC.Controllers;
 public class AiAdminController : Controller
 {
     private readonly IAiAdminManager _aiAdminManager;
+    private readonly IAiPricingService _pricingService;
 
-    public AiAdminController(IAiAdminManager aiAdminManager)
+    public AiAdminController(IAiAdminManager aiAdminManager, IAiPricingService pricingService)
     {
         _aiAdminManager = aiAdminManager;
+        _pricingService = pricingService;
     }
 
     [HttpGet]
@@ -292,6 +294,44 @@ public class AiAdminController : Controller
         return Json(new { models, error });
     }
 
+    [HttpPost]
+    [Route("admin/ai/providers/test-health")]
+    public async Task<IActionResult> TestHealth([FromBody] AiProviderFormViewModel form)
+    {
+        if (string.IsNullOrWhiteSpace(form.BaseUrl))
+        {
+            return BadRequest("Base URL is required.");
+        }
+
+        var config = new AiProviderConfig
+        {
+            ProviderName = form.ProviderName ?? "Custom",
+            BaseUrl = form.BaseUrl,
+            ApiKey = form.ApiKey ?? string.Empty,
+            ApiVersion = form.ApiVersion ?? string.Empty,
+            CompletionsModel = form.CompletionsModel ?? string.Empty,
+            ModerationModel = form.ModerationModel ?? string.Empty,
+            Temperature = form.Temperature
+        };
+
+        var (moderationProbe, completionsProbe) = await _aiAdminManager.ProbeProviderAsync(config);
+        int modelCount = 0;
+        try
+        {
+            var models = await _aiAdminManager.ListProviderModelsFromConfigAsync(config);
+            modelCount = models.Count;
+        }
+        catch { }
+
+        return Json(new
+        {
+            healthy = moderationProbe.Ok && completionsProbe.Ok,
+            modelCount,
+            moderation = new { ok = moderationProbe.Ok, error = moderationProbe.Error, durationMs = moderationProbe.DurationMs },
+            completions = new { ok = completionsProbe.Ok, error = completionsProbe.Error, preview = completionsProbe.ResponsePreview, durationMs = completionsProbe.DurationMs }
+        });
+    }
+
     [HttpGet]
     [Route("admin/ai/prompts")]
     public async Task<IActionResult> Prompts([FromQuery] string? search)
@@ -409,5 +449,23 @@ public class AiAdminController : Controller
     {
         await _aiAdminManager.DeleteModerationKeywordAsync(id);
         return RedirectToAction("Keywords");
+    }
+
+    [HttpGet]
+    [Route("admin/ai/pricing")]
+    public async Task<IActionResult> Pricing()
+    {
+        var pricing = await _pricingService.GetAllPricingAsync();
+        var eurRate = await _pricingService.GetEurExchangeRateAsync();
+        ViewBag.EurRate = eurRate;
+        return View("Pricing/Pricing", pricing);
+    }
+
+    [HttpPost]
+    [Route("admin/ai/pricing/refresh")]
+    public async Task<IActionResult> RefreshPricing()
+    {
+        await _pricingService.RefreshPricingAsync();
+        return RedirectToAction("Pricing");
     }
 }

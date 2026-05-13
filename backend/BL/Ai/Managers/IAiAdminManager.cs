@@ -29,6 +29,7 @@ public interface IAiAdminManager
     Task DeleteProviderConfigAsync(int id);
     Task<IReadOnlyList<string>> ListProviderModelsAsync(int providerConfigId);
     Task<IReadOnlyList<string>> ListProviderModelsFromConfigAsync(AiProviderConfig config);
+    Task<(AiHealthProbeResult moderation, AiHealthProbeResult completions)> ProbeProviderAsync(AiProviderConfig config);
     Task<IReadOnlyList<RateLimitConfig>> GetAllRateLimitConfigsAsync();
     Task<RateLimitConfig> GetRateLimitConfigByIdAsync(int id);
     Task SaveRateLimitConfigAsync(RateLimitConfig config);

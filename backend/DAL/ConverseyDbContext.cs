@@ -33,6 +33,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<RateLimitConfig>  RateLimitConfigs { get; set; }
     public DbSet<ModerationKeyword>  ModerationKeywords { get; set; }
     public DbSet<AiCostLimit> AiCostLimits { get; set; }
+    public DbSet<AiModelPricing> AiModelPricings { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {

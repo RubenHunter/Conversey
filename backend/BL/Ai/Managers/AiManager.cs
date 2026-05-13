@@ -11,6 +11,7 @@ public sealed class AiManager : IAiManager
     private readonly IPromptRepository _promptRepository;
     private readonly IAuditRepository _auditRepository;
     private readonly IModerationKeywordRepository _moderationKeywordRepository;
+    private readonly IAiPricingService _pricingService;
     private readonly string _completionsModel;
     private readonly string _moderationModel;
     private readonly decimal _temperature;
@@ -24,18 +25,19 @@ public sealed class AiManager : IAiManager
         "inappropriate", "offensive", "flag", "harmful", "abuse", "dangerous"
     };
 
-    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, IModerationKeywordRepository moderationKeywordRepository, string completionsModel, string moderationModel, decimal temperature = 1.0m)
+    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, IModerationKeywordRepository moderationKeywordRepository, IAiPricingService pricingService, string completionsModel, string moderationModel, decimal temperature = 1.0m)
     {
         _provider = provider;
         _promptRepository = promptRepository;
         _auditRepository = auditRepository;
         _moderationKeywordRepository = moderationKeywordRepository;
+        _pricingService = pricingService;
         _completionsModel = string.IsNullOrWhiteSpace(completionsModel) ? "mistral-small-latest" : completionsModel;
         _moderationModel = moderationModel;
         _temperature = temperature == 0m ? 1.0m : temperature;
     }
 
-    public async Task<ModerationDecision> ModerateContentAsync(string content)
+    public async Task<ModerationDecision> ModerateContentAsync(string content, string? workspaceId = null, string? projectId = null)
     {
         var keywordSet = _moderationKeywordRepository.GetKeywordSet();
         var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -48,18 +50,41 @@ public sealed class AiManager : IAiManager
 
         Console.WriteLine($"[AiManager] Keywords passed. Provider={_provider.ProviderName}, NativeModeration={_provider.SupportsNativeModeration}, ModerationModel=\"{_moderationModel}\", CompletionsModel=\"{_completionsModel}\"");
 
-        if (_provider.SupportsNativeModeration && !string.IsNullOrWhiteSpace(_moderationModel))
+        try
         {
-            Console.WriteLine($"[AiManager] → Native moderation endpoint (/{_moderationModel})");
-            return await ModerateViaNativeEndpointAsync(content);
-        }
+            if (_provider.SupportsNativeModeration && !string.IsNullOrWhiteSpace(_moderationModel))
+            {
+                Console.WriteLine($"[AiManager] → Native moderation endpoint (/{_moderationModel})");
+                return await ModerateViaNativeEndpointAsync(content, workspaceId, projectId);
+            }
 
-        var effectiveModel = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
-        Console.WriteLine($"[AiManager] → Prompt-based moderation (model: \"{effectiveModel}\")");
-        return await ModerateViaPromptAsync(content);
+            var effectiveModel = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
+            Console.WriteLine($"[AiManager] → Prompt-based moderation (model: \"{effectiveModel}\")");
+            return await ModerateViaPromptAsync(content, workspaceId, projectId);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+        {
+            Console.WriteLine($"[AiManager] Moderation provider returned 503 — marking for review");
+            return new ModerationDecision { IsAllowed = false };
+        }
+        catch (AiException ex) when (ex.Message.Contains("503", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine($"[AiManager] Moderation provider unavailable (503) — marking for review");
+            return new ModerationDecision { IsAllowed = false };
+        }
+        catch (HttpRequestException)
+        {
+            Console.WriteLine($"[AiManager] Moderation provider unreachable (network) — marking for review");
+            return new ModerationDecision { IsAllowed = false };
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine($"[AiManager] Moderation provider timed out — marking for review");
+            return new ModerationDecision { IsAllowed = false };
+        }
     }
 
-    private async Task<ModerationDecision> ModerateViaNativeEndpointAsync(string content)
+    private async Task<ModerationDecision> ModerateViaNativeEndpointAsync(string content, string? workspaceId = null, string? projectId = null)
     {
         var startTime = DateTime.UtcNow;
         try
@@ -67,7 +92,7 @@ public sealed class AiManager : IAiManager
             var result = await _provider.ModerateAsync(content, _moderationModel);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(_moderationModel, ModerationModelType, 0, 0, 0, startTime, duration, _provider.ProviderName, "Moderation");
+            await _auditRepository.LogAiCallAsync(_moderationModel, ModerationModelType, 0, 0, 0, startTime, duration, _provider.ProviderName, "Moderation", workspaceId, projectId);
 
             var info = ParseModerationInfo(result.Categories);
             var isAllowed = !result.Flagged && !HasAnyModerationFlag(info);
@@ -84,7 +109,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    private async Task<ModerationDecision> ModerateViaPromptAsync(string content)
+    private async Task<ModerationDecision> ModerateViaPromptAsync(string content, string? workspaceId = null, string? projectId = null)
     {
         var startTime = DateTime.UtcNow;
         try
@@ -98,7 +123,8 @@ public sealed class AiManager : IAiManager
             var result = await _provider.CompleteAsync(systemPrompt, content, model, 0m);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(model, ModerationModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationPrompt");
+            var cost = await ComputeCostAsync(model, result.PromptTokens, result.CompletionTokens);
+            await _auditRepository.LogAiCallAsync(model, ModerationModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, "ModerationPrompt", workspaceId, projectId);
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -119,7 +145,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public async Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
+    public async Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null, string? workspaceId = null, string? projectId = null)
     {
         var startTime = DateTime.UtcNow;
         try
@@ -132,7 +158,8 @@ public sealed class AiManager : IAiManager
             var result = await _provider.CompleteAsync(systemPrompt, content, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationGenerateAlternative");
+            var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, "ModerationGenerateAlternative", workspaceId, projectId);
 
             return !string.IsNullOrWhiteSpace(result.Content) ? result.Content : "Please rephrase your message in a respectful way.";
         }
@@ -146,7 +173,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
+    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null)
     {
         var startTime = DateTime.UtcNow;
         try
@@ -164,7 +191,8 @@ public sealed class AiManager : IAiManager
             var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaNudging");
+            var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, "IdeaNudging", workspaceId, projectId);
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -183,7 +211,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public async Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public async Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit, string? workspaceId = null, string? projectId = null)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
@@ -207,7 +235,8 @@ public sealed class AiManager : IAiManager
             var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaRanking");
+            var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, "IdeaRanking", workspaceId, projectId);
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -229,7 +258,9 @@ public sealed class AiManager : IAiManager
     public async Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(
         IReadOnlyList<string> ideas,
         IReadOnlyList<string> existingCategories,
-        int maxCategoriesPerIdea)
+        int maxCategoriesPerIdea,
+        string? workspaceId = null,
+        string? projectId = null)
     {
         if (ideas.Count == 0)
         {
@@ -253,7 +284,8 @@ public sealed class AiManager : IAiManager
             var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaCategorization");
+            var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, "IdeaCategorization", workspaceId, projectId);
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -276,6 +308,19 @@ public sealed class AiManager : IAiManager
     {
         var prompt = await _promptRepository.GetPromptAsync(name);
         return prompt ?? new AiPrompt { Name = name };
+    }
+
+    private async Task<decimal> ComputeCostAsync(string modelName, int inputTokens, int outputTokens)
+    {
+        if (inputTokens == 0 && outputTokens == 0) return 0m;
+        try
+        {
+            return await _pricingService.CalculateCostAsync(modelName, inputTokens, outputTokens);
+        }
+        catch
+        {
+            return 0m;
+        }
     }
 
     private static IReadOnlyDictionary<string, string> BuildNudgingVariables(IdeaNudgeAssessmentRequest request)

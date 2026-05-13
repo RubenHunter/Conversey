@@ -1569,7 +1569,7 @@ public static class DataSeeder
             var workspace = workspaces[wsIndex];
             var project = projects[wsIndex];
 
-            var daysAgo = rnd.Next(0, 60);
+            var daysAgo = rnd.Next(2, 60);
             var startTime = now.AddDays(-daysAgo).AddHours(rnd.Next(0, 24)).AddMinutes(rnd.Next(0, 60));
             var durationMs = rnd.Next(100, 5000);
             var modelType = types[rnd.Next(0, types.Length)];

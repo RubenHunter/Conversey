@@ -135,7 +135,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         if (dbConfig != null)
         {
-            (moderationProbe, completionsProbe) = await ProbeWithDbConfigAsync(dbConfig);
+            (moderationProbe, completionsProbe) = await ProbeProviderAsync(dbConfig);
         }
         else
         {
@@ -172,7 +172,7 @@ public sealed class AiAdminManager : IAiAdminManager
                 result.CompletionsModel = activeConfig.CompletionsModel;
                 result.ModerationModel = activeConfig.ModerationModel;
 
-                var (moderationProbe, completionsProbe) = await ProbeWithDbConfigAsync(activeConfig);
+                var (moderationProbe, completionsProbe) = await ProbeProviderAsync(activeConfig);
 
                 if (!moderationProbe.Ok || !completionsProbe.Ok)
                 {
@@ -410,7 +410,7 @@ public sealed class AiAdminManager : IAiAdminManager
         }
     }
 
-    private static (HttpClient httpClient, IAiProvider provider) CreateProviderFromConfig(AiProviderConfig config)
+    public static (HttpClient httpClient, IAiProvider provider) CreateProviderFromConfig(AiProviderConfig config)
     {
         var baseUrl = config.BaseUrl.TrimEnd('/') + '/';
         var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
@@ -437,7 +437,7 @@ public sealed class AiAdminManager : IAiAdminManager
         return (httpClient, provider);
     }
 
-    private async Task<(AiHealthProbeResult moderation, AiHealthProbeResult completions)> ProbeWithDbConfigAsync(AiProviderConfig config)
+    public async Task<(AiHealthProbeResult moderation, AiHealthProbeResult completions)> ProbeProviderAsync(AiProviderConfig config)
     {
         var (httpClient, provider) = CreateProviderFromConfig(config);
         using (httpClient)

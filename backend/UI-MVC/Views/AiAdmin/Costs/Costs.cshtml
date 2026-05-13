@@ -14,7 +14,7 @@
     };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
     var timelineData = Model.Timeline.DailyCosts.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), calls = d.CallCount }).ToList();
-    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6) }).ToList();
+    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToLocalTime().ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6) }).ToList();
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -148,20 +148,25 @@
             <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
                 <h2 class="text-sm font-semibold text-text">Audit Log (@Model.AuditLogs.Count entries)</h2>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-secondary/10 text-sm">
+            <div class="costs-audit-table max-[1500px]:overflow-x-auto">
+                <table class="w-full table-fixed divide-y divide-secondary/10 text-xs min-w-[1000px]">
+                    <colgroup>
+                        <col style="width:8%"><col style="width:12%"><col style="width:14%">
+                        <col style="width:14%"><col style="width:8%"><col style="width:16%">
+                        <col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%">
+                    </colgroup>
                     <thead class="bg-background/50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Time</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Workspace</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Project</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Model</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Type</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Prompt</th>
-                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">In</th>
-                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Out</th>
-                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Cost</th>
-                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Duration</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Time</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Workspace</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Project</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Model</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Type</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Prompt</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">In</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Out</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Cost</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Dur.</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-secondary/10">
@@ -174,16 +179,16 @@
                             @foreach (var log in Model.AuditLogs)
                             {
                                 <tr class="hover:bg-background/30">
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.StartTime.ToString("MM-dd HH:mm")</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.WorkspaceId</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/70">@log.ProjectId</td>
-                                    <td class="whitespace-nowrap px-6 py-3 font-mono text-xs text-text">@log.ModelName</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@log.ModelType</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@log.PromptName</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-text/60">@log.InputTokens.ToString("N0")</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-text/60">@log.OutputTokens.ToString("N0")</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs font-semibold text-text">@log.Cost.ToString("C", nlBe)</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-right text-xs text-text/60">@(log.Duration.TotalSeconds < 1 ? "< 1s" : $"{log.Duration.TotalSeconds:F1}s")</td>
+                                    <td class="px-2 py-2 text-xs text-text/70">@log.StartTime.ToLocalTime().ToString("MM-dd HH:mm")</td>
+                                    <td class="px-2 py-2 text-xs text-text/70"><span class="block truncate" title="@log.WorkspaceId">@log.WorkspaceId</span></td>
+                                    <td class="px-2 py-2 text-xs text-text/70"><span class="block truncate" title="@log.ProjectId">@log.ProjectId</span></td>
+                                    <td class="px-2 py-2 font-mono text-xs text-text"><span class="block truncate" title="@log.ModelName">@log.ModelName</span></td>
+                                    <td class="px-2 py-2 text-xs text-text/60">@log.ModelType</td>
+                                    <td class="px-2 py-2 text-xs text-text/60"><span class="block truncate" title="@log.PromptName">@log.PromptName</span></td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@log.InputTokens.ToString("N0")</td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@log.OutputTokens.ToString("N0")</td>
+                                    <td class="px-2 py-2 text-right text-xs font-semibold text-text">@log.Cost.ToString("C", nlBe)</td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@(log.Duration.TotalSeconds < 1 ? "< 1s" : $"{log.Duration.TotalSeconds:F1}s")</td>
                                 </tr>
                             }
                         }

@@ -191,22 +191,22 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
     private sealed class TestAiManager( TestAiManagerConfig config) : IAiManager
     {
-        public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
+        public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(config.Alternative);
         }
 
-        public Task<ModerationDecision> ModerateContentAsync(string content)
+        public Task<ModerationDecision> ModerateContentAsync(string content, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
         }
 
-        public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
+        public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
         }
 
-        public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit, string? workspaceId = null, string? projectId = null)
         {
             if (candidateIdeas.Count == 0 || limit <= 0)
             {
@@ -222,7 +222,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             return Task.FromResult<IEnumerable<int>>(ordered.Take(limit).ToList());
         }
 
-        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea, string? workspaceId = null, string? projectId = null)
         {
             if (config.ThrowOnCategorize)
             {

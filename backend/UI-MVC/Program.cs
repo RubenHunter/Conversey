@@ -57,6 +57,7 @@ builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>(
 builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
 builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
 builder.Services.AddScoped<ICostLimitRepository, CostLimitRepository>();
+builder.Services.AddScoped<IModelPricingRepository, ModelPricingRepository>();
 builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
 
 // Add managers
@@ -66,6 +67,7 @@ builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
+builder.Services.AddScoped<IAiPricingService, AiPricingService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -170,8 +172,9 @@ builder.Services.AddScoped<IAiManager>(provider =>
         var promptRepo = provider.GetRequiredService<IPromptRepository>();
         var auditRepo = provider.GetRequiredService<IAuditRepository>();
         var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        var pricingService = provider.GetRequiredService<IAiPricingService>();
 
-        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel);
+        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
     }
 
     throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
@@ -272,6 +275,9 @@ void InitializeDatabase(bool drop)
             var config = services.GetRequiredService<IConfiguration>();
             DataSeeder.Seed(dbCtx, config);
             SeedIdentity(userManager, roleManager, dbCtx);
+
+            var pricingService = services.GetRequiredService<IAiPricingService>();
+            pricingService.RefreshPricingAsync().GetAwaiter().GetResult();
         }
     }
 }
@@ -408,8 +414,9 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
     var promptRepo = provider.GetRequiredService<IPromptRepository>();
     var auditRepo = provider.GetRequiredService<IAuditRepository>();
     var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+    var pricingService = provider.GetRequiredService<IAiPricingService>();
     var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
     var moderationModel = config.ModerationModel;
 
-    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, completionsModel, moderationModel, config.Temperature);
+    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
 }
