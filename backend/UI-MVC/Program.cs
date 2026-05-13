@@ -313,11 +313,12 @@ void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<Identity
 
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
     EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
+    EnsureSeedUser(userManager, "admin@conversey.be", null);
 }
 
 void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
 {
-    var normalizedWorkspaceId = Slug.FromName(workspaceId);
+    var normalizedWorkspaceId = string.IsNullOrEmpty(workspaceId) ? new Slug { Text = "" } : Slug.FromName(workspaceId);
     var user = userManager.FindByEmailAsync(email).Result;
     if (user == null)
     {
