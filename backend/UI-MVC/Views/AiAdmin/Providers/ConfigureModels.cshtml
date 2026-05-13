@@ -1,8 +1,8 @@
-@model Conversey.BL.Domain.Ai.AiProviderConfig
+@model Conversey.UI_MVC.Models.AiAdmin.AiModelsViewModel
 @{
-    ViewData["Title"] = $"Configure Models: {Model.ProviderName}";
-    var availableModels = ViewBag.AvailableModels as IReadOnlyList<string> ?? Array.Empty<string>();
-    var fetchError = ViewBag.FetchError as string;
+    ViewData["Title"] = $"Configure Models: {Model.Provider.ProviderName}";
+    var availableModels = Model.AvailableModels;
+    var fetchError = Model.FetchError;
     var hasModels = availableModels.Count > 0;
 }
 
@@ -10,7 +10,7 @@
     <div class="mx-auto max-w-5xl">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Configure Models: @Model.ProviderName</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Configure Models: @Model.Provider.ProviderName</h1>
                 <p class="mt-1 text-sm text-gray-500">Select which models to use for AI operations. Models are fetched from the provider's API.</p>
             </div>
             <a href="@Url.Action("Providers")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to Providers</a>
@@ -25,15 +25,15 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <h3 class="text-xs font-semibold uppercase text-gray-500">Base URL</h3>
-                            <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.BaseUrl) ? "—" : Model.BaseUrl)</p>
+                            <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.Provider.BaseUrl) ? "—" : Model.Provider.BaseUrl)</p>
                         </div>
                         <div>
                             <h3 class="text-xs font-semibold uppercase text-gray-500">API Key</h3>
-                            <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.ApiKey) ? "—" : new string('*', Math.Min(Model.ApiKey.Length, 20)))</p>
+                            <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.Provider.ApiKey) ? "—" : new string('*', Math.Min(Model.Provider.ApiKey.Length, 20)))</p>
                         </div>
                     </div>
                     <div class="mt-3">
-                        <a href="@Url.Action("EditProvider", new { id = Model.Id })" class="text-sm text-indigo-600 hover:text-indigo-700">Edit connection settings</a>
+                        <a href="@Url.Action("EditProvider", new { id = Model.Provider.Id })" class="text-sm text-indigo-600 hover:text-indigo-700">Edit connection settings</a>
                     </div>
                 </div>
             </div>
@@ -55,7 +55,7 @@
                 </div>
             }
 
-            <form asp-action="ConfigureModels" asp-route-id="@Model.Id" method="post" class="space-y-6">
+            <form asp-action="SaveModels" asp-route-id="@Model.Provider.Id" method="post" class="space-y-6">
                 @Html.AntiForgeryToken()
 
                 <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -64,20 +64,20 @@
                     </div>
                     <div class="px-6 py-4 space-y-4">
                         <div>
-                            <label asp-for="CompletionsModel" class="block text-xs font-semibold uppercase text-gray-500">Completions Model</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500">Completions Model</label>
                             <div class="mt-1 flex gap-2">
                                 @if (hasModels)
                                 {
-                                    <select asp-for="CompletionsModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <select name="CompletionsModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                         <option value="">— select or type manually —</option>
                                         @foreach (var m in availableModels)
                                         {
-                                            var selected = string.Equals(m, Model.CompletionsModel, StringComparison.OrdinalIgnoreCase);
+                                            var selected = string.Equals(m, Model.Provider.CompletionsModel, StringComparison.OrdinalIgnoreCase);
                                             <option value="@m" selected="@selected">@m</option>
                                         }
                                     </select>
                                 }
-                                <input asp-for="CompletionsModel" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 @(hasModels ? "hidden" : "")" placeholder="mistral-small-latest" list="completions-datalist" />
+                                <input name="CompletionsModel" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 @(hasModels ? "hidden" : "")" placeholder="mistral-small-latest" list="completions-datalist" />
                                 @if (hasModels)
                                 {
                                     <datalist id="completions-datalist">
@@ -92,20 +92,20 @@
                         </div>
 
                         <div>
-                            <label asp-for="ModerationModel" class="block text-xs font-semibold uppercase text-gray-500">Moderation Model</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500">Moderation Model</label>
                             <div class="mt-1 flex gap-2">
                                 @if (hasModels)
                                 {
-                                    <select asp-for="ModerationModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <select name="ModerationModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                         <option value="">— none (skip moderation) —</option>
                                         @foreach (var m in availableModels)
                                         {
-                                            var selected = string.Equals(m, Model.ModerationModel, StringComparison.OrdinalIgnoreCase);
+                                            var selected = string.Equals(m, Model.Provider.ModerationModel, StringComparison.OrdinalIgnoreCase);
                                             <option value="@m" selected="@selected">@m</option>
                                         }
                                     </select>
                                 }
-                                <input asp-for="ModerationModel" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 @(hasModels ? "hidden" : "")" placeholder="mistral-moderation-latest" list="moderation-datalist" />
+                                <input name="ModerationModel" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 @(hasModels ? "hidden" : "")" placeholder="mistral-moderation-latest" list="moderation-datalist" />
                                 @if (hasModels)
                                 {
                                     <datalist id="moderation-datalist">
@@ -120,8 +120,8 @@
                         </div>
 
                         <div>
-                            <label asp-for="Temperature" class="block text-xs font-semibold uppercase text-gray-500">Temperature</label>
-                            <input asp-for="Temperature" type="number" min="0" max="2" step="0.1" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="1.0" />
+                            <label class="block text-xs font-semibold uppercase text-gray-500">Temperature</label>
+                            <input name="Temperature" type="number" min="0" max="2" step="0.1" value="@Model.Provider.Temperature" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="1.0" />
                             <p class="mt-1 text-xs text-gray-400">0 = deterministic, 1 = balanced, 2 = creative. Mistral models work well at 0.1-0.2 for structured tasks.</p>
                         </div>
                     </div>

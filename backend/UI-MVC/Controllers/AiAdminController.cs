@@ -67,8 +67,8 @@ public class AiAdminController : Controller
             modelType: filter?.ModelType,
             providerName: filter?.ProviderName,
             promptName: filter?.PromptName,
-            dateFrom: filter?.DateFrom,
-            dateTo: filter?.DateTo);
+            dateFrom: filter?.DateFrom.HasValue == true ? DateTime.SpecifyKind(filter.DateFrom.Value, DateTimeKind.Utc) : null,
+            dateTo: filter?.DateTo.HasValue == true ? DateTime.SpecifyKind(filter.DateTo.Value, DateTimeKind.Utc) : null);
 
         var timeline = await _aiAdminManager.GetCostsTimelineAsync(
             days: filter?.TimelineDays ?? 30,
@@ -110,7 +110,7 @@ public class AiAdminController : Controller
             Filter = filter ?? new AiCostsFilterViewModel()
         };
 
-        return View(model);
+        return View("Costs/Costs", model);
     }
 
     [HttpGet]
@@ -119,7 +119,7 @@ public class AiAdminController : Controller
     {
         if (setup == true)
         {
-            return View("Setup");
+            return View("Providers/Setup");
         }
 
         var providers = await _aiAdminManager.GetAllProviderConfigsAsync();
@@ -131,14 +131,14 @@ public class AiAdminController : Controller
             HealthCheck = healthCheck
         };
 
-        return View(model);
+        return View("Providers/Providers", model);
     }
 
     [HttpGet]
     [Route("admin/ai/providers/new")]
     public IActionResult CreateProvider()
     {
-        return View("EditProvider", new AiProviderFormViewModel());
+        return View("Providers/EditProvider", new AiProviderFormViewModel());
     }
 
     [HttpGet]
@@ -162,14 +162,14 @@ public class AiAdminController : Controller
             ApiKeyExpiresAt = config.ApiKeyExpiresAt
         };
 
-        return View(model);
+        return View("Providers/EditProvider", model);
     }
 
     [HttpPost]
     [Route("admin/ai/providers/{id:int?}")]
     public async Task<IActionResult> SaveProvider(int? id, AiProviderFormViewModel form)
     {
-        if (!ModelState.IsValid) return View("EditProvider", form);
+        if (!ModelState.IsValid) return View("Providers/EditProvider", form);
 
         var config = id.HasValue && id.Value > 0
             ? await _aiAdminManager.GetProviderConfigByIdAsync(id.Value)
@@ -204,9 +204,15 @@ public class AiAdminController : Controller
     {
         var config = await _aiAdminManager.GetProviderConfigByIdAsync(id);
         if (config == null) return NotFound();
-        if (config.IsDefault) return BadRequest("Cannot delete the default provider.");
 
-        await _aiAdminManager.DeleteProviderConfigAsync(id);
+        try
+        {
+            await _aiAdminManager.DeleteProviderConfigAsync(id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         return RedirectToAction("Providers");
     }
 
@@ -229,21 +235,25 @@ public class AiAdminController : Controller
             fetchError = ex.Message;
         }
 
-        ViewBag.AvailableModels = availableModels;
-        ViewBag.FetchError = fetchError;
-        return View(config);
+        var model = new AiModelsViewModel
+        {
+            Provider = config,
+            AvailableModels = availableModels,
+            FetchError = fetchError
+        };
+        return View("Providers/ConfigureModels", model);
     }
 
     [HttpPost]
     [Route("admin/ai/providers/{id:int}/models")]
-    public async Task<IActionResult> SaveModels(int id, AiProviderConfig config)
+    public async Task<IActionResult> SaveModels(int id, string CompletionsModel, string ModerationModel, decimal Temperature)
     {
         var existing = await _aiAdminManager.GetProviderConfigByIdAsync(id);
         if (existing == null) return NotFound();
 
-        existing.CompletionsModel = config.CompletionsModel;
-        existing.ModerationModel = config.ModerationModel;
-        existing.Temperature = config.Temperature;
+        existing.CompletionsModel = CompletionsModel;
+        existing.ModerationModel = ModerationModel;
+        existing.Temperature = Temperature;
 
         await _aiAdminManager.SaveProviderConfigAsync(existing);
         return RedirectToAction("Providers");
@@ -302,7 +312,7 @@ public class AiAdminController : Controller
             SearchQuery = search ?? string.Empty
         };
 
-        return View(model);
+        return View("Prompts/Prompts", model);
     }
 
     [HttpGet]
@@ -321,21 +331,21 @@ public class AiAdminController : Controller
             HasDefault = defaultPrompt != null
         };
 
-        return View(model);
+        return View("Prompts/EditPrompt", model);
     }
 
     [HttpPost]
     [Route("admin/ai/prompts/{id:int}")]
-    public async Task<IActionResult> SavePrompt(int id, AiPrompt prompt)
+    public async Task<IActionResult> SavePrompt(int id, string SystemPrompt, string UserPromptTemplate, string Description)
     {
         if (!ModelState.IsValid) return RedirectToAction("EditPrompt", new { id });
 
         var existing = await _aiAdminManager.GetPromptByIdAsync(id);
         if (existing == null) return NotFound();
 
-        existing.SystemPrompt = prompt.SystemPrompt;
-        existing.UserPromptTemplate = prompt.UserPromptTemplate;
-        existing.Description = prompt.Description;
+        existing.SystemPrompt = SystemPrompt;
+        existing.UserPromptTemplate = UserPromptTemplate;
+        existing.Description = Description;
 
         await _aiAdminManager.SavePromptAsync(existing);
         return RedirectToAction("Prompts");
@@ -364,17 +374,32 @@ public class AiAdminController : Controller
     public async Task<IActionResult> Keywords()
     {
         var keywords = await _aiAdminManager.GetAllModerationKeywordsAsync();
-        return View(keywords);
+        var model = new AiKeywordsViewModel
+        {
+            Keywords = keywords.Select(k => new AiKeywordItem
+            {
+                Id = k.Id,
+                Keyword = k.Keyword,
+                WorkspaceId = k.WorkspaceId,
+                CreatedAt = k.CreatedAt.ToString("yyyy-MM-dd")
+            }).ToList()
+        };
+        return View("Keywords/Keywords", model);
     }
 
     [HttpPost]
     [Route("admin/ai/keywords/create")]
-    public async Task<IActionResult> CreateKeyword(ModerationKeyword keyword)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateKeyword(string Keyword)
     {
-        if (string.IsNullOrWhiteSpace(keyword.Keyword))
+        if (string.IsNullOrWhiteSpace(Keyword))
             return RedirectToAction("Keywords");
 
-        await _aiAdminManager.SaveModerationKeywordAsync(keyword);
+        await _aiAdminManager.SaveModerationKeywordAsync(new ModerationKeyword
+        {
+            Keyword = Keyword.Trim(),
+            WorkspaceId = null
+        });
         return RedirectToAction("Keywords");
     }
 

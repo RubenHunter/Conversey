@@ -191,26 +191,26 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
     private sealed class TestAiManager( TestAiManagerConfig config) : IAiManager
     {
-        public string GenerateAlternative(string content, ModerationDecision decision = null)
+        public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
         {
-            return config.Alternative;
+            return Task.FromResult(config.Alternative);
         }
 
-        public ModerationDecision ModerateContent(string content)
+        public Task<ModerationDecision> ModerateContentAsync(string content)
         {
-            return new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative };
+            return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
         }
 
-        public IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+        public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
         {
-            return new IdeaNudgeDecision { IsApproved = true };
+            return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
         }
 
-        public IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
         {
             if (candidateIdeas.Count == 0 || limit <= 0)
             {
-                return Array.Empty<int>();
+                return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
             }
 
             var ordered = Enumerable.Range(0, candidateIdeas.Count);
@@ -219,10 +219,10 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 ordered = ordered.Reverse();
             }
 
-            return ordered.Take(limit);
+            return Task.FromResult<IEnumerable<int>>(ordered.Take(limit).ToList());
         }
 
-        public IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
         {
             if (config.ThrowOnCategorize)
             {
@@ -271,7 +271,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 result[index] = normalized.AsReadOnly();
             }
 
-            return result;
+            return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
         }
 
         private static string NormalizeCategoryKey(string value)

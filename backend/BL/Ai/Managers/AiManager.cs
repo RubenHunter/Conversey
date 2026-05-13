@@ -35,7 +35,7 @@ public sealed class AiManager : IAiManager
         _temperature = temperature == 0m ? 1.0m : temperature;
     }
 
-    public ModerationDecision ModerateContent(string content)
+    public async Task<ModerationDecision> ModerateContentAsync(string content)
     {
         var keywordSet = _moderationKeywordRepository.GetKeywordSet();
         var unsafeTerm = keywordSet.FirstOrDefault(term => (content ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -51,23 +51,23 @@ public sealed class AiManager : IAiManager
         if (_provider.SupportsNativeModeration && !string.IsNullOrWhiteSpace(_moderationModel))
         {
             Console.WriteLine($"[AiManager] → Native moderation endpoint (/{_moderationModel})");
-            return ModerateViaNativeEndpoint(content);
+            return await ModerateViaNativeEndpointAsync(content);
         }
 
         var effectiveModel = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
         Console.WriteLine($"[AiManager] → Prompt-based moderation (model: \"{effectiveModel}\")");
-        return ModerateViaPrompt(content);
+        return await ModerateViaPromptAsync(content);
     }
 
-    private ModerationDecision ModerateViaNativeEndpoint(string content)
+    private async Task<ModerationDecision> ModerateViaNativeEndpointAsync(string content)
     {
         var startTime = DateTime.UtcNow;
         try
         {
-            var result = _provider.ModerateAsync(content, _moderationModel).GetAwaiter().GetResult();
+            var result = await _provider.ModerateAsync(content, _moderationModel);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(_moderationModel, ModerationModelType, 0, 0, 0, startTime, duration, _provider.ProviderName, "Moderation").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(_moderationModel, ModerationModelType, 0, 0, 0, startTime, duration, _provider.ProviderName, "Moderation");
 
             var info = ParseModerationInfo(result.Categories);
             var isAllowed = !result.Flagged && !HasAnyModerationFlag(info);
@@ -84,21 +84,21 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    private ModerationDecision ModerateViaPrompt(string content)
+    private async Task<ModerationDecision> ModerateViaPromptAsync(string content)
     {
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = LoadPrompt("ModerationPrompt");
+            var prompt = await LoadPromptAsync("ModerationPrompt");
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? BuildDefaultModerationSystemPrompt()
                 : prompt.SystemPrompt;
 
             var model = string.IsNullOrWhiteSpace(_moderationModel) ? _completionsModel : _moderationModel;
-            var result = _provider.CompleteAsync(systemPrompt, content, model, 0m).GetAwaiter().GetResult();
+            var result = await _provider.CompleteAsync(systemPrompt, content, model, 0m);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(model, ModerationModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationPrompt").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(model, ModerationModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationPrompt");
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -119,20 +119,20 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public string GenerateAlternative(string content, ModerationDecision decision = null)
+    public async Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
     {
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = LoadPrompt("ModerationGenerateAlternative");
+            var prompt = await LoadPromptAsync("ModerationGenerateAlternative");
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text."
                 : prompt.SystemPrompt;
 
-            var result = _provider.CompleteAsync(systemPrompt, content, _completionsModel, _temperature).GetAwaiter().GetResult();
+            var result = await _provider.CompleteAsync(systemPrompt, content, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationGenerateAlternative").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "ModerationGenerateAlternative");
 
             return !string.IsNullOrWhiteSpace(result.Content) ? result.Content : "Please rephrase your message in a respectful way.";
         }
@@ -146,25 +146,25 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
     {
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = LoadPrompt("IdeaNudgingSystem");
+            var systemPrompt = await LoadPromptAsync("IdeaNudgingSystem");
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? BuildDefaultNudgingSystemPrompt(request.NudgingMode)
                 : PromptRenderer.Render(systemPrompt.SystemPrompt, new Dictionary<string, string> { ["NudgingModeDescription"] = DescribeNudgingMode(request.NudgingMode) });
 
-            var userPrompt = LoadPrompt("IdeaNudgingUser");
+            var userPrompt = await LoadPromptAsync("IdeaNudgingUser");
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? BuildDefaultNudgingUserPrompt(request)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, BuildNudgingVariables(request));
 
-            var result = _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature).GetAwaiter().GetResult();
+            var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaNudging").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaNudging");
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -183,7 +183,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public async Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
@@ -194,20 +194,20 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = LoadPrompt("IdeaRankingSystem");
+            var systemPrompt = await LoadPromptAsync("IdeaRankingSystem");
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = LoadPrompt("IdeaRankingUser");
+            var userPrompt = await LoadPromptAsync("IdeaRankingUser");
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? BuildDefaultIdeaRankingPrompt(referenceIdea, candidateIdeas, preferDifferent, cappedLimit)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, BuildRankingVariables(referenceIdea, candidateIdeas, preferDifferent, cappedLimit));
 
-            var result = _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature).GetAwaiter().GetResult();
+            var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaRanking").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaRanking");
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -226,7 +226,7 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    public IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(
+    public async Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(
         IReadOnlyList<string> ideas,
         IReadOnlyList<string> existingCategories,
         int maxCategoriesPerIdea)
@@ -240,20 +240,20 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = LoadPrompt("IdeaCategorizationSystem");
+            var systemPrompt = await LoadPromptAsync("IdeaCategorizationSystem");
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You assign semantic categories to youth ideas. Return only strict JSON."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = LoadPrompt("IdeaCategorizationUser");
+            var userPrompt = await LoadPromptAsync("IdeaCategorizationUser");
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? BuildDefaultCategorizationPrompt(ideas, existingCategories, cappedMax)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, BuildCategorizationVariables(ideas, existingCategories, cappedMax));
 
-            var result = _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature).GetAwaiter().GetResult();
+            var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, _temperature);
             var duration = DateTime.UtcNow - startTime;
 
-            _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaCategorization").GetAwaiter().GetResult();
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, 0, startTime, duration, _provider.ProviderName, "IdeaCategorization");
 
             if (string.IsNullOrWhiteSpace(result.Content))
             {
@@ -272,9 +272,9 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    private AiPrompt LoadPrompt(string name)
+    private async Task<AiPrompt> LoadPromptAsync(string name)
     {
-        var prompt = _promptRepository.GetPromptAsync(name).GetAwaiter().GetResult();
+        var prompt = await _promptRepository.GetPromptAsync(name);
         return prompt ?? new AiPrompt { Name = name };
     }
 

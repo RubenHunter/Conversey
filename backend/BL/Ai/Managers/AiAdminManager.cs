@@ -15,7 +15,7 @@ public sealed class AiAdminManager : IAiAdminManager
     private readonly IModerationKeywordRepository _moderationKeywordRepository;
     private readonly ICostLimitRepository _costLimitRepository;
     private readonly IAiManager _aiManager;
-    private readonly IConfiguration _configuration;
+    private readonly string _appsettingsProvider;
     private readonly RateLimitConfigCache _rateLimitCache;
 
     private static readonly Dictionary<string, AiPrompt> DefaultPrompts = new()
@@ -96,13 +96,13 @@ public sealed class AiAdminManager : IAiAdminManager
         _moderationKeywordRepository = moderationKeywordRepository;
         _costLimitRepository = costLimitRepository;
         _aiManager = aiManager;
-        _configuration = configuration;
+        _appsettingsProvider = (configuration["AI:Provider"] ?? "Noop").Trim();
         _rateLimitCache = rateLimitCache;
     }
 
     public async Task<AiHealthInfo> GetHealthAsync()
     {
-        var appsettingsProvider = (_configuration["AI:Provider"] ?? "Unknown").Trim();
+        var appsettingsProvider = _appsettingsProvider;
         var managerType = _aiManager.GetType().Name;
 
         string activeProvider;
@@ -130,13 +130,26 @@ public sealed class AiAdminManager : IAiAdminManager
             configSource = "appsettings";
         }
 
+        AiHealthProbeResult moderationProbe;
+        AiHealthProbeResult completionsProbe;
+
+        if (dbConfig != null)
+        {
+            (moderationProbe, completionsProbe) = await ProbeWithDbConfigAsync(dbConfig);
+        }
+        else
+        {
+            moderationProbe = await ProbeModerationAsync();
+            completionsProbe = await ProbeCompletionsAsync();
+        }
+
         var health = new AiHealthInfo
         {
             ActiveProvider = activeProvider,
             ConfigSource = configSource,
             ManagerType = managerType,
-            Moderation = await ProbeModerationAsync(),
-            Completions = await ProbeCompletionsAsync(),
+            Moderation = moderationProbe,
+            Completions = completionsProbe,
             CheckedAtUtc = DateTime.UtcNow
         };
 
@@ -159,8 +172,7 @@ public sealed class AiAdminManager : IAiAdminManager
                 result.CompletionsModel = activeConfig.CompletionsModel;
                 result.ModerationModel = activeConfig.ModerationModel;
 
-                var moderationProbe = await ProbeModerationAsync();
-                var completionsProbe = await ProbeCompletionsAsync();
+                var (moderationProbe, completionsProbe) = await ProbeWithDbConfigAsync(activeConfig);
 
                 if (!moderationProbe.Ok || !completionsProbe.Ok)
                 {
@@ -177,7 +189,7 @@ public sealed class AiAdminManager : IAiAdminManager
             }
             else
             {
-                var appsettingsProvider = (_configuration["AI:Provider"] ?? "Noop").Trim();
+                var appsettingsProvider = _appsettingsProvider;
                 result.ProviderName = appsettingsProvider;
                 result.Detail = appsettingsProvider.Equals("Noop", StringComparison.OrdinalIgnoreCase)
                     ? "Using NoopAiManager (no API calls)"
@@ -356,9 +368,16 @@ public sealed class AiAdminManager : IAiAdminManager
         await _providerConfigRepository.SaveConfigAsync(config);
     }
 
-    public Task DeleteProviderConfigAsync(int id)
+    public async Task DeleteProviderConfigAsync(int id)
     {
-        return _providerConfigRepository.DeleteConfigAsync(id);
+        var configs = await _providerConfigRepository.GetAllConfigsAsync();
+        var config = configs.FirstOrDefault(c => c.Id == id);
+        if (config == null) return;
+        if (config.IsDefault)
+        {
+            throw new InvalidOperationException("Cannot delete the default provider.");
+        }
+        await _providerConfigRepository.DeleteConfigAsync(id);
     }
 
     public async Task<IReadOnlyList<string>> ListProviderModelsAsync(int providerConfigId)
@@ -370,29 +389,11 @@ public sealed class AiAdminManager : IAiAdminManager
             return Array.Empty<string>();
         }
 
-        var baseUrl = config.BaseUrl.TrimEnd('/') + '/';
-        using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        var (httpClient, provider) = CreateProviderFromConfig(config);
+        using (httpClient)
         {
-            if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
-            {
-                httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
-            }
-            else
-            {
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
-            }
+            return await provider.ListModelsAsync();
         }
-
-        IAiProvider provider = config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase)
-            ? new AzureOpenAiProvider(httpClient, config.CompletionsModel, config.ApiVersion)
-            : config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase)
-                ? new MistralAiProvider(httpClient)
-                : new OpenAiCompatibleProvider(httpClient, config.ProviderName);
-
-        return await provider.ListModelsAsync();
     }
 
     public async Task<IReadOnlyList<string>> ListProviderModelsFromConfigAsync(AiProviderConfig config)
@@ -402,8 +403,17 @@ public sealed class AiAdminManager : IAiAdminManager
             return Array.Empty<string>();
         }
 
+        var (httpClient, provider) = CreateProviderFromConfig(config);
+        using (httpClient)
+        {
+            return await provider.ListModelsAsync();
+        }
+    }
+
+    private static (HttpClient httpClient, IAiProvider provider) CreateProviderFromConfig(AiProviderConfig config)
+    {
         var baseUrl = config.BaseUrl.TrimEnd('/') + '/';
-        using var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+        var httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         if (!string.IsNullOrWhiteSpace(config.ApiKey))
@@ -424,7 +434,120 @@ public sealed class AiAdminManager : IAiAdminManager
                 ? new MistralAiProvider(httpClient)
                 : new OpenAiCompatibleProvider(httpClient, config.ProviderName);
 
-        return await provider.ListModelsAsync();
+        return (httpClient, provider);
+    }
+
+    private async Task<(AiHealthProbeResult moderation, AiHealthProbeResult completions)> ProbeWithDbConfigAsync(AiProviderConfig config)
+    {
+        var (httpClient, provider) = CreateProviderFromConfig(config);
+        using (httpClient)
+        {
+            var modelCount = 0;
+            string? listError = null;
+
+            try
+            {
+                var models = await provider.ListModelsAsync();
+                modelCount = models.Count;
+            }
+            catch (Exception ex)
+            {
+                listError = ex.Message;
+            }
+
+            var moderationProbe = new AiHealthProbeResult();
+            var completionsProbe = new AiHealthProbeResult();
+
+            var modStart = DateTime.UtcNow;
+            try
+            {
+                if (provider.SupportsNativeModeration && !string.IsNullOrWhiteSpace(config.ModerationModel))
+                {
+                    var modResult = await provider.ModerateAsync("health-check: keep this sentence respectful", config.ModerationModel);
+                    moderationProbe.Ok = true;
+                    moderationProbe.IsAllowed = !modResult.Flagged;
+                }
+                else
+                {
+                    moderationProbe.Ok = true;
+                    moderationProbe.IsAllowed = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                moderationProbe.Ok = false;
+                moderationProbe.Error = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    moderationProbe.InnerError = ex.InnerException.Message;
+                }
+            }
+            moderationProbe.DurationMs = (int)(DateTime.UtcNow - modStart).TotalMilliseconds;
+
+            var compStart = DateTime.UtcNow;
+            try
+            {
+                var compModel = string.IsNullOrWhiteSpace(config.CompletionsModel)
+                    ? modelCount > 0 ? "default" : "mistral-small-latest"
+                    : config.CompletionsModel;
+                var compResult = await provider.CompleteAsync("You are helpful.", "Say hello", compModel,
+                    config.Temperature == 0m ? 0.1m : config.Temperature);
+
+                var content = (compResult.Content ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    completionsProbe.Ok = false;
+                    completionsProbe.Error = "Completions returned empty response.";
+                }
+                else if (content.StartsWith('{') && content.Contains("\"error\""))
+                {
+                    completionsProbe.Ok = false;
+                    completionsProbe.Error = $"Completions returned error response: {content}";
+                }
+                else
+                {
+                    completionsProbe.Ok = true;
+                    completionsProbe.ResponsePreview = content.Length > 80 ? content[..80] + "..." : content;
+                }
+            }
+            catch (Exception ex)
+            {
+                completionsProbe.Ok = false;
+                completionsProbe.Error = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    completionsProbe.InnerError = ex.InnerException.Message;
+                }
+            }
+            completionsProbe.DurationMs = (int)(DateTime.UtcNow - compStart).TotalMilliseconds;
+
+            var connectWarnings = new List<string>();
+            if (listError != null)
+            {
+                connectWarnings.Add($"Provider unreachable: {listError}");
+            }
+            if (modelCount == 0 && listError == null)
+            {
+                connectWarnings.Add("No models available from provider");
+            }
+
+            if (connectWarnings.Count > 0)
+            {
+                var warning = string.Join("; ", connectWarnings);
+                if (completionsProbe.Ok)
+                {
+                    completionsProbe.Ok = false;
+                    completionsProbe.Error = warning;
+                }
+                if (moderationProbe.Ok)
+                {
+                    moderationProbe.Ok = false;
+                    moderationProbe.Error = warning;
+                }
+            }
+
+            return (moderationProbe, completionsProbe);
+        }
     }
 
     private async Task<AiHealthProbeResult> ProbeModerationAsync()
@@ -434,7 +557,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         try
         {
-            var decision = _aiManager.ModerateContent("health-check: keep this sentence respectful");
+            var decision = await _aiManager.ModerateContentAsync("health-check: keep this sentence respectful");
             probe.Ok = true;
             probe.IsAllowed = decision.IsAllowed;
         }
@@ -459,7 +582,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         try
         {
-            var alternative = _aiManager.GenerateAlternative("test", null);
+            var alternative = await _aiManager.GenerateAlternativeAsync("test", null);
             probe.Ok = true;
             probe.ResponsePreview = (alternative ?? "").Length > 80 ? alternative[..80] + "..." : alternative;
         }

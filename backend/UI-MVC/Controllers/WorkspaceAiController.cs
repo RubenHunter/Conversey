@@ -2,6 +2,7 @@ using Conversey.BL.Ai;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
+using Conversey.UI_MVC.Models.AiAdmin;
 using Conversey.UI_MVC.Models.WorkspaceAi;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -91,8 +92,8 @@ public class WorkspaceAiController : Controller
             modelType: filter?.ModelType,
             providerName: filter?.ProviderName,
             promptName: filter?.PromptName,
-            dateFrom: filter?.DateFrom,
-            dateTo: filter?.DateTo);
+            dateFrom: filter?.DateFrom.HasValue == true ? DateTime.SpecifyKind(filter.DateFrom.Value, DateTimeKind.Utc) : null,
+            dateTo: filter?.DateTo.HasValue == true ? DateTime.SpecifyKind(filter.DateTo.Value, DateTimeKind.Utc) : null);
 
         var timeline = await _aiAdminManager.GetCostsTimelineAsync(
             days: filter?.TimelineDays ?? 30,
@@ -143,7 +144,7 @@ public class WorkspaceAiController : Controller
             ("Costs & Audit", null, true)
         };
 
-        return View(model);
+        return View("Costs/Costs", model);
     }
 
     [HttpGet]
@@ -154,11 +155,15 @@ public class WorkspaceAiController : Controller
         if (workspace == null) return NotFound();
 
         var prompts = await _aiAdminManager.GetAllPromptsAsync();
+        var workspacePrompts = prompts
+            .Where(p => !p.Name.EndsWith("System", StringComparison.OrdinalIgnoreCase)
+                        && !p.Name.Equals("ModerationPrompt", StringComparison.OrdinalIgnoreCase))
+            .ToList();
         var projects = workspace.Projects?.ToList() ?? new List<BL.Domain.Administration.Project>();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            prompts = prompts
+            workspacePrompts = workspacePrompts
                 .Where(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                             p.Description.Contains(search, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -167,7 +172,7 @@ public class WorkspaceAiController : Controller
         var model = new WorkspaceAiPromptsViewModel
         {
             WorkspaceId = workspace.Id.ToString(),
-            Prompts = prompts,
+            Prompts = workspacePrompts,
             Projects = projects,
             SelectedProjectId = projectId ?? string.Empty,
             SearchQuery = search ?? string.Empty
@@ -181,7 +186,7 @@ public class WorkspaceAiController : Controller
             ("Prompts", null, true)
         };
 
-        return View(model);
+        return View("Prompts/Prompts", model);
     }
 
     [HttpGet]
@@ -214,12 +219,12 @@ public class WorkspaceAiController : Controller
             (prompt.Name, null, true)
         };
 
-        return View(model);
+        return View("Prompts/EditPrompt", model);
     }
 
     [HttpPost]
     [Route("admin/{workspaceSlug}/ai/prompts/{id:int}")]
-    public async Task<IActionResult> SavePrompt(string workspaceSlug, int id, AiPrompt prompt, [FromQuery] string? projectId)
+    public async Task<IActionResult> SavePrompt(string workspaceSlug, int id, string UserPromptTemplate, string Description, [FromQuery] string? projectId)
     {
         var workspace = GetWorkspace(workspaceSlug);
         if (workspace == null) return NotFound();
@@ -227,8 +232,8 @@ public class WorkspaceAiController : Controller
         var existing = await _aiAdminManager.GetPromptByIdAsync(id);
         if (existing == null) return NotFound();
 
-        existing.UserPromptTemplate = prompt.UserPromptTemplate;
-        existing.Description = prompt.Description;
+        existing.UserPromptTemplate = UserPromptTemplate;
+        existing.Description = Description;
 
         await _aiAdminManager.SavePromptAsync(existing);
 
@@ -311,7 +316,7 @@ public class WorkspaceAiController : Controller
             ("Cost Limits", null, true)
         };
 
-        return View(model);
+        return View("Limits/Limits", model);
     }
 
     [HttpPost]
@@ -400,7 +405,17 @@ public class WorkspaceAiController : Controller
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
             ("Moderation Keywords", null, true)
         };
-        return View(keywords);
+        var model = new AiKeywordsViewModel
+        {
+            Keywords = keywords.Select(k => new AiKeywordItem
+            {
+                Id = k.Id,
+                Keyword = k.Keyword,
+                WorkspaceId = k.WorkspaceId,
+                CreatedAt = k.CreatedAt.ToString("yyyy-MM-dd")
+            }).ToList()
+        };
+        return View("Keywords/Keywords", model);
     }
 
     [HttpPost]

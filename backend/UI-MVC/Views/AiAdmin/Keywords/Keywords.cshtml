@@ -1,10 +1,17 @@
 @using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Models.AiAdmin
 @using Conversey.BL.Domain.Administration
-@using Conversey.BL.Domain.Ai
-@model IReadOnlyList<ModerationKeyword>
+@model AiKeywordsViewModel
 @inject AdminContext AdminContext
 @{
     ViewData["Title"] = "Moderation Keywords";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Moderation Keywords", null, true)
+    };
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -14,9 +21,9 @@
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-text tracking-tight">Moderation Keywords</h1>
-                <p class="mt-1 text-sm text-text/60">Platform-wide keywords plus workspace-specific keywords. You can add workspace-specific words but cannot delete platform defaults.</p>
+                <p class="mt-1 text-sm text-text/60">Words filtered before any AI API call — saves costs by blocking known unsafe terms locally. Platform-wide keywords apply to all workspaces.</p>
             </div>
-            <a href="@Url.Action("Dashboard", new { workspaceSlug = ViewContext.RouteData.Values["workspaceSlug"] })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+            <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 Back to AI Settings
             </a>
@@ -26,20 +33,20 @@
             <svg class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
                 <p class="text-sm font-medium text-primary">How it works</p>
-                <p class="text-xs text-text/60 mt-1">Keywords are checked case-insensitively against submitted content. Platform keywords (no workspace badge) cannot be deleted — only platform admins can manage those. You can add workspace-specific keywords that apply only to this workspace.</p>
+                <p class="text-xs text-text/60 mt-1">Keywords are checked case-insensitively against submitted content before any AI API call. A match immediately blocks the content without spending AI credits. Changes take effect immediately.</p>
             </div>
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
             <div class="px-6 py-4 border-b border-secondary/10">
-                <h2 class="text-sm font-semibold text-text">Add workspace keyword</h2>
-                <p class="text-xs text-text/50 mt-0.5">Add words specific to this workspace. Lowercased and trimmed automatically.</p>
+                <h2 class="text-sm font-semibold text-text">Add keyword</h2>
+                <p class="text-xs text-text/50 mt-0.5">Lowercased and trimmed automatically. Workspace admins can add their own per-workspace keywords.</p>
             </div>
             <div class="px-6 py-4">
-                <form asp-action="CreateKeyword" asp-route-workspaceSlug="@ViewContext.RouteData.Values["workspaceSlug"]" method="post" class="flex items-end gap-3">
+                <form action="@Url.Action("CreateKeyword", "AiAdmin")" method="post" class="flex items-end gap-3">
                     @Html.AntiForgeryToken()
                     <div class="flex-1">
-                        <input name="keywordText" type="text" maxlength="200" required
+                        <input name="Keyword" type="text" maxlength="200" required
                                class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
                                placeholder="e.g. offensive term or phrase" />
                     </div>
@@ -50,9 +57,9 @@
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
             <div class="px-6 py-4 border-b border-secondary/10">
-                <h2 class="text-sm font-semibold text-text">Keywords (@Model.Count)</h2>
+                <h2 class="text-sm font-semibold text-text">All Keywords (@Model.Keywords.Count)</h2>
             </div>
-            @if (Model.Count == 0)
+            @if (Model.Keywords.Count == 0)
             {
                 <div class="px-6 py-8 text-center text-sm text-text/50">No moderation keywords configured.</div>
             }
@@ -63,40 +70,23 @@
                         <thead class="bg-background/50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Keyword</th>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Scope</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Workspace</th>
                                 <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">Added</th>
                                 <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-secondary/10">
-                            @foreach (var kw in Model)
+                            @foreach (var kw in Model.Keywords)
                             {
-                                var isPlatform = kw.WorkspaceId == null;
                                 <tr class="hover:bg-background/30">
                                     <td class="whitespace-nowrap px-6 py-3 font-mono text-xs text-text">@kw.Keyword</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs">
-                                        @if (isPlatform)
-                                        {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-secondary/10 text-secondary">Platform</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">Workspace</span>
-                                        }
-                                    </td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@kw.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@(kw.WorkspaceId ?? "Platform")</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@kw.CreatedAt</td>
                                     <td class="whitespace-nowrap px-6 py-3 text-right">
-                                        @if (!isPlatform)
-                                        {
-                                            <form asp-action="DeleteKeyword" asp-route-workspaceSlug="@ViewContext.RouteData.Values["workspaceSlug"]" asp-route-id="@kw.Id" method="post" class="inline" onsubmit="return confirm('Delete keyword &quot;@kw.Keyword&quot;?');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Delete</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-xs text-text/30">Read-only</span>
-                                        }
+                                        <form action="@Url.Action("DeleteKeyword", "AiAdmin", new { id = kw.Id })" method="post" class="inline" onsubmit="return confirm('Delete keyword &quot;@kw.Keyword&quot;?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Delete</button>
+                                        </form>
                                     </td>
                                 </tr>
                             }

@@ -25,7 +25,7 @@ public class IdeaManager: IIdeaManager
         _projectManager = projectManager;
     }
 
-    public SubmissionResponse SubmitIdea(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false)
+    public async Task<SubmissionResponse> SubmitIdeaAsync(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
@@ -39,7 +39,7 @@ public class IdeaManager: IIdeaManager
             author = _projectManager.AddYouth(youthId, $"{youthId:N}@local.invalid", project.Id);
         }
         
-        ModerationDecision decision = EvaluateIdeaModeration(ideaContent);
+        ModerationDecision decision = await EvaluateIdeaModerationAsync(ideaContent);
 
         ModerationStatus status = decision.IsAllowed ? ModerationStatus.Approved : ModerationStatus.Pending;
         if (qualityNudgeBypassed)
@@ -59,14 +59,14 @@ public class IdeaManager: IIdeaManager
         };
         Validate(idea);
         _repository.CreateIdea(idea);
-        AssignSemanticCategoriesToIdea(idea, topicId);
+        await AssignSemanticCategoriesToIdeaAsync(idea, topicId);
 
         return decision.IsAllowed && !qualityNudgeBypassed
             ? new SubmissionResponse.Approved(idea)
             : new SubmissionResponse.Pending(idea, decision);
     }
 
-    public IdeaNudgeDecision AssessIdeaNudge(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation)
+    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
@@ -93,7 +93,7 @@ public class IdeaManager: IIdeaManager
                 NudgingMode = MapStrengthToNudgingMode(nudgingStrength),
             };
 
-            var decision = _aiManager.AssessIdeaNudge(request);
+            var decision = await _aiManager.AssessIdeaNudgeAsync(request);
             if (decision == null)
             {
                 return new IdeaNudgeDecision { IsApproved = true };
@@ -189,7 +189,7 @@ public class IdeaManager: IIdeaManager
         return ideas;
     }
 
-    public IEnumerable<Idea> GetIdeaDiscoverySuggestions(
+    public async Task<IEnumerable<Idea>> GetIdeaDiscoverySuggestionsAsync(
         Slug workspaceId,
         Slug projectId,
         int topicId,
@@ -252,7 +252,7 @@ public class IdeaManager: IIdeaManager
         bool aiCallFailed = false;
         try
         {
-            rankedIndexes = _aiManager.RankIdeasByRelation(
+            rankedIndexes = await _aiManager.RankIdeasByRelationAsync(
                 referenceIdea,
                 candidates.Select(idea => idea.Content).ToList().AsReadOnly(),
                 category == IdeaDiscoveryCategory.Different,
@@ -315,7 +315,7 @@ public class IdeaManager: IIdeaManager
         return ideaResponse;
     }
 
-    public ResponseSubmissionResponse AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
+    public async Task<ResponseSubmissionResponse> AddResponseAsync(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Youth author;
@@ -331,7 +331,7 @@ public class IdeaManager: IIdeaManager
         Idea idea = GetIdea(topic, ideaId);
 
         responseText = responseText.Trim();
-        ModerationDecision decision = EvaluateIdeaModeration(responseText);
+        ModerationDecision decision = await EvaluateIdeaModerationAsync(responseText);
 
         var response = new IdeaResponse
         {
@@ -520,15 +520,15 @@ public class IdeaManager: IIdeaManager
         return shuffled.AsReadOnly();
     }
 
-    private void AssignSemanticCategoriesToIdea(Idea idea, int topicId)
+    private async Task AssignSemanticCategoriesToIdeaAsync(Idea idea, int topicId)
     {
         string[] categories = { "General ideas" };
 
         try
         {
             var existingCategories = LoadTopicSemanticCategories(topicId);
-            var categorization = _aiManager
-                .CategorizeIdeas(
+            var categorization = await _aiManager
+                .CategorizeIdeasAsync(
                     new[] { idea.Content ?? string.Empty }.ToList().AsReadOnly(),
                     existingCategories,
                     MaxCategoriesPerIdea);
@@ -577,7 +577,7 @@ public class IdeaManager: IIdeaManager
             try
             {
                 categorizedByIndex = _aiManager
-                    .CategorizeIdeas(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea);
+                    .CategorizeIdeasAsync(batchTexts, knownCategories.AsReadOnly(), MaxCategoriesPerIdea).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -681,14 +681,14 @@ public class IdeaManager: IIdeaManager
             $"[IdeaDiscovery] source={source}; candidates={candidateCount}; ranked={rankedCount}; picked={pickedCount}; {scope}");
     }
 
-    private ModerationDecision EvaluateIdeaModeration(string content)
+    private async Task<ModerationDecision> EvaluateIdeaModerationAsync(string content)
     {
         Console.WriteLine($"[IdeaManager] Sending content to moderation: \"{content}\"");
         ModerationDecision fallbackDecision = new ModerationDecision { IsAllowed = true };
         
         try
         {
-            var decision = _aiManager.ModerateContent(content);
+            var decision = await _aiManager.ModerateContentAsync(content);
 
             if (decision.IsAllowed)
             {
@@ -697,7 +697,7 @@ public class IdeaManager: IIdeaManager
 
             try
             {
-                decision.Suggestion = _aiManager.GenerateAlternative(content, decision);
+                decision.Suggestion = await _aiManager.GenerateAlternativeAsync(content, decision);
             }
             catch (Exception ex)
             {

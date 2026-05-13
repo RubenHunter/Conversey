@@ -4,11 +4,11 @@ namespace Conversey.BL.Ai;
 
 public interface IAiManager
 {
-    string GenerateAlternative(string content, ModerationDecision decision = null);
-    ModerationDecision ModerateContent(string content);
-    IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request);
-    IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit);
-    IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(
+    Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null);
+    Task<ModerationDecision> ModerateContentAsync(string content);
+    Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request);
+    Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit);
+    Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(
         IReadOnlyList<string> ideas,
         IReadOnlyList<string> existingCategories,
         int maxCategoriesPerIdea);

@@ -5,33 +5,33 @@ namespace Tests.IntegrationTests;
 
 public class MockAiManager : IAiManager
 {
-    public string GenerateAlternative(string content, ModerationDecision decision = null)
+    public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null)
     {
-        return $"[Mock] Alternative text for: {content}";
+        return Task.FromResult($"[Mock] Alternative text for: {content}");
     }
 
-    public ModerationDecision ModerateContent(string content)
+    public Task<ModerationDecision> ModerateContentAsync(string content)
     {
-        return new ModerationDecision
+        return Task.FromResult(new ModerationDecision
         {
             IsAllowed = true,
             Categories = new ModerationInfo()
-        };
+        });
     }
 
-    public IdeaNudgeDecision AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+    public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request)
     {
-        return new IdeaNudgeDecision
+        return Task.FromResult(new IdeaNudgeDecision
         {
             IsApproved = true
-        };
+        });
     }
 
-    public IEnumerable<int> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+    public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
     {
         if (candidateIdeas.Count == 0 || limit <= 0)
         {
-            return Array.Empty<int>();
+            return Task.FromResult<IEnumerable<int>>(Array.Empty<int>());
         }
 
         var ordered = Enumerable.Range(0, candidateIdeas.Count);
@@ -40,10 +40,10 @@ public class MockAiManager : IAiManager
             ordered = ordered.Reverse();
         }
 
-        return ordered.Take(limit);
+        return Task.FromResult<IEnumerable<int>>(ordered.Take(limit).ToList());
     }
 
-    public IReadOnlyDictionary<int, IReadOnlyList<string>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+    public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
     {
         var result = new Dictionary<int, IReadOnlyList<string>>();
         for (int index = 0; index < ideas.Count; index++)
@@ -51,6 +51,6 @@ public class MockAiManager : IAiManager
             result[index] = new[] { existingCategories.FirstOrDefault() ?? "General ideas" };
         }
 
-        return result;
+        return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
     }
 }

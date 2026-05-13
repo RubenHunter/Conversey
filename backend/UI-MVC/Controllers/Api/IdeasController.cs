@@ -21,11 +21,11 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<SubmissionResponseDto> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
+    public async Task<ActionResult<SubmissionResponseDto>> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
     {
         try
         {
-            SubmissionResponse response = _manager.SubmitIdea(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
+            SubmissionResponse response = await _manager.SubmitIdeaAsync(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(IdeaDto.From(approved.Idea)),
@@ -40,11 +40,11 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost("nudge")]
-    public ActionResult<IdeaNudgeResponseDto> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
+    public async Task<ActionResult<IdeaNudgeResponseDto>> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
     {
         try
         {
-            var decision = _manager.AssessIdeaNudge(
+            var decision = await _manager.AssessIdeaNudgeAsync(
                 workspaceId,
                 projectId,
                 topicId,
@@ -87,7 +87,7 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("discover")]
-    public ActionResult<IEnumerable<IdeaDto>> DiscoverIdeas(
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> DiscoverIdeas(
         Slug workspaceId,
         Slug projectId,
         int topicId,
@@ -103,7 +103,7 @@ public class IdeasController : ControllerBase
 
         try
         {
-            var ideas = _manager.GetIdeaDiscoverySuggestions(
+            var ideas = await _manager.GetIdeaDiscoverySuggestionsAsync(
                 workspaceId,
                 projectId,
                 topicId,

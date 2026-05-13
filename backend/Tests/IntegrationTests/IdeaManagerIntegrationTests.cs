@@ -41,7 +41,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void SubmitIdea_WhenAllowed_ShouldReturnApproved()
+    public async Task SubmitIdea_WhenAllowed_ShouldReturnApproved()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
@@ -52,7 +52,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
             .Select(topic => topic.Id)
             .First();
 
-        var response = manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Integration idea");
+        var response = await manager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Integration idea");
 
         var approved = Assert.IsType<SubmissionResponse.Approved>(response);
         Assert.Equal(ModerationStatus.Approved, approved.Idea.Status);
@@ -60,7 +60,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void SubmitIdea_WhenCategorizationFails_ShouldStillPersistIdea()
+    public async Task SubmitIdea_WhenCategorizationFails_ShouldStillPersistIdea()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         _fixture.SetAiCategorizationBehavior(throwOnCategorize: true);
@@ -75,7 +75,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
                 .Select(topic => topic.Id)
                 .First();
 
-            var response = manager.SubmitIdea(
+            var response = await manager.SubmitIdeaAsync(
                 ManagerSeedData.WorkspaceSlug,
                 ManagerSeedData.ProjectSlug,
                 topicId,
@@ -93,7 +93,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void SubmitIdea_WhenTopicAlreadyHasACategory_ShouldReuseTheExistingLabel()
+    public async Task SubmitIdea_WhenTopicAlreadyHasACategory_ShouldReuseTheExistingLabel()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
@@ -104,7 +104,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
             .Select(topic => topic.Id)
             .First();
 
-        var response = manager.SubmitIdea(
+        var response = await manager.SubmitIdeaAsync(
             ManagerSeedData.WorkspaceSlug,
             ManagerSeedData.ProjectSlug,
             topicId,
@@ -116,7 +116,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void SubmitIdea_WhenFlagged_ShouldReturnPendingWithSuggestion()
+    public async Task SubmitIdea_WhenFlagged_ShouldReturnPendingWithSuggestion()
     {
         _fixture.SetAiModerationBehavior(isAllowed: false, alternative: "rewrite please");
         try
@@ -129,7 +129,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
                     .Select(topic => topic.Id)
                     .First();
 
-            var response = manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "flagged");
+            var response = await manager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "flagged");
 
             var pending = Assert.IsType<SubmissionResponse.Pending>(response);
             Assert.Equal(ModerationStatus.Pending, pending.Idea.Status);
@@ -142,7 +142,7 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
     }
 
     [Fact]
-    public void AddResponse_And_Reactions_ShouldPersist()
+    public async Task AddResponse_And_Reactions_ShouldPersist()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
@@ -154,8 +154,8 @@ public class IdeaManagerIntegrationTests : IClassFixture<ManagerIntegrationTestF
             .First();
 
         var idea = Assert.IsType<SubmissionResponse.Approved>(
-            manager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "response test idea")).Idea;
-        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(manager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, ManagerSeedData.YouthToken, "response"));
+            await manager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "response test idea")).Idea;
+        var responseSubmission = Assert.IsType<ResponseSubmissionResponse.Approved>(await manager.AddResponseAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, ManagerSeedData.YouthToken, "response"));
 
         _ = manager.AddIdeaReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, ManagerSeedData.YouthToken, "like");
         _ = manager.AddResponseReaction(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, idea.Id, responseSubmission.IdeaResponse.Id, ManagerSeedData.YouthToken, "upvote");

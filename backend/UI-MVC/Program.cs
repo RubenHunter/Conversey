@@ -372,7 +372,7 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
 
     var factory = provider.GetRequiredService<IHttpClientFactory>();
     var httpClient = factory.CreateClient();
-    httpClient.BaseAddress = new Uri(config.BaseUrl);
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
     httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
     IAiProvider aiProvider;
