@@ -200,18 +200,31 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var config = provider.GetRequiredService<IConfiguration>();
     var providerName = (config["AI:Provider"] ?? "Noop").Trim();
 
+    if (providerName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        return new NoopAiManager();
+    }
+
     if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException("AI provider is set to Mistral but AI:Mistral:ApiKey is missing.");
+        }
+
         var aiConfig = new AiManagerConfig
         {
             ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest"
+            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
+            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest"
         };
+
         var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
         return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
     }
-    return new NoopAiManager();
+
+    throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
@@ -273,35 +286,84 @@ void InitializeDatabase(bool drop)
     {
         var services = scope.ServiceProvider;
         var dbCtx = services.GetRequiredService<ConverseyDbContext>();
-        if (drop) dbCtx.Database.EnsureDeleted();
-        dbCtx.Database.EnsureCreated();
-        SeedIdentity(services.GetRequiredService<UserManager<ApplicationUser>>(), services.GetRequiredService<RoleManager<IdentityRole>>());
-        if (!dbCtx.Workspaces.Any()) DataSeeder.Seed(dbCtx);
+        // Create database schema first (including Identity tables)
+        var created = dbCtx.CreateDatabase(drop);
+        // Then seed Identity and Roles
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        SeedIdentity(userManager, roleManager);
+        if (created)
+        {
+            DataSeeder.Seed(dbCtx);
+        }
     }
 }
 
 void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
 {
-    if (!roleManager.RoleExistsAsync("Admin").Result) roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+    // Create roles if they don't exist
+    if (!roleManager.RoleExistsAsync("User").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("User")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("Admin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+    }
+
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
+    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
 }
 
 void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
 {
+    var normalizedWorkspaceId = Slug.FromName(workspaceId);
     var user = userManager.FindByEmailAsync(email).Result;
-    var targetWorkspaceId = Slug.FromName(workspaceId);
-    
     if (user == null)
     {
-        user = new ApplicationUser { Email = email, UserName = email, EmailConfirmed = true, WorkspaceId = targetWorkspaceId };
+        user = new ApplicationUser
+        {
+            Email = email,
+            UserName = email,
+            EmailConfirmed = true,
+            WorkspaceId = normalizedWorkspaceId
+        };
         userManager.CreateAsync(user, "Test123!").Wait();
     }
-    else if (string.IsNullOrEmpty(user.WorkspaceId.Text) || user.WorkspaceId != targetWorkspaceId)
+    else
     {
-        // Update existing user if WorkspaceId is missing or wrong
-        user.WorkspaceId = targetWorkspaceId;
-        userManager.UpdateAsync(user).Wait();
+        var changed = false;
+        if (user.UserName != email)
+        {
+            user.UserName = email;
+            changed = true;
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            changed = true;
+        }
+        
+        if (user.WorkspaceId != normalizedWorkspaceId)
+        {
+            user.WorkspaceId = normalizedWorkspaceId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            userManager.UpdateAsync(user).Wait();
+        }
+
+        if (!userManager.HasPasswordAsync(user).Result)
+        {
+            userManager.AddPasswordAsync(user, "Test123!").Wait();
+        }
     }
-    
-    if (!userManager.IsInRoleAsync(user, "Admin").Result) userManager.AddToRoleAsync(user, "Admin").Wait();
+
+    if (!userManager.IsInRoleAsync(user, "Admin").Result)
+    {
+        userManager.AddToRoleAsync(user, "Admin").Wait();
+    }
 }
