@@ -1477,6 +1477,7 @@ public static class DataSeeder
                 PermitLimit = 30,
                 WindowSeconds = 60,
                 QueueLimit = 0,
+                PartitionType = "user",
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -1486,6 +1487,7 @@ public static class DataSeeder
                 PermitLimit = 60,
                 WindowSeconds = 60,
                 QueueLimit = 0,
+                PartitionType = "user",
                 CreatedAt = now,
                 UpdatedAt = now
             }

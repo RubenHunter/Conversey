@@ -10,6 +10,7 @@ public sealed class RateLimitConfigEntry
     public int WindowSeconds { get; init; }
     public int QueueLimit { get; init; }
     public int Version { get; init; }
+    public string PartitionType { get; init; } = "global";
 }
 
 public sealed class RateLimitConfigCache
@@ -23,7 +24,8 @@ public sealed class RateLimitConfigCache
         PermitLimit = 30,
         WindowSeconds = 60,
         QueueLimit = 0,
-        Version = 0
+        Version = 0,
+        PartitionType = "global"
     };
 
     public RateLimitConfigCache(IServiceScopeFactory scopeFactory)
@@ -61,7 +63,8 @@ public sealed class RateLimitConfigCache
                 PermitLimit = config.PermitLimit,
                 WindowSeconds = config.WindowSeconds,
                 QueueLimit = config.QueueLimit,
-                Version = generation
+                Version = generation,
+                PartitionType = config.PartitionType
             };
         }
     }

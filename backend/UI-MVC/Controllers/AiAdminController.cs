@@ -468,4 +468,41 @@ public class AiAdminController : Controller
         await _pricingService.RefreshPricingAsync();
         return RedirectToAction("Pricing");
     }
+
+    [HttpGet]
+    [Route("admin/ai/rate-limits")]
+    public async Task<IActionResult> RateLimits()
+    {
+        var configs = await _aiAdminManager.GetAllRateLimitConfigsAsync();
+        return View("RateLimits/RateLimits", configs);
+    }
+
+    [HttpGet]
+    [Route("admin/ai/rate-limits/{id:int}")]
+    public async Task<IActionResult> EditRateLimit(int id)
+    {
+        var config = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
+        if (config == null) return NotFound();
+
+        return View("RateLimits/EditRateLimit", config);
+    }
+
+    [HttpPost]
+    [Route("admin/ai/rate-limits/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditRateLimit(int id, RateLimitConfig form)
+    {
+        if (!ModelState.IsValid) return View("RateLimits/EditRateLimit", form);
+
+        var existing = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
+        if (existing == null) return NotFound();
+
+        existing.PermitLimit = form.PermitLimit;
+        existing.WindowSeconds = form.WindowSeconds;
+        existing.QueueLimit = form.QueueLimit;
+        existing.PartitionType = form.PartitionType;
+
+        await _aiAdminManager.SaveRateLimitConfigAsync(existing);
+        return RedirectToAction("RateLimits");
+    }
 }

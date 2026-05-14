@@ -19,6 +19,10 @@ public class RateLimitConfig
     [Range(0, 100)]
     public int QueueLimit { get; set; } = 0;
 
+    [Required]
+    [MaxLength(50)]
+    public string PartitionType { get; set; } = "global";
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

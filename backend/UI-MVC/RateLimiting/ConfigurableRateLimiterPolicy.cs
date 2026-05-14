@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Conversey.BL.Ai;
 using Microsoft.AspNetCore.Http;
@@ -29,8 +30,13 @@ public abstract class ConfigurableRateLimiterPolicy : IRateLimiterPolicy<string>
     public RateLimitPartition<string> GetPartition(HttpContext httpContext)
     {
         var config = _cache.Get(_policyName);
+
+        var partitionKey = config.PartitionType == "user"
+            ? $"{_policyName}:{GetUserKey(httpContext)}"
+            : $"{_policyName}";
+
         return RateLimitPartition.GetFixedWindowLimiter(
-            $"{_policyName}-v{config.Version}",
+            partitionKey,
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = config.PermitLimit,
@@ -38,6 +44,19 @@ public abstract class ConfigurableRateLimiterPolicy : IRateLimiterPolicy<string>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = config.QueueLimit
             });
+    }
+
+    private static string GetUserKey(HttpContext httpContext)
+    {
+        var userId = httpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? httpContext.User?.Identity?.Name;
+
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            return userId;
+        }
+
+        return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
     public Func<OnRejectedContext, CancellationToken, ValueTask> OnRejected => null;
