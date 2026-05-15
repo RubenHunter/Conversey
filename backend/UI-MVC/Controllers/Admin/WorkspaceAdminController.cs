@@ -27,14 +27,44 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         {
             Id = p.Id,
             Title = p.Name,
-            ImageUrl = p.ImageUrl
+            ImageUrl = p.ImageUrl,
+            Status = p.Status
         }).ToList());
     }
 
     [HttpGet("/admin/projects/new")]
-    public IActionResult CreateProject()
+    public IActionResult CreateProject([FromQuery] string? copy)
     {
-        return View(CreateFormVm(new CreateProjectStepOneViewModel()));
+        if (string.IsNullOrWhiteSpace(copy))
+        {
+            var projectStep1 = new CreateProjectStepOneViewModel();
+            return View(CreateFormVm(projectStep1, null, false));
+        }
+
+        try
+        {
+            var sourceProject = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = copy });
+            var projectStep1Copy = new CreateProjectStepOneViewModel
+            {
+                Name = sourceProject.Name,
+                Description = sourceProject.Description,
+                ImageUrl = sourceProject.ImageUrl,
+                InteractionForm = sourceProject.InteractionForm,
+                StartDate = sourceProject.StartDate.Date,
+                EndDate = sourceProject.EndDate.Date,
+                NudgingStrength = sourceProject.NudgingStrength,
+                Status = Status.Draft,
+                Slug = string.Empty
+            };
+
+            return View(CreateFormVm(projectStep1Copy, null, true));
+        }
+        catch (NotFoundException notFoundException)
+        {
+            ModelState.AddModelError(string.Empty, notFoundException.Message);
+            var projectStep1 = new CreateProjectStepOneViewModel();
+            return View(CreateFormVm(projectStep1, null, false));
+        }
     }
 
     [HttpPost("/admin/projects/new")]
@@ -50,15 +80,25 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         try
         {
+            if (ProjectExistsAsNonDraft(projectStep1))
+            {
+                ModelState.AddModelError("CreateStep1ViewModel.Name",
+                    "Project name already exists. Draft can save, but creation blocked until name unique.");
+                return View(CreateFormVm(projectStep1));
+            }
+
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
-            projectManager.AddProject(
+            projectManager.SaveProject(
                 workspaceContext.CurrentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
                 projectStep1.EndDate,
                 projectStep1.InteractionForm,
-                imageUrl
+                imageUrl,
+                projectStep1.NudgingStrength,
+                Status.Active,
+                projectStep1.Slug
             );
 
             return RedirectToAction("Projects");
@@ -118,8 +158,19 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         try
         {
             var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
-            
-            return View(EditFormVm(project));
+
+            return View(CreateFormVm(new CreateProjectStepOneViewModel
+            {
+                Name = project.Name,
+                Description = project.Description,
+                ImageUrl = project.ImageUrl,
+                InteractionForm = project.InteractionForm,
+                StartDate = project.StartDate.Date,
+                EndDate = project.EndDate.Date,
+                NudgingStrength = project.NudgingStrength,
+                Slug = project.Id.ToString(),
+                Status = project.Status
+            }, project));
         }
         catch (NotFoundException e)
         {
@@ -130,16 +181,30 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
     
     [HttpPost("/admin/project/{id}")]
-    public IActionResult EditProject(Slug id, AdminFormViewModel<Project> projectFormViewModel)
+    public async Task<IActionResult> EditProject(Slug id, ProjectViewModel projectViewModel)
     {
         try
         {
-            var project = projectFormViewModel.FormItem;
-            project.Id = id;
-            project.Workspace = workspaceContext.CurrentWorkspace;
-            project.StartDate = project.StartDate.ToUniversalTime();
-            project.EndDate = project.EndDate.ToUniversalTime();
-            projectManager.EditProject(project);
+            var projectStep1 = projectViewModel.CreateStep1ViewModel;
+
+            if (!ModelState.IsValid)
+            {
+                return View(CreateFormVm(projectStep1, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+            }
+
+            var imageUrl = await ResolveProjectImageUrl(projectStep1);
+            projectManager.SaveProject(
+                workspaceContext.CurrentWorkspace.Id,
+                projectStep1.Name,
+                projectStep1.Description,
+                projectStep1.StartDate,
+                projectStep1.EndDate,
+                projectStep1.InteractionForm,
+                imageUrl,
+                projectStep1.NudgingStrength,
+                projectStep1.Status,
+                id.ToString()
+            );
 
             return RedirectToAction("Projects");
         }
@@ -149,10 +214,50 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ApplyValidationExceptionToModelState(ex, "CreateStep1ViewModel");
         }
 
-        return View(EditFormVm(projectFormViewModel.FormItem));
+        return View(CreateFormVm(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+    }
+
+    [HttpPost("/admin/projects/draft")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveDraft(ProjectViewModel projectViewModel)
+    {
+        var projectStep1 = projectViewModel.CreateStep1ViewModel;
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new { error = "Draft validation failed." });
+        }
+
+        try
+        {
+            if (ProjectExistsAsNonDraft(projectStep1))
+            {
+                return Conflict(new { error = "Project name already exists. Draft can save, but creation blocked until name unique." });
+            }
+
+            var imageUrl = await ResolveProjectImageUrl(projectStep1);
+            var project = projectManager.SaveProject(
+                workspaceContext.CurrentWorkspace.Id,
+                projectStep1.Name,
+                projectStep1.Description,
+                projectStep1.StartDate,
+                projectStep1.EndDate,
+                projectStep1.InteractionForm,
+                imageUrl,
+                projectStep1.NudgingStrength,
+                Status.Draft,
+                projectStep1.Slug
+            );
+
+            return Json(new { slug = project.Id.ToString() });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpPost("/admin/project/delete/{id}")]
@@ -170,32 +275,58 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 
-
-    private ProjectViewModel CreateFormVm(CreateProjectStepOneViewModel projectStep1)
+    [HttpPost("/admin/projects/{id}/archive")]
+    [ValidateAntiForgeryToken]
+    public IActionResult ArchiveProject(Slug id)
     {
+        try
+        {
+            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            project.Status = Status.Archived;
+            projectManager.EditProject(project);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+
+    private ProjectViewModel CreateFormVm(CreateProjectStepOneViewModel projectStep1, Project? project = null, bool isCopyFlow = false)
+    {
+        var isCreatePage = project == null;
         return new ProjectViewModel
         {
             AdminFormViewModel = new AdminFormViewModel<Project>
             {
                 FormItem = new Project
                 {
+                    Id = project?.Id ?? Slug.FromName(projectStep1.Name),
                     Name = projectStep1.Name,
                     Description = projectStep1.Description,
                     ImageUrl = projectStep1.ImageUrl,
                     InteractionForm = projectStep1.InteractionForm,
                     StartDate = projectStep1.StartDate,
-                    EndDate = projectStep1.EndDate
+                    EndDate = projectStep1.EndDate,
+                    Status = projectStep1.Status
                 },
-                FormAction = "CreateProject",
-                SubmitLabel = "Create Project",
+                FormAction = project == null ? "CreateProject" : "EditProject",
+                SubmitLabel = project == null ? "Create Project" : "Update Project",
             },
             CreateStep1ViewModel = projectStep1,
             StepperViewModel = new StepperViewModel
             {
-                Title = "Creating a Project",
+                Title = project == null ? "Creating a Project" : "Editing a Project",
                 EntityName = "Project",
-                DraftStoragePrefix = $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-create",
+                DraftStoragePrefix = isCreatePage
+                    ? $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-create"
+                    : $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-edit:{project?.Id}",
                 ImageUploadUrl = Url.Action(nameof(UploadCreateProjectImage)) ?? "/admin/projects/new/upload-image",
+                DraftSaveUrl = Url.Action(nameof(SaveDraft)) ?? "/admin/projects/draft",
+                ProjectListUrl = Url.Action(nameof(Projects)) ?? "/admin/projects",
+                IsCreatePage = isCreatePage,
+                IsCopyFlow = isCopyFlow,
                 Steps =
                 [
                     new StepItem
@@ -273,6 +404,25 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         else
         {
             ModelState.AddModelError(string.Empty, ex.Message);
+        }
+    }
+
+    private bool ProjectExistsAsNonDraft(CreateProjectStepOneViewModel projectStep1)
+    {
+        if (string.IsNullOrWhiteSpace(projectStep1.Name)) return false;
+
+        var slugText = !string.IsNullOrWhiteSpace(projectStep1.Slug)
+            ? projectStep1.Slug
+            : Slug.FromName(projectStep1.Name).ToString();
+
+        try
+        {
+            var existing = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = slugText });
+            return existing.Status != Status.Draft;
+        }
+        catch (NotFoundException)
+        {
+            return false;
         }
     }
 }

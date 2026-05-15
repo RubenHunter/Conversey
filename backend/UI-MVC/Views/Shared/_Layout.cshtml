@@ -9,9 +9,11 @@
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
-    <script type="module" vite-src="~/components/shared//universalStepper.ts"></script>
+    <script type="module" vite-src="~/components/shared/universalStepper.ts"></script>
+    <script type="module" vite-src="~/components/shared/createProjectStepper.ts"></script>
 
     <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
+    <script type="module" vite-src="~/components/shared/projectArchiveModal.ts"></script>
     
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />

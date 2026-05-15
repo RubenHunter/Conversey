@@ -1,7 +1,9 @@
-@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
     ViewData["Title"] = "Edit Project";
 }
 
-@await Html.PartialAsync("_ProjectForm", Model)
+@await Html.PartialAsync("_Stepper", Model)
+
+@await Html.PartialAsync("_DraftExitModal")

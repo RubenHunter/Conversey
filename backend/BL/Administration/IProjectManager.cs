@@ -17,6 +17,9 @@ public interface IProjectManager
     Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
         DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3);
 
+    Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string? slug);
+
     void EditProject(Project updatedProject);
     void RemoveProject(Slug projectId, Slug workspaceId);
     

@@ -71,6 +71,12 @@
                         <span class="block font-bold text-xl text-primary tracking-tight">@project.Title</span>
                         <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">Project Workspace</span>
                     </div>
+
+                    <div class="absolute top-3 right-3 flex gap-2 z-20">
+                        <span class="text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full border border-secondary/20 bg-white/90 text-secondary">
+                            @project.Status
+                        </span>
+                    </div>
                     
                     @* Hover tint overlay *@
                     <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
@@ -89,6 +95,12 @@
                         <a title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id" aria-label="Edit project @project.Title">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </a>
+                        <button title="Archive" class="p-2 text-text/40 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" data-archive-id="@project.Id" data-archive-name="@project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-2 12a2 2 0 01-2 2H8a2 2 0 01-2-2L4 7m16 0H4m16 0-1-3H5L4 7"></path></svg>
+                        </button>
+                        <button title="Copy" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" data-copy-id="@project.Id" data-copy-name="@project.Title" aria-label="Copy project @project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 8h8a2 2 0 002-2V8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
                         <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         </button>
@@ -123,3 +135,62 @@
 
 
 @await Html.PartialAsync("_DeleteModal")
+
+<div id="archiveModal"
+     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+
+        <h2 class="text-lg font-semibold text-gray-900">
+            Archive project
+        </h2>
+
+        <p class="mt-2 text-sm text-gray-600">
+            <span id="archiveItemName" class="font-medium text-gray-900"></span>
+            project not publicly accessible anymore, only visible to admins.
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <button id="cancelArchive"
+                    type="button"
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button id="confirmArchive"
+                    type="button"
+                    class="rounded-md bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700">
+                Archive
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="copyModal"
+     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+
+        <h2 class="text-lg font-semibold text-gray-900">
+            Copy project
+        </h2>
+
+        <p class="mt-2 text-sm text-gray-600">
+            Copy <span id="copyItemName" class="font-medium text-gray-900"></span> into a new draft?
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <button id="cancelCopy"
+                    type="button"
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button id="confirmCopy"
+                    type="button"
+                    class="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90">
+                Copy
+            </button>
+        </div>
+    </div>
+</div>

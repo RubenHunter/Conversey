@@ -17,9 +17,9 @@ public class CloudStorageRepository : ICloudStorageRepository
 
         var keyPath = config["GoogleCloud:JsonFilePath"] 
                       ?? throw new InvalidOperationException("GoogleCloud:JsonFilePath is missing from configuration.");
-
+        
         using var stream = new FileStream(keyPath, FileMode.Open, FileAccess.Read);
-    
+        
         var serviceAccount = CredentialFactory.FromStream<ServiceAccountCredential>(stream);
         var credential = serviceAccount.ToGoogleCredential();
 

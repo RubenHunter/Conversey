@@ -4,7 +4,11 @@
      data-total-steps="@Model.StepperViewModel.Steps.Count" 
      data-entity="@Model.StepperViewModel.EntityName"
      data-draft-storage-prefix="@Model.StepperViewModel.DraftStoragePrefix"
-     data-image-upload-url="@Model.StepperViewModel.ImageUploadUrl">
+     data-image-upload-url="@Model.StepperViewModel.ImageUploadUrl"
+     data-draft-save-url="@Model.StepperViewModel.DraftSaveUrl"
+     data-project-list-url="@Model.StepperViewModel.ProjectListUrl"
+     data-is-create-page="@Model.StepperViewModel.IsCreatePage.ToString().ToLowerInvariant()"
+     data-is-copy-flow="@Model.StepperViewModel.IsCopyFlow.ToString().ToLowerInvariant()">
     
     @* Header Section *@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">

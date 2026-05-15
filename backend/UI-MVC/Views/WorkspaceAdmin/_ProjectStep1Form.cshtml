@@ -3,7 +3,7 @@
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 @inject WorkspaceContext WorkspaceContext
 
-<form id="create-project-step1-form" method="post" asp-action="CreateProject" enctype="multipart/form-data" class="space-y-6">
+<form id="create-project-step1-form" method="post" asp-action="@Model.AdminFormViewModel.FormAction" enctype="multipart/form-data" class="space-y-6">
     <div>
         <h2 class="text-2xl font-bold text-text">Step 1: Intro &amp; Presentation</h2>
         <p class="mt-1 text-sm text-text/60">Basic project details and cover image.</p>
@@ -13,7 +13,10 @@
         <label asp-for="CreateStep1ViewModel.Name" class="block text-sm font-medium text-text">Project Name</label>
         <input asp-for="CreateStep1ViewModel.Name" class="mt-1 block w-full rounded-md border border-text/20 bg-background px-3 py-2" required />
         <span asp-validation-for="CreateStep1ViewModel.Name" class="text-sm text-red-600"></span>
+        <p id="step1NameWarning" class="mt-1 text-xs text-amber-600"></p>
     </div>
+
+    <input asp-for="CreateStep1ViewModel.Slug" type="hidden" />
 
     <div>
         <label class="block text-sm font-medium text-text">Workspace</label>
@@ -48,6 +51,12 @@
         </div>
     </div>
 
+    <div>
+        <label asp-for="CreateStep1ViewModel.NudgingStrength" class="block text-sm font-medium text-text">Nudging Strength</label>
+        <input asp-for="CreateStep1ViewModel.NudgingStrength" type="number" min="1" max="5"
+               class="mt-1 block w-full rounded-md border border-text/20 bg-background px-3 py-2" />
+    </div>
+
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
             <label asp-for="CreateStep1ViewModel.StartDate" class="block text-sm font-medium text-text">Start Date</label>
@@ -60,5 +69,12 @@
             <input asp-for="CreateStep1ViewModel.EndDate" type="date"
                    class="mt-1 block w-full rounded-md border border-text/20 bg-background px-3 py-2" />
         </div>
+    </div>
+
+    <div>
+        <label asp-for="CreateStep1ViewModel.Status" class="block text-sm font-medium text-text">Status</label>
+        <select asp-for="CreateStep1ViewModel.Status" asp-items="Html.GetEnumSelectList<Status>()"
+                class="mt-1 block w-full rounded-md border border-text/20 bg-background px-3 py-2">
+        </select>
     </div>
 </form>

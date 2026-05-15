@@ -79,8 +79,25 @@ public class ProjectManager: IProjectManager
     public Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
         DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3)
     {
+        return SaveProject(
+            workspaceId,
+            name,
+            description,
+            startDate,
+            endDate,
+            interactionForm,
+            imageUrl,
+            nudgingStrength,
+            Status.Active,
+            null
+        );
+    }
+
+    public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string? slug)
+    {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
-        
+
         if (string.IsNullOrWhiteSpace(name))
         {
             var results = new List<ValidationResult>
@@ -92,26 +109,45 @@ public class ProjectManager: IProjectManager
             ex.Data["ValidationResults"] = results;
             throw ex;
         }
-        
-        var project = new Project
+
+        var resolvedSlug = string.IsNullOrWhiteSpace(slug) ? Slug.FromName(name) : Slug.FromName(slug);
+        var existing = _projectRepository.ReadProjectByIdAndWorkspaceId(resolvedSlug, workspaceId);
+
+        if (existing == null)
         {
-            Id = Slug.FromName(name),
-            Name = name,
-            Description = description,
-            ImageUrl = imageUrl?.Trim() ?? string.Empty,
-            Status = Status.Draft,
-            StartDate = startDate.ToUniversalTime(),
-            EndDate = endDate.ToUniversalTime(),
-            InteractionForm = interactionForm,
-            NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
+            var project = new Project
+            {
+                Id = resolvedSlug,
+                Name = name,
+                Description = description,
+                ImageUrl = imageUrl?.Trim() ?? string.Empty,
+                Status = status,
+                StartDate = startDate.ToUniversalTime(),
+                EndDate = endDate.ToUniversalTime(),
+                InteractionForm = interactionForm,
+                NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
 
-            Workspace = workspace
-        };
-        
-        Validate(project);
+                Workspace = workspace
+            };
 
-        _projectRepository.CreateProject(project);
-        return project;
+            Validate(project);
+            _projectRepository.CreateProject(project);
+            return project;
+        }
+
+        existing.Name = name;
+        existing.Description = description;
+        existing.ImageUrl = imageUrl?.Trim() ?? string.Empty;
+        existing.Status = status;
+        existing.StartDate = startDate.ToUniversalTime();
+        existing.EndDate = endDate.ToUniversalTime();
+        existing.InteractionForm = interactionForm;
+        existing.NudgingStrength = Math.Clamp(nudgingStrength, 1, 5);
+        existing.Workspace = workspace;
+
+        Validate(existing);
+        _projectRepository.UpdateProject(existing);
+        return existing;
     }
 
     public void EditProject(Project updatedProject)

@@ -6,6 +6,10 @@ public class StepperViewModel
     public string EntityName { get; set; } = string.Empty; // example: "Project"
     public string DraftStoragePrefix { get; set; } = string.Empty;
     public string ImageUploadUrl { get; set; } = string.Empty;
+    public string DraftSaveUrl { get; set; } = string.Empty;
+    public string ProjectListUrl { get; set; } = string.Empty;
+    public bool IsCreatePage { get; set; }
+    public bool IsCopyFlow { get; set; }
     public List<StepItem> Steps { get; set; } = [];
 }
 
