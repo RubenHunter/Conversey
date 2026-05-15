@@ -1,5 +1,6 @@
 import { QuestionType, type Question } from '../../models/question'
 import { createSpeakerButton, getSpeechLanguage } from '../../services/speechService'
+import { getSurveyStrings } from '../../i18n/survey'
 
 function escapeHtml(value: string): string {
     return value
@@ -11,6 +12,7 @@ function escapeHtml(value: string): string {
 }
 
 function getAnswerHint(question: Question): string {
+    const t = getSurveyStrings()
     const customHint = question.hint?.trim()
     if (customHint) {
         return customHint
@@ -18,21 +20,22 @@ function getAnswerHint(question: Question): string {
 
     switch (question.type) {
         case QuestionType.SingleChoice:
-            return 'Choose one option.'
+            return t.answerHintSingleChoice
         case QuestionType.MultipleChoice:
-            return 'Choose one or more options.'
+            return t.answerHintMultipleChoice
         case QuestionType.Scale:
-            return 'Enter a numeric value.'
+            return t.answerHintScale
         case QuestionType.OpenText:
-            return 'Write your answer in your own words.'
+            return t.answerHintOpenText
         default:
             return ''
     }
 }
 
 export function generateQuestionHeader(question: Question, questionNumber: number): string {
+    const t = getSurveyStrings()
     const requiredBadge = question.isRequired
-        ? '<span class="survey-required-badge">Required</span>'
+        ? `<span class="survey-required-badge">${escapeHtml(t.requiredLabel)}</span>`
         : ''
     const answerHint = getAnswerHint(question)
     const answerHintMarkup = answerHint
