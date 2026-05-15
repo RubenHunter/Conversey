@@ -7,15 +7,17 @@ import {apiFetch} from './apiService';
 
 const SPEECH_CONFIG = {
   CHUNK_INTERVAL_MS: 2000,
-  TRANSCRIBE_INTERVAL_MS: 2000,
   MIN_AUDIO_SIZE: 60000,           // For final transcription
   MIN_TEMPORARY_AUDIO_SIZE: 5000,  // For real-time feedback (5KB)
   DOT_ANIMATION_INTERVAL_MS: 500,
   AUDIO_TIMEOUT_MS: 200,
-  MIN_INITIAL_DURATION_MS: 5000,
-  MIN_CONTINUE_DURATION_MS: 2000,
+  MIN_INITIAL_DURATION_MS: 2000,
+  MIN_CONTINUE_DURATION_MS: 1000,
   MAX_RECORDING_DURATION_MS: 60000,
   TIMER_UPDATE_INTERVAL_MS: 100,
+  EARLY_CHUNK_DELAY_MS: 100,       // Delay for first chunk request
+  TRANSCRIBE_DEBOUNCE_MS: 150,    // Debounce delay for transcription
+  STOP_DELAY_MS: 300,             // Delay before stop after requestData
 } as const;
 
 export function getSpeechLanguage(): string {
@@ -103,7 +105,7 @@ function getBestMimeType(): string | undefined {
 }
 
 // ============================================================================
-// API Functions
+// 
 // ============================================================================
 
 async function transcribe(audio: Blob, language: string, contextBias: string[] = []): Promise<string> {
@@ -150,8 +152,8 @@ export class STTManager {
   private stream: MediaStream | null = null;
   private chunks: Blob[] = [];
   private completeChunks: Blob[] = [];        // Full recording for final transcription
-  private temporaryChunks: Blob[] = [];     // Last 5 chunks for real-time feedback
-  private readonly TEMPORARY_WINDOW_SIZE = 5; // 5 chunks = ~10 seconds
+  private temporaryChunks: Blob[] = [];     // Last  chunks for real-time feedback
+  private readonly TEMPORARY_WINDOW_SIZE = 5; // 5 recent chunks + 1 permanent header chunk
   private language: string = getSpeechLanguage();
   private contextBias: string[] = [];
   private callbacks: SpeechCallbacks = {};
@@ -160,6 +162,7 @@ export class STTManager {
 
   private isStopping = false;
   private isTranscribing = false;
+  private transcribeDebounce: number | null = null;
   private hasFirstTranscription = false;
   private totalRecordedMs = 0;
   private startTimeMs: number | null = null;
@@ -172,12 +175,25 @@ export class STTManager {
   private progressInterval: number | null = null;
   private timerInterval: number | null = null;
 
+  // Volume analysis
+  private audioContext: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private volumeCallbacks: Array<(volume: number) => void> = [];
+  private lastVolume = 0;
+
   setupCallbacks(callbacks: SpeechCallbacks): void {
     this.callbacks = { ...this.callbacks, ...callbacks };
   }
 
   setTimerElement(element: HTMLElement): void {
     this.timerTextElement = element;
+  }
+
+  onVolume(callback: (volume: number) => void): () => void {
+    this.volumeCallbacks.push(callback);
+    return () => {
+      this.volumeCallbacks = this.volumeCallbacks.filter(c => c !== callback);
+    };
   }
 
   async start(
@@ -211,14 +227,15 @@ export class STTManager {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       this.blockTextarea();
+      this.setupVolumeAnalysis(this.stream);
 
       const mimeType = getBestMimeType();
       this.recorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
 
-      this.transcribeInterval = window.setInterval(
-        () => this.transcribeWindow(),
-        SPEECH_CONFIG.TRANSCRIBE_INTERVAL_MS
-      );
+      // Force early first chunk to minimize audio data in header chunk
+      setTimeout(() => {
+        this.recorder?.requestData();
+      }, SPEECH_CONFIG.EARLY_CHUNK_DELAY_MS);
 
       this.recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
@@ -227,13 +244,16 @@ export class STTManager {
           this.completeChunks.push(e.data);
           this.temporaryChunks.push(e.data);
 
-          // Keep temporaryChunks limited to TEMPORARY_WINDOW_SIZE
-          if (this.temporaryChunks.length > this.TEMPORARY_WINDOW_SIZE) {
-            this.temporaryChunks.shift();  // Remove oldest chunk
+          // Keep first chunk (contains headers), trim from index 1
+          if (this.temporaryChunks.length > this.TEMPORARY_WINDOW_SIZE + 1) {
+            this.temporaryChunks.splice(1, 1);
           }
 
           this.totalRecordedMs += SPEECH_CONFIG.CHUNK_INTERVAL_MS;
           this.updateTextareaFeedback();
+          
+          // Trigger debounced transcription on new chunk
+          this.triggerTranscribeWindow();
         }
       };
 
@@ -276,7 +296,7 @@ export class STTManager {
     }
     if (this.recorder?.state === 'recording') {
       this.recorder.requestData();
-      setTimeout(() => this.recorder?.stop(), 300);
+      setTimeout(() => this.recorder?.stop(), SPEECH_CONFIG.STOP_DELAY_MS);
     } else {
       this.recorder?.stop();
     }
@@ -290,6 +310,43 @@ export class STTManager {
   // --------------------------------------------------------------------------
   // Private Methods
   // --------------------------------------------------------------------------
+
+  private setupVolumeAnalysis(stream: MediaStream): void {
+    // Reset previous analysis
+    this.lastVolume = 0;
+    
+    try {
+      const audioContext = new (window.AudioContext || 
+        (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+
+      this.audioContext = audioContext;
+      this.analyser = analyser;
+
+      const data = new Uint8Array(analyser.frequencyBinCount);
+
+      const update = () => {
+        if (!this.analyser) return;
+        this.analyser.getByteFrequencyData(data);
+        const rawVolume = data.reduce((a, b) => a + b) / data.length / 255;
+        // Smooth: 70% old value, 30% new value
+        this.lastVolume = this.lastVolume * 0.7 + rawVolume * 0.3;
+        
+        this.volumeCallbacks.forEach(cb => cb(this.lastVolume));
+        
+        if (this.audioContext?.state === 'running') {
+          requestAnimationFrame(update);
+        }
+      };
+      update();
+    } catch (err) {
+      console.warn('[STT] Volume analysis not available:', err);
+      // Non-fatal: continue without volume visualization
+    }
+  }
 
   private blockTextarea(): void {
     if (!this.textareaRef) return;
@@ -365,6 +422,13 @@ export class STTManager {
     }
   }
 
+  private triggerTranscribeWindow(): void {
+    if (this.transcribeDebounce) clearTimeout(this.transcribeDebounce);
+    this.transcribeDebounce = window.setTimeout(() => {
+      this.transcribeWindow();
+    }, SPEECH_CONFIG.TRANSCRIBE_DEBOUNCE_MS);
+  }
+
   private async processFinalTranscription(): Promise<void> {
     if (this.completeChunks.length > 0) {
       const mimeType = this.recorder?.mimeType || 'audio/webm';
@@ -403,9 +467,21 @@ export class STTManager {
   }
 
   private cleanup(): void {
-    this.transcribeInterval && clearInterval(this.transcribeInterval);
+    if (this.transcribeDebounce) {
+      clearTimeout(this.transcribeDebounce);
+      this.transcribeDebounce = null;
+    }
     this.progressInterval && clearInterval(this.progressInterval);
     this.timerInterval && clearInterval(this.timerInterval);
+
+    // Close audio context for volume analysis
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => {});
+    }
+    this.audioContext = null;
+    this.analyser = null;
+    this.volumeCallbacks = [];
+    this.lastVolume = 0;
 
     this.stream?.getTracks().forEach(t => t.stop());
     this.stream = null;
