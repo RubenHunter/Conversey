@@ -28,11 +28,13 @@ import { renderIdeasComposer } from './composer'
 import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../services/speechService'
 import type { ActiveView } from './types.ts'
 import { renderIdeasHeader } from './ideasHeader'
+import { wireMagicModeButton, type MagicModeWiringOptions, type MagicModeModalController } from '../../components/survey/magicMode'
 import { createTopicModalController } from './topicModal'
 import { createIdeasListController } from './ideasListController'
 import { createIdeasSubmitHandler } from './ideasSubmitHandler'
 import { createIdeaNudgeDialogController } from './ideaNudgeDialog'
 import {ProjectContext, render} from "../../main";
+import { getSurveyStrings } from '../../i18n/survey'
 
 type DiscoveryBadgeType = 'similar' | 'different'
 
@@ -125,6 +127,7 @@ function buildBroadFeed(topicIdeas: Idea[]): Idea[] {
 
 
 export async function renderIdeasPage(container: HTMLElement, params: ProjectContext): Promise<void> {
+    const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
@@ -153,13 +156,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 aria-haspopup="menu"
                                 aria-expanded="false"
                             >
-                                <span id="ideas-discovery-label">Explore ideas</span>
+                                <span id="ideas-discovery-label">${t.communityIdeas}</span>
                                 <span class="ideas-discovery-chevron" aria-hidden="true">▾</span>
                             </button>
                             <div id="ideas-discovery-menu" class="ideas-discovery-menu" role="menu" hidden>
-                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">Similar ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">Differing ideas</button>
-                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">All ideas</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
+                                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
                             </div>
                         </div>
                         <div id="ideas-list" class="ideas-list" aria-live="polite"></div>
@@ -171,7 +174,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 </svg>
                                 <span class="ideas-load-more-arrow">↓</span>
                             </span>
-                            <span id="ideas-load-more-text" class="ideas-load-more-text">Click or scroll down to load 7 more ideas</span>
+                            <span id="ideas-load-more-text" class="ideas-load-more-text">${t.loadMoreIdeas || 'Click or scroll down to load 7 more ideas'}</span>
                         </button>
                     </section>
 
@@ -179,7 +182,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         <div class="ideas-compose-head">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
-                                    <span class="ideas-compose-topic-kicker">Topic:</span>
+                                    <span class="ideas-compose-topic-kicker">${t.topicLabel}:</span>
                                     <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
@@ -187,7 +190,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
                                 <button id="ideas-prompt-speaker" class="survey-speaker-btn"
-                                        title="Lees voor" aria-label="Lees vraag voor" disabled>
+                                        title="${t.readAloud}" aria-label="${t.readAloud}" disabled>
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
                                     </svg>
@@ -195,15 +198,15 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea" placeholder="Share your idea for this topic..."></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
-                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
+                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="${t.magicModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    <span class="survey-magic-btn-text">Magic Mode</span>
+                                    <span class="survey-magic-btn-text">${t.magicModeButton}</span>
                                 </button>
-                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
+                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="${t.voiceInput}" title="${t.voiceInput}">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                                     </svg>
@@ -223,7 +226,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     hidden
                 >
                     <span class="ideas-compose-topic-text">
-                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span class="ideas-compose-topic-kicker">${t.topicLabel}</span>
                         <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
                         <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                     </span>
@@ -235,8 +238,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         <div id="topic-modal-backdrop" class="modal-backdrop" hidden aria-hidden="true"></div>
         <div id="topic-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="topic-modal-title" hidden>
             <div class="modal-header">
-                <h3 id="topic-modal-title">Select a Topic</h3>
-                <button id="topic-modal-close" class="modal-close" aria-label="Close">&times;</button>
+                <h3 id="topic-modal-title">${t.selectTopicToShare}</h3>
+                <button id="topic-modal-close" class="modal-close" aria-label="${t.close}">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="topic-modal-list" class="modal-list"></div>
@@ -466,6 +469,17 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const firstIdeaContactDialog = createFirstIdeaContactDialogController({
         root: container,
         storageKey: firstIdeaContactStorageKey,
+    })
+
+    const magicModeModal: MagicModeModalController = wireMagicModeButton(magicBtn, {
+        getQuestionText: () => prompt.textContent ?? '',
+        onResult: (finalText) => {
+            if (finalText.trim()) {
+                textarea.value = finalText
+                textarea.dispatchEvent(new Event('input', { bubbles: true }))
+                submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
+            }
+        }
     })
 
     function getNudgingContext(view: ActiveView) {
@@ -1164,6 +1178,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         resizeObserver.disconnect()
         discoveryRequestToken += 1
         document.removeEventListener('keydown', handleKeyDown)
+        magicModeModal.destroy()
         if (copyPulseTimeout !== null) {
             window.clearTimeout(copyPulseTimeout)
         }
