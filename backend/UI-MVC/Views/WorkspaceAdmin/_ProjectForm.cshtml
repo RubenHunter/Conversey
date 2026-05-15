@@ -1,16 +1,18 @@
 @using Conversey.BL.Domain.Administration
 @using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Project>
 @inject WorkspaceContext WorkspaceContext
+@inject IAdminI18nService I18n
 
 <div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-3xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-4">
-            <h1 class="text-2xl font-bold text-gray-900">Create Project</h1>
+            <h1 class="text-2xl font-bold text-gray-900">@I18n["Create Project"]</h1>
             <a
                 href="@Url.Action("Projects", "WorkspaceAdmin")"
                 class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                Back to projects
+                @I18n["Back to projects"]
             </a>
         </div>
 
@@ -20,19 +22,19 @@
 
 
             <div>
-                <label asp-for="FormItem.Name" class="block text-sm font-medium text-gray-700">Project Name</label>
+                <label asp-for="FormItem.Name" class="block text-sm font-medium text-gray-700">@I18n["Project Name"]</label>
                 <input asp-for="FormItem.Name" class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2" />
                 <span asp-validation-for="FormItem.Name" class="text-sm text-red-600"></span>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700">Workspace</label>
+                <label class="block text-sm font-medium text-gray-700">@I18n["Workspace"]</label>
                 <input type="text" value="@WorkspaceContext.CurrentWorkspace.Name" disabled
                        class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-gray-500 sm:text-sm" />
             </div>
 
             <div>
-                <label asp-for="FormItem.Description" class="block text-sm font-medium text-gray-700">Description</label>
+                <label asp-for="FormItem.Description" class="block text-sm font-medium text-gray-700">@I18n["Description"]</label>
                 <textarea asp-for="FormItem.Description" rows="4"
                           class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"></textarea>
                 <span asp-validation-for="FormItem.Description" class="text-sm text-red-600"></span>
@@ -40,14 +42,14 @@
 
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                    <label asp-for="FormItem.Status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <label asp-for="FormItem.Status" class="block text-sm font-medium text-gray-700">@I18n["Status"]</label>
                     <select asp-for="FormItem.Status" asp-items="Html.GetEnumSelectList<Status>()"
                             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2">
                     </select>
                 </div>
 
                 <div>
-                    <label asp-for="FormItem.InteractionForm" class="block text-sm font-medium text-gray-700">Interaction Form</label>
+                    <label asp-for="FormItem.InteractionForm" class="block text-sm font-medium text-gray-700">@I18n["Interaction Form"]</label>
                     <select asp-for="FormItem.InteractionForm" asp-items="Html.GetEnumSelectList<InteractionType>()"
                             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2">
                     </select>
@@ -56,13 +58,13 @@
 
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                    <label asp-for="FormItem.StartDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <label asp-for="FormItem.StartDate" class="block text-sm font-medium text-gray-700">@I18n["Start Date"]</label>
                     <input asp-for="FormItem.StartDate" type="date"
                            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2" />
                 </div>
 
                 <div>
-                    <label asp-for="FormItem.EndDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <label asp-for="FormItem.EndDate" class="block text-sm font-medium text-gray-700">@I18n["End Date"]</label>
                     <input asp-for="FormItem.EndDate" type="date"
                            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2" />
                 </div>
@@ -77,4 +79,3 @@
         </form>
     </div>
 </div>
-

@@ -1,14 +1,17 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
+
 <div id="deleteModal"
      class="fixed inset-0 hidden items-center justify-center bg-black/50">
 
     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
 
         <h2 class="text-lg font-semibold text-gray-900">
-            Confirm deletion
+            @I18n["Confirm deletion"]
         </h2>
 
         <p class="mt-2 text-sm text-gray-600">
-            Are you sure you want to delete
+            @I18n["Are you sure you want to delete"]
             <span id="deleteItemName" class="font-medium text-gray-900"></span>?
         </p>
 
@@ -17,13 +20,13 @@
             <button id="cancelDelete"
                     type="button"
                     class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                Cancel
+                @I18n["Cancel"]
             </button>
 
             <button id="confirmDelete"
                     type="button"
                     class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
-                Delete
+                @I18n["Delete"]
             </button>
 
         </div>

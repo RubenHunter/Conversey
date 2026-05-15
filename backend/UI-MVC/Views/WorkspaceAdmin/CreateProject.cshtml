@@ -1,11 +1,13 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
-    ViewData["Title"] = "Create Project";
+    ViewData["Title"] = I18n["Create Project"];
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Projects", "/admin/projects", false),
-        ("Create", null, true)
+        (I18n["Projects"], "/admin/projects", false),
+        (I18n["Create"], null, true)
     };
 }
 

@@ -505,4 +505,28 @@ public class AiAdminController : Controller
         await _aiAdminManager.SaveRateLimitConfigAsync(existing);
         return RedirectToAction("RateLimits");
     }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("admin/language")]
+    public IActionResult SetLanguage(string lang, string returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(lang))
+        {
+            lang = "en";
+        }
+
+        Response.Cookies.Append(
+            ".Conversey.Admin.Culture",
+            $"c={lang}-{(lang == "nl" ? "BE" : lang == "fr" ? "BE" : "US")}|uic={lang}-{(lang == "nl" ? "BE" : lang == "fr" ? "BE" : "US")}",
+            new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, SameSite = SameSiteMode.Lax }
+        );
+
+        if (!string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction("Index");
+    }
 }

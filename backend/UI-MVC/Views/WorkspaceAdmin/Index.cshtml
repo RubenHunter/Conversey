@@ -1,13 +1,15 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Resources
 @inject AdminContext AdminContext
 @inject WorkspaceContext WorkspaceContext
+@inject IAdminI18nService I18n
 @{
-    ViewData["Title"] = "Admin Panel";
+    ViewData["Title"] = I18n["Admin Panel"];
     ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", null, true)
+        (I18n["Dashboard"], null, true)
     };
     var workspaceSlug = WorkspaceContext.CurrentWorkspace?.Id.ToString() ?? string.Empty;
 }
@@ -18,7 +20,7 @@
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="mb-10">
             <h1 class="text-3xl font-bold text-text tracking-tight">@WorkspaceContext.CurrentWorkspace?.Name</h1>
-            <p class="mt-2 text-sm text-text/60">Manage your workspace projects and settings.</p>
+            <p class="mt-2 text-sm text-text/60">@I18n["Manage your workspace projects and settings."]</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -28,8 +30,8 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-text">Projects</h3>
-                        <p class="text-xs text-text/50 mt-1">Manage projects, topics, and participants</p>
+                        <h3 class="font-semibold text-text">@I18n["Projects"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["Manage projects, topics, and participants"]</p>
                     </div>
                 </div>
             </a>
@@ -40,8 +42,8 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-text">AI Settings</h3>
-                        <p class="text-xs text-text/50 mt-1">Monitor costs, manage prompts, and set cost limits</p>
+                        <h3 class="font-semibold text-text">@I18n["AI Settings"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["Monitor costs, manage prompts, and set cost limits"]</p>
                     </div>
                 </div>
             </a>

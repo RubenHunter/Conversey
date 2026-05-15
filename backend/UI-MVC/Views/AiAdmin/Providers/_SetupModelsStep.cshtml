@@ -1,35 +1,38 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
+
 <div class="max-w-2xl mx-auto">
     <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-text mb-2">Select models</h2>
-        <div id="modelsStatus" class="text-xs text-text/50 mb-4">Loading models from provider...</div>
+        <h2 class="text-lg font-semibold text-text mb-2">@I18n["Select models"]</h2>
+        <div id="modelsStatus" class="text-xs text-text/50 mb-4">@I18n["Loading models from provider..."]</div>
 
         <div class="space-y-5">
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Completions Model</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="Completions Model" data-info-content="The model used for text generation tasks. This powers: idea nudging (quality checks), idea ranking, idea categorization, and generating constructive alternatives for flagged content. Prefer a fast, cost-effective model like <code class=&quot;bg-background px-1 rounded text-[11px]&quot;>mistral-small-latest</code>.">
+                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Completions Model"]</label>
+                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Completions Model"]" data-info-content="@I18n["The model used for text generation tasks."]">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <select id="setupCompletionsModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">Loading models...</option>
+                    <option value="">@I18n["Loading models..."]</option>
                 </select>
             </div>
 
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Moderation Model</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="Moderation Model" data-info-content="The model used for content moderation. This checks submitted ideas for harmful content before they are published. Mistral, Azure, and OpenAI provide dedicated moderation endpoints (e.g. <code class=&quot;bg-background px-1 rounded text-[11px]&quot;>mistral-moderation-latest</code>).<br><br>If you leave this empty, the completions model will be used for moderation via a prompt-based fallback — less reliable but works with any provider.">
+                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Moderation Model"]</label>
+                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Moderation Model"]" data-info-content="@I18n["The model used for content moderation."]">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <select id="setupModerationModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">Loading models...</option>
+                    <option value="">@I18n["Loading models..."]</option>
                 </select>
             </div>
 
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">Temperature</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="Temperature" data-info-content="<strong>0</strong> = deterministic (same input → same output, best for moderation/categorization).<br><strong>1</strong> = balanced (some creativity, good for nudging questions).<br><strong>2</strong> = maximum creativity (may produce unexpected results).<br><br>Recommended: 0.1–0.2 for structured tasks like moderation and categorization.">
+                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Temperature"]</label>
+                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Temperature"]" data-info-content="@I18n["Controls randomness: 0 = deterministic, 2 = creative."]">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <input id="setupTemperature" type="number" min="0" max="2" step="0.1" value="0.2" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -49,6 +52,18 @@
 </div>
 
 <script>
+var i18nEnterProviderDetailsFirst = '@I18n["Enter provider details in step 1 first."]';
+var i18nNoBaseURL = '@I18n["No base URL"]';
+var i18nTestingConnectionTo = '@I18n["Testing connection to"]';
+var i18nConnectionFailed2 = '@I18n["Connection failed:"]';
+var i18nGoBackToStep1ToFixCredentials = '@I18n["Go back to step 1 to fix your credentials."]';
+var i18nGoBackToStep1 = '@I18n["Go back to step 1."]';
+var i18nCouldNotLoadFromAPI = '@I18n["Could not load from API"]';
+var i18nNoneSkipModeration = '@I18n["None (skip moderation)"]';
+var i18nSelectAModel = '@I18n["Select a model..."]';
+var i18nModelsFoundSuffix = '@I18n["model(s). Select from the dropdowns below."]';
+var i18nFound = '@I18n["Found"]';
+
 (function() {
     var statusEl = document.getElementById('modelsStatus');
     var compSelect = document.getElementById('setupCompletionsModel');
@@ -65,13 +80,13 @@
         var apiKey = document.getElementById('setupApiKey')?.value || '';
 
         if (!baseUrl) {
-            showError('<span class="text-amber-600">Enter provider details in step 1 first.</span>');
-            compSelect.innerHTML = '<option value="">No base URL</option>';
-            modSelect.innerHTML = '<option value="">No base URL</option>';
+            showError('<span class="text-amber-600">' + i18nEnterProviderDetailsFirst + '</span>');
+            compSelect.innerHTML = '<option value="">' + i18nNoBaseURL + '</option>';
+            modSelect.innerHTML = '<option value="">' + i18nNoBaseURL + '</option>';
             return;
         }
 
-        statusEl.textContent = 'Testing connection to ' + provider + '...';
+        statusEl.textContent = i18nTestingConnectionTo + ' ' + provider + '...';
         statusEl.className = 'text-xs text-text/50 mb-4';
 
         fetch('/admin/ai/providers/test-models', {
@@ -87,22 +102,22 @@
                     || data.error.toLowerCase().indexOf('api key') !== -1
                     || data.error.toLowerCase().indexOf('key') !== -1;
                 var extra = isAuth
-                    ? ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">Go back to step 1 to fix your credentials.</button>'
-                    : ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-text/40 hover:text-text/60 font-medium text-[11px]">Go back to step 1.</button>';
-                showError('<span class="text-red-600">Connection failed: ' + data.error + '.</span><br><span class="text-text/50">Select a model from the dropdown or type one manually below.</span>' + extra);
-                compSelect.innerHTML = '<option value="">Could not load from API — select below</option>';
-                modSelect.innerHTML = '<option value="">None (skip moderation)</option>';
+                    ? ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">' + i18nGoBackToStep1ToFixCredentials + '</button>'
+                    : ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-text/40 hover:text-text/60 font-medium text-[11px]">' + i18nGoBackToStep1 + '</button>';
+                showError('<span class="text-red-600">' + i18nConnectionFailed2 + ' ' + data.error + '.</span><br><span class="text-text/50">' + i18nSelectAModel + '</span>' + extra);
+                compSelect.innerHTML = '<option value="">' + i18nCouldNotLoadFromAPI + '</option>';
+                modSelect.innerHTML = '<option value="">' + i18nNoneSkipModeration + '</option>';
                 return;
             }
             var models = data.models || [];
-            statusEl.textContent = 'Found ' + models.length + ' model(s). Select from the dropdowns below.';
+            statusEl.textContent = i18nFound + ' ' + models.length + ' ' + i18nModelsFoundSuffix;
             statusEl.className = 'text-xs text-green-600 mb-4';
 
             var prevComp = compSelect.value;
             var prevMod = modSelect.value;
 
-            compSelect.innerHTML = '<option value="">Select a model...</option>';
-            modSelect.innerHTML = '<option value="">None (completions model will be used for moderation)</option>';
+            compSelect.innerHTML = '<option value="">' + i18nSelectAModel + '</option>';
+            modSelect.innerHTML = '<option value="">' + i18nNoneSkipModeration + '</option>';
             models.forEach(function(m) {
                 var opt1 = document.createElement('option');
                 opt1.value = m;
@@ -117,9 +132,9 @@
             });
         })
         .catch(function(e) {
-            showError('<span class="text-red-600">Connection failed: ' + e.message + '.</span><br><span class="text-text/50">Select a model from the dropdown or type one manually below.</span> <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">Go back to step 1 to fix your credentials.</button>');
-            compSelect.innerHTML = '<option value="">Failed — select below</option>';
-            modSelect.innerHTML = '<option value="">None (skip moderation)</option>';
+            showError('<span class="text-red-600">' + i18nConnectionFailed2 + ' ' + e.message + '.</span><br><span class="text-text/50">' + i18nSelectAModel + '</span> <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline text-primary hover:text-primary/80 font-medium text-[11px]">' + i18nGoBackToStep1ToFixCredentials + '</button>');
+            compSelect.innerHTML = '<option value="">' + i18nCouldNotLoadFromAPI + '</option>';
+            modSelect.innerHTML = '<option value="">' + i18nNoneSkipModeration + '</option>';
         });
     }
 

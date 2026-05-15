@@ -1,6 +1,8 @@
+@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.AiAdmin.AiModelsViewModel
+@inject IAdminI18nService I18n
 @{
-    ViewData["Title"] = $"Configure Models: {Model.Provider.ProviderName}";
+    ViewData["Title"] = I18n["Configure Models"] + ": " + Model.Provider.ProviderName;
     var availableModels = Model.AvailableModels;
     var fetchError = Model.FetchError;
     var hasModels = availableModels.Count > 0;
@@ -10,30 +12,30 @@
     <div class="mx-auto max-w-5xl">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Configure Models: @Model.Provider.ProviderName</h1>
-                <p class="mt-1 text-sm text-gray-500">Select which models to use for AI operations. Models are fetched from the provider's API.</p>
+                <h1 class="text-2xl font-bold text-gray-900">@I18n["Configure Models"]: @Model.Provider.ProviderName</h1>
+                <p class="mt-1 text-sm text-gray-500">@I18n["Select which models to use for AI operations."]</p>
             </div>
-            <a href="@Url.Action("Providers")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; Back to Providers</a>
+            <a href="@Url.Action("Providers")" class="text-sm text-indigo-600 hover:text-indigo-700">&larr; @I18n["Back to Providers"]</a>
         </div>
 
         <div class="mt-6 space-y-6">
             <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 px-6 py-4">
-                    <h2 class="text-sm font-semibold text-gray-900">Provider Connection</h2>
+                    <h2 class="text-sm font-semibold text-gray-900">@I18n["Provider Connection"]</h2>
                 </div>
                 <div class="px-6 py-4">
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <h3 class="text-xs font-semibold uppercase text-gray-500">Base URL</h3>
+                            <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Base URL"]</h3>
                             <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.Provider.BaseUrl) ? "—" : Model.Provider.BaseUrl)</p>
                         </div>
                         <div>
-                            <h3 class="text-xs font-semibold uppercase text-gray-500">API Key</h3>
+                            <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["API Key"]</h3>
                             <p class="mt-1 text-sm font-mono text-gray-700">@(string.IsNullOrWhiteSpace(Model.Provider.ApiKey) ? "—" : new string('*', Math.Min(Model.Provider.ApiKey.Length, 20)))</p>
                         </div>
                     </div>
                     <div class="mt-3">
-                        <a href="@Url.Action("EditProvider", new { id = Model.Provider.Id })" class="text-sm text-indigo-600 hover:text-indigo-700">Edit connection settings</a>
+                        <a href="@Url.Action("EditProvider", new { id = Model.Provider.Id })" class="text-sm text-indigo-600 hover:text-indigo-700">@I18n["Edit connection settings"]</a>
                     </div>
                 </div>
             </div>
@@ -41,17 +43,17 @@
             @if (!string.IsNullOrWhiteSpace(fetchError))
             {
                 <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
-                    <p class="text-sm font-medium text-amber-800">Could not fetch models from provider API.</p>
+                    <p class="text-sm font-medium text-amber-800">@I18n["Could not fetch models from provider API."]</p>
                     <p class="mt-1 text-xs text-amber-600">@fetchError</p>
-                    <p class="mt-1 text-xs text-amber-600">You can still enter model names manually below.</p>
+                    <p class="mt-1 text-xs text-amber-600">@I18n["You can still enter model names manually below."]</p>
                 </div>
             }
 
             @if (hasModels)
             {
                 <div class="rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm">
-                    <p class="text-sm font-medium text-green-800">@availableModels.Count model(s) found.</p>
-                    <p class="mt-1 text-xs text-green-600">Select from the dropdowns below, or type a model name manually.</p>
+                    <p class="text-sm font-medium text-green-800">@availableModels.Count @I18n["model(s) found."]</p>
+                    <p class="mt-1 text-xs text-green-600">@I18n["Select from the dropdowns below, or type a model name manually."]</p>
                 </div>
             }
 
@@ -60,16 +62,16 @@
 
                 <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
                     <div class="border-b border-gray-200 px-6 py-4">
-                        <h2 class="text-sm font-semibold text-gray-900">Model Selection</h2>
+                        <h2 class="text-sm font-semibold text-gray-900">@I18n["Model Selection"]</h2>
                     </div>
                     <div class="px-6 py-4 space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500">Completions Model</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500">@I18n["Completions Model"]</label>
                             <div class="mt-1 flex gap-2">
                                 @if (hasModels)
                                 {
                                     <select name="CompletionsModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                        <option value="">— select or type manually —</option>
+                                        <option value="">— @I18n["select or type manually"] —</option>
                                         @foreach (var m in availableModels)
                                         {
                                             var selected = string.Equals(m, Model.Provider.CompletionsModel, StringComparison.OrdinalIgnoreCase);
@@ -88,16 +90,16 @@
                                     </datalist>
                                 }
                             </div>
-                            <p class="mt-1 text-xs text-gray-400">Used for: idea nudging, ranking, categorization, alternative generation.</p>
+                            <p class="mt-1 text-xs text-gray-400">@I18n["Used for: idea nudging, ranking, categorization, alternative generation."]</p>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500">Moderation Model</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500">@I18n["Moderation Model"]</label>
                             <div class="mt-1 flex gap-2">
                                 @if (hasModels)
                                 {
                                     <select name="ModerationModel" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                        <option value="">— none (skip moderation) —</option>
+                                        <option value="">— @I18n["none (skip moderation)"] —</option>
                                         @foreach (var m in availableModels)
                                         {
                                             var selected = string.Equals(m, Model.Provider.ModerationModel, StringComparison.OrdinalIgnoreCase);
@@ -116,23 +118,23 @@
                                     </datalist>
                                 }
                             </div>
-                            <p class="mt-1 text-xs text-gray-400">Used for: content moderation. Leave empty if provider has no dedicated moderation endpoint.</p>
+                            <p class="mt-1 text-xs text-gray-400">@I18n["Used for content moderation. Leave empty for prompt-based fallback."]</p>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-gray-500">Temperature</label>
+                            <label class="block text-xs font-semibold uppercase text-gray-500">@I18n["Temperature"]</label>
                             <input name="Temperature" type="number" min="0" max="2" step="0.1" value="@Model.Provider.Temperature" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="1.0" />
-                            <p class="mt-1 text-xs text-gray-400">0 = deterministic, 1 = balanced, 2 = creative. Mistral models work well at 0.1-0.2 for structured tasks.</p>
+                            <p class="mt-1 text-xs text-gray-400">@I18n["Controls randomness: 0 = deterministic, 2 = creative."]</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3">
                     <a href="@Url.Action("Providers")" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                        Skip (save later)
+                        @I18n["Skip (save later)"]
                     </a>
                     <button type="submit" class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-                        Save Models
+                        @I18n["Save Models"]
                     </button>
                 </div>
             </form>

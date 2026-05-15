@@ -15,9 +15,11 @@ using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.RateLimiting;
+using Conversey.UI_MVC.Resources;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -188,7 +190,24 @@ builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AdminI18nService>();
+builder.Services.AddSingleton<IAdminI18nService>(p => p.GetRequiredService<AdminI18nService>());
+
 builder.Services.AddSingleton<RateLimitConfigCache>();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { "en-US", "nl-BE", "fr-BE" };
+    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.SupportedUICultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider
+    {
+        CookieName = ".Conversey.Admin.Culture",
+        Options = options
+    });
+});
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -227,6 +246,10 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Assets"
 });
 app.UseMiddleware<WorkspaceMiddleware>();
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.UseRequestLocalization();
+});
 app.UseRouting();
 
 app.UseRateLimiter();
