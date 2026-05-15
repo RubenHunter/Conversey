@@ -6,6 +6,10 @@ export interface SurveyStrings {
     typeBelow: string
     pleaseFill: string
     pleaseFillChoice: string
+    answerHintSingleChoice: string
+    answerHintMultipleChoice: string
+    answerHintScale: string
+    answerHintOpenText: string
     allDone: string
     submitSurvey: string
     submitting: string
@@ -14,7 +18,28 @@ export interface SurveyStrings {
     somethingWrong: string
     offensiveLanguage: string
     readAloud: string
+    close: string
     magicMode: string
+    magicModeButton: string
+    magicModeTitle: string
+    voiceInput: string
+    magicModeActivated: string
+    magicModeAriaLabel: string
+    micStartRecording: string
+    micStopRecording: string
+    micClickToSpeak: string
+    micClickToStop: string
+    magicModeEmptyState: string
+    remove: string
+    rejectedFeedbackPrefix: string
+    rejectionWordCountTooLow: string
+    rejectionWordCountExceeded: string
+    rejectionDuplicateExact: string
+    rejectionDuplicateSemantic: string
+    rejectionSubsetOfExisting: string
+    rejectionFillerContent: string
+    rejectionTooGeneric: string
+    loadMoreIdeas: string
     communityIdeas: string
     broadSelection: string
     similarIdeas: string
@@ -38,6 +63,48 @@ export interface SurveyStrings {
     layoutPickerChat: string
     layoutPickerChatDesc: string
     layoutPickerSave: string
+    // Idea panel & modals
+    selectTopicTitle: string
+    ideaSingular: string
+    editYourIdea: string
+    cancel: string
+    saveChanges: string
+    addReaction: string
+    useAsStarter: string
+    editIdeaBeforePublish: string
+    responses: string
+    writeAComment: string
+    post: string
+    contentSafetyReview: string
+    letsKeepSafe: string
+    aiFlaggedText: string
+    yourOriginalMessage: string
+    editYourResponse: string
+    aiSuggestion: string
+    editAISuggestion: string
+    acceptSuggestion: string
+    postOriginalAnyway: string
+    wantToStayInTouch: string
+    stayInTouchCopy: string
+    dontAskAgain: string
+    noThanks: string
+    leaveMyEmail: string
+    stayInTouchTitle: string
+    emailLeaveCopy: string
+    privacyPolicyLink: string
+    emailAddress: string
+    agreeToContact: string
+    deny: string
+    allowContact: string
+    deepenIdeaTitle: string
+    deepenIdeaStatus: string
+    yourAnswer: string
+    answerAIsQuestion: string
+    answerAndContinue: string
+    confirmAndContinue: string
+    switchTopic: string
+    ideasList: string
+    converseyBrand: string
 }
 
 const nl: SurveyStrings = {
@@ -46,6 +113,10 @@ const nl: SurveyStrings = {
     typeBelow: 'Typ je antwoord in de chatbalk hieronder',
     pleaseFill: 'Typ je antwoord in voor je verder gaat.',
     pleaseFillChoice: 'Selecteer een antwoord voor je verder gaat.',
+    answerHintSingleChoice: 'Kies één optie.',
+    answerHintMultipleChoice: 'Kies één of meer opties.',
+    answerHintScale: 'Voer een numerieke waarde in.',
+    answerHintOpenText: 'Schrijf je antwoord in je eigen woorden.',
     allDone: 'Je hebt alle vragen beantwoord — goed gedaan! Klaar om je antwoorden in te sturen?',
     submitSurvey: 'Antwoorden bevestigen',
     submitting: 'Bezig met versturen...',
@@ -54,7 +125,28 @@ const nl: SurveyStrings = {
     somethingWrong: 'Er is iets misgegaan. Probeer het opnieuw.',
     offensiveLanguage: 'Aanstootgevend taalgebruik gedetecteerd',
     readAloud: 'Voorlezen',
+    close: 'Sluiten',
     magicMode: 'Magic',
+    magicModeButton: 'Magic Mode',
+    magicModeTitle: 'Beantwoord in Magic Mode',
+    voiceInput: 'Spraakinput',
+    magicModeActivated: '<b>Magic mode</b> geactiveerd',
+    magicModeAriaLabel: 'Magic Mode',
+    micStartRecording: 'Start opname',
+    micStopRecording: 'Stop opname',
+    micClickToSpeak: 'Klik om te spreken',
+    micClickToStop: 'Klik om te stoppen',
+    magicModeEmptyState: 'Spreek om sleutelwoorden te genereren...',
+    remove: 'Verwijder',
+    rejectedFeedbackPrefix: '❌ ',
+    rejectionWordCountTooLow: 'Te kort',
+    rejectionWordCountExceeded: 'Te lang',
+    rejectionDuplicateExact: 'Duplicaat',
+    rejectionDuplicateSemantic: 'Lijkt op bestaand',
+    rejectionSubsetOfExisting: 'Deel van bestaand',
+    rejectionFillerContent: 'Vulwoord',
+    rejectionTooGeneric: 'Te generiek',
+    loadMoreIdeas: 'Klik of scroll om 7 meer ideeën te laden',
     communityIdeas: 'Ideeën van de community',
     broadSelection: 'Brede selectie',
     similarIdeas: 'Vergelijkbare ideeën',
@@ -78,6 +170,48 @@ const nl: SurveyStrings = {
     layoutPickerChat: 'Chatweergave',
     layoutPickerChatDesc: 'Beantwoord vragen in een gespreksstijl.',
     layoutPickerSave: 'Mijn keuze onthouden',
+    // Idea panel & modals
+    selectTopicTitle: 'Selecteer een thema',
+    ideaSingular: 'Idee',
+    editYourIdea: 'Bewerk je idee...',
+    cancel: 'Annuleren',
+    saveChanges: 'Wijzigingen opslaan',
+    addReaction: 'Voeg reactie toe',
+    useAsStarter: 'Gebruik als startpunt',
+    editIdeaBeforePublish: 'Bewerk idee voor publicatie',
+    responses: 'Reacties',
+    writeAComment: 'Schrijf een reactie...',
+    post: 'Plaatsen',
+    contentSafetyReview: 'Inhoudsveiligheidscontrole',
+    letsKeepSafe: 'Laten we deze ruimte veilig houden',
+    aiFlaggedText: 'Onze AI heeft je tekst als mogelijk kwetsend gemarkeerd. Je kunt de suggestie gebruiken, deze bewerken of doorgaan met je oorspronkelijke tekst.',
+    yourOriginalMessage: 'Je oorspronkelijke bericht',
+    editYourResponse: 'Bewerk je antwoord',
+    aiSuggestion: 'AI-suggestie',
+    editAISuggestion: 'Bewerk de AI-suggestie',
+    acceptSuggestion: 'Suggestie accepteren',
+    postOriginalAnyway: 'Toch oorspronkelijke bericht plaatsen',
+    wantToStayInTouch: 'In contact blijven?',
+    stayInTouchCopy: 'We kunnen je op de hoogte houden als er iets gebeurt met je idee.',
+    dontAskAgain: 'Vraag het niet meer',
+    noThanks: 'Nee, bedankt',
+    leaveMyEmail: 'Laat je e-mail achter',
+    stayInTouchTitle: 'Blijf op de hoogte over je idee',
+    emailLeaveCopy: 'Je kunt je e-mailadres achterlaten als je wilt dat we contact met je opnemen over je ideeën.',
+    privacyPolicyLink: 'Lees onze privacyverklaring hier.',
+    emailAddress: 'E-mailadres',
+    agreeToContact: 'Ik ga akkoord met contact over dit idee.',
+    deny: 'Weigeren',
+    allowContact: 'Contact toestaan',
+    deepenIdeaTitle: 'Laten we je idee verdiepen',
+    deepenIdeaStatus: 'De AI stelt één vraag tegelijk. Sluit het dialoogvenster om de huidige versie als in afwachting van beoordeling te plaatsen.',
+    yourAnswer: 'Jouw antwoord',
+    answerAIsQuestion: 'Beantwoord de vraag van de AI...',
+    answerAndContinue: 'Beantwoorden & doorgaan',
+    confirmAndContinue: 'Bevestigen en doorgaan',
+    switchTopic: 'Wissel van thema',
+    ideasList: 'Ideeënlijst',
+    converseyBrand: 'Conversey',
 }
 
 const en: SurveyStrings = {
@@ -86,6 +220,10 @@ const en: SurveyStrings = {
     typeBelow: 'Type your answer in the chat bar below',
     pleaseFill: 'Please type your answer before continuing.',
     pleaseFillChoice: 'Please select an answer before continuing.',
+    answerHintSingleChoice: 'Choose one option.',
+    answerHintMultipleChoice: 'Choose one or more options.',
+    answerHintScale: 'Enter a numeric value.',
+    answerHintOpenText: 'Write your answer in your own words.',
     allDone: "You've answered all the questions — well done! Ready to submit your responses?",
     submitSurvey: 'Submit Survey',
     submitting: 'Submitting...',
@@ -94,7 +232,28 @@ const en: SurveyStrings = {
     somethingWrong: 'Sorry, something went wrong. Please try again.',
     offensiveLanguage: 'Offensive language detected',
     readAloud: 'Read aloud',
+    close: 'Close',
     magicMode: 'Magic',
+    magicModeButton: 'Magic Mode',
+    magicModeTitle: 'Answer in Magic Mode',
+    voiceInput: 'Voice input',
+    magicModeActivated: '<b>Magic mode</b> activated',
+    magicModeAriaLabel: 'Magic Mode',
+    micStartRecording: 'Start recording',
+    micStopRecording: 'Stop recording',
+    micClickToSpeak: 'Click to speak',
+    micClickToStop: 'Click to stop',
+    magicModeEmptyState: 'Speak to generate keywords...',
+    remove: 'Remove',
+    rejectedFeedbackPrefix: '❌ ',
+    rejectionWordCountTooLow: 'Too short',
+    rejectionWordCountExceeded: 'Too long',
+    rejectionDuplicateExact: 'Duplicate',
+    rejectionDuplicateSemantic: 'Similar to existing',
+    rejectionSubsetOfExisting: 'Part of existing',
+    rejectionFillerContent: 'Filler word',
+    rejectionTooGeneric: 'Too generic',
+    loadMoreIdeas: 'Click or scroll down to load 7 more ideas',
     communityIdeas: 'Community ideas',
     broadSelection: 'Broad selection',
     similarIdeas: 'Similar ideas',
@@ -126,6 +285,10 @@ const fr: SurveyStrings = {
     typeBelow: 'Tapez votre réponse dans la barre de chat ci-dessous',
     pleaseFill: 'Veuillez saisir votre réponse avant de continuer.',
     pleaseFillChoice: 'Veuillez sélectionner une réponse avant de continuer.',
+    answerHintSingleChoice: 'Choisissez une option.',
+    answerHintMultipleChoice: 'Choisissez une ou plusieurs options.',
+    answerHintScale: 'Entrez une valeur numérique.',
+    answerHintOpenText: 'Écrivez votre réponse avec vos propres mots.',
     allDone: 'Vous avez répondu à toutes les questions — bravo ! Prêt(e) à envoyer vos réponses ?',
     submitSurvey: 'Envoyer les réponses',
     submitting: 'Envoi en cours...',
@@ -134,7 +297,28 @@ const fr: SurveyStrings = {
     somethingWrong: "Une erreur s'est produite. Veuillez réessayer.",
     offensiveLanguage: 'Langage offensant détecté',
     readAloud: 'Lire à voix haute',
+    close: 'Fermer',
     magicMode: 'Magic',
+    magicModeButton: 'Magic Mode',
+    magicModeTitle: 'Répondre en Magic Mode',
+    voiceInput: 'Saisie vocale',
+    magicModeActivated: '<b>Magic mode</b> activé',
+    magicModeAriaLabel: 'Magic Mode',
+    micStartRecording: 'Démarrer l\'enregistrement',
+    micStopRecording: 'Arrêter l\'enregistrement',
+    micClickToSpeak: 'Cliquez pour parler',
+    micClickToStop: 'Cliquez pour arrêter',
+    magicModeEmptyState: 'Parlez pour générer des mots-clés...',
+    remove: 'Supprimer',
+    rejectedFeedbackPrefix: '❌ ',
+    rejectionWordCountTooLow: 'Trop court',
+    rejectionWordCountExceeded: 'Trop long',
+    rejectionDuplicateExact: 'Dupliqué',
+    rejectionDuplicateSemantic: 'Similaire à existant',
+    rejectionSubsetOfExisting: 'Partie de existant',
+    rejectionFillerContent: 'Mot de remplissage',
+    rejectionTooGeneric: 'Trop générique',
+    loadMoreIdeas: 'Cliquez ou faites défiler vers le bas pour charger 7 idées supplémentaires',
     communityIdeas: 'Idées de la communauté',
     broadSelection: 'Large sélection',
     similarIdeas: 'Idées similaires',
