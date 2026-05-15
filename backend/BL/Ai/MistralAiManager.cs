@@ -776,44 +776,16 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
             }
 
             // Check subset of existing (e.g., "spoor" when "spoornetwerk" exists)
-            var isSubset = false;
-            var similarTo = "";
-            foreach (var existing in existingPhrasesSet)
+            if (existingPhrasesSet.Any(existing => IsSubset(phrase, existing) || IsSubset(existing, phrase)))
             {
-                if (IsSubset(phrase, existing))
-                {
-                    isSubset = true;
-                    similarTo = existing;
-                    break;
-                }
-                if (IsSubset(existing, phrase))
-                {
-                    // The existing phrase is a subset of the new one, so reject the new one
-                    isSubset = true;
-                    similarTo = existing;
-                    break;
-                }
-            }
-            if (isSubset)
-            {
-                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.SubsetOfExisting, similarTo));
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.SubsetOfExisting));
                 continue;
             }
 
             // Check semantic duplicates using Jaccard similarity
-            var isSemanticDuplicate = false;
-            foreach (var existing in existingPhrasesSet)
+            if (existingPhrasesSet.Any(existing => JaccardSimilarity(phrase, existing) > 0.6))
             {
-                if (JaccardSimilarity(phrase, existing) > 0.6)
-                {
-                    isSemanticDuplicate = true;
-                    similarTo = existing;
-                    break;
-                }
-            }
-            if (isSemanticDuplicate)
-            {
-                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic, similarTo));
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic));
                 continue;
             }
 
@@ -843,7 +815,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         // Add phrases that were cut due to maxPhrases limit
         foreach (var phrase in cleaned.Skip(maxPhrases))
         {
-            rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.TooGeneric, "Exceeded max phrases limit"));
+            rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.TooGeneric));
         }
 
         rejectedPhrasesWithReasons = rejectedList.AsReadOnly();
@@ -924,9 +896,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
             var stem = StemPhrase(phrase);
             if (seenStems.Contains(stem))
             {
-                // Find which phrase this is a stem duplicate of
-                var similarTo = result.FirstOrDefault(p => StemPhrase(p) == stem);
-                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic, similarTo));
+                rejectedList.Add(new RejectedPhrase(phrase, PhraseRejectionReason.DuplicateSemantic));
             }
             else
             {
