@@ -1,36 +1,49 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
 @inject IAdminI18nService I18n
+@inject WorkspaceContext WorkspaceContext
 @model Conversey.BL.Domain.Administration.Project
 @Html.AntiForgeryToken()
 
 @{
     ViewData["Title"] = I18n["Project Details"];
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Projects"], "/admin/projects", false),
+        (Model.Name, null, true)
+    };
 }
 
-<div class="min-h-screen bg-gray-50 px-4 py-10">
-    <div class="mx-auto max-w-4xl">
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
 
         <!-- Back -->
         <div class="mb-6">
             <a href="@Url.Action("Projects", "WorkspaceAdmin")"
-               class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                ← @I18n["Back to projects"]
+               class="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary transition-colors">
+                <span class="text-lg">←</span>
+                @I18n["Back to projects"]
             </a>
         </div>
 
         <!-- Card -->
-        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div class="rounded-2xl border border-secondary/10 bg-white shadow-sm overflow-hidden">
 
             <!-- Header -->
-            <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-secondary/10 px-8 py-6 bg-linear-to-br from-primary/5 to-secondary/5">
                 <div>
-                    <h1 class="text-2xl font-semibold text-gray-900">
+                    <div class="text-xs uppercase tracking-widest text-secondary font-semibold">
+                        @I18n["Project Details"]
+                    </div>
+                    <h1 class="mt-1 text-3xl font-bold text-text tracking-tight">
                         @Model.Name
                     </h1>
-
-                    <p class="mt-1 text-sm text-gray-500">
-                        @I18n["Project ID"]: @Model.Id.Text
+                    <p class="mt-1 text-sm text-text/60">
+                        @I18n["Project ID"]: <span class="font-semibold text-text">@Model.Id.Text</span>
                     </p>
                 </div>
 
@@ -38,63 +51,63 @@
                 @{
                     var statusColor = Model.Status switch
                     {
-                        Status.Active => "bg-green-100 text-green-700",
-                        Status.Draft => "bg-yellow-100 text-yellow-700",
-                        Status.Archived => "bg-gray-100 text-gray-600",
-                        _ => "bg-gray-100 text-gray-600"
+                        Status.Active => "bg-primary/10 text-primary",
+                        Status.Draft => "bg-secondary/20 text-secondary",
+                        Status.Archived => "bg-text/5 text-text/60",
+                        _ => "bg-text/5 text-text/60"
                     };
                 }
 
-                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium @statusColor">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] uppercase tracking-widest font-bold @statusColor">
                     @Model.Status
                 </span>
             </div>
 
             <!-- Body -->
-            <div class="px-6 py-6 space-y-6">
+            <div class="px-8 py-8 space-y-8">
 
                 <!-- Description -->
-                <div>
-                    <h2 class="text-sm font-semibold text-gray-700">@I18n["Description"]</h2>
-                    <p class="mt-2 whitespace-normal text-sm text-gray-600">
+                <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                    <h2 class="text-xs font-semibold uppercase tracking-widest text-secondary">@I18n["Description"]</h2>
+                    <p class="mt-3 whitespace-normal text-sm text-text/70">
                         @(string.IsNullOrWhiteSpace(Model.Description) ? I18n["No description provided."] : Model.Description)
                     </p>
                 </div>
-                
+
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Status"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.Status</p>
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["Status"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">@Model.Status</p>
                     </div>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Interaction Type"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.InteractionForm</p>
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["Interaction Type"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">@Model.InteractionForm</p>
                     </div>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["AI Nudging Strength"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.NudgingStrength</p>
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["AI Nudging Strength"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">@Model.NudgingStrength</p>
                     </div>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Start Date"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["Start Date"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">
                             @(Model.StartDate == default ? "-" : Model.StartDate.ToString("yyyy-MM-dd"))
                         </p>
                     </div>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["End Date"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["End Date"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">
                             @(Model.EndDate == default ? "-" : Model.EndDate.ToString("yyyy-MM-dd"))
                         </p>
                     </div>
 
-                    <div class="sm:col-span-2">
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Workspace"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
+                    <div class="rounded-xl border border-secondary/10 bg-white p-5 shadow-sm sm:col-span-2">
+                        <h3 class="text-[10px] font-semibold uppercase tracking-widest text-secondary">@I18n["Workspace"]</h3>
+                        <p class="mt-2 text-sm font-semibold text-text">
                             @Model.Workspace?.Name
                         </p>
                     </div>
@@ -103,10 +116,10 @@
             </div>
 
             <!-- Footer actions -->
-            <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end border-t border-secondary/10 px-8 py-5 bg-background">
 
                 <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"
-                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                   class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
                     @I18n["Edit"]
                 </a>
 
@@ -114,13 +127,13 @@
                         data-delete-id="@Model.Id.Text"
                         data-delete-name="@Model.Name"
                         data-delete-endpoint="/admin/project/delete/@Model.Id.Text"
-                        class="inline-flex items-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                        class="inline-flex items-center justify-center rounded-xl border border-accent/30 px-5 py-2.5 text-sm font-bold text-accent hover:bg-accent/5 transition-all">
                     @I18n["Delete"]
                 </button>
             </div>
 
         </div>
-    </div>
+    </main>
 </div>
 
 @await Html.PartialAsync("_DeleteModal")

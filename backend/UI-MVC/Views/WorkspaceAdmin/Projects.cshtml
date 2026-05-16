@@ -21,7 +21,7 @@
     @await Html.PartialAsync("_AdminHeader")
 
     <!-- Container widened to w-full with a max-width of 1600px for ultra-wide screens -->
-    <main class="p-8 w-full max-w-400 mx-auto">
+    <main class="p-8 w-full max-w-400 mx-auto" data-search-root data-search-input="#projectSearchInput" data-search-count="#projectSearchCount">
         
         <!-- Top Stats Row: Occupies horizontal space and adds immediate utility -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -40,7 +40,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div class="flex items-center space-x-4">
                 <div class="relative w-80">
-                    <input type="text" placeholder="@I18n["Search projects..."]" 
+                    <input id="projectSearchInput" type="text" placeholder="@I18n["Search projects..."]" 
                            class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm" />
                     <span class="absolute left-3 top-2.5 text-secondary">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -53,15 +53,15 @@
             </div>
             
             <div class="text-sm text-text/50">
-                @I18n["Showing"] <strong>@Model.Count()</strong> @I18n["projects"]
+                @I18n["Showing"] <strong id="projectSearchCount">@Model.Count()</strong> @I18n["projects"]
             </div>
         </div>
 
         <!-- Project Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" data-search-items>
             @foreach (var project in Model)
             {
-                <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative">
+                <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative" data-search-item data-search-text="@project.Title @project.Status">
                 @* The main link covers the whole card *@
                 <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id" aria-label="@(string.Format(I18n["View project {0}"], project.Title))"></a>
                 
@@ -115,7 +115,7 @@
             }
 
             <!-- Persistent "Add New" Card: Ensures the layout never looks empty -->
-            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" aria-label="@I18n["Create project"]">
+            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" aria-label="@I18n["Create project"]" data-search-item data-search-ignore>
                 <div class="w-12 h-12 rounded-full bg-white shadow-sm border border-secondary/10 flex items-center justify-center text-secondary group-hover:text-primary group-hover:scale-110 transition-all">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>

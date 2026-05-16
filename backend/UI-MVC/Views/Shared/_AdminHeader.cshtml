@@ -4,6 +4,15 @@
 @inject AdminContext AdminContext
 @inject IAdminI18nService I18n
 
+@if (AdminContext.CurrentAdmin is ConverseyAdmin)
+{
+    @await Html.PartialAsync("_AdminSidebarConversey")
+}
+else if (AdminContext.CurrentAdmin is WorkspaceAdmin)
+{
+    @await Html.PartialAsync("_AdminSidebarWorkspace")
+}
+
 <header class="w-full flex items-center justify-between px-8 py-3 border-b border-secondary/10 bg-white sticky top-0 z-50 shadow-sm">
     <!-- Left Section -->
     <div class="flex items-center space-x-4">

@@ -47,7 +47,7 @@
             </thead>
             
             <!-- Body -->
-            <tbody class="divide-y divide-gray-100 bg-white">
+            <tbody id="workspaceTableBody" class="divide-y divide-gray-100 bg-white">
             @if (!hasItems)
             {
                 <tr>
@@ -60,7 +60,7 @@
             {
                 @foreach (var item in enumerable)
                 {
-                    <tr data-row-id="@Model.RowId(item)" class="hover:bg-gray-50">
+                    <tr data-row-id="@Model.RowId(item)" class="hover:bg-gray-50" data-search-item data-search-text="@Model.RowId(item) @item.Name">
                         @foreach (var col in objects)
                         {
                             <td class="px-4 py-3 text-sm text-gray-700">
