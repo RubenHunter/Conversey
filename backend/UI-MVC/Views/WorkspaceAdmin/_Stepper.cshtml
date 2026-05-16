@@ -1,3 +1,5 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 <div id="dynamic-stepper" class="w-full max-w-5xl mx-auto p-6 bg-background text-text" 
@@ -16,14 +18,14 @@
         
         <div class="flex items-center gap-3">
             <button id="saveDraftBtn" type="button" class="px-6 py-2 border border-text/20 rounded-lg hover:bg-text/5 transition-colors">
-                Save as draft
+                @I18n["Save as draft"]
             </button>
             <div class="flex gap-2">
                 <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all">
-                    < Back
+                    @I18n["< Back"]
                 </button>
                 <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all">
-                    Next >
+                    @I18n["Next >"]
                 </button>
             </div>
         </div>
@@ -52,7 +54,7 @@
                      <div class="step-dot w-2 h-2 rounded-full bg-text scale-0 transition-transform duration-300"></div>
                  </div>
              
-                 <span class="mt-4 text-xs uppercase text-text/50 font-medium">step @stepNum</span>
+                 <span class="mt-4 text-xs uppercase text-text/50 font-medium">@I18n["step"] @stepNum</span>
                  <span class="text-sm font-bold text-center">@Model.StepperViewModel.Steps[i].Label</span>
              </div>
          }
@@ -63,8 +65,9 @@
         @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
         {
             <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
+                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model.AdminFormViewModel)
             </div>
         }
     </div>
 </div>
+

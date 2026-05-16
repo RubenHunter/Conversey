@@ -1,0 +1,148 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Resources
+@model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiDashboardViewModel
+@inject AdminContext AdminContext
+@inject IAdminI18nService I18n
+@{
+    ViewData["Title"] = I18n["AI Settings"];
+    var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["AI Settings"]</h1>
+            <p class="mt-2 text-sm text-text/60">@I18n["Monitor AI costs, manage prompts, and set cost limits for your workspace."]</p>
+        </div>
+
+        @if (Model.IsWorkspaceOverLimit)
+        {
+            <div class="mb-6 rounded-xl border border-accent/20 bg-accent/5 p-4 flex items-start gap-3">
+                <svg class="w-5 h-5 text-accent mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>
+                    <p class="text-sm font-medium text-accent">@I18n["Workspace AI cost limit reached"]</p>
+                    <p class="text-xs text-text/60 mt-1">@I18n["All AI functions are now using the NoopAiManager (no API calls). Update your cost limit to re-enable AI."]</p>
+                </div>
+            </div>
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block">@I18n["Workspace Cost (this month)"]</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.WorkspaceTotalCost.ToString("C", nlBe)</div>
+                @if (Model.WorkspaceLimit != null)
+                {
+                    <div class="mt-2 w-full bg-background rounded-full h-1.5">
+                        <div class="bg-primary h-1.5 rounded-full" style="width: @Math.Min(100, (Model.WorkspaceTotalCost / Model.WorkspaceLimit.LimitAmount) * 100)%"></div>
+                    </div>
+                    <p class="text-[10px] text-text/40 mt-1">Limit: @Model.WorkspaceLimit.LimitAmount.ToString("C", nlBe)</p>
+                }
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block">@I18n["Projects"]</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.ProjectCosts.Count</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block">@I18n["Period"]</span>
+                <div class="text-sm font-medium text-text mt-1">@Model.PeriodStart.ToString("MMM yyyy")</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <a href="@Url.Action("Costs", new { workspaceSlug = Model.WorkspaceId })" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">@I18n["Costs & Audit"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["View AI usage, costs, and audit logs per project"]</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId })" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">@I18n["Prompts"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["Edit user prompts per project with reset to default"]</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Limits", new { workspaceSlug = Model.WorkspaceId })" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">@I18n["Cost Limits"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["Set AI cost limits per project and workspace-wide"]</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Keywords", new { workspaceSlug = Model.WorkspaceId })" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">@I18n["Moderation Keywords"]</h3>
+                        <p class="text-xs text-text/50 mt-1">@I18n["Manage workspace-specific flagged words"]</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        @if (Model.ProjectCosts.Any())
+        {
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+                <div class="px-6 py-4 border-b border-secondary/10">
+                    <h2 class="text-sm font-semibold text-text">@I18n["Costs per Project"]</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-secondary/10 text-sm">
+                        <thead class="bg-background/50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Project"]</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Cost"]</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Status"]</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-secondary/10">
+                            @foreach (var pc in Model.ProjectCosts)
+                            {
+                                var isOverLimit = pc.Limit != null && pc.TotalCost >= pc.Limit.LimitAmount;
+                                <tr class="hover:bg-background/30">
+                                    <td class="px-6 py-3 text-sm text-text">@pc.ProjectName</td>
+                                    <td class="px-6 py-3 text-right text-sm font-semibold text-text">@pc.TotalCost.ToString("C", nlBe)</td>
+                                    <td class="px-6 py-3 text-right">
+                                        @if (isOverLimit)
+                                        {
+                                            <span class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 uppercase">@I18n["Over Limit"]</span>
+                                        }
+                                        else if (pc.Limit != null)
+                                        {
+                                            <span class="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600 uppercase">@((pc.TotalCost / pc.Limit.LimitAmount * 100).ToString("F0"))% @I18n["% of limit"]</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-[10px] text-text/40">@I18n["No limit"]</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </main>
+</div>

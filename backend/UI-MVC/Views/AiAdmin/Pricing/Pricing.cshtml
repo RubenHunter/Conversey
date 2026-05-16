@@ -1,0 +1,150 @@
+@using Conversey.BL.Domain.Ai
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@model IReadOnlyList<AiModelPricing>
+@inject AdminContext AdminContext
+@inject IAdminI18nService I18n
+@{
+    ViewData["Title"] = I18n["Model Pricing"];
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Dashboard"], "/admin", false),
+        (I18n["AI Settings"], "/admin/ai", false),
+        (I18n["Model Pricing"], null, true)
+    };
+    var eurRate = ViewBag.EurRate as decimal? ?? 0.92m;
+    var providers = Model.Select(p => p.ProviderName).Distinct().OrderBy(p => p).ToList();
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["Model Pricing"]</h1>
+                <p class="mt-1 text-sm text-text/60">@I18n["Cost per million tokens in USD."] @I18n["EUR rate:"] 1 USD = @eurRate.ToString("F4") EUR.</p>
+                <p class="mt-1 text-sm text-text/60">@I18n["Refresh to get todays prices"]</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <form asp-action="RefreshPricing" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">@I18n["Refresh from OpenRouter"]</button>
+                </form>
+                <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    @I18n["Back to AI Settings"]
+                </a>
+            </div>    
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+            <div class="px-6 py-4 border-b border-secondary/10 flex flex-wrap items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Provider"]</label>
+                    <select id="providerFilter" class="rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="">@I18n["All"]</option>
+                        @foreach (var p in providers)
+                        {
+                            <option value="@p">@p</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Sort by"]</label>
+                    <select id="sortBy" class="rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="model-asc">@I18n["Model name A-Z"]</option>
+                        <option value="model-desc">@I18n["Model name Z-A"]</option>
+                        <option value="input-asc">@I18n["Input price up"]</option>
+                        <option value="input-desc">@I18n["Input price down"]</option>
+                        <option value="output-asc">@I18n["Output price up"]</option>
+                        <option value="output-desc">@I18n["Output price down"]</option>
+                        <option value="total-asc">@I18n["Total price up"]</option>
+                        <option value="total-desc">@I18n["Total price down"]</option>
+                    </select>
+                </div>
+                <span id="rowCount" class="text-xs text-text/50 ml-auto"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-[800px] divide-y divide-secondary/10 text-xs">
+                    <thead class="bg-background/50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Model"]</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Provider"]</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Input /1M tok"]</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Output /1M tok"]</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Total /1M tok"]</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Updated"]</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pricingBody" class="divide-y divide-secondary/10">
+                        @foreach (var p in Model)
+                        {
+                            <tr class="pricing-row hover:bg-background/30" data-provider="@p.ProviderName" data-model="@p.ModelName" data-input="@p.InputPricePerMillionTokens" data-output="@p.OutputPricePerMillionTokens">
+                                <td class="whitespace-nowrap px-3 py-2 font-mono text-xs text-text">@p.ModelName</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-xs text-text/60">@p.ProviderName</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@p.InputPricePerMillionTokens.ToString("F2")</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@p.OutputPricePerMillionTokens.ToString("F2")</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@((p.InputPricePerMillionTokens + p.OutputPricePerMillionTokens).ToString("F2"))</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right text-xs text-text/50">@p.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+var i18nModelsPlural = '@I18n["models"]';
+var i18nOf = '@I18n["of"]';
+
+(function() {
+    var tbody = document.getElementById('pricingBody');
+    var rows = Array.from(tbody.querySelectorAll('.pricing-row'));
+    var providerFilter = document.getElementById('providerFilter');
+    var sortBy = document.getElementById('sortBy');
+    var rowCount = document.getElementById('rowCount');
+
+    function update() {
+        var provider = providerFilter.value;
+        var sort = sortBy.value;
+
+        var filtered = rows.filter(function(r) {
+            return !provider || r.getAttribute('data-provider') === provider;
+        });
+
+        filtered.sort(function(a, b) {
+            var va, vb;
+            switch (sort) {
+                case 'model-asc': return a.getAttribute('data-model').localeCompare(b.getAttribute('data-model'));
+                case 'model-desc': return b.getAttribute('data-model').localeCompare(a.getAttribute('data-model'));
+                case 'input-asc': return parseFloat(a.getAttribute('data-input')) - parseFloat(b.getAttribute('data-input'));
+                case 'input-desc': return parseFloat(b.getAttribute('data-input')) - parseFloat(a.getAttribute('data-input'));
+                case 'output-asc': return parseFloat(a.getAttribute('data-output')) - parseFloat(b.getAttribute('data-output'));
+                case 'output-desc': return parseFloat(b.getAttribute('data-output')) - parseFloat(a.getAttribute('data-output'));
+                case 'total-asc':
+                    va = parseFloat(a.getAttribute('data-input')) + parseFloat(a.getAttribute('data-output'));
+                    vb = parseFloat(b.getAttribute('data-input')) + parseFloat(b.getAttribute('data-output'));
+                    return va - vb;
+                case 'total-desc':
+                    va = parseFloat(a.getAttribute('data-input')) + parseFloat(a.getAttribute('data-output'));
+                    vb = parseFloat(b.getAttribute('data-input')) + parseFloat(b.getAttribute('data-output'));
+                    return vb - va;
+                default: return 0;
+            }
+        });
+
+        tbody.innerHTML = '';
+        filtered.forEach(function(r) { tbody.appendChild(r); });
+        rowCount.textContent = filtered.length + ' ' + i18nOf + ' ' + rows.length + ' ' + i18nModelsPlural;
+    }
+
+    providerFilter.addEventListener('change', update);
+    sortBy.addEventListener('change', update);
+    update();
+})();
+</script>

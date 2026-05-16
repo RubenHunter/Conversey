@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <RootNamespace>Conversey.UI_MVC</RootNamespace>
     <AssemblyName>Conversey.UI_MVC</AssemblyName>
     <UserSecretsId>f4540dc8-15f9-4cd7-a204-9e449373b7b1</UserSecretsId>

@@ -1,0 +1,265 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@using Conversey.BL.Domain.Administration
+@model Conversey.UI_MVC.Models.AiAdmin.AiProviderFormViewModel
+@inject AdminContext AdminContext
+@inject IAdminI18nService I18n
+@{
+    ViewData["Title"] = Model.Id > 0 ? I18n["Edit Provider"] + ": " + Model.ProviderName : I18n["Add AI Provider"];
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    var isEdit = Model.Id > 0;
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Dashboard"], "/admin", false),
+        (I18n["AI Settings"], "/admin/ai", false),
+        (I18n["Providers"], "/admin/ai/providers", false),
+        (isEdit ? Model.ProviderName : I18n["Add Provider"], null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight">@(isEdit ? I18n["Edit Provider"] : I18n["Add AI Provider"])</h1>
+                <p class="mt-1 text-sm text-text/60">@I18n["Configure connection to your AI service provider."]</p>
+            </div>
+            <a href="@Url.Action("Providers")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                @I18n["Back to Providers"]
+            </a>
+        </div>
+
+        <form asp-action="SaveProvider" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-text">@I18n["Provider Name"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["Display name for this provider configuration."]</p>
+                    </div>
+                    <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="name-info">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+                </div>
+                <div id="name-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
+                    <p class="text-xs text-text/60">@I18n["Common provider names:"] <code class="rounded bg-background px-1">Mistral</code>, <code class="rounded bg-background px-1">Azure</code>, <code class="rounded bg-background px-1">Ollama</code>, <code class="rounded bg-background px-1">Groq</code>. @I18n["This name determines which provider implementation is used internally."]</p>
+                </div>
+                <div class="px-6 py-4">
+                    <input asp-for="ProviderName" type="text" placeholder="Mistral" autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" />
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-text">@I18n["Base URL"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["API endpoint URL for the provider."]</p>
+                    </div>
+                    <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="url-info">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+                </div>
+                <div id="url-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
+                    <p class="text-xs text-text/60">Mistral: <code class="rounded bg-background px-1">https://api.mistral.ai/v1/</code>. Azure: <code class="rounded bg-background px-1">https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT/</code>. Ollama: <code class="rounded bg-background px-1">http://localhost:11434/v1/</code>.</p>
+                </div>
+                <div class="px-6 py-4">
+                    <input asp-for="BaseUrl" type="url" placeholder="@I18n["e.g. https://api.mistral.ai/v1"]" autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" />
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-text">@I18n["API Key"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["Authentication key for the provider API."]</p>
+                    </div>
+                    <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="key-info">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+                </div>
+                <div id="key-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
+                    <p class="text-xs text-text/60">@I18n["Get your API key from the providers dashboard."] @I18n["The key is stored encrypted in the database."]</p>
+                </div>
+                <div class="px-6 py-4">
+                    <input asp-for="ApiKey" type="password" placeholder="sk-..." autocomplete="new-password" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" />
+                    @if (isEdit && !string.IsNullOrEmpty(Model.ApiKey))
+                    {
+                        <p class="mt-1 text-xs text-text/40">@I18n["Current:"] @(new string('*', Math.Min(Model.ApiKey.Length, 20)))</p>
+                    }
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-text">@I18n["Models"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["Select models for completions and moderation."]</p>
+                    </div>
+                    <button id="fetchModelsBtn" type="button" class="px-3 py-1.5 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-xs font-medium text-text/70 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        @I18n["Fetch Models"]
+                    </button>
+                </div>
+                <div id="editModelsStatus" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs"></div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["Completions Model"]</label>
+                        <select id="editCompletionsSelect" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">@I18n["Select a model..."]</option>
+                            @if (!string.IsNullOrEmpty(Model.CompletionsModel))
+                            {
+                                <option value="@Model.CompletionsModel" selected>@Model.CompletionsModel</option>
+                            }
+                        </select>
+                        <input asp-for="CompletionsModel" type="text" placeholder="@I18n["Or type a model name..."]" class="mt-2 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p class="mt-1 text-xs text-text/40">@I18n["Used for: idea nudging, ranking, categorization, alternative generation."]</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["Moderation Model"]</label>
+                        <select id="editModerationSelect" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">@I18n["None (skip moderation)"]</option>
+                            @if (!string.IsNullOrEmpty(Model.ModerationModel))
+                            {
+                                <option value="@Model.ModerationModel" selected>@Model.ModerationModel</option>
+                            }
+                        </select>
+                        <input asp-for="ModerationModel" type="text" placeholder="@I18n["Or type a model name..."]" class="mt-2 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p class="mt-1 text-xs text-text/40">@I18n["Used for content moderation. Leave empty for prompt-based fallback."]</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+                    <div class="px-6 py-4 border-b border-secondary/10">
+                        <h2 class="text-sm font-semibold text-text">@I18n["Temperature"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["Controls randomness: 0 = deterministic, 2 = creative."]</p>
+                    </div>
+                    <div class="px-6 py-4">
+                        <input asp-for="Temperature" type="number" min="0" max="2" step="0.1" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" />
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+                    <div class="px-6 py-4 border-b border-secondary/10">
+                        <h2 class="text-sm font-semibold text-text">@I18n["API Key Expires"]</h2>
+                        <p class="text-xs text-text/50 mt-0.5">@I18n["When the API key expires (optional)."]</p>
+                    </div>
+                    <div class="px-6 py-4">
+                        <input asp-for="ApiKeyExpiresAt" type="date" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+                <div class="px-6 py-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input asp-for="IsEnabled" type="checkbox" class="w-4 h-4 rounded border-secondary/30 text-primary focus:ring-primary/50" />
+                        <div>
+                            <span class="text-sm font-medium text-text">@I18n["Enable this provider"]</span>
+                            <p class="text-xs text-text/50">@I18n["Only one provider can be active at a time. Enabling this will disable all others."]</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a href="@Url.Action("Providers")" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70">@I18n["Cancel"]</a>
+                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">@(isEdit ? I18n["Save Changes"] : I18n["Add Provider"])</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<script>
+var i18nEnterBaseUrlFirst = '@I18n["Enter a Base URL first."]';
+var i18nFetchingModels = '@I18n["Fetching models..."]';
+var i18nCouldNotFetchModels = '@I18n["Could not fetch models:"]';
+var i18nTypeModelNamesManually = '@I18n["Type model names manually."]';
+var i18nFound = '@I18n["Found"]';
+var i18nModelsFoundSuffix = '@I18n["model(s). Select from dropdowns or type manually."]';
+var i18nSelectAModel = '@I18n["Select a model..."]';
+var i18nNoneSkipModeration = '@I18n["None (skip moderation)"]';
+var i18nFailed = '@I18n["Failed:"]';
+
+document.querySelectorAll('.info-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var target = document.getElementById(this.getAttribute('data-target'));
+        target.classList.toggle('hidden');
+    });
+});
+
+(function() {
+    var compSelect = document.getElementById('editCompletionsSelect');
+    var modSelect = document.getElementById('editModerationSelect');
+    var compInput = document.getElementById('CompletionsModel');
+    var modInput = document.getElementById('ModerationModel');
+    var statusEl = document.getElementById('editModelsStatus');
+
+    compSelect.addEventListener('change', function() { if (this.value) compInput.value = this.value; });
+    modSelect.addEventListener('change', function() { if (this.value) modInput.value = this.value; });
+
+    document.getElementById('fetchModelsBtn').addEventListener('click', function() {
+        var provider = document.getElementById('ProviderName')?.value || '';
+        var baseUrl = document.getElementById('BaseUrl')?.value || '';
+        var apiKey = document.getElementById('ApiKey')?.value || '';
+
+        if (!baseUrl) {
+            statusEl.textContent = i18nEnterBaseUrlFirst;
+            statusEl.className = 'hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs text-red-600';
+            statusEl.classList.remove('hidden');
+            return;
+        }
+
+        statusEl.textContent = i18nFetchingModels;
+        statusEl.className = 'hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs text-text/50';
+        statusEl.classList.remove('hidden');
+
+        fetch('/admin/ai/providers/test-models', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ providerName: provider, baseUrl: baseUrl, apiKey: apiKey })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                statusEl.textContent = i18nCouldNotFetchModels + ' ' + data.error + '. ' + i18nTypeModelNamesManually;
+                statusEl.className = 'hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs text-amber-600';
+                statusEl.classList.remove('hidden');
+                return;
+            }
+            var models = data.models || [];
+            statusEl.textContent = i18nFound + ' ' + models.length + ' ' + i18nModelsFoundSuffix;
+            statusEl.className = 'hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs text-green-600';
+            statusEl.classList.remove('hidden');
+
+            var currentComp = compInput.value;
+            var currentMod = modInput.value;
+
+            compSelect.innerHTML = '<option value="">' + i18nSelectAModel + '</option>';
+            modSelect.innerHTML = '<option value="">' + i18nNoneSkipModeration + '</option>';
+            models.forEach(function(m) {
+                var opt1 = document.createElement('option');
+                opt1.value = m; opt1.textContent = m;
+                if (m === currentComp) opt1.selected = true;
+                compSelect.appendChild(opt1);
+                var opt2 = document.createElement('option');
+                opt2.value = m; opt2.textContent = m;
+                if (m === currentMod) opt2.selected = true;
+                modSelect.appendChild(opt2);
+            });
+        })
+        .catch(function(e) {
+            statusEl.textContent = i18nFailed + ' ' + e.message;
+            statusEl.className = 'hidden px-6 py-3 bg-background/50 border-b border-secondary/10 text-xs text-red-600';
+            statusEl.classList.remove('hidden');
+        });
+    });
+})();
+</script>

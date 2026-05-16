@@ -1,0 +1,64 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
+
+<div class="max-w-xl mx-auto">
+    <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-text mb-4">@I18n["Choose your AI provider"]</h2>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["Provider"]</label>
+                <input id="setupProvider" type="text" list="provider-datalist" placeholder="@I18n["Select or type..."]" autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <datalist id="provider-datalist">
+                    <option value="Mistral"></option>
+                    <option value="Azure"></option>
+                    <option value="Ollama"></option>
+                    <option value="Groq"></option>
+                    <option value="Google"></option>
+                    <option value="Together"></option>
+                    <option value="NVIDIA"></option>
+                    <option value="OpenAI"></option>
+                </datalist>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["Base URL"]</label>
+                <input id="setupBaseUrl" type="url" placeholder="https://api.example.com/v1/" autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <p class="mt-1 text-xs text-text/40" id="baseUrlHint">@I18n["Select a provider to see the default URL."]</p>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["API Key"]</label>
+                <input id="setupApiKey" type="password" placeholder="sk-..." autocomplete="new-password" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["API Key Expiry (optional)"]</label>
+                <input id="setupKeyExpiry" type="date" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var i18nSelectProviderToSeeURL = '@I18n["Select a provider to see the default URL."]';
+var i18nDefaultURLFor = '@I18n["Default URL for"]';
+
+(function() {
+    var examples = {
+        'Mistral': 'https://api.mistral.ai/v1/',
+        'Azure': 'https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT/',
+        'Ollama': 'http://localhost:11434/v1/',
+        'Groq': 'https://api.groq.com/openai/v1/',
+        'Google': 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        'Together': 'https://api.together.xyz/v1/',
+        'NVIDIA': 'https://integrate.api.nvidia.com/v1/',
+        'OpenAI': 'https://api.openai.com/v1/'
+    };
+    document.getElementById('setupProvider').addEventListener('input', function() {
+        var url = examples[this.value] || '';
+        document.getElementById('setupBaseUrl').value = url;
+        document.getElementById('baseUrlHint').textContent = url ? i18nDefaultURLFor + ' ' + this.value : i18nSelectProviderToSeeURL;
+    });
+})();
+</script>

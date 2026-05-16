@@ -1,7 +1,9 @@
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
-    ViewData["Title"] = "Edit Project";
+    ViewData["Title"] = I18n["Edit Project"];
 }
 
 @await Html.PartialAsync("_Stepper", Model)
