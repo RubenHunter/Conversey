@@ -5,7 +5,10 @@
 @{
     ViewData["Title"] = I18n["Edit Project"];
 }
-
-@await Html.PartialAsync("_Stepper", Model)
+<div class="min-h-screen bg-background">
+    @await Html.PartialAsync("_AdminHeader")
+    
+    @await Html.PartialAsync("_Stepper", Model)
+</div>
 
 @await Html.PartialAsync("_DraftExitModal")

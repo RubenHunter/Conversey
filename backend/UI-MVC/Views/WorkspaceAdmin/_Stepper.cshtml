@@ -65,7 +65,7 @@
         @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
         {
             <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model.AdminFormViewModel)
+                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
             </div>
         }
     </div>

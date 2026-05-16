@@ -4,7 +4,7 @@
 
 @{
     ViewData["Title"] = I18n["Create Project"];
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
     {
         (I18n["Projects"], "/admin/projects", false),
         (I18n["Create"], null, true)
@@ -14,7 +14,6 @@
 <div class="min-h-screen bg-background">
     @await Html.PartialAsync("_AdminHeader")
     
-    <!-- Render the stepper and it handles the content partials internally -->
 @await Html.PartialAsync("_Stepper", Model)
 </div>
 
