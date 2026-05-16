@@ -8,6 +8,7 @@ public interface IAdminI18nService
     string this[string key] { get; }
     string CurrentLanguage { get; }
     IReadOnlyList<string> SupportedLanguages { get; }
+    IReadOnlyDictionary<string, string> CurrentLanguageMap { get; }
 }
 
 public class AdminI18nService : IAdminI18nService
@@ -43,6 +44,25 @@ public class AdminI18nService : IAdminI18nService
                 return enValue;
             }
             return key;
+        }
+    }
+
+    public IReadOnlyDictionary<string, string> CurrentLanguageMap
+    {
+        get
+        {
+            var lang = CurrentLanguage;
+            if (_allStrings.TryGetValue(lang, out var dict))
+            {
+                return new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(dict);
+            }
+
+            if (_allStrings.TryGetValue("en", out var enDict))
+            {
+                return new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(enDict);
+            }
+
+            return new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
         }
     }
 

@@ -1,51 +1,53 @@
-@using Conversey.UI_MVC.Resources
-@inject IAdminI18nService I18n
-
 <div class="max-w-2xl mx-auto">
     <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-text mb-4">@I18n["Verify & Save"]</h2>
+        <h2 class="text-lg font-semibold text-text mb-4" data-i18n="Verify & Save">Verify & Save</h2>
 
         <div id="healthCheckBar" class="rounded-lg p-3 mb-4 text-xs hidden">
         </div>
 
         <div id="setupSummary" class="space-y-3 mb-6 text-sm">
-            <p class="text-text/60">@I18n["Fill in the previous steps to see a summary here."]</p>
+            <p class="text-text/60" data-i18n="Fill in the previous steps to see a summary here.">Fill in the previous steps to see a summary here.</p>
         </div>
 
         <div class="flex gap-3">
             <button id="saveProviderBtn" type="button" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                @I18n["Save Provider"]
+                <span data-i18n="Save Provider">Save Provider</span>
             </button>
         </div>
     </div>
 </div>
 
 <script>
-var i18nFillInSteps = '@I18n["Fill in the previous steps to see a summary here."]';
-var i18nProviderName = '@I18n["Provider name"]';
-var i18nBaseURL = '@I18n["Base URL"]';
-var i18nAPIKey = '@I18n["API Key"]';
-var i18nNotSet = '@I18n["Not set"]';
-var i18nCompletionsModel = '@I18n["Completions model"]';
-var i18nNotSelected = '@I18n["Not selected"]';
-var i18nModerationModel = '@I18n["Moderation model"]';
-var i18nPromptFallback = '@I18n["prompt fallback"]';
-var i18nCompletionsFallbackMsg = '@I18n["Completions model will be used for moderation via prompt."]';
-var i18nTemperature = '@I18n["Temperature"]';
-var i18nTestingProviderConnection = '@I18n["Testing provider connection..."]';
-var i18nConnection = '@I18n["Connection:"]';
-var i18nOKModelsAvailable = '@I18n["OK"]';
-var i18nModelSuffix = '@I18n["model(s) available"]';
-var i18nHealth = '@I18n["Health:"]';
-var i18nAllProbesPassed = '@I18n["All probes passed"]';
-var i18nProbesFailed = '@I18n["Probes failed"]';
-var i18nModerationLabel = '@I18n["Moderation:"]';
-var i18nCompletionsLabel = '@I18n["Completions:"]';
-var i18nConnectionFailed = '@I18n["Connection failed:"]';
-var i18nGoBackToStep1 = '@I18n["Go back to step 1"]';
-var i18nOKStatus = '@I18n["OK"]';
-var i18nFailedStatus = '@I18n["Failed"]';
+var adminStrings = (window.__AdminI18n && window.__AdminI18n.strings) || {};
+function t(key, fallback) {
+    return Object.prototype.hasOwnProperty.call(adminStrings, key) ? adminStrings[key] : (fallback || key);
+}
+
+var i18nFillInSteps = t('Fill in the previous steps to see a summary here.', 'Fill in the previous steps to see a summary here.');
+var i18nProviderName = t('Provider name', 'Provider name');
+var i18nBaseURL = t('Base URL', 'Base URL');
+var i18nAPIKey = t('API Key', 'API Key');
+var i18nNotSet = t('Not set', 'Not set');
+var i18nCompletionsModel = t('Completions model', 'Completions model');
+var i18nNotSelected = t('Not selected', 'Not selected');
+var i18nModerationModel = t('Moderation model', 'Moderation model');
+var i18nPromptFallback = t('prompt fallback', 'prompt fallback');
+var i18nCompletionsFallbackMsg = t('Completions model will be used for moderation via prompt.', 'Completions model will be used for moderation via prompt.');
+var i18nTemperature = t('Temperature', 'Temperature');
+var i18nTestingProviderConnection = t('Testing provider connection...', 'Testing provider connection...');
+var i18nConnection = t('Connection:', 'Connection:');
+var i18nOKModelsAvailable = t('OK', 'OK');
+var i18nModelSuffix = t('model(s) available', 'model(s) available');
+var i18nHealth = t('Health:', 'Health:');
+var i18nAllProbesPassed = t('All probes passed', 'All probes passed');
+var i18nProbesFailed = t('Probes failed', 'Probes failed');
+var i18nModerationLabel = t('Moderation:', 'Moderation:');
+var i18nCompletionsLabel = t('Completions:', 'Completions:');
+var i18nConnectionFailed = t('Connection failed:', 'Connection failed:');
+var i18nGoBackToStep1 = t('Go back to step 1', 'Go back to step 1');
+var i18nOKStatus = t('OK', 'OK');
+var i18nFailedStatus = t('Failed', 'Failed');
 
 (function() {
     function getVal(id) { var el = document.getElementById(id); return el ? el.value || '' : ''; }

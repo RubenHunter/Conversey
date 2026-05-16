@@ -1,18 +1,16 @@
 @using Conversey.UI_MVC.Models
-@using Conversey.UI_MVC.Resources
 @using Conversey.UI_MVC.Models.AiAdmin
 @using Conversey.BL.Domain.Administration
 @model AiKeywordsViewModel
 @inject AdminContext AdminContext
-@inject IAdminI18nService I18n
 @{
-    ViewData["Title"] = I18n["Moderation Keywords"];
+    ViewData["Title"] = "Moderation Keywords";
     ViewData["WorkspaceName"] = "Conversey Platform";
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
     {
-        (I18n["Dashboard"], "/admin", false),
-        (I18n["AI Settings"], "/admin/ai", false),
-        (I18n["Moderation Keywords"], null, true)
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Moderation Keywords", null, true)
     };
 }
 
@@ -22,27 +20,27 @@
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["Moderation Keywords"]</h1>
-                <p class="mt-1 text-sm text-text/60">@I18n["Words filtered before any AI API call \u2014 saves costs by blocking known unsafe terms locally. Platform-wide keywords apply to all workspaces."]</p>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Moderation Keywords">Moderation Keywords</h1>
+                <p class="mt-1 text-sm text-text/60"><span data-i18n="Words filtered before any AI API call">Words filtered before any AI API call</span> - <span data-i18n="saves costs by blocking known unsafe terms locally. Platform-wide keywords apply to all workspaces.">saves costs by blocking known unsafe terms locally. Platform-wide keywords apply to all workspaces.</span></p>
             </div>
             <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                @I18n["Back to AI Settings"]
+                <span data-i18n="Back to AI Settings">Back to AI Settings</span>
             </a>
         </div>
 
         <div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
             <svg class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
-                <p class="text-sm font-medium text-primary">@I18n["How it works"]</p>
-                <p class="text-xs text-text/60 mt-1">@I18n["Keywords are checked case-insensitively against submitted content before any AI API call. A match immediately blocks the content without spending AI credits. Changes take effect immediately."]</p>
+                <p class="text-sm font-medium text-primary" data-i18n="How it works">How it works</p>
+                <p class="text-xs text-text/60 mt-1" data-i18n="Keywords are checked case-insensitively against submitted content before any AI API call. A match immediately blocks the content without spending AI credits. Changes take effect immediately.">Keywords are checked case-insensitively against submitted content before any AI API call. A match immediately blocks the content without spending AI credits. Changes take effect immediately.</p>
             </div>
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
             <div class="px-6 py-4 border-b border-secondary/10">
-                <h2 class="text-sm font-semibold text-text">@I18n["Add keyword"]</h2>
-                <p class="text-xs text-text/50 mt-0.5">@I18n["Lowercased and trimmed automatically. Workspace admins can add their own per-workspace keywords."]</p>
+                <h2 class="text-sm font-semibold text-text" data-i18n="Add keyword">Add keyword</h2>
+                <p class="text-xs text-text/50 mt-0.5" data-i18n="Lowercased and trimmed automatically. Workspace admins can add their own per-workspace keywords.">Lowercased and trimmed automatically. Workspace admins can add their own per-workspace keywords.</p>
             </div>
             <div class="px-6 py-4">
                 <form action="@Url.Action("CreateKeyword", "AiAdmin")" method="post" class="flex items-end gap-3">
@@ -50,20 +48,20 @@
                     <div class="flex-1">
                         <input name="Keyword" type="text" maxlength="200" required
                                class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
-                               placeholder="@I18n["e.g. offensive term or phrase"]" />
+                               placeholder="e.g. offensive term or phrase" data-i18n-placeholder="e.g. offensive term or phrase" />
                     </div>
-                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium">@I18n["Add"]</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Add">Add</button>
                 </form>
             </div>
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
             <div class="px-6 py-4 border-b border-secondary/10">
-                <h2 class="text-sm font-semibold text-text">@I18n["All Keywords"] (@Model.Keywords.Count)</h2>
+                <h2 class="text-sm font-semibold text-text"><span data-i18n="All Keywords">All Keywords</span> (@Model.Keywords.Count)</h2>
             </div>
             @if (Model.Keywords.Count == 0)
             {
-                <div class="px-6 py-8 text-center text-sm text-text/50">@I18n["No moderation keywords configured."]</div>
+                <div class="px-6 py-8 text-center text-sm text-text/50" data-i18n="No moderation keywords configured.">No moderation keywords configured.</div>
             }
             else
             {
@@ -71,10 +69,10 @@
                     <table class="min-w-full divide-y divide-secondary/10 text-sm">
                         <thead class="bg-background/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Keyword"]</th>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Workspace"]</th>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Added"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Actions"]</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Keyword">Keyword</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Workspace">Workspace</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Added">Added</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-secondary/10">
@@ -82,12 +80,21 @@
                             {
                                 <tr class="hover:bg-background/30">
                                     <td class="whitespace-nowrap px-6 py-3 font-mono text-xs text-text">@kw.Keyword</td>
-                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@(kw.WorkspaceId ?? I18n["Platform"])</td>
+                                    <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">
+                                        @if (kw.WorkspaceId != null)
+                                        {
+                                            @kw.WorkspaceId
+                                        }
+                                        else
+                                        {
+                                            <span data-i18n="Platform">Platform</span>
+                                        }
+                                    </td>
                                     <td class="whitespace-nowrap px-6 py-3 text-xs text-text/60">@kw.CreatedAt</td>
                                     <td class="whitespace-nowrap px-6 py-3 text-right">
-                                        <form action="@Url.Action("DeleteKeyword", "AiAdmin", new { id = kw.Id })" method="post" class="inline" onsubmit="return confirm('@string.Format(I18n["Delete keyword \"{0}\"?"], kw.Keyword.Replace("'", "\\'"))');">
+                                        <form action="@Url.Action("DeleteKeyword", "AiAdmin", new { id = kw.Id })" method="post" class="inline" onsubmit="return confirmDeleteKeyword('@kw.Keyword.Replace("'", "\\'")');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">@I18n["Delete"]</button>
+                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium" data-i18n="Delete">Delete</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -99,3 +106,14 @@
         </div>
     </main>
 </div>
+
+<script>
+var adminStrings = (window.__AdminI18n && window.__AdminI18n.strings) || {};
+function t(key, fallback) {
+    return Object.prototype.hasOwnProperty.call(adminStrings, key) ? adminStrings[key] : (fallback || key);
+}
+
+function confirmDeleteKeyword(keyword) {
+    return confirm(t('Delete keyword "{0}"?', 'Delete keyword "{0}"?').replace('{0}', keyword));
+}
+</script>

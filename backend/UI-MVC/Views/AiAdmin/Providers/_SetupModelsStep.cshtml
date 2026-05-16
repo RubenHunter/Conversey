@@ -1,38 +1,35 @@
-@using Conversey.UI_MVC.Resources
-@inject IAdminI18nService I18n
-
 <div class="max-w-2xl mx-auto">
     <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-text mb-2">@I18n["Select models"]</h2>
-        <div id="modelsStatus" class="text-xs text-text/50 mb-4">@I18n["Loading models from provider..."]</div>
+        <h2 class="text-lg font-semibold text-text mb-2" data-i18n="Select models">Select models</h2>
+        <div id="modelsStatus" class="text-xs text-text/50 mb-4" data-i18n="Loading models from provider...">Loading models from provider...</div>
 
         <div class="space-y-5">
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Completions Model"]</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Completions Model"]" data-info-content="@I18n["The model used for text generation tasks."]">
+                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Completions Model">Completions Model</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Completions Model" data-info-content-key="The model used for text generation tasks.">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <select id="setupCompletionsModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">@I18n["Loading models..."]</option>
+                    <option value="" data-i18n="Loading models...">Loading models...</option>
                 </select>
             </div>
 
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Moderation Model"]</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Moderation Model"]" data-info-content="@I18n["The model used for content moderation."]">
+                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Moderation Model">Moderation Model</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Moderation Model" data-info-content-key="The model used for content moderation.">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <select id="setupModerationModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">@I18n["Loading models..."]</option>
+                    <option value="" data-i18n="Loading models...">Loading models...</option>
                 </select>
             </div>
 
             <div>
                 <div class="flex items-center gap-1.5 mb-1">
-                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Temperature"]</label>
-                    <span class="info-trigger cursor-pointer" data-info-title="@I18n["Temperature"]" data-info-content="@I18n["Controls randomness: 0 = deterministic, 2 = creative."]">
+                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Temperature">Temperature</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Temperature" data-info-content-key="Controls randomness: 0 = deterministic, 2 = creative.">
                         <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
                 </div>
                 <input id="setupTemperature" type="number" min="0" max="2" step="0.1" value="0.2" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -52,17 +49,22 @@
 </div>
 
 <script>
-var i18nEnterProviderDetailsFirst = '@I18n["Enter provider details in step 1 first."]';
-var i18nNoBaseURL = '@I18n["No base URL"]';
-var i18nTestingConnectionTo = '@I18n["Testing connection to"]';
-var i18nConnectionFailed2 = '@I18n["Connection failed:"]';
-var i18nGoBackToStep1ToFixCredentials = '@I18n["Go back to step 1 to fix your credentials."]';
-var i18nGoBackToStep1 = '@I18n["Go back to step 1."]';
-var i18nCouldNotLoadFromAPI = '@I18n["Could not load from API"]';
-var i18nNoneSkipModeration = '@I18n["None (skip moderation)"]';
-var i18nSelectAModel = '@I18n["Select a model..."]';
-var i18nModelsFoundSuffix = '@I18n["model(s). Select from the dropdowns below."]';
-var i18nFound = '@I18n["Found"]';
+var adminStrings = (window.__AdminI18n && window.__AdminI18n.strings) || {};
+function t(key, fallback) {
+    return Object.prototype.hasOwnProperty.call(adminStrings, key) ? adminStrings[key] : (fallback || key);
+}
+
+var i18nEnterProviderDetailsFirst = t('Enter provider details in step 1 first.', 'Enter provider details in step 1 first.');
+var i18nNoBaseURL = t('No base URL', 'No base URL');
+var i18nTestingConnectionTo = t('Testing connection to', 'Testing connection to');
+var i18nConnectionFailed2 = t('Connection failed:', 'Connection failed:');
+var i18nGoBackToStep1ToFixCredentials = t('Go back to step 1 to fix your credentials.', 'Go back to step 1 to fix your credentials.');
+var i18nGoBackToStep1 = t('Go back to step 1.', 'Go back to step 1.');
+var i18nCouldNotLoadFromAPI = t('Could not load from API', 'Could not load from API');
+var i18nNoneSkipModeration = t('None (skip moderation)', 'None (skip moderation)');
+var i18nSelectAModel = t('Select a model...', 'Select a model...');
+var i18nModelsFoundSuffix = t('model(s). Select from the dropdowns below.', 'model(s). Select from the dropdowns below.');
+var i18nFound = t('Found', 'Found');
 
 (function() {
     var statusEl = document.getElementById('modelsStatus');
@@ -145,6 +147,11 @@ var i18nFound = '@I18n["Found"]';
     var activeTrigger = null;
 
     document.querySelectorAll('.info-trigger').forEach(function(el) {
+        var titleKey = el.getAttribute('data-info-title-key') || '';
+        var contentKey = el.getAttribute('data-info-content-key') || '';
+        if (titleKey) el.setAttribute('data-info-title', t(titleKey, titleKey));
+        if (contentKey) el.setAttribute('data-info-content', t(contentKey, contentKey));
+
         el.addEventListener('click', function(e) {
             e.stopPropagation();
             if (activeTrigger === el) {
