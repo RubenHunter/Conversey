@@ -147,6 +147,23 @@ var i18nProvider = t('Provider', 'Provider');
 var i18nModeration = t('Moderation', 'Moderation');
 var i18nCompletions = t('Completions', 'Completions');
 
+(function() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('setupCleared') !== '1') {
+        return;
+    }
+
+    try {
+        localStorage.removeItem('conversey-ai-provider-setup-state-v1');
+    } catch (e) {
+        // Ignore storage access failures; the redirect has already completed successfully.
+    }
+
+    params.delete('setupCleared');
+    var nextUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, document.title, nextUrl);
+})();
+
 document.getElementById('healthCheckBtn').addEventListener('click', async function() {
     var btn = this;
     btn.disabled = true;

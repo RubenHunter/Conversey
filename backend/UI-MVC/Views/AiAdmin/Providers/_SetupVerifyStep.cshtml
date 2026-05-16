@@ -158,6 +158,7 @@ var i18nFailedStatus = t('Failed', 'Failed');
 
     document.addEventListener('stepper:step-enter', function(e) {
         if (e.detail && e.detail.step === 3) {
+            updateSummary();
             runHealthCheck();
         }
     });

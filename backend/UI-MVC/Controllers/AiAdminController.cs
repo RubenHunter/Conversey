@@ -197,6 +197,11 @@ public class AiAdminController : Controller
 
         await _aiAdminManager.SaveProviderConfigAsync(config);
 
+        if (!id.HasValue || id.Value <= 0)
+        {
+            return RedirectToAction("Providers", new { setupCleared = 1 });
+        }
+
         return RedirectToAction("Providers");
     }
 

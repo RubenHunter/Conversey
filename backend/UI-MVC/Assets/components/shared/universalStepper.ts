@@ -1,3 +1,16 @@
+type ProviderSetupState = {
+    getCurrentStep?: () => number;
+    setCurrentStep?: (step: number) => void;
+};
+
+type ProviderSetupWindow = Window & {
+    __ProviderSetupState?: ProviderSetupState;
+};
+
+function getProviderSetupState(): ProviderSetupState | undefined {
+    return (window as ProviderSetupWindow).__ProviderSetupState;
+}
+
 export class Stepper {
      private currentStep: number = 1;
      private totalSteps: number;
@@ -22,7 +35,26 @@ export class Stepper {
          this.init();
      }
 
+     private getInitialStep(): number {
+         const persistedStep = getProviderSetupState()?.getCurrentStep?.() ?? 1;
+         if (!Number.isFinite(persistedStep)) {
+             return 1;
+         }
+
+         return Math.min(Math.max(Math.floor(persistedStep), 1), this.totalSteps);
+     }
+
+     private persistCurrentStep() {
+         getProviderSetupState()?.setCurrentStep?.(this.currentStep);
+     }
+
+     private dispatchStepEnter(step: number) {
+         this.container.dispatchEvent(new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true }));
+     }
+
      private init() {
+         this.currentStep = this.getInitialStep();
+
          this.nextBtn.addEventListener('click', () => {
              if (this.currentStep === this.totalSteps) {
                  const saveBtn = document.getElementById('saveProviderBtn') as HTMLButtonElement | null;
@@ -34,10 +66,16 @@ export class Stepper {
              this.goToStep(this.currentStep + 1);
          });
          this.prevBtn.addEventListener('click', () => this.goToStep(this.currentStep - 1));
+         document.addEventListener('provider-setup:reset', () => {
+             this.currentStep = 1;
+             this.updateUI();
+             this.dispatchStepEnter(this.currentStep);
+         });
          
          // Wait for DOM to render, then calculate and position track
          setTimeout(() => this.positionTrack(), 0);
          this.updateUI();
+         this.dispatchStepEnter(this.currentStep);
      }
 
      private positionTrack() {
@@ -67,7 +105,8 @@ export class Stepper {
         if (step < 1 || step > this.totalSteps) return;
         this.currentStep = step;
         this.updateUI();
-        this.container.dispatchEvent(new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true }));
+         this.persistCurrentStep();
+         this.dispatchStepEnter(step);
     }
 
     private updateUI() {
