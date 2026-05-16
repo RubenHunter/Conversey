@@ -37,14 +37,14 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         if (string.IsNullOrWhiteSpace(copy))
         {
-            var projectStep1 = new CreateProjectStepOneViewModel();
+            var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
             return View(CreateFormVm(projectStep1, null, false));
         }
 
         try
         {
             var sourceProject = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = copy });
-            var projectStep1Copy = new CreateProjectStepOneViewModel
+            var projectStep1Copy = new CreateProjectIntroAndPresentationViewModel
             {
                 Name = sourceProject.Name,
                 Description = sourceProject.Description,
@@ -62,7 +62,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         catch (NotFoundException notFoundException)
         {
             ModelState.AddModelError(string.Empty, notFoundException.Message);
-            var projectStep1 = new CreateProjectStepOneViewModel();
+            var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
             return View(CreateFormVm(projectStep1, null, false));
         }
     }
@@ -159,7 +159,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         {
             var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
 
-            return View(CreateFormVm(new CreateProjectStepOneViewModel
+            return View(CreateFormVm(new CreateProjectIntroAndPresentationViewModel
             {
                 Name = project.Name,
                 Description = project.Description,
@@ -293,7 +293,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
-    private ProjectViewModel CreateFormVm(CreateProjectStepOneViewModel projectStep1, Project? project = null, bool isCopyFlow = false)
+    private ProjectViewModel CreateFormVm(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
     {
         var isCreatePage = project == null;
         return new ProjectViewModel
@@ -326,13 +326,13 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 DraftSaveUrl = Url.Action(nameof(SaveDraft)) ?? "/admin/projects/draft",
                 ProjectListUrl = Url.Action(nameof(Projects)) ?? "/admin/projects",
                 IsCreatePage = isCreatePage,
-                IsCopyFlow = isCopyFlow,
+                IsCopyFlow = isCopy,
                 Steps =
                 [
                     new StepItem
                     {
                         Label = "Intro & Presentation",
-                        PartialViewName = "_ProjectStep1Form"
+                        PartialViewName = "_ProjectStepIntroAndPresentationForm"
                     },
                     new StepItem
                     {
@@ -369,7 +369,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         };
     }
     
-    private async Task<string> ResolveProjectImageUrl(CreateProjectStepOneViewModel projectStep1)
+    private async Task<string> ResolveProjectImageUrl(CreateProjectIntroAndPresentationViewModel projectStep1)
     {
         if (projectStep1.ImageFile == null || projectStep1.ImageFile.Length == 0)
         {
@@ -407,7 +407,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 
-    private bool ProjectExistsAsNonDraft(CreateProjectStepOneViewModel projectStep1)
+    private bool ProjectExistsAsNonDraft(CreateProjectIntroAndPresentationViewModel projectStep1)
     {
         if (string.IsNullOrWhiteSpace(projectStep1.Name)) return false;
 

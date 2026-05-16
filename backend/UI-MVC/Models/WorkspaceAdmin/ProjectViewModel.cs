@@ -7,5 +7,5 @@ public class ProjectViewModel
 {
     public AdminFormViewModel<Project> AdminFormViewModel { get; set; } = null!;
     public StepperViewModel StepperViewModel { get; set; } = null!;
-    public CreateProjectStepOneViewModel CreateStep1ViewModel { get; set; } = new();
+    public CreateProjectIntroAndPresentationViewModel CreateStep1ViewModel { get; set; } = new();
 }

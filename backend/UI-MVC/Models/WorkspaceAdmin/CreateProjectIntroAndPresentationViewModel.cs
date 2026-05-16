@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Conversey.UI_MVC.Models.WorkspaceAdmin;
 
-public class CreateProjectStepOneViewModel
+public class CreateProjectIntroAndPresentationViewModel
 {
     public string Slug { get; set; } = string.Empty;
 
