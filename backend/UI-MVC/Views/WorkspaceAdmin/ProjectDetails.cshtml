@@ -9,7 +9,6 @@
 <div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-4xl">
 
-        <!-- Back -->
         <div class="mb-6">
             <a href="@Url.Action("Projects", "WorkspaceAdmin")"
                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
@@ -17,10 +16,8 @@
             </a>
         </div>
 
-        <!-- Card -->
         <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
 
-            <!-- Header -->
             <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
                 <div>
                     <h1 class="text-2xl font-semibold text-gray-900">
@@ -32,7 +29,6 @@
                     </p>
                 </div>
 
-                <!-- Status badge -->
                 @{
                     var statusColor = Model.Status switch
                     {
@@ -48,10 +44,8 @@
                 </span>
             </div>
 
-            <!-- Body -->
             <div class="px-6 py-6 space-y-6">
 
-                <!-- Description -->
                 <div>
                     <h2 class="text-sm font-semibold text-gray-700" data-i18n="Description">Description</h2>
                     <p class="mt-2 whitespace-normal text-sm text-gray-600">
@@ -100,7 +94,6 @@
                 </div>
             </div>
 
-            <!-- Footer actions -->
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
 
                 <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"

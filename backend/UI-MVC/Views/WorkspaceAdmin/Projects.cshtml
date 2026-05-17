@@ -18,10 +18,8 @@
     
     @await Html.PartialAsync("_AdminHeader")
 
-    <!-- Container widened to w-full with a max-width of 1600px for ultra-wide screens -->
     <main class="p-8 w-full max-w-400 mx-auto">
         
-        <!-- Top Stats Row: Occupies horizontal space and adds immediate utility -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm flex items-center justify-between">
                 <div>
@@ -34,7 +32,6 @@
             </div>
         </div>
 
-        <!-- Toolbar -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div class="flex items-center space-x-4">
                 <div class="relative w-80">
@@ -55,15 +52,12 @@
             </div>
         </div>
 
-        <!-- Project Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             @foreach (var project in Model)
             {
                 <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative">
-                @* The main link covers the whole card *@
                 <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id"></a>
                 
-                @* TOP SECTION: Now includes the image variable and the custom class *@
                 <div class="project-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden"
                      style="--card-image: url('@project.ImageUrl');">
                     
@@ -72,19 +66,15 @@
                         <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block" data-i18n="Project Workspace">Project Workspace</span>
                     </div>
                     
-                    @* Hover tint overlay *@
                     <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
                 </div>
 
-                @* FOOTER SECTION: Restored to original layout *@
                 <div class="p-4 flex items-center justify-between border-t border-secondary/10 relative z-20">
-                    @* Avatars *@
                     <div class="flex -space-x-2">
                         <div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JD</div>
                         <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
                     </div>
 
-                    @* Action Buttons *@
                     <div class="flex items-center space-x-1">
                         <a title="Edit" data-i18n="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -100,7 +90,6 @@
             </div>
             }
 
-            <!-- Persistent "Add New" Card: Ensures the layout never looks empty -->
             <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" data-i18n="Create project">
                 <div class="w-12 h-12 rounded-full bg-white shadow-sm border border-secondary/10 flex items-center justify-center text-secondary group-hover:text-primary group-hover:scale-110 transition-all">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +101,6 @@
         </div>
     </main>
 
-    <!-- Floating Action Button remains for quick access -->
     <a class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" href="/admin/projects/new" data-i18n="New Project">
         <svg class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>

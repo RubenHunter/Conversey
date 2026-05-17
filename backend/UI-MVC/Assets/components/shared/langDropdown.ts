@@ -1,4 +1,3 @@
-// Moves language dropdown behavior out of the partial into a module
 document.addEventListener('DOMContentLoaded', () => {
   const dropdowns = Array.from(document.querySelectorAll('.lang-dropdown')) as HTMLElement[];
 

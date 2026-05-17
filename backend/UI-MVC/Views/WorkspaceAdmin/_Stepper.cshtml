@@ -4,7 +4,6 @@
      data-total-steps="@Model.StepperViewModel.Steps.Count" 
      data-entity="@Model.StepperViewModel.EntityName">
     
-    @* Header Section *@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
         <h1 class="text-4xl font-bold tracking-tight">@Model.StepperViewModel.Title</h1>
         
@@ -23,15 +22,11 @@
         </div>
     </div>
 
-    @* Visual Stepper Line *@
      <div class="relative flex justify-between items-start mb-16 px-8">
      
-         @* 1. The Track (Lower Layer) - JS positions this between first and last circle *@
          <div class="absolute top-3.5 h-0.5 z-0">
-             @* Background Dotted Line *@
              <div class="absolute inset-0 border-t-2 border-dotted border-text/20"></div>
          
-             @* Progress Fill Line *@
              <div id="progress-line" 
                   class="absolute inset-y-0 left-0 bg-primary transition-all duration-500 ease-in-out" 
                   style="width: 0%; height: 2px;"></div>
@@ -41,7 +36,6 @@
          {
              var stepNum = i + 1;
              <div class="step-indicator flex flex-col items-center flex-1" data-step="@stepNum">
-                 @* Circle stays the same, but ensure bg-background is opaque to hide the line behind it *@
                  <div class="step-circle z-10 w-7 h-7 rounded-full border-2 border-text bg-background flex items-center justify-center transition-all duration-300">
                      <div class="step-dot w-2 h-2 rounded-full bg-text scale-0 transition-transform duration-300"></div>
                  </div>
@@ -52,7 +46,6 @@
          }
      </div>
 
-    @* Content Area *@
     <div class="step-content-container relative overflow-hidden min-h-75">
         @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
         {

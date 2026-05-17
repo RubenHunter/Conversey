@@ -14,7 +14,6 @@ function cleanupSetupStateFromQuery(): void {
   try {
     localStorage.removeItem('conversey-ai-provider-setup-state-v1');
   } catch {
-    // Ignore storage access issues; URL cleanup still proceeds.
   }
 
   params.delete('setupCleared');

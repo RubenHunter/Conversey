@@ -52,7 +52,6 @@
                     var container = new TagBuilder("div");
                     container.AddCssClass("flex gap-3");
 
-                    // EDIT BUTTON
                     var edit = new TagBuilder("a")
                     {
                         Attributes =
@@ -66,7 +65,6 @@
                     var divider = new TagBuilder("p");
                     divider.InnerHtml.Append("|");
 
-                    // DELETE BUTTON
                     var delete = new TagBuilder("button")
                     {
                         Attributes =
@@ -96,7 +94,6 @@
 <div class="min-h-screen bg-gray-50 px-4 py-10">
     <div class="mx-auto max-w-4xl">
 
-        <!-- Back -->
         <div class="mb-6">
             <a href="@Url.Action("Workspaces", "ConverseyAdmin")"
                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
@@ -104,10 +101,8 @@
             </a>
         </div>
 
-        <!-- Card -->
         <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
 
-            <!-- Header -->
             <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
                 <div>
                     <h1 class="text-2xl font-semibold text-gray-900">
@@ -120,15 +115,12 @@
                 </div>
             </div>
 
-            <!-- Body -->
             <div class="px-6 py-6 space-y-6">
 
-                <!-- Workspace Admins -->
                 @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
 
             </div>
 
-            <!-- Footer actions -->
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
 
                 <a href="@Url.Action("EditWorkspace", "ConverseyAdmin", new { id = Model.Workspace.Id.Text })"

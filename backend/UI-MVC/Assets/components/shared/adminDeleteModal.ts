@@ -69,7 +69,6 @@ class DeleteModal {
                 return;
             }
 
-            // remove row if exists (table case)
             document.querySelector(`[data-row-id="${id}"]`)
                 ?.closest("tr")
                 ?.remove();

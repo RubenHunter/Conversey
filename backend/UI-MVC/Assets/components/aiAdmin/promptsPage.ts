@@ -1,4 +1,3 @@
-// Shared prompts page behavior for AiAdmin + WorkspaceAi pages.
 const input = document.getElementById('promptSearch') as HTMLInputElement | null;
 const projectSelect = document.getElementById('projectFilter') as HTMLSelectElement | null;
 const items = Array.from(document.querySelectorAll('.prompt-item')) as HTMLElement[];
@@ -17,7 +16,6 @@ if (input) {
 
 if (projectSelect) {
   projectSelect.addEventListener('change', () => {
-    // Workspace page provides this; fallback keeps behavior predictable.
     const base = (window as any).__PromptsBaseUrl || window.location.pathname;
     const url =
       base +

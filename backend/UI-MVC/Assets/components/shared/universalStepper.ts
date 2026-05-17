@@ -72,7 +72,6 @@ export class Stepper {
              this.dispatchStepEnter(this.currentStep);
          });
          
-         // Wait for DOM to render, then calculate and position track
          setTimeout(() => this.positionTrack(), 0);
          this.updateUI();
          this.dispatchStepEnter(this.currentStep);
@@ -89,12 +88,10 @@ export class Stepper {
          const lastRect = lastStep.getBoundingClientRect();
          const containerRect = this.trackContainer.getBoundingClientRect();
 
-         // Calculate offsets relative to container
          const leftOffset = firstRect.left - containerRect.left + firstRect.width / 2;
          const rightOffset = containerRect.right - lastRect.right + lastRect.width / 2;
          const trackWidth = containerRect.width - leftOffset - rightOffset;
 
-         // Update track positioning
          const track = this.progressLine.parentElement!;
          track.style.left = `${leftOffset}px`;
          track.style.right = `${rightOffset}px`;
@@ -110,38 +107,31 @@ export class Stepper {
     }
 
     private updateUI() {
-         // 1. Update Progress Line
          const progressPercent = ((this.currentStep - 1) / (this.totalSteps - 1)) * 100;
          this.progressLine.style.width = `${progressPercent}%`;
 
-        // 2. Update Circles & Content
         this.container.querySelectorAll('.step-indicator').forEach((el, idx) => {
             const stepIdx = idx + 1;
             const circle = el.querySelector('.step-circle')!;
             const dot = el.querySelector('.step-dot')!;
             const pane = document.getElementById(`step-content-${stepIdx}`)!;
 
-            // Reset classes
             circle.className = "step-circle w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300";
             dot.classList.add('scale-0');
             pane.classList.add('hidden');
 
             if (stepIdx < this.currentStep) {
-                // Completed
                 circle.classList.add('bg-primary', 'border-primary');
             } else if (stepIdx === this.currentStep) {
-                // Current
                 circle.classList.add('bg-background', 'border-primary', 'ring-4', 'ring-primary/10');
                 dot.classList.remove('scale-0');
                 dot.classList.add('bg-primary');
                 pane.classList.remove('hidden');
             } else {
-                // Future
                 circle.classList.add('bg-background', 'border-text/30');
             }
         });
 
-        // 3. Button Logic
         this.prevBtn.classList.toggle('hidden', this.currentStep === 1);
 
         if (this.currentStep === this.totalSteps) {
@@ -154,7 +144,6 @@ export class Stepper {
     }
 }
 
-// Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('dynamic-stepper')) {
         new Stepper('dynamic-stepper');

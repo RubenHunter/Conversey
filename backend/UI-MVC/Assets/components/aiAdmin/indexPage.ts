@@ -29,7 +29,6 @@ async function initHealthBanner(): Promise<void> {
       t('Completions', 'Completions') + ': ' + (health.completions?.ok ? 'OK' : 'FAIL') +
       '</p></div>';
   } catch {
-    // Non-critical dashboard check; ignore transient network errors.
   }
 }
 
