@@ -84,25 +84,5 @@
     </main>
 </div>
 
-<script>
-(function() {
-    var input = document.getElementById('promptSearch');
-    var projectSelect = document.getElementById('projectFilter');
-    var items = document.querySelectorAll('.prompt-item');
-
-    input.addEventListener('input', function() {
-        var query = input.value.toLowerCase().trim();
-        items.forEach(function(item) {
-            var name = item.getAttribute('data-name');
-            var desc = item.getAttribute('data-desc');
-            var match = !query || name.indexOf(query) !== -1 || desc.indexOf(query) !== -1;
-            item.style.display = match ? '' : 'none';
-        });
-    });
-
-    projectSelect.addEventListener('change', function() {
-        var url = '@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId })' + '?search=' + encodeURIComponent(input.value) + '&projectId=' + encodeURIComponent(projectSelect.value);
-        window.location.href = url;
-    });
-})();
-</script>
+<script>window.__PromptsBaseUrl = '@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId })';</script>
+<script type="module" vite-src="~/components/aiAdmin/promptsPage.ts"></script>

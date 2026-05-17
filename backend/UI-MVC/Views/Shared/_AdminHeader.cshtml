@@ -114,21 +114,4 @@
     </div>
 </header>
 
-<script>
-(function() {
-    var dropdowns = document.querySelectorAll('.lang-dropdown');
-    dropdowns.forEach(function(dd) {
-        var toggle = dd.querySelector('.lang-toggle');
-        var menu = dd.querySelector('.lang-menu');
-        toggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            menu.classList.toggle('hidden');
-        });
-    });
-    document.addEventListener('click', function() {
-        dropdowns.forEach(function(dd) {
-            dd.querySelector('.lang-menu').classList.add('hidden');
-        });
-    });
-})();
-</script>
+@* Language dropdown behavior moved to a module: Assets/components/shared/langDropdown.ts *@
