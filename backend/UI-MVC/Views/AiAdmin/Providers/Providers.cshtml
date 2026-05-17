@@ -86,7 +86,7 @@
                             <a href="@Url.Action("EditProvider", new { id = config.Id })" class="px-3 py-1.5 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-xs font-medium text-text/70" data-i18n="Edit">Edit</a>
                             @if (!config.IsDefault)
                             {
-                                <form asp-action="DeleteProvider" asp-route-id="@config.Id" method="post" class="inline" onsubmit="return confirmDeleteProvider('@config.ProviderName');">
+                                <form asp-action="DeleteProvider" asp-route-id="@config.Id" method="post" class="inline" data-confirm-delete-provider data-provider-name="@config.ProviderName">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="px-3 py-1.5 border border-accent/20 rounded-lg hover:bg-accent/5 transition-colors text-xs font-medium text-accent" data-i18n="Delete">Delete</button>
                                 </form>
@@ -129,60 +129,4 @@
     </main>
 </div>
 
-<script>
-var adminStrings = (window.__AdminI18n && window.__AdminI18n.strings) || {};
-function t(key, fallback) {
-    return Object.prototype.hasOwnProperty.call(adminStrings, key) ? adminStrings[key] : (fallback || key);
-}
-
-function confirmDeleteProvider(providerName) {
-    return confirm(t('Are you sure you want to delete this provider?', 'Are you sure you want to delete this provider?').replace('{0}', providerName));
-}
-
-var i18nTesting = t('Testing...', 'Testing...');
-var i18nAllProbesOk = t('All probes successful', 'All probes successful');
-var i18nHealthCheckFailed = t('Health check failed', 'Health check failed');
-var i18nTestHealth = t('Test Health', 'Test Health');
-var i18nProvider = t('Provider', 'Provider');
-var i18nModeration = t('Moderation', 'Moderation');
-var i18nCompletions = t('Completions', 'Completions');
-
-(function() {
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('setupCleared') !== '1') {
-        return;
-    }
-
-    try {
-        localStorage.removeItem('conversey-ai-provider-setup-state-v1');
-    } catch (e) {
-        // Ignore storage access failures; the redirect has already completed successfully.
-    }
-
-    params.delete('setupCleared');
-    var nextUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-    window.history.replaceState({}, document.title, nextUrl);
-})();
-
-document.getElementById('healthCheckBtn').addEventListener('click', async function() {
-    var btn = this;
-    btn.disabled = true;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ' + i18nTesting;
-    var resultDiv = document.getElementById('healthCheckResult');
-    try {
-        var response = await fetch('/api/ai/health', { method: 'GET', headers: { 'Accept': 'application/json' } });
-        var data = await response.json();
-        var isOk = data.status === 'ok';
-        resultDiv.className = 'mb-6 rounded-xl border p-4 ' + (isOk ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50');
-        resultDiv.innerHTML = '<p class="text-sm font-medium ' + (isOk ? 'text-green-700' : 'text-red-700') + '">' + (isOk ? i18nAllProbesOk : i18nHealthCheckFailed) + '</p>' +
-            '<p class="text-xs text-text/60 mt-1">' + i18nProvider + ': ' + (data.activeProvider || 'N/A') + ' | ' + i18nModeration + ': ' + (data.moderation?.ok ? 'OK' : 'Failed') + ' | ' + i18nCompletions + ': ' + (data.completions?.ok ? 'OK' : 'Failed') + '</p>';
-        resultDiv.classList.remove('hidden');
-    } catch (e) {
-        resultDiv.className = 'mb-6 rounded-xl border border-red-200 bg-red-50 p-4';
-        resultDiv.innerHTML = '<p class="text-sm font-medium text-red-700">' + i18nHealthCheckFailed + ': ' + e.message + '</p>';
-        resultDiv.classList.remove('hidden');
-    }
-    btn.disabled = false;
-    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> ' + i18nTestHealth;
-});
-</script>
+<script type="module" vite-src="~/components/aiAdmin/providersPage.ts"></script>

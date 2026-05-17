@@ -15,6 +15,7 @@
 
     <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
     <script type="module" vite-src="~/components/shared/langDropdown.ts"></script>
+    <script type="module" vite-src="~/components/shared/adminI18nBindings.ts"></script>
     
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
@@ -41,39 +42,5 @@
         @RenderBody()
     </div>
 
-    <script>
-        // Populate all data-i18n elements from window.__AdminI18n.strings
-        if (window.__AdminI18n?.strings) {
-            document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('[data-i18n]').forEach(function(el) {
-                    var key = el.getAttribute('data-i18n');
-                    if (key && window.__AdminI18n.strings[key]) {
-                        el.textContent = window.__AdminI18n.strings[key];
-                    }
-                });
-
-                document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-                    var key = el.getAttribute('data-i18n-placeholder');
-                    if (key && window.__AdminI18n.strings[key]) {
-                        el.setAttribute('placeholder', window.__AdminI18n.strings[key]);
-                    }
-                });
-
-                document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
-                    var key = el.getAttribute('data-i18n-title');
-                    if (key && window.__AdminI18n.strings[key]) {
-                        el.setAttribute('title', window.__AdminI18n.strings[key]);
-                    }
-                });
-
-                document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
-                    var key = el.getAttribute('data-i18n-aria-label');
-                    if (key && window.__AdminI18n.strings[key]) {
-                        el.setAttribute('aria-label', window.__AdminI18n.strings[key]);
-                    }
-                });
-            });
-        }
-    </script>
 </body>
 </html>

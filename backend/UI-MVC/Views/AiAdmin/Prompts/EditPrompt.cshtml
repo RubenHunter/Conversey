@@ -105,11 +105,4 @@
     </main>
 </div>
 
-<script>
-document.querySelectorAll('.info-toggle').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var target = document.getElementById(this.getAttribute('data-target'));
-        target.classList.toggle('hidden');
-    });
-});
-</script>
+<script type="module" vite-src="~/components/shared/infoToggle.ts"></script>

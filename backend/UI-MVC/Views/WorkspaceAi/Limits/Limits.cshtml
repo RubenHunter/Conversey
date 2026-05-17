@@ -119,7 +119,7 @@
                                     }
                                 </td>
                                 <td class="px-6 py-3 text-right">
-                                    <button type="button" class="text-xs text-primary hover:text-primary/80 font-medium" onclick="toggleLimitForm('@pl.ProjectId')" data-i18n="@(pl.ActiveLimit != null ? "Edit" : "Set Limit")">
+                                    <button type="button" class="text-xs text-primary hover:text-primary/80 font-medium" data-project-limit-toggle data-project-id="@pl.ProjectId" data-i18n="@(pl.ActiveLimit != null ? "Edit" : "Set Limit")">
                                         @(pl.ActiveLimit != null ? "Edit" : "Set Limit")
                                     </button>
                                 </td>
@@ -142,7 +142,7 @@
                                             <input name="PeriodEnd" type="date" value="@(pl.ActiveLimit?.PeriodEnd.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.AddMonths(1).ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
                                         </div>
                                         <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Save">Save</button>
-                                        <button type="button" class="px-4 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70" onclick="toggleLimitForm('@pl.ProjectId')" data-i18n="Cancel">Cancel</button>
+                                        <button type="button" class="px-4 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70" data-project-limit-toggle data-project-id="@pl.ProjectId" data-i18n="Cancel">Cancel</button>
                                     </form>
                                 </td>
                             </tr>
@@ -154,9 +154,4 @@
     </main>
 </div>
 
-<script>
-function toggleLimitForm(projectId) {
-    var row = document.getElementById('limit-form-' + projectId);
-    row.classList.toggle('hidden');
-}
-</script>
+<script type="module" vite-src="~/components/workspaceAi/limitsPage.ts"></script>

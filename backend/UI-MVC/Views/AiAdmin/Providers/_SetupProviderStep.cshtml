@@ -37,30 +37,4 @@
     </div>
 </div>
 
-<script>
-var adminStrings = (window.__AdminI18n && window.__AdminI18n.strings) || {};
-function t(key, fallback) {
-    return Object.prototype.hasOwnProperty.call(adminStrings, key) ? adminStrings[key] : (fallback || key);
-}
-
-var i18nSelectProviderToSeeURL = t('Select a provider to see the default URL.', 'Select a provider to see the default URL.');
-var i18nDefaultURLFor = t('Default URL for', 'Default URL for');
-
-(function() {
-    var examples = {
-        'Mistral': 'https://api.mistral.ai/v1/',
-        'Azure': 'https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT/',
-        'Ollama': 'http://localhost:11434/v1/',
-        'Groq': 'https://api.groq.com/openai/v1/',
-        'Google': 'https://generativelanguage.googleapis.com/v1beta/openai/',
-        'Together': 'https://api.together.xyz/v1/',
-        'NVIDIA': 'https://integrate.api.nvidia.com/v1/',
-        'OpenAI': 'https://api.openai.com/v1/'
-    };
-    document.getElementById('setupProvider').addEventListener('input', function() {
-        var url = examples[this.value] || '';
-        document.getElementById('setupBaseUrl').value = url;
-        document.getElementById('baseUrlHint').textContent = url ? i18nDefaultURLFor + ' ' + this.value : i18nSelectProviderToSeeURL;
-    });
-})();
-</script>
+@* Logic moved to Assets/components/aiAdmin/providerSetupProviderStep.ts *@
