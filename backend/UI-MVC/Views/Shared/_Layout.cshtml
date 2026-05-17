@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using System.Text.Json
+@inject Conversey.UI_MVC.Resources.IAdminI18nService AdminI18n
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -9,7 +11,11 @@
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
+    <script type="module" vite-src="~/components/shared//universalStepper.ts"></script>
+
     <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
+    <script type="module" vite-src="~/components/shared/langDropdown.ts"></script>
+    <script type="module" vite-src="~/components/shared/adminI18nBindings.ts"></script>
     
     <environment include="Development">
         <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
@@ -19,8 +25,22 @@
     </environment>
 </head>
 <body>
-	<div id="app" class="min-h-screen flex flex-col items-center justify-center gap-8">
-		@RenderBody()
-	</div>
+    @{
+        var path = Context.Request.Path;
+        if (path.StartsWithSegments("/admin"))
+        {
+            var map = AdminI18n.CurrentLanguageMap;
+            var lang = AdminI18n.CurrentLanguage;
+            var json = JsonSerializer.Serialize(new { lang = lang, strings = map });
+            <text>
+                <script>window.__AdminI18n = @Html.Raw(json);</script>
+            </text>
+        }
+    }
+
+    <div id="app" class="min-h-screen flex flex-col">
+        @RenderBody()
+    </div>
+
 </body>
 </html>

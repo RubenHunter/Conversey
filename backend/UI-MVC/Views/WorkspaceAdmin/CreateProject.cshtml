@@ -1,7 +1,19 @@
-@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+@using Conversey.UI_MVC.Resources
+@inject IAdminI18nService I18n
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
-    ViewData["Title"] = "Create Project";
+    ViewData["Title"] = I18n["Create Project"];
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Projects"], "/admin/projects", false),
+        (I18n["Create"], null, true)
+    };
 }
 
-@await Html.PartialAsync("_ProjectForm", Model)
+<div class="min-h-screen bg-background">
+    @await Html.PartialAsync("_AdminHeader")
+    
+    @await Html.PartialAsync("_Stepper", Model)
+</div>
+    

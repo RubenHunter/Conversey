@@ -3,9 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);CS8632;CS8669</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <RootNamespace>Conversey.UI_MVC</RootNamespace>
     <AssemblyName>Conversey.UI_MVC</AssemblyName>
+    <UserSecretsId>a8b107df-900e-4843-90a6-167b060b4165</UserSecretsId>
+    <UserSecretsId>727cedbe-3ee8-4d5c-8051-5c86f9e4ca27</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

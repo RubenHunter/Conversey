@@ -5,6 +5,7 @@ using Conversey.BL.Domain.Common;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

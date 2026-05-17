@@ -1,0 +1,94 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@model Conversey.BL.Domain.Ai.RateLimitConfig
+@inject AdminContext AdminContext
+@{
+    ViewData["Title"] = $"Edit Rate Limit: {Model.PolicyName}";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Rate Limits", "/admin/ai/rate-limits", false),
+        ($"Edit {Model.PolicyName}", null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-2xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Edit Rate Limit">Edit Rate Limit</h1>
+                <p class="mt-1 text-sm text-text/60">
+                    <span class="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-xs font-medium text-primary">@Model.PolicyName</span>
+                    @(Model.PolicyName == "AiFixedPolicy" ? "— " : "— ")<span data-i18n="@(Model.PolicyName == "AiFixedPolicy" ? "User-facing AI endpoints (ideas, nudging, discovery)" : "Admin AI endpoints (health checks, cost queries, model listing)")">@(Model.PolicyName == "AiFixedPolicy" ? "User-facing AI endpoints (ideas, nudging, discovery)" : "Admin AI endpoints (health checks, cost queries, model listing)")</span>
+                </p>
+            </div>
+            <a href="@Url.Action("RateLimits")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span data-i18n="Back to Rate Limits">Back to Rate Limits</span>
+            </a>
+        </div>
+
+        <form asp-action="EditRateLimit" asp-route-id="@Model.Id" method="post" class="space-y-6">
+            @Html.AntiForgeryToken()
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+                <div class="px-6 py-4 border-b border-secondary/10">
+                    <h2 class="text-sm font-semibold text-text" data-i18n="Limits">Limits</h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label asp-for="PermitLimit" class="block text-xs font-semibold uppercase text-secondary tracking-wider" data-i18n="Permit Limit">Permit Limit</label>
+                        <input asp-for="PermitLimit" type="number" min="1" max="10000" class="mt-1 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p class="mt-1 text-xs text-text/50" data-i18n="Maximum requests allowed within the configured time window. Range: 1-10000.">Maximum requests allowed within the configured time window. Range: 1-10000.</p>
+                        <span asp-validation-for="PermitLimit" class="text-xs text-accent"></span>
+                    </div>
+                    <div>
+                        <label asp-for="WindowSeconds" class="block text-xs font-semibold uppercase text-secondary tracking-wider" data-i18n="Window (seconds)">Window (seconds)</label>
+                        <input asp-for="WindowSeconds" type="number" min="1" max="3600" class="mt-1 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p class="mt-1 text-xs text-text/50" data-i18n="Time window over which the permit limit is enforced. Range: 1-3600 (1 hour).">Time window over which the permit limit is enforced. Range: 1-3600 (1 hour).</p>
+                        <span asp-validation-for="WindowSeconds" class="text-xs text-accent"></span>
+                    </div>
+                    <div>
+                        <label asp-for="QueueLimit" class="block text-xs font-semibold uppercase text-secondary tracking-wider" data-i18n="Queue Limit">Queue Limit</label>
+                        <input asp-for="QueueLimit" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <p class="mt-1 text-xs text-text/50" data-i18n="Requests that can queue when limit is hit. 0 = reject immediately (recommended). Range: 0-100.">Requests that can queue when limit is hit. 0 = reject immediately (recommended). Range: 0-100.</p>
+                        <span asp-validation-for="QueueLimit" class="text-xs text-accent"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+                <div class="px-6 py-4 border-b border-secondary/10">
+                    <h2 class="text-sm font-semibold text-text" data-i18n="Partition">Partition</h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    <div>
+                        <label asp-for="PartitionType" class="block text-xs font-semibold uppercase text-secondary tracking-wider" data-i18n="Partition Type">Partition Type</label>
+                        <select asp-for="PartitionType" class="mt-1 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="global"><span data-i18n="global">global</span> &mdash; <span data-i18n="Single bucket shared by all users">Single bucket shared by all users</span></option>
+                            <option value="user"><span data-i18n="user">user</span> &mdash; <span data-i18n="One bucket per user (user ID, falls back to IP)">One bucket per user (user ID, falls back to IP)</span></option>
+                        </select>
+                        <p class="mt-1 text-xs text-text/50">
+                            <strong>global:</strong> <span data-i18n="All requests share the same limit. One abusive user can exhaust the limit for everyone.">All requests share the same limit. One abusive user can exhaust the limit for everyone.</span><br />
+                            <strong>user:</strong> <span data-i18n="Each authenticated user (or IP for anonymous) gets their own independent limit bucket.">Each authenticated user (or IP for anonymous) gets their own independent limit bucket.</span>
+                        </p>
+                        <span asp-validation-for="PartitionType" class="text-xs text-accent"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a href="@Url.Action("RateLimits")" class="rounded-lg border border-secondary/20 bg-white px-4 py-2 text-sm font-medium text-text hover:bg-background/50 transition-colors" data-i18n="Cancel">
+                    Cancel
+                </a>
+                <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors" data-i18n="Save Changes">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </main>
+</div>
