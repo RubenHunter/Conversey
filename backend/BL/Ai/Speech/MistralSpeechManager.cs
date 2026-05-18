@@ -1,12 +1,14 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Conversey.BL.Ai.Speech;
 
 public class MistralSpeechManager : ISpeechManager
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<MistralSpeechManager> _logger;
     private readonly string _sttModel;
     private readonly string _ttsModel;
     private readonly IVoiceManager _voiceManager;
@@ -14,13 +16,17 @@ public class MistralSpeechManager : ISpeechManager
     public MistralSpeechManager(
         HttpClient httpClient,
         IVoiceManager voiceManager,
+        ILogger<MistralSpeechManager> logger,
         string sttModel = "voxtral-mini-latest",
         string ttsModel = "voxtral-mini-tts-latest")
     {
         _httpClient = httpClient;
         _voiceManager = voiceManager;
+        _logger = logger;
         _sttModel = sttModel;
         _ttsModel = ttsModel;
+        _logger.LogInformation("[Speech:Mistral] STT={SttModel} TTS={TtsModel} BaseUrl={BaseUrl}",
+            _sttModel, _ttsModel, httpClient.BaseAddress);
     }
 
     public async Task<string> TranscribeSpeechAsync(Stream audioStream, string language, IEnumerable<string> contextBias = null, string mimeType = "audio/webm")

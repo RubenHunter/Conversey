@@ -124,6 +124,34 @@
                             <input name="Temperature" type="number" min="0" max="2" step="0.1" value="@Model.Provider.Temperature" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="1.0" />
                             <p class="mt-1 text-xs text-gray-400" data-i18n="Controls randomness: 0 = deterministic, 2 = creative.">Controls randomness: 0 = deterministic, 2 = creative.</p>
                         </div>
+
+                        @{
+                            var cfgProviderName = Model.Provider.ProviderName?.Trim();
+                            var cfgSupportsSpeech = string.Equals(cfgProviderName, "Mistral", StringComparison.OrdinalIgnoreCase) ||
+                                                   string.Equals(cfgProviderName, "OpenAI", StringComparison.OrdinalIgnoreCase);
+                        }
+                        @if (cfgSupportsSpeech)
+                        {
+                            <div class="border-t border-gray-200 pt-4 mt-4">
+                                <p class="text-xs font-semibold uppercase text-gray-500 mb-3" data-i18n="Speech Models (optional)">Speech Models (optional)</p>
+                                <div>
+                                    <label class="block text-xs font-semibold uppercase text-gray-500" data-i18n="STT Model (speech-to-text)">STT Model (speech-to-text)</label>
+                                    <input name="SttModel" type="text" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="whisper-1" value="@Model.Provider.SttModel" />
+                                    <p class="mt-1 text-xs text-gray-400" data-i18n="Model for transcribing speech to text. Leave empty for default.">Model for transcribing speech to text. Leave empty for default.</p>
+                                </div>
+                                <div class="mt-4">
+                                    <label class="block text-xs font-semibold uppercase text-gray-500" data-i18n="TTS Model (text-to-speech)">TTS Model (text-to-speech)</label>
+                                    <input name="TtsModel" type="text" class="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="tts-1" value="@Model.Provider.TtsModel" />
+                                    <p class="mt-1 text-xs text-gray-400" data-i18n="Model for synthesizing text into speech audio. Leave empty for default.">Model for synthesizing text into speech audio. Leave empty for default.</p>
+                                </div>
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(Model.Provider.SttModel) || !string.IsNullOrEmpty(Model.Provider.TtsModel))
+                        {
+                            <div class="border-t border-amber-200 pt-4 mt-4">
+                                <p class="text-xs text-amber-600"><strong data-i18n="Note:">Note:</strong> <span>This provider (@cfgProviderName) does not support speech via the built-in providers. STT/TTS model values will be ignored.</span></p>
+                            </div>
+                        }
                     </div>
                 </div>
 
