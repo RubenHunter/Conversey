@@ -1,18 +1,32 @@
+/**
+ * Bubble List - Manages Magic Mode phrase bubbles
+ * 
+ * Handles creation, display, and management of phrase bubbles that appear
+ * in the Magic Mode modal. Supports both permanent (AI-validated) and temporary
+ * bubbles, with animations for adding/removing.
+ */
 import { getSurveyStrings } from '../../../i18n/survey'
 
+/**
+ * Represents a bubble in the Magic Mode UI.
+ * Contains the phrase text and its DOM element.
+ */
 // Bubble interface - all bubbles are permanent (AI validated)
 interface Bubble {
     text: string;
     element: HTMLElement;
 }
 
+/**
+ * Controller interface for the bubble list.
+ * Provides methods to add, remove, and query bubbles, as well as manage recording state.
+ */
 export interface BubbleListController {
     addBubbles(phrases: string[]): void;
     addTemporaryBubbles(phrases: string[]): void;
     removeBubble(index: number): void;
     getBubbles(): string[];
     getRejectedPhrases(): string[];
-    convertTemporaryToPermanent(): void;
     reset(): void;
     setRecordingState(isRecording: boolean): void;
     readonly element: HTMLElement;
@@ -20,6 +34,13 @@ export interface BubbleListController {
 
 
 
+/**
+ * Creates a bubble list controller.
+ * 
+ * Initializes the container element and sets up event handlers for bubble interactions.
+ * 
+ * @returns BubbleListController instance
+ */
 export function createBubbleList(): BubbleListController {
     const t = getSurveyStrings()
     const activeBubbles: Bubble[] = [];
@@ -31,6 +52,14 @@ export function createBubbleList(): BubbleListController {
 
     const normalize = (s: string): string => s.trim().toLowerCase();
 
+    /**
+     * Creates a bubble DOM element with text and close button.
+     * Applies randomized phase for staggered animation and sets up event handlers.
+     * 
+     * @param text - The phrase text to display in the bubble
+     * @param index - The bubble index for animation ordering
+     * @returns The created bubble HTMLElement
+     */
     function createBubbleElement(text: string, index: number): HTMLElement {
         const bubbleEl = document.createElement('div');
         bubbleEl.className = 'magic-mode-bubble magic-mode-badge-enter';
@@ -95,6 +124,10 @@ export function createBubbleList(): BubbleListController {
         return bubbleEl;
     }
 
+    /**
+     * Renders all active bubbles into the container.
+     * Clears existing content and recreates bubble elements with proper animations.
+     */
     function render(): void {
         // Clear everything
         container.innerHTML = '';
@@ -113,6 +146,12 @@ export function createBubbleList(): BubbleListController {
         // Note: removingBubbles stay in their original position until animation completes
     }
 
+    /**
+     * Adds permanent bubbles for the given phrases.
+     * Normalizes phrases, removes duplicates, updates active bubbles, and re-renders.
+     * 
+     * @param phrases - Array of phrase texts to add as permanent bubbles
+     */
     function addBubbles(phrases: string[]): void {
         let needsPlaceholderUpdate = false;
         
@@ -138,17 +177,23 @@ export function createBubbleList(): BubbleListController {
         }
     }
 
+    /**
+     * Adds temporary bubbles for the given phrases.
+     * These bubbles are styled differently and are used as a fallback for errors.
+     * 
+     * @param phrases - Array of phrase texts to add as temporary bubbles
+     */
     function addTemporaryBubbles(phrases: string[]): void {
         // Fallback method - adds as permanent for now
         // In future: can be removed when AI validation is fully reliable
         this.addBubbles(phrases);
     }
 
-    function convertTemporaryToPermanent(): void {
-        // No-op: all bubbles are already permanent (AI validated)
-        render();
-    }
-
+    /**
+     * Removes a bubble at the specified index with animation.
+     * 
+     * @param index - The index of the bubble to remove
+     */
     function removeBubble(index: number): void {
         const removed = activeBubbles.splice(index, 1)[0];
         if (removed) {
@@ -176,14 +221,28 @@ export function createBubbleList(): BubbleListController {
         }
     }
 
+    /**
+     * Gets the text of all active bubbles.
+     * 
+     * @returns Array of all bubble texts
+     */
     function getBubbles(): string[] {
         return activeBubbles.map(b => b.text);
     }
 
+    /**
+     * Gets all rejected phrases as an array.
+     * 
+     * @returns Array of all rejected phrase texts
+     */
     function getRejectedPhrases(): string[] {
         return Array.from(rejectedPhrases);
     }
 
+    /**
+     * Resets the bubble list to its initial state.
+     * Clears all bubbles, rejected phrases, and re-renders.
+     */
     function reset(): void {
         // Clear all removing bubbles from DOM immediately to prevent memory leaks
         removingBubbles.forEach(el => el.remove());
@@ -194,6 +253,11 @@ export function createBubbleList(): BubbleListController {
         render();
     }
 
+    /**
+     * Sets the recording state which affects bubble styling.
+     * 
+     * @param recording - Whether recording is currently active
+     */
     function setRecordingState(recording: boolean): void {
         if (recording) {
             container.classList.add('recording');
@@ -206,7 +270,6 @@ export function createBubbleList(): BubbleListController {
     return { 
         addBubbles, 
         addTemporaryBubbles, 
-        convertTemporaryToPermanent,
         removeBubble, 
         getBubbles, 
         getRejectedPhrases, 
