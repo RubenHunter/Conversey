@@ -6,12 +6,23 @@
 @import "./styles/pages/completed.css";
 @import "./styles/pages/landing.css";
 @import "./styles/pages/survey.css";
+@import "./styles/pages/projects.css";
 
 /** {*/
 /*	margin: 0;*/
 /*	padding: 0;*/
 /*	box-sizing: border-box;*/
 /*}*/
+
+@plugin "tailwindcss-animate";
+
+@theme {
+	--color-text: #05030a;
+	--color-background: #f8f7fc;
+	--color-primary: #6c5ce7;
+	--color-secondary: #db99c8;
+	--color-accent: #cd6f88;
+}
 
 html,
 body {

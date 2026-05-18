@@ -19,4 +19,7 @@ public interface IProjectManager
 
     void EditProject(Project updatedProject);
     void RemoveProject(Slug projectId, Slug workspaceId);
+    
+    Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType);
+
 }

@@ -1,0 +1,74 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Models.Admin
+@using Conversey.UI_MVC.Models.AiAdmin
+@using Conversey.BL.Domain.Administration
+@inject AdminContext AdminContext
+@{
+    ViewData["Title"] = "Setup New Provider";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Providers", "/admin/ai/providers", false),
+        ("Setup New Provider", null, true)
+    };
+
+    var steps = new List<StepItem>
+    {
+        new() { Label = "Provider", PartialViewName = "Providers/_SetupProviderStep" },
+        new() { Label = "Models", PartialViewName = "Providers/_SetupModelsStep" },
+        new() { Label = "Verify", PartialViewName = "Providers/_SetupVerifyStep" }
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+    @Html.AntiForgeryToken()
+
+    <div id="dynamic-stepper" class="w-full max-w-5xl mx-auto p-6 text-text" data-total-steps="@steps.Count" data-entity="Provider">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
+            <h1 class="text-4xl font-bold tracking-tight" data-i18n="Setup New Provider">Setup New Provider</h1>
+            <div class="flex gap-2">
+                <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all">
+                    <span style="display:none" data-i18n="Previous">Previous</span><span data-i18n="< Back">< Back</span>
+                </button>
+                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all">
+                    <span data-i18n="Continue">Continue</span> <span style="display:none" data-i18n="Finish Setup">Finish Setup</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="relative flex justify-between items-start mb-16 px-8">
+            <div class="absolute top-3.5 h-0.5 z-0">
+                <div class="absolute inset-0 border-t-2 border-dotted border-text/20"></div>
+                <div id="progress-line" class="absolute inset-y-0 left-0 bg-primary transition-all duration-500 ease-in-out" style="width: 0%; height: 2px;"></div>
+            </div>
+            @for (int i = 0; i < steps.Count; i++)
+            {
+                var stepNum = i + 1;
+                <div class="step-indicator flex flex-col items-center flex-1" data-step="@stepNum">
+                    <div class="step-circle z-10 w-7 h-7 rounded-full border-2 border-text bg-background flex items-center justify-center transition-all duration-300">
+                        <div class="step-dot w-2 h-2 rounded-full bg-text scale-0 transition-transform duration-300"></div>
+                    </div>
+                    <span class="mt-4 text-xs uppercase text-text/50 font-medium"><span data-i18n="step">step</span> @stepNum</span>
+                    <span class="text-sm font-bold text-center">@steps[i].Label</span>
+                </div>
+            }
+        </div>
+
+        <div class="step-content-container relative overflow-visible min-h-75">
+            @for (int i = 0; i < steps.Count; i++)
+            {
+                <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                    @await Html.PartialAsync(steps[i].PartialViewName)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script type="module" vite-src="~/components/aiAdmin/providerSetupState.ts"></script>
+<script type="module" vite-src="~/components/aiAdmin/providerSetupProviderStep.ts"></script>
+<script type="module" vite-src="~/components/aiAdmin/providerSetupModelsStep.ts"></script>
+<script type="module" vite-src="~/components/aiAdmin/providerSetupVerifyStep.ts"></script>

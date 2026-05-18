@@ -1,0 +1,39 @@
+<div class="max-w-xl mx-auto">
+    <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-text mb-4" data-i18n="Choose your AI provider">Choose your AI provider</h2>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Provider">Provider</label>
+                <input id="setupProvider" type="text" list="provider-datalist" placeholder="Select or type..." data-i18n-placeholder="Select or type..." autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <datalist id="provider-datalist">
+                    <option value="Mistral"></option>
+                    <option value="Azure"></option>
+                    <option value="Ollama"></option>
+                    <option value="Groq"></option>
+                    <option value="Google"></option>
+                    <option value="Together"></option>
+                    <option value="NVIDIA"></option>
+                    <option value="OpenAI"></option>
+                </datalist>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Base URL">Base URL</label>
+                <input id="setupBaseUrl" type="url" placeholder="https://api.example.com/v1/" autocomplete="off" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <p class="mt-1 text-xs text-text/40" id="baseUrlHint" data-i18n="Select a provider to see the default URL.">Select a provider to see the default URL.</p>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="API Key">API Key</label>
+                <input id="setupApiKey" type="password" placeholder="sk-..." autocomplete="new-password" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="API Key Expiry (optional)">API Key Expiry (optional)</label>
+                <input id="setupKeyExpiry" type="date" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+        </div>
+    </div>
+</div>
+
