@@ -30,14 +30,14 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                 ></textarea>
 
                 <div class="survey-textarea-actions">
-                    <button class="survey-magic-btn" title="${t.magicModeTitle}">
+                    <button class="survey-magic-btn" type="button" title="${t.magicModeTitle}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                         </svg>
                         <span class="survey-magic-btn-text">${t.magicModeButton}</span>
                     </button>
-                    <button class="survey-mic-btn" title="${t.voiceInput}" id="mic-btn-${question.id}">
+                    <button class="survey-mic-btn" type="button" title="${t.voiceInput}" id="mic-btn-${question.id}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z"/>
