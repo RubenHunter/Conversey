@@ -1,5 +1,5 @@
 using Conversey.BL.Ai;
-using Conversey.BL.Domain.DTOs.MagicMode;
+using Conversey.BL.Ai.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UI_MVC.Controllers.Api;

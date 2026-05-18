@@ -1,4 +1,4 @@
-namespace Conversey.BL.Domain.DTOs.MagicMode;
+namespace Conversey.BL.Ai.DTOs;
 
 public record ExtractKeyPhrasesRequest(
     string Transcript,

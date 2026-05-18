@@ -8,9 +8,9 @@ namespace Conversey.UI_MVC.Controllers.Api;
 [Route("api/speech")]
 public class SpeechController : ControllerBase
 {
-    private readonly IMistralSpeechManager _speechManager;
+    private readonly ISpeechManager _speechManager;
     
-    public SpeechController(IMistralSpeechManager speechManager)
+    public SpeechController(ISpeechManager speechManager)
     {
         _speechManager = speechManager;
     }

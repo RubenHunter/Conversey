@@ -17,7 +17,7 @@ using Conversey.BL.Domain.Ai;
 using System.Runtime.CompilerServices;
 
 using Conversey.BL.Domain.Ai;
-using Conversey.BL.Domain.DTOs.MagicMode;
+using Conversey.BL.Ai.DTOs;
 
 namespace Tests.IntegrationTests.Infrastructure;
 

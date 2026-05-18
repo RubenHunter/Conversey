@@ -1,8 +1,6 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
-using Microsoft.Extensions.AI;
-using System.Runtime.CompilerServices;
-using Conversey.BL.Domain.DTOs.MagicMode;
 
 namespace Tests.IntegrationTests;
 

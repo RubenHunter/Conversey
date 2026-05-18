@@ -168,15 +168,6 @@ builder.Services.AddScoped<IAiManager>(provider =>
 
         var completionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest";
         var moderationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest";
-        // merge conflict to fix
-        var aiConfig = new AiManagerConfig
-        {
-            ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-            KeyPhraseModel = config["AI:Mistral:KeyPhraseModel"] ?? "mistral-small-latest",
-            NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced"
-        };
 
         var factory = provider.GetRequiredService<IHttpClientFactory>();
         var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
@@ -189,35 +180,15 @@ builder.Services.AddScoped<IAiManager>(provider =>
     }
 
     throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
-    /* TO fix merge conflict
-     throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
 });
 
-builder.Services.AddSingleton<Conversey.BL.Ai.Speech.IMistralVoiceManager, Conversey.BL.Ai.Speech.MistralVoiceManager>();
-builder.Services.AddScoped<Conversey.BL.Ai.Speech.IMistralSpeechManager>(provider =>
+builder.Services.AddSingleton<Conversey.BL.Ai.Speech.IVoiceManager, Conversey.BL.Ai.Speech.MistralVoiceManager>();
+builder.Services.AddScoped<Conversey.BL.Ai.Speech.ISpeechManager>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("MistralAPI");
-    var voiceManager = provider.GetRequiredService<Conversey.BL.Ai.Speech.IMistralVoiceManager>();
-    return new Conversey.BL.Ai.Speech.MistralSpeechManager(
-        httpClient,
-        voiceManager
-    );
+    var voiceManager = provider.GetRequiredService<Conversey.BL.Ai.Speech.IVoiceManager>();
+    return new Conversey.BL.Ai.Speech.MistralSpeechManager(httpClient, voiceManager);
 });
-
-builder.Services.AddSingleton(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    return new AiManagerConfig
-    {
-        ApiKey = config["AI:Mistral:ApiKey"] ?? string.Empty,
-        CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-        ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
-        KeyPhraseModel = config["AI:Mistral:KeyPhraseModel"] ?? "mistral-small-latest",
-        NudgingMode = config["AI:Nudging:Mode"] ?? "Balanced",
-    };
-});
-
-*/
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);

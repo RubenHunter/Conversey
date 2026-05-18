@@ -1,3 +1,4 @@
+using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 
@@ -122,6 +123,49 @@ public sealed class NoopAiManager : IAiManager
         }
 
         return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
+    }
+
+    public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+            return Task.FromResult(new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>()));
+
+        var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+        var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+
+        var sentences = transcript
+            .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
+            .Take(maxPhrases)
+            .ToList()
+            .AsReadOnly();
+
+        return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
+    }
+
+    public Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        string language,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+            return Task.FromResult(string.Empty);
+
+        var filteredBubbles = bubbles.ToList();
+        if (rejectedPhrases != null)
+        {
+            var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+            filteredBubbles = filteredBubbles.Where(b => !rejectedSet.Contains(b)).ToList();
+        }
+
+        return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
     }
 
     private static string NormalizeCategoryKey(string value)

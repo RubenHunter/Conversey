@@ -1,9 +1,9 @@
 import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
-import { bindMicButton, getSpeechLanguage } from '../../services/speechService'
-import { wireMagicModeButton, type MagicModeModalController } from './magicMode'
-import { getSurveyStrings } from '../../i18n/survey'
+import { bindMicButton, getSpeechLanguage } from '../../../services/speechService'
+import { wireMagicModeButton, type MagicModeModalController } from '../magicMode'
+import { getSurveyStrings } from '../../../i18n/survey'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
     const t = getSurveyStrings()

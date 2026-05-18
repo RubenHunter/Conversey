@@ -16,7 +16,7 @@ import {
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
 } from '../../../services/ideaResponseService'
-import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../services/speechService'
+import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../../services/speechService'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import { resolveInitialIdeasView } from '../utils/initialView'
 import { createIdeaPanelController } from '../components/ideaPanel'
@@ -28,7 +28,7 @@ import { renderIdeasHeader } from "../utils/ideasHeader"
 import {createTopicModalController} from "../components/topicModal";
 import {createIdeasListController} from "../components/ideasListController";
 import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
-import { wireMagicModeButton, type MagicModeWiringOptions, type MagicModeModalController } from '../components/survey/magicMode'
+import { wireMagicModeButton, type MagicModeWiringOptions, type MagicModeModalController } from '../../survey/magicMode'
 import type { ActiveView } from '../types'
 import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
 import { IdeaAuthorType } from '../../../models/idea'

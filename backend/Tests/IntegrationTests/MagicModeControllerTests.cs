@@ -1,5 +1,5 @@
 using Conversey.BL.Ai;
-using Conversey.BL.Domain.DTOs.MagicMode;
+using Conversey.BL.Ai.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using UI_MVC.Controllers.Api;

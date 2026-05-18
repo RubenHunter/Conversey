@@ -1,6 +1,6 @@
 namespace Conversey.BL.Ai.Speech;
 
-public class MistralVoiceManager : IMistralVoiceManager
+public class MistralVoiceManager : IVoiceManager
 {
     private static readonly Dictionary<string, string> Voices = new(StringComparer.OrdinalIgnoreCase)
     {

@@ -1,6 +1,6 @@
 import type { Question } from '../../../models/question'
 import { generateQuestionHeader } from '../utils/surveyUtils'
-import {initQuestionSpeakerForWrapper} from './shared'
+import {initQuestionSpeakerForWrapper} from '../utils/surveyUtils'
 
 export type QuestionAnswer = number | string | number[] | null
 

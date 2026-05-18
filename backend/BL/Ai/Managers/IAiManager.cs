@@ -1,5 +1,4 @@
-using Conversey.BL.Domain.DTOs.MagicMode;
-using Microsoft.Extensions.AI;
+using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.BL.Ai;

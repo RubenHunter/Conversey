@@ -1,6 +1,6 @@
 namespace Conversey.BL.Ai.Speech;
 
-public interface IMistralVoiceManager
+public interface IVoiceManager
 {
     string GetVoiceForLanguage(string language);
 }

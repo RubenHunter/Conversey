@@ -118,12 +118,11 @@ export async function renderChatSurveyPage(
     let confirmedUpToIndex = 0
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
-        let activeSendHandler: (() => void | Promise<void>) | null = null
-        let editingBubble: HTMLElement | null = null
-        let handleIdeaSubmit: () => Promise<void> = async () => { return }
+    let editingBubble: HTMLElement | null = null
+    let handleIdeaSubmit: () => Promise<void> = async () => { return }
 
     // ===== Edit handler (must be defined early for use in sendOpenTextMessage) =====
-        const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
+    const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
         
         // Make the bubble contenteditable
         bubbleElement.contentEditable = 'true'

@@ -4,16 +4,16 @@ using System.Text.Json;
 
 namespace Conversey.BL.Ai.Speech;
 
-public class MistralSpeechManager : IMistralSpeechManager
+public class MistralSpeechManager : ISpeechManager
 {
     private readonly HttpClient _httpClient;
     private readonly string _sttModel;
     private readonly string _ttsModel;
-    private readonly IMistralVoiceManager _voiceManager;
+    private readonly IVoiceManager _voiceManager;
 
     public MistralSpeechManager(
         HttpClient httpClient,
-        IMistralVoiceManager voiceManager,
+        IVoiceManager voiceManager,
         string sttModel = "voxtral-mini-latest",
         string ttsModel = "voxtral-mini-tts-latest")
     {
