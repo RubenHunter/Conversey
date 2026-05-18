@@ -1,9 +1,9 @@
 import "./main.css";
 
-let app: HTMLDivElement;
+let app: HTMLDivElement | null = null;
 
 function init(): void {
-	app = document.querySelector<HTMLDivElement>('#app')
+	app = document.querySelector<HTMLDivElement>('#app')!
 }
 
 export interface ProjectContext {
@@ -20,7 +20,6 @@ function parseProject() {
 }
 
 function parseRoute(): ProjectContext {
-	const path = window.location.pathname
 	const domain = window.location.hostname
 
 	const organizationSlug = domain.split(".")[0]

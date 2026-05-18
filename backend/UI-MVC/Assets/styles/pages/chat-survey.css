@@ -11,9 +11,35 @@
   flex-direction: column;
   height: 100svh;
   overflow: hidden;
-  background-color: var(--color-bg);
   align-self: stretch;
   width: 100%;
+  position: relative;
+}
+
+.chat-shell::before {
+  content: '';
+  position: absolute;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
+  background-image: var(--project-bg, none);
+  background-size: cover;
+  background-position: center;
+  filter: blur(var(--backdrop-blur-light));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.chat-shell::after {
+  content: '';
+  position: absolute;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
 }
 
 /* Override topbar bleed within the chat shell */
@@ -36,6 +62,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== Survey header (shared with vertical scroll) — sticky inside chat scroll area ===== */
@@ -71,12 +99,6 @@
   margin: 0 auto;
   box-sizing: border-box;
   align-self: stretch;
-}
-
-@media (min-width: 832px) {
-  .chat-messages {
-    padding: var(--spacing-md) var(--spacing-xl);
-  }
 }
 
 /* ===== Chat rows ===== */
@@ -164,15 +186,15 @@
 .chat-speaker-btn {
   flex-shrink: 0;
   border-radius: var(--radius-full);
-  border: none;
+  border: 1px solid var(--color-black);
   background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
+  color: var(--color-black);
+  cursor: not-allowed;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2px;
-  align-self: flex-end;
+  align-self: center;
   margin-bottom: 2px;
   transition: color var(--transition-base), background-color var(--transition-base);
 }
@@ -218,6 +240,28 @@
   background-color: var(--color-primary);
   color: var(--color-text-on-primary);
   border-bottom-right-radius: var(--radius-sm);
+}
+
+/* Editable user bubble (clickable to re-edit) */
+.chat-bubble--editable {
+  cursor: pointer;
+  transition: filter var(--transition-base), transform var(--transition-base);
+}
+
+.chat-bubble--editable:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
+}
+
+/* Editing state - bubble is in edit mode */
+.chat-bubble--editing {
+  cursor: text;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  filter: none;
+  transform: none;
 }
 
 /* Project title bubble */
@@ -297,8 +341,10 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   font-style: italic;
-  padding: var(--spacing-xs) 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
   margin: 0;
+  background-color: color-mix(var(--color-surface) 67%, transparent);
+  border-radius: var(--radius-sm);
 }
 
 .chat-question-block .survey-error {
@@ -420,12 +466,16 @@
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
+  text-shadow: 0 0 12px white, 0 0 24px rgba(255, 255, 255, 0.6);
 }
 
 .chat-submit-success-sub {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: color-mix(var(--color-surface) 67%, transparent);
+  border-radius: var(--radius-sm);
 }
 
 /* ===== Input wrap ===== */
@@ -435,6 +485,8 @@
   border-top: 1px solid var(--color-border);
   padding: var(--spacing-sm) var(--spacing-md);
   padding-bottom: calc(var(--spacing-sm) + env(safe-area-inset-bottom, 0px));
+  position: relative;
+  z-index: 1;
 }
 
 .chat-input-bar {
@@ -693,7 +745,7 @@
 
 /* ===== Ideas area ===== */
 .chat-ideas-area {
-  flex: 0 0 45svh;
+  flex:0 0 45svh;
   height: 45svh;
   min-height: 45svh;
   max-height: 45svh;
@@ -704,6 +756,8 @@
   flex-direction: column;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
+  position: relative;
+  z-index: 1;
 }
 
 .chat-ideas-area-header {
@@ -735,6 +789,8 @@
   top: 100%;
   right: 0;
   min-width: 180px;
+  max-height: calc(var(--spacing-xl) * 8);
+  overflow-y: auto;
   z-index: 10;
 }
 
@@ -802,6 +858,10 @@
 
 .chat-shell--ideas .ideas-list {
   height: 100%;
+}
+
+.chat-shell--ideas .ideas-list--has-more {
+  padding-bottom: 18rem;
 }
 
 .chat-shell--ideas .ideas-load-more {

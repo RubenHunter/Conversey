@@ -1,8 +1,7 @@
+using System.Text.Json.Serialization;
 using Conversey.BL.Domain.Ideation;
 
 namespace Conversey.BL.Ai;
-
-using System.Text.Json.Serialization;
 
 public class ModerationResponse
 {

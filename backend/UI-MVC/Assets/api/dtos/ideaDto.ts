@@ -20,26 +20,18 @@ export interface ApiIdeaDto {
     ProjectId?: number | ApiSlugValue
     topicId?: number
     TopicId?: number
-    body?: string
-    Body?: string
     content?: string
     Content?: string
     status?: string | number
     Status?: string | number
-    authorType?: 'self' | 'other'
-    AuthorType?: 'self' | 'other'
     youthId?: string
     YouthId?: string
-    youthToken?: string
-    YouthToken?: string
-    createdAt?: string
-    CreatedAt?: string
     submissionDate?: string
     SubmissionDate?: string
-    semanticCategories?: string[]
-    SemanticCategories?: string[]
     qualityNudgeBypassed?: boolean
     QualityNudgeBypassed?: boolean
+    semanticCategories?: string[]
+    SemanticCategories?: string[]
     reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
     Reactions?: Array<{ emoji?: string; Emoji?: string; count?: number; Count?: number }>
 }

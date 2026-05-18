@@ -1,5 +1,5 @@
-import type { ApiAnswerOptionDto, ApiQuestionDto, ApiQuestionTypeDto } from '../api/dtos/questionDto.ts'
-import { QuestionType, type AnswerOption, type Question } from '../models/question.ts'
+import type { ApiAnswerOptionDto, ApiQuestionDto, ApiQuestionTypeDto } from '../api/dtos/questionDto'
+import { QuestionType, type AnswerOption, type Question } from '../models/question'
 
 function pickNumber(...values: Array<number | undefined>): number | undefined {
     return values.find((value) => typeof value === 'number' && Number.isFinite(value))
@@ -54,7 +54,7 @@ function mapAnswerOption(dto: ApiAnswerOptionDto, questionId: number): AnswerOpt
     }
 }
 
-export function mapApiQuestionToQuestion(dto: ApiQuestionDto): Question {
+function mapApiQuestionToQuestion(dto: ApiQuestionDto): Question {
     const id = pickNumber(dto.id, dto.Id) ?? 0
     const projectSlug = pickString(dto.projectSlug, dto.ProjectSlug)
     const projectId = pickNumber(dto.projectId, dto.ProjectId) ?? (projectSlug ? toStableNumericId(projectSlug) : 0)

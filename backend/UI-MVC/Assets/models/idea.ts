@@ -1,4 +1,7 @@
-export type IdeaAuthorType = 'self' | 'other'
+export enum IdeaAuthorType {
+    Self = 'self',
+    Other = 'other',
+}
 
 export interface IdeaReactionSummary {
     emoji: string

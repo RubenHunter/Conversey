@@ -1,5 +1,5 @@
-import type { Question } from '../models/question.ts'
-import type { QuestionAnswer } from '../components/survey/singleChoiceQuestion.ts'
+import type { Question } from '../models/question'
+import type { QuestionAnswer } from '../components/survey/components/singleChoiceQuestion'
 
 const SURVEY_PROGRESS_KEY_PREFIX = 'conversey-survey-progress'
 const SURVEY_PROGRESS_VERSION = 1

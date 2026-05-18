@@ -1,16 +1,16 @@
-﻿import type { ApiIdeaDto } from '../api/dtos/ideaDto.ts'
-import { mapApiIdeaToIdea, mapSubmitIdeaRequestToApiSubmitIdeaRequest } from '../mappers/ideaMapper.ts'
-import type { Idea, IdeaTopic, SubmitIdeaRequest } from '../models/idea.ts'
-import type { Project } from '../models/project.ts'
-import { apiFetch } from './apiService.ts'
-import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'
+﻿import type { ApiIdeaDto } from '../api/dtos/ideaDto'
+import { mapApiIdeaToIdea, mapSubmitIdeaRequestToApiSubmitIdeaRequest } from '../mappers/ideaMapper'
+import type { Idea, IdeaTopic, SubmitIdeaRequest } from '../models/idea'
+import type { Project } from '../models/project'
+import { apiFetch } from './apiService'
+import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService'
+import { DiscoveryMode } from '../components/ideas/types'
 
 interface IdeasContext {
     topics: IdeaTopic[]
     ideas: Idea[]
 }
 
-export type IdeaDiscoveryCategory = 'similar' | 'different' | 'random'
 export const IDEA_DISCOVERY_MAX_RESULTS = 30
 
 export function getOrCreateProjectScopedYouthId(projectSlug: string): string {
@@ -233,7 +233,7 @@ export async function getDiscoveredIdeasForTopic(
     projectSlug: string,
     topicId: number,
     youthToken: string,
-    category: IdeaDiscoveryCategory,
+    category: DiscoveryMode,
     limit = IDEA_DISCOVERY_MAX_RESULTS,
 ): Promise<Idea[]> {
     const normalizedProjectSlug = normalizeSlugForClient(projectSlug)

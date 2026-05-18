@@ -37,11 +37,11 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<ResponseSubmissionResponseDto> AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseRequestDto request)
+    public async Task<ActionResult<ResponseSubmissionResponseDto>> AddResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseRequestDto request)
     {
         try
         {
-            var submission = _ideaManager.AddResponse(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Text);
+            var submission = await _ideaManager.AddResponseAsync(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Text);
             return Ok(submission switch
             {
                 ResponseSubmissionResponse.Approved approved => new ResponseSubmissionResponseDto.Approved(ResponseDto.From(approved.IdeaResponse)),
