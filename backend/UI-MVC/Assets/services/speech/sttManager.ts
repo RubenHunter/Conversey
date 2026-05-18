@@ -16,8 +16,8 @@
  * - Configurable audio quality and timing
  * - Dependency injection for improved testability
  */
-import { SPEECH_CONFIG } from '../config/speechConfig';
-import { getSpeechLanguage } from '../config/speechConfig';
+import { SPEECH_CONFIG } from '../../config/speechConfig';
+import { getSpeechLanguage } from '../../config/speechConfig';
 import { getBestMimeType } from './speechUtils';
 import { transcribe } from './speechUtils';
 import { createBufferManager, type BufferManager } from './bufferManager';

@@ -26,7 +26,7 @@ export type {
     IStreamService,
     ITranscribeService,
     ISynthesizeService,
-} from './interfaces';
+} from './speech/interfaces';
 
 // Re-export default implementations
 export {
@@ -34,11 +34,11 @@ export {
     defaultAudioPlayerFactory,
     defaultAudioContextFactory,
     defaultStreamService,
-} from './interfaces';
+} from './speech/interfaces';
 
 // Re-export dependency injection types for managers
-export type { STTManagerDependencies } from './sttManager';
-export type { TTSManagerDependencies } from './ttsManager';
+export type { STTManagerDependencies } from './speech/sttManager';
+export type { TTSManagerDependencies } from './speech/ttsManager';
 
 // Re-export pure functions for testability
 export {
@@ -47,34 +47,34 @@ export {
     getRequiredRecordingDuration,
     getRecorderMimeType,
     meetsMinimumAudioSize,
-} from './sttManager';
+} from './speech/sttManager';
 
-export { calculateAudioTimeout } from './ttsManager';
+export { calculateAudioTimeout } from './speech/ttsManager';
 
 // Re-export types and constants
 export {
   PRIORITY_MIME_TYPES,
   SpeechError,
-} from './speechTypes';
+} from './speech/speechTypes';
 
 export type {
   SpeechState,
   SpeechCallbacks,
-} from './speechTypes';
+} from './speech/speechTypes';
 
 // Re-export configuration
 export { SPEECH_CONFIG, getSpeechLanguage } from '../config/speechConfig';
 
 // Re-export utilities and API types
-export { toBase64, getBestMimeType, transcribe, synthesize } from './speechUtils';
-export type { SynthesizeRequestBody, TranscribeResponse } from './speechUtils';
+export { toBase64, getBestMimeType, transcribe, synthesize } from './speech/speechUtils';
+export type { SynthesizeRequestBody, TranscribeResponse } from './speech/speechUtils';
 
 // Re-export buffer manager
-export { createBufferManager, type BufferManager } from './bufferManager';
+export { createBufferManager, type BufferManager } from './speech/bufferManager';
 
 // Re-export managers
-export { STTManager } from './sttManager';
-export { TTSManager } from './ttsManager';
+export { STTManager } from './speech/sttManager';
+export { TTSManager } from './speech/ttsManager';
 
 // Re-export factories
 export {
@@ -83,4 +83,4 @@ export {
   createSpeakerButton,
   bindMicButton,
   type SpeakerButtonController,
-} from './speechFactories';
+} from './speech/speechFactories';

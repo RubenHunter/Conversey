@@ -2,7 +2,7 @@
  * Speech Service Utilities
  * Utility functions for speech recognition and synthesis.
  */
-import { apiFetch } from './apiService';
+import { apiFetch } from '../apiService';
 import { PRIORITY_MIME_TYPES } from './speechTypes';
 import { SpeechError } from './speechTypes';
 
