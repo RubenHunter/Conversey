@@ -15,6 +15,7 @@
     flex-direction: column;
     background: var(--color-surface);
     animation: magic-mode-dialog-in 0.22s ease-out forwards;
+    min-height: 70vh;
 }
 
 @media (min-width: 640px) {
@@ -24,6 +25,7 @@
         top: 50%;
         transform: translate(-50%, -50%);
         width: min(640px, calc(100vw - 2rem));
+        min-height: 500px;
         max-height: min(88svh, 88vh);
         border-radius: var(--radius-xl);
         border: 1px solid var(--color-border);
@@ -79,7 +81,8 @@
 }
 
 .magic-mode-ring-container {
-    flex: 0 0 15rem;
+    flex: 0 0 40%;
+    min-height: 250px;
     position: relative;
     pointer-events: none;
     margin-top: auto;
@@ -119,8 +122,8 @@
     100% { transform: scale(0.5); opacity: 0; }
 }
 
-   Status Rings - Transcript & AI Indicators
-   ========================================================================== */
+/* Status Rings - Transcript & AI Indicators */
+/* ========================================================================== */
 
 .magic-mode-ring-wrapper {
     position: absolute;
@@ -148,7 +151,7 @@
     opacity: 0.65;
     transform: scale(1.4);
 }
-=======
+
 /* ==========================================================================
    Status Rings - Transcript & AI Indicators
    ========================================================================== */
@@ -190,7 +193,8 @@
 .magic-mode-ai-wrapper.thinking .magic-mode-ai-ring {
     opacity: 0.65;
     transform: scale(1.4);
-}==========================================================================
+}
+/* ==========================================================================
    Magic Mode Bubbles - Cloud Styling
    ========================================================================== */
 
@@ -201,9 +205,9 @@
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     margin: 0.25rem 0.5rem;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
     border-radius: 9999px;
-    background: rgba(var(--color-primary-rgb), 0.1);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
     color: var(--color-primary);
     font-size: var(--font-size-xs);
     font-weight: 500;
@@ -248,7 +252,7 @@
 .magic-mode-bubble.active {
     background: var(--color-primary);
     color: white;
-    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.2);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 20%, transparent);
     transform: translateY(-1px);
 }
 
@@ -381,7 +385,7 @@
     background: transparent;
     border: none;
     box-shadow: none;
-    color: var(--color-base-content);
+    color: var(--color-text);
 }
 
 .magic-mode-mic-btn.recording {
