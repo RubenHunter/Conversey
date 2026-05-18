@@ -330,6 +330,16 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 .AsReadOnly();
             return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
         }
+
+        public Task<string> GenerateTextFromBubbles(
+            string transcript,
+            IReadOnlyList<string> bubbles,
+            string language)
+        {
+            if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+                return Task.FromResult(string.Empty);
+            return Task.FromResult(transcript + " " + string.Join(", ", bubbles));
+        }
     }
 
     private sealed class TestAiManagerConfig

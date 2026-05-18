@@ -208,5 +208,16 @@ public sealed class NoopAiManager : IAiManager
         }
         return Task.FromResult(new ExtractKeyPhrasesResponse(phrases, Array.Empty<RejectedPhrase>()));
     }
+
+    public Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        string language)
+    {
+        // Combine transcript and bubbles into a simple response
+        var combined = new List<string> { transcript };
+        combined.AddRange(bubbles);
+        return Task.FromResult(string.Join(" ", combined));
+    }
 }
 

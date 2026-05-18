@@ -553,9 +553,6 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
             return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
 
-        // Build rejection context for AI learning
-        var rejectionContext = BuildRejectionContext(existingPhrases, rejectedPhrases);
-
         // Build user prompt using StringBuilder to avoid raw string literal issues
         var userPrompt = new StringBuilder();
         userPrompt.AppendLine($"From the following {language} speech transcript, extract EXACTLY up to {maxPhrases} unique, meaningful key phrases.");
@@ -725,6 +722,104 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
         return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
     }
 
+    public async Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        string language)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+            return string.Empty;
+
+        var userPrompt = new StringBuilder();
+        userPrompt.AppendLine("Rewrite the transcript and key phrases from the FIRST-PERSON user perspective. Use first-person pronouns matching the language: Dutch='ik/mijn/wij/onze', English='I/my/we/our', French='je/mon/nous/notre'. Make it sound like the user is speaking directly.");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### INSTRUCTIONS:");
+        userPrompt.AppendLine("1. Rewrite the transcript in FIRST PERSON using appropriate pronouns");
+        userPrompt.AppendLine("2. Ensure all key phrases are incorporated naturally into the response");
+        userPrompt.AppendLine("3. Write in complete sentences from the user's perspective");
+        userPrompt.AppendLine("4. Maintain the original language (" + language + ")");
+        userPrompt.AppendLine("5. Do NOT add any phrases that are not in the transcript or key phrases");
+        userPrompt.AppendLine("6. Do NOT invent information");
+        userPrompt.AppendLine("7. Be concise but complete");
+        userPrompt.AppendLine("8. ALWAYS use first-person pronouns (never third-person)");
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### KEY PHRASES:");
+        foreach (var phrase in bubbles)
+        {
+            userPrompt.AppendLine("- " + phrase);
+        }
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### TRANSCRIPT:");
+        userPrompt.Append(transcript);
+
+        var payload = new
+        {
+            model = _completionsModel,
+            temperature = 0.3,
+            messages = new object[]
+            {
+                new {
+                    role = "system",
+                    content = "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in the same language as the user."
+                },
+                new {
+                    role = "user",
+                    content = userPrompt.ToString()
+                }
+            }
+        };
+
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync("chat/completions", payload);
+            var body = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new AiException($"Mistral completion failed ({(int)response.StatusCode}): {body}", null);
+            }
+
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("choices", out var choices) &&
+                choices.ValueKind == JsonValueKind.Array &&
+                choices.GetArrayLength() > 0 &&
+                choices[0].TryGetProperty("message", out var message) &&
+                message.TryGetProperty("content", out var content) &&
+                content.ValueKind == JsonValueKind.String)
+            {
+                return content.GetString()?.Trim() ?? string.Empty;
+            }
+
+            // Try alternative response format (choices[0].text)
+            if (root.TryGetProperty("choices", out choices) &&
+                choices.ValueKind == JsonValueKind.Array &&
+                choices.GetArrayLength() > 0 &&
+                choices[0].TryGetProperty("text", out var text) &&
+                text.ValueKind == JsonValueKind.String)
+            {
+                return text.GetString()?.Trim() ?? string.Empty;
+            }
+
+            // Try output[0].text format
+            if (root.TryGetProperty("outputs", out var outputs) &&
+                outputs.ValueKind == JsonValueKind.Array &&
+                outputs.GetArrayLength() > 0 &&
+                outputs[0].TryGetProperty("text", out var outputText) &&
+                outputText.ValueKind == JsonValueKind.String)
+            {
+                return outputText.GetString()?.Trim() ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new AiException("Failed to parse Mistral response: " + ex.Message, ex);
+        }
+
+        return string.Empty;
+    }
+
     private IReadOnlyList<string> ParseAndCleanPhrases(
         JsonElement phrasesArray,
         IReadOnlyList<string> existingPhrases,
@@ -851,7 +946,7 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
     {
         var fillerWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "enkele", "enkelei", "enkele", "enige", "sommige", "verschillende",
+            "enkele", "enkelei", "enige", "sommige", "verschillende",
             "hier", "daar", "dit", "dat", "deze", "die", "het", "een",
             "van", "in", "op", "te", "voor", "met", "door", "bij", "uit",
             "als", "dat", "wat", "die", "die", "welke", "waar",
@@ -939,21 +1034,5 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
             return lowerWord.Substring(0, lowerWord.Length - 4);
         
         return lowerWord;
-    }
-
-    private string BuildRejectionContext(IReadOnlyList<string> existingPhrases, IReadOnlyList<string> rejectedPhrases)
-    {
-        // For now, we don't have session-level tracking of rejected phrases with reasons
-        // This can be extended in the future by maintaining a session state
-        // For example, you could pass rejectedPhrasesWithReasons from the client
-        // and format them here for the AI to learn from
-        
-        // If you want to implement this, you would:
-        // 1. Track rejected phrases with reasons in the session/client
-        // 2. Pass them to the API
-        // 3. Format them here like:
-        //    "- [REJECTED: word_count_exceeded] 'some long phrase here'"
-        
-        return string.Empty;
     }
 }

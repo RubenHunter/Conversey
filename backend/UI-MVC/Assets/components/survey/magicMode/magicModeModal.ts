@@ -1,14 +1,31 @@
+/**
+ * Magic Mode Modal - AI-powered phrase extraction and suggestion modal
+ * 
+ * Provides a modal interface for users to speak their ideas, which are then
+ * transcribed and sent to the AI for key phrase extraction. Displays extracted
+ * phrases as interactive bubbles that can be selected to populate form fields.
+ * 
+ * Features:
+ * - STT integration for voice input
+ * - AI-powered key phrase extraction
+ * - Phrase caching for performance
+ * - Feedback display for rejected phrases
+ * - Animated status rings for STT/AI state
+ * - Volume visualization for microphone input
+ */
 import { getSTTManager } from '../../../services/speechService';
 import { detectLocale, getSurveyStrings } from '../../../i18n/survey';
 import { createBubbleList } from './bubbleList';
+import { createRingController, type RingController } from './ringController';
+import { createPhraseCache, generateCacheKey, type PhraseCache } from './phraseCache';
+import { createFeedbackController, type FeedbackController } from './feedbackController';
+import type { RejectedPhrase, PhraseRejectionReason } from './types';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const MAX_PHRASES = 2
-const CACHE_MAX_SIZE = 100
-const FEEDBACK_DURATION_MS = 3000
+const MAX_PHRASES = 2;
 
 // ============================================================================
 // ============================================================================
@@ -24,71 +41,50 @@ export function createMagicModeModal(): MagicModeModalController {
     let isRecording = false;
     let onCloseCallback: ((text: string) => void) | null = null;
     const bubbleList = createBubbleList();
+    const ringController = createRingController();
+    const phraseCache = createPhraseCache({ maxSize: 100 });
+    const feedbackController = createFeedbackController({ durationMs: 3000 });
     
     // Mic volume animation
     let micContainer: HTMLElement | null = null;
+    let micBtn: HTMLButtonElement | null = null;
+    let micHint: HTMLElement | null = null;
     let unsubscribeVolume: (() => void) | null = null;
-    
-    // Status ring state
-    let transcriptInProgress = false;
-    let aiInProgress = false;
-    let transcriptWrapperEl: HTMLElement | null = null;
-    let aiWrapperEl: HTMLElement | null = null;
-    
-    // Update ring state classes on individual wrappers
-    function updateRingState(): void {
-        if (transcriptWrapperEl) {
-            transcriptWrapperEl.classList.toggle('transcribing', transcriptInProgress);
-        }
-        if (aiWrapperEl) {
-            aiWrapperEl.classList.toggle('thinking', aiInProgress);
-        }
-    }
     
     // AI validation state
     let pendingValidation = false;
-    const phraseCache = new Map<string, {phrases: string[], rejected: Array<{phrase: string, reason: string}>}>();
+    
+    // Track full transcript for final text generation
+    let fullTranscript = '';
 
-    function showRejectedFeedback(rejected: Array<{phrase: string, reason: string}>): void {
-      if (rejected.length === 0) return;
-      
-      const feedbackElement = document.createElement('div');
-      feedbackElement.className = 'magic-mode-feedback';
-      
-      // Group by reason and show specific phrases
-      const reasonGroups: Record<string, string[]> = {};
-      rejected.forEach(r => {
-        if (!reasonGroups[r.reason]) reasonGroups[r.reason] = [];
-        reasonGroups[r.reason].push(r.phrase);
-      });
-
-      const reasonText = Object.entries(reasonGroups)
-        .map(([reason, phrases]) => {
-          const reasonLabel = getReasonText(reason);
-          const phraseList = phrases.map(p => `"${p}"`).join(', ');
-          return phrases.length === 1 
-            ? `"${phrases[0]}" (${reasonLabel})`
-            : `${phrases.length}x ${reasonLabel}: ${phraseList}`;
-        })
-        .join('; ');
-
-      feedbackElement.textContent = `${t.rejectedFeedbackPrefix}${reasonText}`;
-      document.body.appendChild(feedbackElement);
-
-      setTimeout(() => feedbackElement.remove(), FEEDBACK_DURATION_MS);
-    }
-
-    function getReasonText(reason: string): string {
-      const reasonMap: Record<string, string> = {
-        'WordCountTooLow': t.rejectionWordCountTooLow,
-        'WordCountExceeded': t.rejectionWordCountExceeded,
-        'DuplicateExact': t.rejectionDuplicateExact,
-        'DuplicateSemantic': t.rejectionDuplicateSemantic,
-        'SubsetOfExisting': t.rejectionSubsetOfExisting,
-        'FillerContent': t.rejectionFillerContent,
-        'TooGeneric': t.rejectionTooGeneric
-      };
-      return reasonMap[reason] || reason;
+    // Sync UI state with STT state changes
+    function handleSTTStateChange(state: string): void {
+        if (state === 'idle' && isRecording) {
+            // STT stopped automatically (e.g., 60s timeout), update UI
+            isRecording = false;
+            ringController.stopAll();
+            ringController.setRecordingState(false);
+            
+            // Clean up volume callback
+            if (unsubscribeVolume) {
+                unsubscribeVolume();
+                unsubscribeVolume = null;
+            }
+            
+            // Reset volume and recording classes
+            if (micContainer) {
+                micContainer.style.setProperty('--mic-volume', '0');
+                micContainer.classList.remove('recording');
+            }
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+                micBtn.setAttribute('aria-pressed', 'false');
+                micBtn.setAttribute('aria-label', t.micStartRecording);
+            }
+            if (micHint) {
+                micHint.classList.remove('hidden');
+            }
+        }
     }
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
@@ -122,7 +118,9 @@ export function createMagicModeModal(): MagicModeModalController {
         closeBtn.className = 'btn btn-ghost btn-sm btn-circle';
         closeBtn.setAttribute('aria-label', t.close);
         closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
-        closeBtn.addEventListener('click', closeModal);
+        closeBtn.addEventListener('click', async () => {
+            await closeModal();
+        });
 
         header.appendChild(title);
         header.appendChild(closeBtn);
@@ -137,33 +135,8 @@ export function createMagicModeModal(): MagicModeModalController {
         body.appendChild(questionEl);
         body.appendChild(bubbleList.element);
 
-        // Ring container - dedicated space for status rings
-        const ringContainer = document.createElement('div');
-        ringContainer.className = 'magic-mode-ring-container';
-
-        // Transcript wrapper - slower orbit
-        const transcriptWrapper = document.createElement('div');
-        transcriptWrapper.className = 'magic-mode-ring-wrapper magic-mode-transcript-wrapper';
-
-        // AI wrapper - faster orbit
-        const aiWrapper = document.createElement('div');
-        aiWrapper.className = 'magic-mode-ring-wrapper magic-mode-ai-wrapper';
-
-        const transcriptRing = document.createElement('div');
-        transcriptRing.className = 'magic-mode-status-ring magic-mode-transcript-ring';
-
-        const aiRing = document.createElement('div');
-        aiRing.className = 'magic-mode-status-ring magic-mode-ai-ring';
-
-        // Assemble: both wrappers at same center point
-        transcriptWrapper.appendChild(transcriptRing);
-        aiWrapper.appendChild(aiRing);
-        ringContainer.append(transcriptWrapper, aiWrapper);
-        body.appendChild(ringContainer);
-
-        // Store references for state management
-        transcriptWrapperEl = transcriptWrapper;
-        aiWrapperEl = aiWrapper;
+        // Ring container - use RingController for status ring animations
+        body.appendChild(ringController.element);
 
         // Footer
         const footer = document.createElement('div');
@@ -177,25 +150,23 @@ export function createMagicModeModal(): MagicModeModalController {
         const micFill = document.createElement('div');
         micFill.className = 'magic-mode-mic-fill';
 
-        const micBtn = document.createElement('button');
-        micBtn.className = 'btn btn-circle btn-lg magic-mode-mic-btn';
-        micBtn.setAttribute('aria-label', t.micStartRecording);
-        micBtn.setAttribute('aria-pressed', 'false');
-        micBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
+        const micBtnEl = document.createElement('button');
+        micBtnEl.className = 'btn btn-circle btn-lg magic-mode-mic-btn';
+        micBtnEl.setAttribute('aria-label', t.micStartRecording);
+        micBtnEl.setAttribute('aria-pressed', 'false');
+        micBtnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
 
         micContainerEl.appendChild(micFill);
-        micContainerEl.appendChild(micBtn);
+        micContainerEl.appendChild(micBtnEl);
 
-        const micHint = document.createElement('p');
-        micHint.className = 'text-xs text-base-content/50 magic-mode-mic-hint';
-        micHint.textContent = t.micClickToSpeak;
+        const micHintEl = document.createElement('p');
+        micHintEl.className = 'text-xs text-base-content/50 magic-mode-mic-hint';
+        micHintEl.textContent = t.micClickToSpeak;
 
-        micBtn.addEventListener('click', () => {
+        micBtnEl.addEventListener('click', () => {
             isRecording = !isRecording;
             if (isRecording) {
-                transcriptInProgress = true;
-                aiInProgress = false;
-                updateRingState();
+                ringController.startTranscribing();
                 stt.start(null, detectLocale(), onTranscript);
                 // Setup volume callback
                 unsubscribeVolume = stt.onVolume((volume: number) => {
@@ -205,9 +176,7 @@ export function createMagicModeModal(): MagicModeModalController {
                 });
             } else {
                 stt.stop();
-                transcriptInProgress = false;
-                aiInProgress = false;
-                updateRingState();
+                ringController.stopAll();
                 // Clean up volume callback
                 if (unsubscribeVolume) {
                     unsubscribeVolume();
@@ -219,20 +188,24 @@ export function createMagicModeModal(): MagicModeModalController {
                 }
             }
             // Toggle recording classes
+            ringController.setRecordingState(isRecording);
             micContainerEl.classList.toggle('recording', isRecording);
-            micBtn.classList.toggle('recording', isRecording);
-            micHint.classList.toggle('hidden', isRecording);
-            transcriptWrapperEl?.classList.toggle('recording', isRecording);
-            aiWrapperEl?.classList.toggle('recording', isRecording);
-            micBtn.setAttribute('aria-pressed', String(isRecording));
-            micBtn.setAttribute('aria-label', isRecording ? t.micStopRecording : t.micStartRecording);
+            micBtnEl.classList.toggle('recording', isRecording);
+            micHintEl.classList.toggle('hidden', isRecording);
+            micBtnEl.setAttribute('aria-pressed', String(isRecording));
+            micBtnEl.setAttribute('aria-label', isRecording ? t.micStopRecording : t.micStartRecording);
         });
 
-        micContainerEl.appendChild(micHint);
+        micContainerEl.appendChild(micHintEl);
         footer.appendChild(micContainerEl);
         
-        // Store reference for cleanup
+        // Store references for cleanup
         micContainer = micContainerEl;
+        micBtn = micBtnEl;
+        micHint = micHintEl;
+        
+        // Setup STT state change callback for automatic stops (e.g., 60s timeout)
+        stt.setupCallbacks({ onStateChange: handleSTTStateChange });
 
         dialog.appendChild(header);
         dialog.appendChild(body);
@@ -246,59 +219,32 @@ export function createMagicModeModal(): MagicModeModalController {
     let activeBackdrop: HTMLElement | null = null;
     let activeDialog: HTMLElement | null = null;
 
-    function generateCacheKey(
-        transcript: string,
-        language: string,
-        maxPhrases: number,
-        existingPhrases: string[],
-        rejectedPhrases: string[]
-    ): string {
-        const normalizedTranscript = transcript.trim().toLowerCase();
-        const normalizedExisting = existingPhrases
-            .map(p => p.trim().toLowerCase())
-            .sort()
-            .join('|');
-        const normalizedRejected = rejectedPhrases
-            .map(p => p.trim().toLowerCase())
-            .sort()
-            .join('|');
-        return `${normalizedTranscript}|${language}|${maxPhrases}|${normalizedExisting}|${normalizedRejected}`;
-    }
-
-    function cleanupCache(): void {
-        if (phraseCache.size > CACHE_MAX_SIZE) {
-            const keys = Array.from(phraseCache.keys());
-            for (let i = 0; i < keys.length - (CACHE_MAX_SIZE / 2); i++) {
-                phraseCache.delete(keys[i]);
-            }
-        }
-    }
-
-    async function fetchAndCachePhrases(text: string, cacheKey: string): Promise<{phrases: string[], rejected: Array<{phrase: string, reason: string}>}> {
+    async function fetchAndCachePhrases(text: string, cacheKey: string): Promise<{phrases: string[], rejected: RejectedPhrase[]}> {
         const result = await fetchKeyPhrases(text, bubbleList.getBubbles(), bubbleList.getRejectedPhrases());
         
         if (result.phrases.length > 0) {
-            phraseCache.set(cacheKey, { phrases: result.phrases, rejected: result.rejectedPhrasesWithReasons || [] });
-            cleanupCache();
+            phraseCache.set(cacheKey, { phrases: result.phrases, rejected: result.rejectedPhrasesWithReasons });
+            phraseCache.cleanup();
         }
         
         return {
             phrases: result.phrases,
-            rejected: result.rejectedPhrasesWithReasons || []
+            rejected: result.rejectedPhrasesWithReasons
         };
     }
 
     async function onTranscript(text: string): Promise<void> {
         if (!text.trim()) return;
 
+        // Accumulate full transcript
+        fullTranscript = text;
+
         // Debouncing: if validation is already in progress, skip
         if (pendingValidation) return;
         pendingValidation = true;
         
         // STT is done, now starting AI processing
-        transcriptInProgress = false;
-        aiInProgress = true;
-        updateRingState();
+        ringController.startThinking();
 
         // Generate cache key
         const cacheKey = generateCacheKey(
@@ -316,9 +262,8 @@ export function createMagicModeModal(): MagicModeModalController {
                 // Add accepted phrases directly as permanent bubbles
                 bubbleList.addBubbles(cached.phrases);
             }
-            aiInProgress = false;
+            ringController.stopAll();
             pendingValidation = false;
-            updateRingState();
             return;
         }
 
@@ -329,29 +274,47 @@ export function createMagicModeModal(): MagicModeModalController {
             if (result.phrases.length > 0) {
                 bubbleList.addBubbles(result.phrases);
             }
-
-            // Optional: show rejected phrases as feedback
-            if (result.rejected.length > 0) {
-                showRejectedFeedback(result.rejected);
-            }
         } catch (error) {
             console.error('[MagicMode] Validation failed:', error);
             // Fallback: add as temporary bubble (for emergencies)
             bubbleList.addTemporaryBubbles([text]);
         } finally {
-            aiInProgress = false;
             pendingValidation = false;
-            updateRingState();
-            
-            // Trigger AI completion animation (360° orbit + glow in 1s)
-            if (aiWrapperEl) {
-                aiWrapperEl.classList.add('ai-complete');
-                setTimeout(() => aiWrapperEl?.classList.remove('ai-complete'), 1000);
-            }
+            ringController.completeAI();
         }
     }
 
-    function closeModal(): void {
+    async function generateFinalText(): Promise<string> {
+        const bubbles = bubbleList.getBubbles();
+        
+        // If we have bubbles and a transcript, try to generate a polished text
+        if (bubbles.length > 0 && fullTranscript.trim()) {
+            try {
+                const response = await fetch('/api/magic-mode/generate-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        transcript: fullTranscript,
+                        bubbles: bubbles,
+                        language: detectLocale()
+                    })
+                });
+                if (response.ok) {
+                    const data = await response.json() as { text: string };
+                    if (data?.text?.trim()) {
+                        return data.text;
+                    }
+                }
+            } catch (error) {
+                console.error('[MagicMode] Failed to generate final text:', error);
+            }
+        }
+        
+        // Fallback: join bubbles with commas
+        return bubbles.join(', ');
+    }
+
+    async function closeModal(): Promise<void> {
         if (isRecording) {
             stt.stop();
             isRecording = false;
@@ -363,19 +326,18 @@ export function createMagicModeModal(): MagicModeModalController {
         }
         if (micContainer) {
             micContainer.style.setProperty('--mic-volume', '0');
+            micContainer = null;
         }
-        micContainer = null;
+        micBtn = null;
+        micHint = null;
         
         // Reset ring states
-        transcriptInProgress = false;
-        aiInProgress = false;
-        updateRingState();
-        transcriptWrapperEl?.classList.remove('recording');
-        aiWrapperEl?.classList.remove('recording');
-        transcriptWrapperEl = null;
-        aiWrapperEl = null;
+        ringController.stopAll();
+        ringController.setRecordingState(false);
+        feedbackController.destroy();
         
-        const text = bubbleList.getBubbles().join(', ');
+        // Generate final text from bubbles + transcript
+        const text = await generateFinalText();
         
         activeBackdrop?.remove();
         activeDialog?.remove();
@@ -384,6 +346,7 @@ export function createMagicModeModal(): MagicModeModalController {
         
         // Reset state
         pendingValidation = false;
+        fullTranscript = '';
         phraseCache.clear();
         
         onCloseCallback?.(text);
@@ -396,11 +359,11 @@ export function createMagicModeModal(): MagicModeModalController {
             
             // Reset state for new modal
             pendingValidation = false;
+            fullTranscript = '';
             phraseCache.clear();
-            transcriptWrapperEl = null;
-            aiWrapperEl = null;
-            transcriptInProgress = false;
-            aiInProgress = false;
+            ringController.stopAll();
+            ringController.setRecordingState(false);
+            feedbackController.destroy();
 
             const { backdrop, dialog } = buildDOM();
             activeBackdrop = backdrop;
@@ -423,15 +386,12 @@ export function createMagicModeModal(): MagicModeModalController {
                 micContainer.style.setProperty('--mic-volume', '0');
             }
             micContainer = null;
+            micBtn = null;
+            micHint = null;
             
             // Reset ring states
-            transcriptInProgress = false;
-            aiInProgress = false;
-            updateRingState();
-            transcriptWrapperEl?.classList.remove('recording');
-            aiWrapperEl?.classList.remove('recording');
-            transcriptWrapperEl = null;
-            aiWrapperEl = null;
+            ringController.destroy();
+            feedbackController.destroy();
             
             activeBackdrop?.remove();
             activeDialog?.remove();
@@ -443,6 +403,7 @@ export function createMagicModeModal(): MagicModeModalController {
             
             // Reset state
             pendingValidation = false;
+            isRecording = false;
             phraseCache.clear();
         }
     };
@@ -452,7 +413,7 @@ async function fetchKeyPhrases(
     transcript: string,
     existingPhrases: string[],
     rejectedPhrases: string[]
-): Promise<{phrases: string[], rejectedPhrasesWithReasons: Array<{phrase: string, reason: string}>}> {
+): Promise<{phrases: string[], rejectedPhrasesWithReasons: RejectedPhrase[]}> {
     try {
         const response = await fetch('/api/magic-mode/key-phrases', {
             method: 'POST',
@@ -483,9 +444,9 @@ async function fetchKeyPhrases(
             7: 'TooGeneric'
         };
         
-        const convertedRejected = (data.rejectedPhrasesWithReasons || []).map(r => ({
+        const convertedRejected: RejectedPhrase[] = (data.rejectedPhrasesWithReasons || []).map(r => ({
             phrase: r.phrase,
-            reason: reasonMap[r.reason] || 'Unknown'
+            reason: (reasonMap[r.reason] || 'None') as PhraseRejectionReason
         }));
         
         return { phrases: data.phrases ?? [], rejectedPhrasesWithReasons: convertedRejected };

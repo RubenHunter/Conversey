@@ -22,4 +22,21 @@ public class MagicModeController(IAiManager aiManager) : ControllerBase
             request.RejectedPhrases);
         return Ok(response);
     }
+
+    [HttpPost("generate-text")]
+    public async Task<IActionResult> GenerateText([FromBody] GenerateTextFromBubblesRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Transcript) || request.Bubbles == null || request.Bubbles.Count == 0)
+            return BadRequest("Transcript and bubbles are required.");
+
+        var text = await aiManager.GenerateTextFromBubbles(
+            request.Transcript,
+            request.Bubbles,
+            request.Language);
+        
+        if (string.IsNullOrWhiteSpace(text))
+            return Ok(new { Text = string.Empty });
+        
+        return Ok(new { Text = text });
+    }
 }

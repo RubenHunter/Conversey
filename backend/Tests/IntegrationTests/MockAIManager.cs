@@ -101,4 +101,16 @@ public class MockAiManager : IAiManager
             .AsReadOnly();
         return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
     }
+
+    public Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        string language)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+            return Task.FromResult(string.Empty);
+        
+        // Simple mock: combine transcript and bubbles
+        return Task.FromResult(transcript + " " + string.Join(", ", bubbles));
+    }
 }
