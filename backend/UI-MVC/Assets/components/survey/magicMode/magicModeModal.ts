@@ -296,7 +296,8 @@ export function createMagicModeModal(): MagicModeModalController {
                     body: JSON.stringify({
                         transcript: fullTranscript,
                         bubbles: bubbles,
-                        language: detectLocale()
+                        language: detectLocale(),
+                        rejectedPhrases: bubbleList.getRejectedPhrases()
                     })
                 });
                 if (response.ok) {

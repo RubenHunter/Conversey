@@ -24,5 +24,6 @@ public interface IAiManager : IChatClient
     Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language);
+        string language,
+        IReadOnlyList<string> rejectedPhrases = null);
 }

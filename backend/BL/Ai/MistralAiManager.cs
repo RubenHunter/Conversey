@@ -725,28 +725,43 @@ Decide whether the draft is ready. If not, ask one follow-up question that is sp
     public async Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language)
+        string language,
+        IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
             return string.Empty;
 
         var userPrompt = new StringBuilder();
-        userPrompt.AppendLine("Rewrite the transcript and key phrases from the FIRST-PERSON user perspective. Use first-person pronouns matching the language: Dutch='ik/mijn/wij/onze', English='I/my/we/our', French='je/mon/nous/notre'. Make it sound like the user is speaking directly.");
+        userPrompt.AppendLine("Write the transcript and key phrases from the FIRST-PERSON user perspective. Use first-person pronouns matching the language: Dutch='ik/mijn/wij/onze', English='I/my/we/our', French='je/mon/nous/notre'. Make it sound like the user is speaking directly.");
         userPrompt.AppendLine();
         userPrompt.AppendLine("### INSTRUCTIONS:");
-        userPrompt.AppendLine("1. Rewrite the transcript in FIRST PERSON using appropriate pronouns");
+        userPrompt.AppendLine("1. Write a summary in FIRST PERSON using appropriate pronouns");
         userPrompt.AppendLine("2. Ensure all key phrases are incorporated naturally into the response");
         userPrompt.AppendLine("3. Write in complete sentences from the user's perspective");
         userPrompt.AppendLine("4. Maintain the original language (" + language + ")");
-        userPrompt.AppendLine("5. Do NOT add any phrases that are not in the transcript or key phrases");
-        userPrompt.AppendLine("6. Do NOT invent information");
-        userPrompt.AppendLine("7. Be concise but complete");
-        userPrompt.AppendLine("8. ALWAYS use first-person pronouns (never third-person)");
+        userPrompt.AppendLine("5. Do NOT include any rejected phrases or concepts similar to them");
+        userPrompt.AppendLine("6. Do NOT add any phrases that are not in the transcript or key phrases");
+        userPrompt.AppendLine("7. Do NOT invent information");
+        userPrompt.AppendLine("8. Be concise but complete");
+        userPrompt.AppendLine("9. ALWAYS use first-person pronouns (never third-person)");
         userPrompt.AppendLine();
         userPrompt.AppendLine("### KEY PHRASES:");
         foreach (var phrase in bubbles)
         {
             userPrompt.AppendLine("- " + phrase);
+        }
+        userPrompt.AppendLine();
+        userPrompt.AppendLine("### REJECTED PHRASES (NEVER INCLUDE):");
+        if (rejectedPhrases != null && rejectedPhrases.Count > 0)
+        {
+            foreach (var phrase in rejectedPhrases)
+            {
+                userPrompt.AppendLine("- " + phrase);
+            }
+        }
+        else
+        {
+            userPrompt.AppendLine("(none)");
         }
         userPrompt.AppendLine();
         userPrompt.AppendLine("### TRANSCRIPT:");

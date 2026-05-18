@@ -32,7 +32,8 @@ public class MagicModeController(IAiManager aiManager) : ControllerBase
         var text = await aiManager.GenerateTextFromBubbles(
             request.Transcript,
             request.Bubbles,
-            request.Language);
+            request.Language,
+            request.RejectedPhrases);
         
         if (string.IsNullOrWhiteSpace(text))
             return Ok(new { Text = string.Empty });

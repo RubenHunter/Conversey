@@ -212,11 +212,19 @@ public sealed class NoopAiManager : IAiManager
     public Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language)
+        string language,
+        IReadOnlyList<string> rejectedPhrases = null)
     {
         // Combine transcript and bubbles into a simple response
+        // Filter out any rejected phrases
+        var bubbleList = bubbles.ToList();
+        if (rejectedPhrases != null)
+        {
+            var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+            bubbleList = bubbleList.Where(b => !rejectedSet.Contains(b)).ToList();
+        }
         var combined = new List<string> { transcript };
-        combined.AddRange(bubbles);
+        combined.AddRange(bubbleList);
         return Task.FromResult(string.Join(" ", combined));
     }
 }

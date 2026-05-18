@@ -334,11 +334,19 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         public Task<string> GenerateTextFromBubbles(
             string transcript,
             IReadOnlyList<string> bubbles,
-            string language)
+            string language,
+            IReadOnlyList<string> rejectedPhrases = null)
         {
             if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
                 return Task.FromResult(string.Empty);
-            return Task.FromResult(transcript + " " + string.Join(", ", bubbles));
+            // Filter out rejected phrases
+            var filteredBubbles = bubbles.ToList();
+            if (rejectedPhrases != null)
+            {
+                var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+                filteredBubbles = filteredBubbles.Where(b => !rejectedSet.Contains(b)).ToList();
+            }
+            return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
         }
     }
 
