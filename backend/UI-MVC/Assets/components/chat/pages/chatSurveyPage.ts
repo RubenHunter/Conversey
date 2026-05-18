@@ -254,7 +254,6 @@ export async function renderChatSurveyPage(
         const speakerBtn = document.createElement('button')
         speakerBtn.className = 'chat-speaker-btn'
         speakerBtn.type = 'button'
-        speakerBtn.disabled = true
         speakerBtn.setAttribute('aria-label', t.readAloud)
         speakerBtn.innerHTML = SPEAKER_SVG
         const speakerController = createSpeakerButton(speakerBtn, () => text, getSpeechLanguage)
@@ -299,6 +298,11 @@ export async function renderChatSurveyPage(
 
     // ===== Input icon =====
     function updateSendIcon(): void {
+        if (isChatRecording) {
+            micIcon.classList.remove('chat-icon-hidden')
+            sendIcon.classList.add('chat-icon-hidden')
+            return
+        }
         const hasText = chatInput.value.trim().length > 0
         micIcon.classList.toggle('chat-icon-hidden', hasText)
         sendIcon.classList.toggle('chat-icon-hidden', !hasText)

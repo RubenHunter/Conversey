@@ -99,6 +99,7 @@ export function createSpeakerButton(
     } catch { cleanup(); }
   }
 
+  btn.disabled = false;
   btn.addEventListener('click', handleClick);
 
   return {

@@ -54,7 +54,6 @@ public class OpenAiSpeechManager : ISpeechManager
 
             content.Add(new StringContent(_sttModel), "model");
             content.Add(new StringContent(language), "language");
-            content.Add(new StringContent("text"), "response_format");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "audio/transcriptions");
             request.Content = content;
@@ -64,11 +63,20 @@ public class OpenAiSpeechManager : ISpeechManager
 
             if (!response.IsSuccessStatusCode)
             {
+                _logger.LogError("OpenAI STT HTTP {Status}: {Body}", (int)response.StatusCode, responseContent);
                 throw new HttpRequestException($"OpenAI STT returned {response.StatusCode}: {responseContent}");
             }
 
-            var result = JsonSerializer.Deserialize<OpenAiTranscriptionResponse>(responseContent);
-            return result?.Text ?? string.Empty;
+            try
+            {
+                var result = JsonSerializer.Deserialize<OpenAiTranscriptionResponse>(responseContent);
+                return result?.Text ?? string.Empty;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "OpenAI STT JSON parse failed. Raw response: {Body}", responseContent);
+                throw;
+            }
         }
         catch (HttpRequestException)
         {
