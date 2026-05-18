@@ -1187,6 +1187,27 @@ export function createBufferManager(windowSize: number): BufferManager;
   - `npx tsc --noEmit` - No TypeScript errors
   - `dotnet test --filter MagicMode` - All 4 Magic Mode tests passed
 
+#### [2026-05-16 04:50] - FEATURE: Include Rejected Phrases in Generated Text Filtering
+- **File**: `BL/Ai/MistralAiManager.cs`
+- **Method**: `GenerateTextFromBubbles`
+- **Changes**:
+  - Added `rejectedPhrases` parameter (optional, default null) to method signature
+  - Added REJECTED PHRASES section to user prompt: "### REJECTED PHRASES (NEVER INCLUDE):"
+  - Added instruction #5: "Do NOT include any rejected phrases or concepts similar to them"
+  - Updated IAiManager interface to include rejectedPhrases parameter
+  - Updated NoopAiManager to filter out rejected phrases from output
+  - Updated GenerateTextFromBubblesRequest DTO to include RejectedPhrases
+  - Updated MagicModeController to pass rejectedPhrases to AI manager
+  - Updated magicModeModal.ts to pass bubbleList.getRejectedPhrases() to API
+  - Updated test mocks (MockAIManager, TestAiManager) to implement new signature
+- **Root Cause**: User wanted rejected phrases to be excluded from the generated text so users don't see rejected ideas in the final output
+- **Behavior**: When generating text, the AI now receives the list of rejected phrases and is explicitly instructed to never include them or similar concepts in the output. The NoopAiManager also filters them out directly.
+- **Status**: ✅ Complete
+- **Verified**:
+  - `dotnet build Conversey.sln` - Build succeeded
+  - `pnpm run build` (UI-MVC) - TypeScript build succeeded
+  - `dotnet test --filter MagicMode` - All 4 Magic Mode tests passed
+
 #### [2026-05-16 04:45] - PROMPT UPDATE: First-Person User Perspective for Generated Text
 - **File**: `BL/Ai/MistralAiManager.cs`
 - **Method**: `GenerateTextFromBubbles`
