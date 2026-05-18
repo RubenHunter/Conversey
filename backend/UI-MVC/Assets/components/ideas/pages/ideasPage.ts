@@ -28,7 +28,7 @@ import { renderIdeasHeader } from "../utils/ideasHeader"
 import {createTopicModalController} from "../components/topicModal";
 import {createIdeasListController} from "../components/ideasListController";
 import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
-import { wireMagicModeButton, type MagicModeWiringOptions, type MagicModeModalController } from '../../survey/magicMode'
+import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import type { ActiveView } from '../types'
 import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
 import { IdeaAuthorType } from '../../../models/idea'
@@ -147,11 +147,11 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         <div class="survey-textarea-wrapper">
                             <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
-                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="${t.magicModeTitle}">
+                                <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    <span class="survey-magic-btn-text">${t.magicModeButton}</span>
+                                    <span class="survey-brainstorm-btn-text">${t.brainstormModeButton}</span>
                                 </button>
                                 <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="${t.voiceInput}" title="${t.voiceInput}">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -234,7 +234,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
-                                class="survey-magic-btn idea-panel-edit-cta"
+                                class="survey-brainstorm-btn idea-panel-edit-cta"
                                 type="button"
                                 aria-label="${t.editIdea}"
                                 title="${t.editIdea}"
@@ -244,7 +244,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">${t.editIdea}</span>
+                                <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                             </button>
                         </div>
                     </div>
@@ -379,7 +379,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const textareaWrapper = container.querySelector<HTMLDivElement>('.survey-textarea-wrapper')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
-    const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
+    const brainstormBtn = container.querySelector<HTMLButtonElement>('#ideas-brainstorm')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
     const promptSpeakerBtn = container.querySelector<HTMLButtonElement>('#ideas-prompt-speaker')!
     const unbindMic = bindMicButton(speakBtn, textarea, getSpeechLanguage, (text) => {
@@ -405,9 +405,9 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         storageKey: firstIdeaContactStorageKey,
     })
 
-    const magicModeModal: MagicModeModalController = wireMagicModeButton(magicBtn, {
+    const brainstormModal: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
         getQuestionText: () => prompt.textContent ?? '',
-        onResult: (finalText) => {
+        onResult: (finalText: string) => {
             if (finalText.trim()) {
                 textarea.value = finalText
                 textarea.dispatchEvent(new Event('input', { bubbles: true }))
@@ -570,18 +570,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             textareaWrapper.classList.remove('ideas-compose-copied')
             copyPulseTimeout = null
         }, 850)
-    }
-
-    function getNudgingContext(view: ActiveView) {
-        if (view.type !== 'topic') return null
-        const topic = topics.find((item) => item.id === view.topicId)
-        if (!topic) return null
-        return {
-            projectTitle: project.title,
-            projectDescription: project.description,
-            topicTitle: topic.title,
-            topicPrompt: topic.prompt,
-        }
     }
 
     // Create controllers
@@ -763,7 +751,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             promptSpeakerBtn,
             textarea,
             submitBtn,
-            magicBtn,
+            brainstormBtn,
             speakBtn,
         })
 
@@ -1000,19 +988,19 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         resizeObserver.disconnect()
         discoveryRequestToken += 1
         document.removeEventListener('keydown', handleKeyDown)
-        magicModeModal.destroy()
+        brainstormModal.destroy()
         if (copyPulseTimeout !== null) {
             window.clearTimeout(copyPulseTimeout)
         }
     }, { once: false })
 
-    // Magic button focus behavior
+    // Brainstorm button focus behavior
     textarea.addEventListener('focus', () => {
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {

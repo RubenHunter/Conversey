@@ -258,4 +258,50 @@ Rules:
         prompt.Append(transcript);
         return prompt.ToString();
     }
+
+    internal static string BuildKeyPhrasesSystemPrompt()
+    {
+        return "You are a professional note-taking assistant. You ALWAYS return valid JSON. " +
+               "Extract concise, meaningful key phrases from spoken language in {{Language}} as if taking meeting notes. " +
+               "Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings.";
+    }
+
+    internal static string BuildTextFromBubblesSystemPrompt()
+    {
+        return "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in {{Language}}.";
+    }
+
+    internal static IReadOnlyDictionary<string, string> BuildKeyPhrasesVariables(
+        string transcript,
+        string language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases,
+        IReadOnlyList<string> rejectedPhrases)
+    {
+        return new Dictionary<string, string>
+        {
+            ["Transcript"] = transcript ?? string.Empty,
+            ["Language"] = language ?? string.Empty,
+            ["MaxPhrases"] = maxPhrases.ToString(),
+            ["ExistingPhrases"] = JsonSerializer.Serialize(existingPhrases ?? new List<string>()),
+            ["RejectedPhrases"] = JsonSerializer.Serialize(rejectedPhrases ?? new List<string>())
+        };
+    }
+
+    internal static IReadOnlyDictionary<string, string> BuildTextFromBubblesVariables(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        string language,
+        IReadOnlyList<string> rejectedPhrases)
+    {
+        return new Dictionary<string, string>
+        {
+            ["Transcript"] = transcript ?? string.Empty,
+            ["Bubbles"] = bubbles != null ? string.Join("\n- ", bubbles) : string.Empty,
+            ["Language"] = language ?? string.Empty,
+            ["RejectedPhrases"] = rejectedPhrases != null && rejectedPhrases.Count > 0
+                ? string.Join("\n- ", rejectedPhrases)
+                : "(none)"
+        };
+    }
 }

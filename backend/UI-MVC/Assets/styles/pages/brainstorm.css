@@ -1,25 +1,25 @@
-.magic-mode-backdrop {
+.brainstorm-backdrop {
     position: fixed;
     inset: 0;
     z-index: 96;
     background: var(--backdrop-bg);
     backdrop-filter: blur(var(--backdrop-blur));
-    animation: magic-mode-backdrop-in 0.2s ease-out forwards;
+    animation: brainstorm-backdrop-in 0.2s ease-out forwards;
 }
 
-.magic-mode-dialog {
+.brainstorm-dialog {
     position: fixed;
     inset: 0;
     z-index: 97;
     display: flex;
     flex-direction: column;
     background: var(--color-surface);
-    animation: magic-mode-dialog-in 0.22s ease-out forwards;
+    animation: brainstorm-dialog-in 0.22s ease-out forwards;
     min-height: 70vh;
 }
 
 @media (min-width: 640px) {
-    .magic-mode-dialog {
+    .brainstorm-dialog {
         inset: auto;
         left: 50%;
         top: 50%;
@@ -33,7 +33,7 @@
     }
 }
 
-.magic-mode-dialog-header {
+.brainstorm-dialog-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -41,7 +41,7 @@
     flex-shrink: 0;
 }
 
-.magic-mode-dialog-body {
+.brainstorm-dialog-body {
     flex: 1;
     overflow-y: auto;
     padding: var(--spacing-md) 0;
@@ -50,14 +50,14 @@
     gap: var(--spacing-md);
 }
 
-.magic-mode-question {
+.brainstorm-question {
     width: 80%;
     margin: 0 auto;
     text-align: left;
     font-weight: bold;
 }
 
-.magic-mode-dialog-footer {
+.brainstorm-dialog-footer {
     padding: var(--spacing-lg);
     display: flex;
     flex-direction: column;
@@ -66,7 +66,7 @@
     flex-shrink: 0;
 }
 
-.magic-mode-bubble-area {
+.brainstorm-bubble-area {
     flex: 1 1 auto;
     min-height: 6rem;
     border-radius: var(--radius-lg);
@@ -80,7 +80,7 @@
     margin-bottom: 0;
 }
 
-.magic-mode-ring-container {
+.brainstorm-ring-container {
     flex: 0 0 40%;
     min-height: 250px;
     position: relative;
@@ -88,18 +88,18 @@
     margin-top: auto;
 }
 
-@keyframes magic-mode-backdrop-in {
+@keyframes brainstorm-backdrop-in {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
-@keyframes magic-mode-dialog-in {
+@keyframes brainstorm-dialog-in {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 @media (min-width: 640px) {
-    @keyframes magic-mode-dialog-in {
+    @keyframes brainstorm-dialog-in {
         from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
         to { opacity: 1; transform: translate(-50%, -50%); }
     }
@@ -125,7 +125,7 @@
 /* Status Rings - Transcript & AI Indicators */
 /* ========================================================================== */
 
-.magic-mode-ring-wrapper {
+.brainstorm-ring-wrapper {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -136,18 +136,18 @@
     height: 7rem;
 }
 
-.magic-mode-ring-wrapper.recording {
+.brainstorm-ring-wrapper.recording {
     animation: orbit-wrapper 3s linear infinite;
 }
 
-.magic-mode-ring-wrapper.transcribing .magic-mode-transcript-ring,
-.magic-mode-ring-wrapper.recording.transcribing .magic-mode-transcript-ring {
+.brainstorm-ring-wrapper.transcribing .brainstorm-transcript-ring,
+.brainstorm-ring-wrapper.recording.transcribing .brainstorm-transcript-ring {
     opacity: 0.8;
     transform: scale(1.2);
 }
 
-.magic-mode-ring-wrapper.thinking .magic-mode-ai-ring,
-.magic-mode-ring-wrapper.recording.thinking .magic-mode-ai-ring {
+.brainstorm-ring-wrapper.thinking .brainstorm-ai-ring,
+.brainstorm-ring-wrapper.recording.thinking .brainstorm-ai-ring {
     opacity: 0.65;
     transform: scale(1.4);
 }
@@ -156,7 +156,7 @@
    Status Rings - Transcript & AI Indicators
    ========================================================================== */
 
-.magic-mode-ring-wrapper {
+.brainstorm-ring-wrapper {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -167,38 +167,38 @@
 }
 
 /* Transcript wrapper - base rotation speed */
-.magic-mode-transcript-wrapper {
+.brainstorm-transcript-wrapper {
     animation: orbit-wrapper 15s linear infinite;
 }
 
-.magic-mode-transcript-wrapper.recording {
+.brainstorm-transcript-wrapper.recording {
     animation: orbit-wrapper 3s linear infinite;
 }
 
 /* AI wrapper - rotates twice as fast, creating differential motion */
-.magic-mode-ai-wrapper {
+.brainstorm-ai-wrapper {
     animation: orbit-wrapper 30s linear infinite;
 }
 
-.magic-mode-ai-wrapper.recording {
+.brainstorm-ai-wrapper.recording {
     animation: orbit-wrapper 6s linear infinite;
 }
 
 /* State-based ring scaling */
-.magic-mode-transcript-wrapper.transcribing .magic-mode-transcript-ring {
+.brainstorm-transcript-wrapper.transcribing .brainstorm-transcript-ring {
     opacity: 0.8;
     transform: scale(1.2);
 }
 
-.magic-mode-ai-wrapper.thinking .magic-mode-ai-ring {
+.brainstorm-ai-wrapper.thinking .brainstorm-ai-ring {
     opacity: 0.65;
     transform: scale(1.4);
 }
 /* ==========================================================================
-   Magic Mode Bubbles - Cloud Styling
+   Brainstorm Mode Bubbles - Cloud Styling
    ========================================================================== */
 
-.magic-mode-bubble {
+.brainstorm-bubble {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -224,11 +224,11 @@
     animation-delay: calc(var(--bubble-phase) * -1s);
 }
 
-.magic-mode-bubble-text {
+.brainstorm-bubble-text {
     line-height: 1.2;
 }
 
-.magic-mode-bubble-close {
+.brainstorm-bubble-close {
     display: none;
     background: transparent;
     border: none;
@@ -244,23 +244,23 @@
     transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.magic-mode-bubble.active .magic-mode-bubble-close {
+.brainstorm-bubble.active .brainstorm-bubble-close {
     display: block;
     opacity: 1;
 }
 
-.magic-mode-bubble.active {
+.brainstorm-bubble.active {
     background: var(--color-primary);
     color: white;
     box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 20%, transparent);
     transform: translateY(-1px);
 }
 
-.magic-mode-bubble-area .magic-mode-bubble-remove {
+.brainstorm-bubble-area .brainstorm-bubble-remove {
     animation: bubble-pop 0.3s ease-out forwards !important;
 }
 
-.magic-mode-badge-enter {
+.brainstorm-badge-enter {
     animation: cloud-puff 0.4s ease-out, gentle-float 4s ease-in-out infinite 0.4s;
     filter: blur(0px);
 }
@@ -269,7 +269,7 @@
    Status Rings - Transcript & AI Indicators
    ========================================================================== */
 
-.magic-mode-ring-wrapper {
+.brainstorm-ring-wrapper {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -280,23 +280,23 @@
     height: 7rem;
 }
 
-.magic-mode-ring-wrapper.recording {
+.brainstorm-ring-wrapper.recording {
     animation: orbit-wrapper 3s linear infinite;
 }
 
-.magic-mode-ring-wrapper.transcribing .magic-mode-transcript-ring,
-.magic-mode-ring-wrapper.recording.transcribing .magic-mode-transcript-ring {
+.brainstorm-ring-wrapper.transcribing .brainstorm-transcript-ring,
+.brainstorm-ring-wrapper.recording.transcribing .brainstorm-transcript-ring {
     opacity: 0.8;
     transform: scale(1.2);
 }
 
-.magic-mode-ring-wrapper.thinking .magic-mode-ai-ring,
-.magic-mode-ring-wrapper.recording.thinking .magic-mode-ai-ring {
+.brainstorm-ring-wrapper.thinking .brainstorm-ai-ring,
+.brainstorm-ring-wrapper.recording.thinking .brainstorm-ai-ring {
     opacity: 0.65;
     transform: scale(1.4);
 }
 
-.magic-mode-status-ring {
+.brainstorm-status-ring {
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
@@ -304,7 +304,7 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.magic-mode-transcript-ring {
+.brainstorm-transcript-ring {
     width: 4rem;
     height: 4rem;
     color: var(--color-primary);
@@ -314,7 +314,7 @@
     margin: 0;
 }
 
-.magic-mode-ai-ring {
+.brainstorm-ai-ring {
     width: 6rem;
     height: 6rem;
     color: color-mix(in srgb, var(--color-primary) 50%, #E879F9);
@@ -333,14 +333,14 @@
    Mic Elements
    ========================================================================== */
 
-.magic-mode-mic-container {
+.brainstorm-mic-container {
     position: relative;
     display: inline-flex;
     --mic-volume: 0;
     margin-bottom: 1.5rem;
 }
 
-.magic-mode-mic-hint {
+.brainstorm-mic-hint {
     position: absolute;
     top: calc(100% + 0.5rem);
     left: 50%;
@@ -350,7 +350,7 @@
     white-space: nowrap;
 }
 
-.magic-mode-mic-hint.hidden {
+.brainstorm-mic-hint.hidden {
     opacity: 0;
     pointer-events: none;
 }
@@ -359,7 +359,7 @@
    Mic Volume Animation - Filled Circle
    ========================================================================== */
 
-.magic-mode-mic-fill {
+.brainstorm-mic-fill {
     position: absolute;
     inset: 0;
     background: var(--color-primary);
@@ -371,24 +371,24 @@
     transition: opacity 0.15s ease-out, transform 0.05s ease-out;
 }
 
-.magic-mode-mic-container.recording .magic-mode-mic-fill {
+.brainstorm-mic-container.recording .brainstorm-mic-fill {
     opacity: 0.7;
     transform: scale(calc(2.0 + var(--mic-volume) * 2.5));
 }
 
-.magic-mode-mic-container .magic-mode-mic-btn {
+.brainstorm-mic-container .brainstorm-mic-btn {
     position: relative;
     z-index: 1;
 }
 
-.magic-mode-mic-btn {
+.brainstorm-mic-btn {
     background: transparent;
     border: none;
     box-shadow: none;
     color: var(--color-text);
 }
 
-.magic-mode-mic-btn.recording {
+.brainstorm-mic-btn.recording {
     color: white;
     background: transparent;
     border: none;

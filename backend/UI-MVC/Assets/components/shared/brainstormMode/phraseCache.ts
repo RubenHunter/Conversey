@@ -1,5 +1,5 @@
 /**
- * Magic Mode Phrase Cache
+ * Brainstorm Mode Phrase Cache
  * Manages client-side caching of AI phrase extraction results.
  *
  * Provides LRU-like eviction when the cache exceeds its maximum size,

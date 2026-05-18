@@ -1,10 +1,10 @@
 /**
- * Magic Mode API Types
+ * Brainstorm Mode API Types
  * 
- * Shared TypeScript type definitions for Magic Mode API DTOs.
- * These types mirror the C# DTOs in Domain/DTOs/MagicMode/ to eliminate duplication.
+ * Shared TypeScript type definitions for Brainstorm Mode API DTOs.
+ * These types mirror the C# DTOs in Domain/DTOs/BrainstormMode/ to eliminate duplication.
  * 
- * Source of truth: C# backend DTOs in Domain/DTOs/MagicMode/
+ * Source of truth: C# backend DTOs in Domain/DTOs/BrainstormMode/
  * - ExtractKeyPhrasesRequest.cs
  * - ExtractKeyPhrasesResponse.cs
  * 

@@ -16,8 +16,8 @@
  * - Configurable audio quality and timing
  * - Dependency injection for improved testability
  */
-import { SPEECH_CONFIG } from './speechConfig';
-import { getSpeechLanguage } from './speechConfig';
+import { SPEECH_CONFIG } from '../config/speechConfig';
+import { getSpeechLanguage } from '../config/speechConfig';
 import { getBestMimeType } from './speechUtils';
 import { transcribe } from './speechUtils';
 import { createBufferManager, type BufferManager } from './bufferManager';
@@ -135,7 +135,6 @@ export class STTManager {
 
   private dotCount = 0;
   private lastDotUpdate = 0;
-  private transcribeInterval: number | null = null;
   private progressInterval: number | null = null;
   private timerInterval: number | null = null;
 

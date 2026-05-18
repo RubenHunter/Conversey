@@ -2,7 +2,7 @@ import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
 import { bindMicButton, getSpeechLanguage } from '../../../services/speechService'
-import { wireMagicModeButton, type MagicModeModalController } from '../magicMode'
+import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import { getSurveyStrings } from '../../../i18n/survey'
 
 export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
@@ -30,12 +30,12 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                 ></textarea>
 
                 <div class="survey-textarea-actions">
-                    <button class="survey-magic-btn" type="button" title="${t.magicModeTitle}">
+                    <button class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                         </svg>
-                        <span class="survey-magic-btn-text">${t.magicModeButton}</span>
+                        <span class="survey-brainstorm-btn-text">${t.brainstormModeButton}</span>
                     </button>
                     <button class="survey-mic-btn" type="button" title="${t.voiceInput}" id="mic-btn-${question.id}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,21 +54,21 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
-    const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
+    const brainstormBtn = wrapper.querySelector<HTMLElement>('.survey-brainstorm-btn')
 
     // Initialize TTS for speaker button in question header
     initQuestionSpeakerForWrapper(wrapper)
 
     const micBtn = wrapper.querySelector<HTMLElement>(`#mic-btn-${question.id}`)
 
-    let modal: MagicModeModalController | null = null
+    let modal: BrainstormModalController | null = null
 
-    if (magicBtn) {
-        magicBtn.removeAttribute('disabled')
+    if (brainstormBtn) {
+        brainstormBtn.removeAttribute('disabled')
 
-        modal = wireMagicModeButton(magicBtn, {
+        modal = wireBrainstormButton(brainstormBtn, {
             getQuestionText: () => wrapper.querySelector<HTMLElement>('.survey-question-title span')?.textContent ?? '',
-            onResult: (finalText) => {
+            onResult: (finalText: string) => {
                 if (finalText.trim()) {
                     applyTextValue(finalText)
                     answerCallback?.()
@@ -78,7 +78,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
         })
     }
 
-    window.addEventListener('app:before-navigate', () => { modal.destroy() }, { once: true })
+    window.addEventListener('app:before-navigate', () => { modal?.destroy() }, { once: true })
 
     const getContextBias = () => {
         const bias: string[] = []
@@ -110,11 +110,11 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     
     textarea.addEventListener('focus', () => {
         if (isLocked) return
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {

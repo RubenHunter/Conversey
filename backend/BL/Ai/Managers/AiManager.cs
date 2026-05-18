@@ -295,15 +295,22 @@ public sealed class AiManager : IAiManager
         if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
             return new ExtractKeyPhrasesResponse(Array.Empty<string>(), Array.Empty<RejectedPhrase>());
 
-        var userPrompt = AiPromptDefaults.BuildKeyPhrasesUserPrompt(transcript, language, maxPhrases, existingPhrases, rejectedPhrases);
-        var systemPrompt = "You are a professional note-taking assistant. You ALWAYS return valid JSON. " +
-                          "Extract concise, meaningful key phrases from spoken language as if taking meeting notes. " +
-                          "Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings.";
+        var variables = AiPromptDefaults.BuildKeyPhrasesVariables(transcript, language, maxPhrases, existingPhrases, rejectedPhrases);
+
+        var systemPrompt = await LoadPromptAsync("ExtractKeyPhrasesSystem");
+        var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
+            ? PromptRenderer.Render(AiPromptDefaults.BuildKeyPhrasesSystemPrompt(), variables)
+            : PromptRenderer.Render(systemPrompt.SystemPrompt, variables);
+
+        var userPrompt = await LoadPromptAsync("ExtractKeyPhrasesUser");
+        var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
+            ? AiPromptDefaults.BuildKeyPhrasesUserPrompt(transcript, language, maxPhrases, existingPhrases, rejectedPhrases)
+            : PromptRenderer.Render(userPrompt.UserPromptTemplate, variables);
 
         var startTime = DateTime.UtcNow;
         try
         {
-            var result = await _provider.CompleteAsync(systemPrompt, userPrompt, _completionsModel, 0.1m);
+            var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, 0.1m);
             var duration = DateTime.UtcNow - startTime;
 
             var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
@@ -333,13 +340,22 @@ public sealed class AiManager : IAiManager
         if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
             return string.Empty;
 
-        var userPrompt = AiPromptDefaults.BuildTextFromBubblesUserPrompt(transcript, bubbles, language, rejectedPhrases);
-        var systemPrompt = "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in the same language as the user.";
+        var variables = AiPromptDefaults.BuildTextFromBubblesVariables(transcript, bubbles, language, rejectedPhrases);
+
+        var systemPrompt = await LoadPromptAsync("GenerateTextFromBubblesSystem");
+        var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
+            ? PromptRenderer.Render(AiPromptDefaults.BuildTextFromBubblesSystemPrompt(), variables)
+            : PromptRenderer.Render(systemPrompt.SystemPrompt, variables);
+
+        var userPrompt = await LoadPromptAsync("GenerateTextFromBubblesUser");
+        var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
+            ? AiPromptDefaults.BuildTextFromBubblesUserPrompt(transcript, bubbles, language, rejectedPhrases)
+            : PromptRenderer.Render(userPrompt.UserPromptTemplate, variables);
 
         var startTime = DateTime.UtcNow;
         try
         {
-            var result = await _provider.CompleteAsync(systemPrompt, userPrompt, _completionsModel, 0.3m);
+            var result = await _provider.CompleteAsync(systemContent, userContent, _completionsModel, 0.3m);
             var duration = DateTime.UtcNow - startTime;
 
             var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);

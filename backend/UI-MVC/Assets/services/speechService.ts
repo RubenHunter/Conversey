@@ -63,7 +63,7 @@ export type {
 } from './speechTypes';
 
 // Re-export configuration
-export { SPEECH_CONFIG, getSpeechLanguage } from './speechConfig';
+export { SPEECH_CONFIG, getSpeechLanguage } from '../config/speechConfig';
 
 // Re-export utilities and API types
 export { toBase64, getBestMimeType, transcribe, synthesize } from './speechUtils';

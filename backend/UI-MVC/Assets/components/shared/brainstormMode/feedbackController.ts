@@ -1,5 +1,5 @@
 /**
- * Magic Mode Feedback Controller
+ * Brainstorm Mode Feedback Controller
  * Manages display of feedback for rejected phrases.
  *
  * Provides visual feedback when the AI rejects phrases, showing the reason
@@ -58,7 +58,7 @@ export function createFeedbackController(options: FeedbackControllerOptions = {}
      */
     function getReasonText(reason: PhraseRejectionReason): string {
         const reasonMap: Record<PhraseRejectionReason, string> = {
-            'None': t.rejectionNone || 'None',
+            'None': t.rejectionNone,
             'WordCountTooLow': t.rejectionWordCountTooLow,
             'WordCountExceeded': t.rejectionWordCountExceeded,
             'DuplicateExact': t.rejectionDuplicateExact,
@@ -87,7 +87,7 @@ export function createFeedbackController(options: FeedbackControllerOptions = {}
             if (rejected.length === 0) return;
             
             const element = document.createElement('div');
-            element.className = 'magic-mode-feedback';
+            element.className = 'brainstorm-feedback';
             
             // Group by reason and show specific phrases
             const reasonGroups: Record<string, string[]> = {};

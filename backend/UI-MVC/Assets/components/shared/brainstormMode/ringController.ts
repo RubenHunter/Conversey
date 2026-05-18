@@ -1,5 +1,5 @@
 /**
- * Magic Mode Ring Controller
+ * Brainstorm Mode Ring Controller
  * Manages status ring animations for STT and AI processing states.
  *
  * Provides visual feedback through animated CSS rings that indicate:
@@ -76,22 +76,22 @@ export function createRingController(): RingController {
     
     // Create the ring container with both wrappers
     const ringContainer = document.createElement('div');
-    ringContainer.className = 'magic-mode-ring-container';
+    ringContainer.className = 'brainstorm-ring-container';
     
     // Transcript wrapper - slower orbit
     const transcriptWrapper = document.createElement('div');
-    transcriptWrapper.className = 'magic-mode-ring-wrapper magic-mode-transcript-wrapper';
+    transcriptWrapper.className = 'brainstorm-ring-wrapper brainstorm-transcript-wrapper';
     
     // AI wrapper - faster orbit
     const aiWrapper = document.createElement('div');
-    aiWrapper.className = 'magic-mode-ring-wrapper magic-mode-ai-wrapper';
+    aiWrapper.className = 'brainstorm-ring-wrapper brainstorm-ai-wrapper';
     
     // Ring elements
     const transcriptRing = document.createElement('div');
-    transcriptRing.className = 'magic-mode-status-ring magic-mode-transcript-ring';
+    transcriptRing.className = 'brainstorm-status-ring brainstorm-transcript-ring';
     
     const aiRing = document.createElement('div');
-    aiRing.className = 'magic-mode-status-ring magic-mode-ai-ring';
+    aiRing.className = 'brainstorm-status-ring brainstorm-ai-ring';
     
     // Assemble hierarchy
     transcriptWrapper.appendChild(transcriptRing);

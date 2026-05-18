@@ -897,7 +897,7 @@
   opacity: 0.35;
 }
 
-.ideas-magic-row {
+.ideas-brainstorm-row {
   margin-bottom: var(--spacing-xs);
 }
 
@@ -1124,7 +1124,7 @@
   flex: 0 0 auto;
 }
 
-.idea-panel-edit-cta .survey-magic-btn-text {
+.idea-panel-edit-cta .survey-brainstorm-btn-text {
   white-space: nowrap;
 }
 

@@ -75,6 +75,34 @@ public sealed class AiAdminManager : IAiAdminManager
             SystemPrompt = "",
             UserPromptTemplate = "Categorize each idea semantically. One idea may belong to multiple categories.\n\nThese are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:\n{{ExistingCategories}}\n\nIdeas:\n{{Ideas}}\n\nRules:\n- Use short, human-readable category names.\n- Max {{MaxCategoriesPerIdea}} categories per idea.\n- Prefer reusing an existing category label when it is semantically close enough.\n- Avoid near-duplicate labels when an existing category already covers the same meaning.\n- Do not invent idea indexes.\n- Avoid creating near-duplicate labels if an existing category already fits.\n- Return strict JSON only in this shape:\n{\"items\":[{\"index\":0,\"categories\":[\"Category A\",\"Category B\"]}]}",
             Description = "User prompt template for idea categorization. Contains index-labeled ideas, existing category labels, and max categories per idea."
+        },
+        ["ExtractKeyPhrasesSystem"] = new()
+        {
+            Name = "ExtractKeyPhrasesSystem",
+            SystemPrompt = "You are a professional note-taking assistant. You ALWAYS return valid JSON. Extract concise, meaningful key phrases from spoken language in {{Language}} as if taking meeting notes. Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings.",
+            UserPromptTemplate = "",
+            Description = "System prompt for extracting key phrases from speech transcripts. Language variable injected at runtime."
+        },
+        ["ExtractKeyPhrasesUser"] = new()
+        {
+            Name = "ExtractKeyPhrasesUser",
+            SystemPrompt = "",
+            UserPromptTemplate = "",
+            Description = "User prompt template for key phrase extraction. Fallback uses AiPromptDefaults.BuildKeyPhrasesUserPrompt when template is empty. Variables: Transcript, Language, MaxPhrases, ExistingPhrases, RejectedPhrases."
+        },
+        ["GenerateTextFromBubblesSystem"] = new()
+        {
+            Name = "GenerateTextFromBubblesSystem",
+            SystemPrompt = "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in {{Language}}.",
+            UserPromptTemplate = "",
+            Description = "System prompt for generating first-person text from key phrase bubbles. Language variable injected at runtime."
+        },
+        ["GenerateTextFromBubblesUser"] = new()
+        {
+            Name = "GenerateTextFromBubblesUser",
+            SystemPrompt = "",
+            UserPromptTemplate = "",
+            Description = "User prompt template for text generation from bubbles. Fallback uses AiPromptDefaults.BuildTextFromBubblesUserPrompt when template is empty. Variables: Transcript, Bubbles, Language, RejectedPhrases."
         }
     };
 

@@ -1,19 +1,22 @@
 using Conversey.BL.Ai;
 using Conversey.BL.Ai.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using UI_MVC.Controllers.Api;
 
 namespace Tests.IntegrationTests;
 
-public class MagicModeControllerTests
+public class BrainstormControllerTests
 {
     private readonly Mock<IAiManager> _aiManagerMock = new();
-    private readonly MagicModeController _controller;
+    private readonly BrainstormController _controller;
 
-    public MagicModeControllerTests()
+    public BrainstormControllerTests()
     {
-        _controller = new MagicModeController(_aiManagerMock.Object);
+        _controller = new BrainstormController(
+            _aiManagerMock.Object,
+            Mock.Of<ILogger<BrainstormController>>());
     }
 
     [Fact]

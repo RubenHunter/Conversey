@@ -1,41 +1,41 @@
 /**
- * Magic Mode Types
- * Type definitions specific to Magic Mode feature
+ * Brainstorm Mode Types
+ * Type definitions specific to Brainstorm Mode feature
  * 
  * Contains interfaces and types for:
- * - Modal controllers (MagicModeModalController, MagicModeWiringOptions)
+ * - Modal controllers (BrainstormModalController, BrainstormWiringOptions)
  * - Bubble management (BubbleListController, Bubble)
- * - Configuration (MagicModeConfig)
+ * - Configuration (BrainstormConfig)
  * - AI phrase extraction types are imported from shared API types
  */
 
 // Import shared API types from central location to avoid duplication
-// These types mirror the C# DTOs in Domain/DTOs/MagicMode/
+// These types mirror the C# DTOs in Domain/DTOs/BrainstormMode/
 export type {
     PhraseRejectionReason,
     RejectedPhrase,
     ExtractKeyPhrasesRequest,
     ExtractKeyPhrasesResponse,
-} from '../../../services/api/magicModeTypes';
+} from '../../../services/api/brainstormTypes';
 
 // ============================================================================
 // Modal Types
 // ============================================================================
 
 /**
- * Controller interface for Magic Mode modal.
+ * Controller interface for Brainstorm Mode modal.
  * Provides methods to open the modal with question text and handle the result.
  */
-export interface MagicModeModalController {
+export interface BrainstormModalController {
     open(questionText: string, onClose: (text: string) => void): void;
     destroy(): void;
 }
 
 /**
- * Options for wiring Magic Mode button.
+ * Options for wiring Brainstorm Mode button.
  * Provides callbacks for getting the question text and handling the result.
  */
-export interface MagicModeWiringOptions {
+export interface BrainstormWiringOptions {
     getQuestionText: () => string;
     onResult: (finalText: string) => void;
 }
@@ -75,10 +75,10 @@ export interface Bubble {
 // ============================================================================
 
 /**
- * Configuration for Magic Mode feature.
+ * Configuration for Brainstorm Mode feature.
  * Defines limits and timing for phrase extraction and caching.
  */
-export interface MagicModeConfig {
+export interface BrainstormConfig {
     maxPhrases: number;
     cacheMaxSize: number;
     feedbackDurationMs: number;
@@ -86,10 +86,10 @@ export interface MagicModeConfig {
 }
 
 /**
- * Default Magic Mode configuration.
+ * Default Brainstorm Mode configuration.
  * Used as fallback when no custom configuration is provided.
  */
-export const DEFAULT_MAGIC_MODE_CONFIG: MagicModeConfig = {
+export const DEFAULT_BRAINSTORM_CONFIG: BrainstormConfig = {
     maxPhrases: 2,
     cacheMaxSize: 100,
     feedbackDurationMs: 3000,

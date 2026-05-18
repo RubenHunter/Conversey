@@ -1,14 +1,14 @@
 /**
- * Bubble List - Manages Magic Mode phrase bubbles
+ * Bubble List - Manages Brainstorm Mode phrase bubbles
  * 
  * Handles creation, display, and management of phrase bubbles that appear
- * in the Magic Mode modal. Supports both permanent (AI-validated) and temporary
+ * in the Brainstorm Mode modal. Supports both permanent (AI-validated) and temporary
  * bubbles, with animations for adding/removing.
  */
 import { getSurveyStrings } from '../../../i18n/survey'
 
 /**
- * Represents a bubble in the Magic Mode UI.
+ * Represents a bubble in the Brainstorm Mode UI.
  * Contains the phrase text and its DOM element.
  */
 // Bubble interface - all bubbles are permanent (AI validated)
@@ -47,7 +47,7 @@ export function createBubbleList(): BubbleListController {
     const rejectedPhrases = new Set<string>();
     const removingBubbles = new Set<HTMLElement>(); // Track bubbles being animated out
     const container = document.createElement('div');
-    container.className = 'magic-mode-bubble-area';
+    container.className = 'brainstorm-bubble-area';
     container.setAttribute('role', 'list');
 
     const normalize = (s: string): string => s.trim().toLowerCase();
@@ -62,7 +62,7 @@ export function createBubbleList(): BubbleListController {
      */
     function createBubbleElement(text: string, index: number): HTMLElement {
         const bubbleEl = document.createElement('div');
-        bubbleEl.className = 'magic-mode-bubble magic-mode-badge-enter';
+        bubbleEl.className = 'brainstorm-bubble brainstorm-badge-enter';
         bubbleEl.setAttribute('role', 'listitem');
         
         // Random phase (0-100%) for natural staggered animation start
@@ -73,12 +73,12 @@ export function createBubbleList(): BubbleListController {
 
         // Text element
         const label = document.createElement('span');
-        label.className = 'magic-mode-bubble-text';
+        label.className = 'brainstorm-bubble-text';
         label.textContent = text;
 
         // Close button - on the LEFT (using text "\u00d7" instead of icon)
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'magic-mode-bubble-close';
+        closeBtn.className = 'brainstorm-bubble-close';
         closeBtn.setAttribute('aria-label', `${t.remove} "${text}"`);
         closeBtn.textContent = '\u00d7';
 
@@ -107,7 +107,7 @@ export function createBubbleList(): BubbleListController {
         // Handle bubble click - show close button on click (universal for desktop & mobile)
         bubbleEl.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
-            if (target.closest('.magic-mode-bubble-close')) {
+            if (target.closest('.brainstorm-bubble-close')) {
                 return;
             }
             bubbleEl.classList.toggle('active');
@@ -116,7 +116,7 @@ export function createBubbleList(): BubbleListController {
         // Handle touch end - toggle active state (consistent with click)
         bubbleEl.addEventListener('touchend', (e) => {
             const target = e.target as HTMLElement;
-            if (target.closest('.magic-mode-bubble-close')) return;
+            if (target.closest('.brainstorm-bubble-close')) return;
             e.preventDefault(); // Prevent browser scrolling
             bubbleEl.classList.toggle('active');
         });
@@ -135,8 +135,8 @@ export function createBubbleList(): BubbleListController {
         // Add placeholder or active bubbles
         if (activeBubbles.length === 0) {
             const placeholder = document.createElement('p');
-            placeholder.className = 'text-base-content/50 text-sm magic-mode-placeholder';
-            placeholder.textContent = t.magicModeEmptyState;
+            placeholder.className = 'text-base-content/50 text-sm brainstorm-placeholder';
+            placeholder.textContent = t.brainstormModeEmptyState;
             container.appendChild(placeholder);
         } else {
             activeBubbles.forEach((bubble) => {
@@ -172,7 +172,7 @@ export function createBubbleList(): BubbleListController {
         
         // Handle placeholder: remove if we just added first bubble
         if (needsPlaceholderUpdate && activeBubbles.length > 0) {
-            const placeholder = container.querySelector('.magic-mode-placeholder');
+            const placeholder = container.querySelector('.brainstorm-placeholder');
             if (placeholder) placeholder.remove();
         }
     }
@@ -186,7 +186,7 @@ export function createBubbleList(): BubbleListController {
     function addTemporaryBubbles(phrases: string[]): void {
         // Fallback method - adds as permanent for now
         // In future: can be removed when AI validation is fully reliable
-        this.addBubbles(phrases);
+        addBubbles(phrases);
     }
 
     /**
@@ -203,13 +203,13 @@ export function createBubbleList(): BubbleListController {
             // If this was the last active bubble, show placeholder immediately
             if (activeBubbles.length === 0) {
                 const placeholder = document.createElement('p');
-                placeholder.className = 'text-base-content/50 text-sm magic-mode-placeholder';
-                placeholder.textContent = t.magicModeEmptyState;
+                placeholder.className = 'text-base-content/50 text-sm brainstorm-placeholder';
+                placeholder.textContent = t.brainstormModeEmptyState;
                 container.appendChild(placeholder);
             }
             
             // Trigger removal animation
-            removed.element.classList.add('magic-mode-bubble-remove');
+            removed.element.classList.add('brainstorm-bubble-remove');
             removed.element.addEventListener('animationend', () => {
                 removingBubbles.delete(removed.element);
                 removed.element.remove();

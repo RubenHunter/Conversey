@@ -1,5 +1,5 @@
 /**
- * Magic Mode Modal - AI-powered phrase extraction and suggestion modal
+ * Brainstorm Mode Modal - AI-powered phrase extraction and suggestion modal
  * 
  * Provides a modal interface for users to speak their ideas, which are then
  * transcribed and sent to the AI for key phrase extraction. Displays extracted
@@ -16,9 +16,9 @@
 import { getSTTManager } from '../../../services/speechService';
 import { detectLocale, getSurveyStrings } from '../../../i18n/survey';
 import { createBubbleList } from './bubbleList';
-import { createRingController, type RingController } from './ringController';
-import { createPhraseCache, generateCacheKey, type PhraseCache } from './phraseCache';
-import { createFeedbackController, type FeedbackController } from './feedbackController';
+import { createRingController } from './ringController';
+import { createPhraseCache, generateCacheKey } from './phraseCache';
+import { createFeedbackController } from './feedbackController';
 import type { RejectedPhrase, PhraseRejectionReason } from './types';
 
 // ============================================================================
@@ -30,12 +30,12 @@ const MAX_PHRASES = 2;
 // ============================================================================
 // ============================================================================
 
-export interface MagicModeModalController {
+export interface BrainstormModalController {
     open(questionText: string, onClose: (text: string) => void): void;
     destroy(): void;
 }
 
-export function createMagicModeModal(): MagicModeModalController {
+export function createBrainstormModal(): BrainstormModalController {
     const stt = getSTTManager();
     const t = getSurveyStrings();
     let isRecording = false;
@@ -89,17 +89,17 @@ export function createMagicModeModal(): MagicModeModalController {
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
         const backdrop = document.createElement('div');
-        backdrop.className = 'magic-mode-backdrop';
+        backdrop.className = 'brainstorm-backdrop';
 
         const dialog = document.createElement('div');
-        dialog.className = 'magic-mode-dialog';
+        dialog.className = 'brainstorm-dialog';
         dialog.setAttribute('role', 'dialog');
         dialog.setAttribute('aria-modal', 'true');
-        dialog.setAttribute('aria-label', t.magicModeAriaLabel);
+        dialog.setAttribute('aria-label', t.brainstormModeAriaLabel);
 
         // Header
         const header = document.createElement('div');
-        header.className = 'magic-mode-dialog-header';
+        header.className = 'brainstorm-dialog-header';
 
         const title = document.createElement('h3');
         title.className = 'text-xs flex items-center';
@@ -108,11 +108,11 @@ export function createMagicModeModal(): MagicModeModalController {
         icon.className = 'w-6 h-6';
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="70%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wand-sparkles-icon lucide-wand-sparkles"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
 
-        const UpperMagicModeText = document.createElement('span');
-        UpperMagicModeText.innerHTML = t.magicModeActivated;
+        const UpperBrainstormModeText = document.createElement('span');
+        UpperBrainstormModeText.innerHTML = t.brainstormModeActivated;
 
         title.appendChild(icon);
-        title.appendChild(UpperMagicModeText);
+        title.appendChild(UpperBrainstormModeText);
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-ghost btn-sm btn-circle';
@@ -127,10 +127,10 @@ export function createMagicModeModal(): MagicModeModalController {
 
         // Body
         const body = document.createElement('div');
-        body.className = 'magic-mode-dialog-body';
+        body.className = 'brainstorm-dialog-body';
 
         const questionEl = document.createElement('h4');
-        questionEl.className = 'magic-mode-question text-base font-medium text-base-content';
+        questionEl.className = 'brainstorm-question text-base font-medium text-base-content';
 
         body.appendChild(questionEl);
         body.appendChild(bubbleList.element);
@@ -140,18 +140,18 @@ export function createMagicModeModal(): MagicModeModalController {
 
         // Footer
         const footer = document.createElement('div');
-        footer.className = 'magic-mode-dialog-footer';
+        footer.className = 'brainstorm-dialog-footer';
 
         // Mic container for volume animation
         const micContainerEl = document.createElement('div');
-        micContainerEl.className = 'magic-mode-mic-container';
+        micContainerEl.className = 'brainstorm-mic-container';
 
         // Filled circle that expands with volume
         const micFill = document.createElement('div');
-        micFill.className = 'magic-mode-mic-fill';
+        micFill.className = 'brainstorm-mic-fill';
 
         const micBtnEl = document.createElement('button');
-        micBtnEl.className = 'btn btn-circle btn-lg magic-mode-mic-btn';
+        micBtnEl.className = 'btn btn-circle btn-lg brainstorm-mic-btn';
         micBtnEl.setAttribute('aria-label', t.micStartRecording);
         micBtnEl.setAttribute('aria-pressed', 'false');
         micBtnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
@@ -160,7 +160,7 @@ export function createMagicModeModal(): MagicModeModalController {
         micContainerEl.appendChild(micBtnEl);
 
         const micHintEl = document.createElement('p');
-        micHintEl.className = 'text-xs text-base-content/50 magic-mode-mic-hint';
+        micHintEl.className = 'text-xs text-base-content/50 brainstorm-mic-hint';
         micHintEl.textContent = t.micClickToSpeak;
 
         micBtnEl.addEventListener('click', () => {
@@ -275,7 +275,7 @@ export function createMagicModeModal(): MagicModeModalController {
                 bubbleList.addBubbles(result.phrases);
             }
         } catch (error) {
-            console.error('[MagicMode] Validation failed:', error);
+            console.error('[BrainstormMode] Validation failed:', error);
             // Fallback: add as temporary bubble (for emergencies)
             bubbleList.addTemporaryBubbles([text]);
         } finally {
@@ -290,7 +290,7 @@ export function createMagicModeModal(): MagicModeModalController {
         // If we have bubbles and a transcript, try to generate a polished text
         if (bubbles.length > 0 && fullTranscript.trim()) {
             try {
-                const response = await fetch('/api/magic-mode/generate-text', {
+                const response = await fetch('/api/brainstorm/generate-text', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -307,7 +307,7 @@ export function createMagicModeModal(): MagicModeModalController {
                     }
                 }
             } catch (error) {
-                console.error('[MagicMode] Failed to generate final text:', error);
+                console.error('[BrainstormMode] Failed to generate final text:', error);
             }
         }
         
@@ -416,7 +416,7 @@ async function fetchKeyPhrases(
     rejectedPhrases: string[]
 ): Promise<{phrases: string[], rejectedPhrasesWithReasons: RejectedPhrase[]}> {
     try {
-        const response = await fetch('/api/magic-mode/key-phrases', {
+        const response = await fetch('/api/brainstorm/key-phrases', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -4,7 +4,7 @@
  */
 import { STTManager } from './sttManager';
 import { TTSManager } from './ttsManager';
-import { getSpeechLanguage } from './speechConfig';
+import { getSpeechLanguage } from '../config/speechConfig';
 import type { SpeechState } from './speechTypes';
 
 // ============================================================================

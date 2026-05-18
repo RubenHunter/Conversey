@@ -11,8 +11,8 @@
  * - Automatic cleanup on stop/destroy
  * - Dependency injection for improved testability
  */
-import { SPEECH_CONFIG } from './speechConfig';
-import { getSpeechLanguage } from './speechConfig';
+import { SPEECH_CONFIG } from '../config/speechConfig';
+import { getSpeechLanguage } from '../config/speechConfig';
 import { synthesize } from './speechUtils';
 import { SpeechError } from './speechTypes';
 import type { SpeechState, SpeechCallbacks } from './speechTypes';

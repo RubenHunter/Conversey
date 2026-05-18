@@ -1,10 +1,10 @@
 /**
- * Magic Mode Index
- * Exports all Magic Mode related components and types
+ * Brainstorm Mode Index
+ * Exports all Brainstorm Mode related components and types
  */
 
-import { createMagicModeModal } from './magicModeModal';
-import type { MagicModeModalController } from './magicModeModal';
+import { createBrainstormModal } from './brainstormModal';
+import type { BrainstormModalController } from './brainstormModal';
 import { createBubbleList } from './bubbleList';
 import type { BubbleListController } from './bubbleList';
 import { createRingController } from './ringController';
@@ -13,10 +13,10 @@ import { createPhraseCache, generateCacheKey } from './phraseCache';
 import type { PhraseCache, PhraseCacheEntry, PhraseCacheOptions } from './phraseCache';
 import { createFeedbackController } from './feedbackController';
 import type { FeedbackController, FeedbackControllerOptions } from './feedbackController';
-import type { MagicModeWiringOptions } from './types';
+import type { BrainstormWiringOptions } from './types';
 
-export { createMagicModeModal };
-export type { MagicModeModalController };
+export { createBrainstormModal };
+export type { BrainstormModalController };
 export { createBubbleList };
 export type { BubbleListController };
 export { createRingController };
@@ -28,34 +28,34 @@ export type { FeedbackController, FeedbackControllerOptions };
 
 // Re-export types from types.ts
 export type {
-    MagicModeConfig,
+    BrainstormConfig,
     Bubble,
     RejectedPhrase,
     PhraseRejectionReason,
     ExtractKeyPhrasesRequest,
     ExtractKeyPhrasesResponse,
-    MagicModeWiringOptions,
+    BrainstormWiringOptions,
 } from './types';
 
 export {
-    DEFAULT_MAGIC_MODE_CONFIG,
+    DEFAULT_BRAINSTORM_CONFIG,
 } from './types';
 
 /**
- * Wires a button element to open the Magic Mode modal.
+ * Wires a button element to open the Brainstorm Mode modal.
  *
  * Sets up a click handler that opens the modal with the question text
  * from options.getQuestionText() and invokes options.onResult() when done.
  *
  * @param button - The button element to wire up
  * @param options - Wiring options with getQuestionText and onResult callbacks
- * @returns The MagicModeModalController instance for programmatic control
+ * @returns The BrainstormModeModalController instance for programmatic control
  */
-export function wireMagicModeButton(
+export function wireBrainstormButton(
     button: HTMLElement,
-    options: MagicModeWiringOptions
-): MagicModeModalController {
-    const modal = createMagicModeModal();
+    options: BrainstormWiringOptions
+): BrainstormModalController {
+    const modal = createBrainstormModal();
     button.addEventListener('click', () => {
         modal.open(options.getQuestionText(), options.onResult);
     });

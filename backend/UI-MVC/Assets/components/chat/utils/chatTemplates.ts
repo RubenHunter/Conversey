@@ -11,7 +11,7 @@ export const AI_AVATAR = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www
   <path d="M6 32c0-5.523 5.373-9 12-9s12 3.477 12 9" fill="white" fill-opacity="0.9"/>
 </svg>`
 
-export const MAGIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+export const BRAINSTORM_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
   <path d="M20 3v4m2-2h-4M4 17v2m1-1H3"/>
 </svg>`
@@ -63,12 +63,12 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
                         </svg>
                         <span>${t.useAsStartingPoint}</span>
                     </button>
-                    <button id="idea-panel-edit-toggle" class="survey-magic-btn idea-panel-edit-cta" type="button" aria-label="${t.editIdea}" hidden>
+                    <button id="idea-panel-edit-toggle" class="survey-brainstorm-btn idea-panel-edit-cta" type="button" aria-label="${t.editIdea}" hidden>
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                         </svg>
-                        <span class="survey-magic-btn-text">${t.editIdea}</span>
+                        <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                     </button>
                 </div>
             </div>
@@ -187,7 +187,7 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
 
 export interface ChatShellStrings {
     selectAbove: string
-    magicMode: string
+    brainstormMode: string
 }
 
 interface RenderChatShellParams {
@@ -222,8 +222,8 @@ export function renderChatShellTemplate({
             </div>
             <div class="chat-input-wrap">
                 <div class="chat-input-bar">
-                    <button id="chat-magic-btn" class="survey-magic-btn chat-magic-btn" type="button" aria-label="${esc(t.magicMode)}" hidden>
-                        ${MAGIC_SVG}
+                    <button id="chat-brainstorm-btn" class="survey-brainstorm-btn chat-brainstorm-btn" type="button" aria-label="${esc(t.brainstormMode)}" hidden>
+                        ${BRAINSTORM_SVG}
                     </button>
                     <textarea
                         id="chat-input"
