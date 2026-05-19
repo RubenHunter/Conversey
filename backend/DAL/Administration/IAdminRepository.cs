@@ -12,5 +12,6 @@ public interface IAdminRepository
     Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
     Task UpdateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
     Task DeleteWorkspaceAdmin(Guid workspaceAdminId);
+    Task<(bool EmailExists, bool UsernameExists)> CheckWorkspaceAdminConflicts(Slug workspaceId, string email, string username, Guid? excludeWorkspaceAdminId = null);
 
 }

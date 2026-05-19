@@ -1,7 +1,24 @@
+@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Workspace>
-
+@inject IAdminI18nService I18n
 @{
     ViewData["Title"] = "Edit Workspace";
+    ViewData["WorkspaceName"] = "Conversey";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Workspaces", Url.Action("Workspaces", "ConverseyAdmin"), false),
+        ("Edit workspace", null, true)
+    };
+    var formViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Edit workspace",
+        ["SubmitLabel"] = "Save changes"
+    };
 }
 
-@await Html.PartialAsync("_WorkspaceForm", Model)
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+    <main class="mx-auto w-full max-w-2xl p-8">
+        @await Html.PartialAsync("_WorkspaceForm", Model, formViewData)
+    </main>
+</div>

@@ -13,6 +13,39 @@
         ("Workspaces", null, true)
     };
     var workspaces = Model ?? [];
+    var createWorkspaceForm = new AdminFormViewModel<Workspace>
+    {
+        FormItem = new Workspace(),
+        FormAction = "CreateWorkspace",
+        SubmitLabel = "Create workspace"
+    };
+    var editWorkspaceForm = new AdminFormViewModel<Workspace>
+    {
+        FormItem = new Workspace(),
+        FormAction = "EditWorkspace",
+        SubmitLabel = "Save changes"
+    };
+    var editWorkspaceActionTemplate = Url.Action("EditWorkspace", "ConverseyAdmin", new { id = "__workspaceId__" }) ?? "/admin/workspace/__workspaceId__";
+    var createWorkspaceViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Create workspace",
+        ["FormId"] = "workspaceCreateForm",
+        ["CloseButtonId"] = "closeWorkspaceCreateModal",
+        ["FormPostUrl"] = Url.Action("CreateWorkspace", "ConverseyAdmin") ?? "/admin/workspaces/new",
+        ["WorkspaceNameInputId"] = "workspaceCreateNameInput",
+        ["WorkspaceIdInputId"] = "workspaceCreateIdInput",
+        ["SubmitLabel"] = "Create workspace"
+    };
+    var editWorkspaceViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Edit workspace",
+        ["FormId"] = "workspaceEditForm",
+        ["CloseButtonId"] = "closeWorkspaceEditModal",
+        ["FormActionTemplate"] = editWorkspaceActionTemplate,
+        ["WorkspaceNameInputId"] = "workspaceEditNameInput",
+        ["WorkspaceIdInputId"] = "workspaceEditIdInput",
+        ["SubmitLabel"] = "Save changes"
+    };
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -84,9 +117,13 @@
                         </div>
 
                         <div class="flex items-center space-x-1">
-                            <a title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="@Url.Action("EditWorkspace", "ConverseyAdmin", new { id = workspace.Id.Text })" aria-label="Edit workspace @workspace.Name">
+                            <button type="button" title="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20"
+                                    data-open-workspace-edit-modal="true"
+                                    data-workspace-id="@workspace.Id.Text"
+                                    data-workspace-name="@workspace.Name"
+                                    aria-label="Edit workspace @workspace.Name">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </a>
+                            </button>
                             <button title="Copy" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" data-copy-id="@workspace.Id.Text" data-copy-name="@workspace.Name" aria-label="Copy workspace @workspace.Name">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 8h8a2 2 0 002-2V8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             </button>
@@ -95,23 +132,39 @@
                 </div>
             }
 
-            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="@Url.Action("CreateWorkspace", "ConverseyAdmin")" aria-label="Create workspace" data-search-item data-search-ignore>
+            <button type="button" class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" data-open-workspace-create-modal="true" aria-label="Create workspace" data-search-item data-search-ignore>
                 <div class="w-12 h-12 rounded-full bg-white shadow-sm border border-secondary/10 flex items-center justify-center text-secondary group-hover:text-primary group-hover:scale-110 transition-all">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                 </div>
                 <span class="mt-4 font-bold text-sm text-secondary group-hover:text-primary">Create New Workspace</span>
-            </a>
+            </button>
         </div>
     </main>
 
-    <a class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" href="@Url.Action("CreateWorkspace", "ConverseyAdmin")" aria-label="New Workspace">
+    <button type="button" class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" data-open-workspace-create-modal="true" aria-label="New Workspace">
         <svg class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
         <span>New Workspace</span>
-    </a>
+    </button>
+</div>
+
+<div id="workspaceCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("_WorkspaceForm", createWorkspaceForm, createWorkspaceViewData)
+    </div>
+</div>
+
+<div id="workspaceEditModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("_WorkspaceForm", editWorkspaceForm, editWorkspaceViewData)
+    </div>
 </div>
 
 @await Html.PartialAsync("_DeleteModal")
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/workspaceModalForms.ts"></script>
+}

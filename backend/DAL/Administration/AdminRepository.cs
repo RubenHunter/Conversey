@@ -29,6 +29,8 @@ public class AdminRepository : IAdminRepository
         {
             Id = Guid.Parse(workspaceAdmin?.Id ?? throw new InvalidOperationException()),
             Email = workspaceAdmin.Email,
+            Username = workspaceAdmin.UserName ?? workspaceAdmin.Email ?? string.Empty,
+            PhoneNumber = workspaceAdmin.PhoneNumber,
             Workspace = workspaceAdmin.Workspace
         };
     }
@@ -42,7 +44,9 @@ public class AdminRepository : IAdminRepository
             {
                 Id = Guid.Parse(wau.Id),
                 Workspace = wau.Workspace,
-                Email = wau.Email
+                Email = wau.Email,
+                Username = wau.UserName ?? wau.Email ?? string.Empty,
+                PhoneNumber = wau.PhoneNumber
             })
             .ToList()
             .AsReadOnly();
@@ -58,8 +62,9 @@ public class AdminRepository : IAdminRepository
         var workspaceAmin = new WorkspaceAdminUser
         {
             Email = workspaceAdmin.Email,
-            UserName = workspaceAdmin.Email,
+            UserName = string.IsNullOrWhiteSpace(workspaceAdmin.Username) ? workspaceAdmin.Email : workspaceAdmin.Username,
             EmailConfirmed = true,
+            PhoneNumber = workspaceAdmin.PhoneNumber,
             Workspace = workspaceAdmin.Workspace
         };
 
@@ -79,7 +84,8 @@ public class AdminRepository : IAdminRepository
             throw new KeyNotFoundException($"Workspace Admin with ID {workspaceAdmin.Id} not found.");
 
         existingUser.Email = workspaceAdmin?.Email;
-        existingUser.UserName = workspaceAdmin?.Email;
+        existingUser.UserName = string.IsNullOrWhiteSpace(workspaceAdmin?.Username) ? workspaceAdmin?.Email : workspaceAdmin.Username;
+        existingUser.PhoneNumber = workspaceAdmin?.PhoneNumber;
         existingUser.Workspace = workspaceAdmin?.Workspace;
 
         var result = await _userManager.UpdateAsync(existingUser);
@@ -104,6 +110,34 @@ public class AdminRepository : IAdminRepository
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
             throw new Exception($"Failed to Delete Workspace Admin: {errors}");
         }
+    }
+
+    public async Task<(bool EmailExists, bool UsernameExists)> CheckWorkspaceAdminConflicts(
+        Slug workspaceId,
+        string email,
+        string username,
+        Guid? excludeWorkspaceAdminId = null)
+    {
+        var query = _dbContext.WorkspaceAdmins
+            .AsNoTracking()
+            .Where(wau => wau.Workspace.Id == workspaceId);
+
+        if (excludeWorkspaceAdminId.HasValue)
+        {
+            var excludedId = excludeWorkspaceAdminId.Value.ToString();
+            query = query.Where(wau => wau.Id != excludedId);
+        }
+
+        var normalizedEmail = (email ?? string.Empty).Trim().ToUpperInvariant();
+        var normalizedUsername = (username ?? string.Empty).Trim().ToUpperInvariant();
+
+        var emailExists = !string.IsNullOrWhiteSpace(normalizedEmail) &&
+                          await query.AnyAsync(wau => wau.Email != null && wau.Email.ToUpper() == normalizedEmail);
+
+        var usernameExists = !string.IsNullOrWhiteSpace(normalizedUsername) &&
+                             await query.AnyAsync(wau => wau.UserName != null && wau.UserName.ToUpper() == normalizedUsername);
+
+        return (emailExists, usernameExists);
     }
     
 }
