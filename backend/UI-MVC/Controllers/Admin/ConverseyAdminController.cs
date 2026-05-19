@@ -2,13 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.DAL;
-using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
@@ -38,8 +35,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [HttpPost("/admin/workspaces/new")]
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
-        workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
-        return RedirectToAction("Workspaces");
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
+        return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 
     [HttpGet("/admin/workspaces/{id}")]

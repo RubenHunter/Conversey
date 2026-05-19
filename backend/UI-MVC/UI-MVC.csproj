@@ -65,6 +65,10 @@
     <AdditionalFiles Include="Views\WorkspaceAdmin\Index.cshtml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="dp-keys\" />
+  </ItemGroup>
+
 
 
   <!-- Ensure Node environment on Build -->

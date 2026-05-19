@@ -31,7 +31,8 @@ public class AdminRepository : IAdminRepository
             Email = workspaceAdmin.Email,
             Username = workspaceAdmin.UserName ?? workspaceAdmin.Email ?? string.Empty,
             PhoneNumber = workspaceAdmin.PhoneNumber,
-            Workspace = workspaceAdmin.Workspace
+            Workspace = workspaceAdmin.Workspace,
+            FirstLogin = workspaceAdmin.FirstLogin,
         };
     }
 
@@ -46,7 +47,8 @@ public class AdminRepository : IAdminRepository
                 Workspace = wau.Workspace,
                 Email = wau.Email,
                 Username = wau.UserName ?? wau.Email ?? string.Empty,
-                PhoneNumber = wau.PhoneNumber
+                PhoneNumber = wau.PhoneNumber,
+                FirstLogin = wau.FirstLogin,
             })
             .ToList()
             .AsReadOnly();
@@ -65,13 +67,14 @@ public class AdminRepository : IAdminRepository
             UserName = string.IsNullOrWhiteSpace(workspaceAdmin.Username) ? workspaceAdmin.Email : workspaceAdmin.Username,
             EmailConfirmed = true,
             PhoneNumber = workspaceAdmin.PhoneNumber,
-            Workspace = workspaceAdmin.Workspace
+            Workspace = workspaceAdmin.Workspace,
+            FirstLogin = true
         };
-
         var result = await _userManager.CreateAsync(workspaceAmin, "Test123!");
-        if (!result.Succeeded)
+        var roleResult = await _userManager.AddToRoleAsync(workspaceAmin, "WorkspaceAdmin");
+        if (!result.Succeeded || !roleResult.Succeeded)
         {
-            throw new Exception("Creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+            throw new Exception("Creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description) + string.Join(", ", roleResult.Errors.Select(e => e.Description))));
         }
     }
 

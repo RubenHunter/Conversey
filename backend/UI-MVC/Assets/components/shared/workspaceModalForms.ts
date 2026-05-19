@@ -8,6 +8,7 @@ class WorkspaceModalForms {
         this.bindOpeners();
         this.bindWorkspaceAdminValidation("workspaceAdminCreateForm", "workspaceAdminCreateEmailInput", "workspaceAdminCreatePhoneInput", "workspaceAdminCreateServerError");
         this.bindWorkspaceAdminValidation("workspaceAdminEditForm", "workspaceAdminEditEmailInput", "workspaceAdminEditPhoneInput", "workspaceAdminEditServerError");
+        this.openWorkspaceAdminModalOnLoad();
         this.bindEsc();
     }
 
@@ -68,6 +69,15 @@ class WorkspaceModalForms {
                 this.prepareWorkspaceAdminEdit(workspaceAdminId, workspaceAdminEmail, workspaceAdminUsername, workspaceAdminPhone);
             });
         });
+    }
+
+    private openWorkspaceAdminModalOnLoad() {
+        const root = document.querySelector<HTMLElement>("[data-open-workspace-admin-modal]");
+        if (!root || root.dataset.openWorkspaceAdminModal !== "true") {
+            return;
+        }
+
+        document.querySelector<HTMLElement>("[data-modal-key='workspace-admin-create']")?.click();
     }
 
     private prepareWorkspaceEdit(workspaceId: string, workspaceName: string) {

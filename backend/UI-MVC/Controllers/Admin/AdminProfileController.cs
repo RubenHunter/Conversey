@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.UI_MVC.Controllers.Admin;
 
 [Authorize(Roles = "ConverseyAdmin,WorkspaceAdmin")]
-public class AdminProfileController(UserManager<IdentityUser> userManager) : Controller
+public class AdminProfileController(
+    UserManager<IdentityUser> userManager,
+    SignInManager<IdentityUser> signInManager)
+    : Controller
 {
     [HttpGet("/admin/profile")]
     public async Task<IActionResult> Index()
@@ -85,5 +88,46 @@ public class AdminProfileController(UserManager<IdentityUser> userManager) : Con
 
         TempData["ProfileSaved"] = "Profile updated.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("/admin/profile/change-password")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordInputModel model)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Challenge();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new
+            {
+                message = "Validation failed.",
+                errors = ModelState
+                    .Where(entry => entry.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        entry => entry.Key,
+                        entry => entry.Value!.Errors.Select(error => error.ErrorMessage).ToArray())
+            });
+        }
+
+        var changePasswordResult = await userManager.ChangePasswordAsync(
+            user,
+            model.CurrentPassword,
+            model.NewPassword);
+
+        if (!changePasswordResult.Succeeded)
+        {
+            return BadRequest(new
+            {
+                message = "Password change failed.",
+                errors = changePasswordResult.Errors.Select(error => error.Description).ToArray()
+            });
+        }
+
+        await signInManager.RefreshSignInAsync(user);
+        return Ok(new { message = "Password updated." });
     }
 }

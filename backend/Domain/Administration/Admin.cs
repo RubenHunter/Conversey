@@ -18,7 +18,7 @@ public abstract class Admin
     public string PhoneNumber { get; set; }
 
     [Required] 
-    public bool FirstLogin { get; set; } = false;
+    public bool FirstLogin { get; init; } = false;
 }
 
 public class ConverseyAdmin : Admin

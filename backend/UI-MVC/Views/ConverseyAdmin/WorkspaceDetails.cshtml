@@ -81,6 +81,8 @@
         ["SubmitLabel"] = "Save changes"
     };
 
+    var openAdminModal = string.Equals(Context.Request.Query["openAdminModal"], "true", StringComparison.OrdinalIgnoreCase);
+
     var tableModel = new AdminTableViewModel<WorkspaceAdmin>
     {
         SectionTitle = "All workspace admins",
@@ -89,7 +91,7 @@
         CreateButtonLabel = "Create new Workspace Admin",
         CreateButtonId = "openWorkspaceAdminCreateModal",
         CreateButtonModalKey = "workspace-admin-create",
-        EmptyState = $"Workspace Admins for {Model.Workspace} will show up here once they are created",
+        EmptyState = $"Workspace Admins for {Model.Workspace.Name} will show up here once they are created",
         RowId = u => u.Id.ToString(),
 
         Items = users.ToList(),
@@ -192,7 +194,7 @@
     };
 }
 
-<div class="min-h-screen bg-background font-sans text-text">
+<div class="min-h-screen bg-background font-sans text-text" data-open-workspace-admin-modal="@openAdminModal.ToString().ToLowerInvariant()">
     @await Html.PartialAsync("_AdminHeader")
 
     <main class="p-8 w-full max-w-400 mx-auto">
