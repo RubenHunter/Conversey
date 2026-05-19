@@ -28,8 +28,25 @@ document.addEventListener('click', (e) => {
         e.stopPropagation()
         const locale = option.dataset.lang as SurveyLocale | undefined
         if (!locale || locale === getLocale()) return
+
+        const label = option.textContent?.trim() || locale.toUpperCase()
+
+        // Update all lang toggle texts immediately
+        document.querySelectorAll('.lang-toggle span:not(.lang-chevron)').forEach(span => {
+            span.textContent = label
+        })
+
+        // Update selected class on all lang options
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            const optLocale = (opt as HTMLElement).dataset.lang
+            opt.classList.toggle('lang-option--selected', optLocale === locale)
+        })
+
+        // Close all lang menus
+        document.querySelectorAll('.lang-menu').forEach(m => m.classList.add('hidden'))
+        document.querySelectorAll('.lang-toggle').forEach(t => t.setAttribute('aria-expanded', 'false'))
+
         setLocale(locale)
-        window.location.reload()
     }
 
     // Close on outside click (if not clicking toggle or menu)

@@ -534,16 +534,32 @@ export function detectLocale(): SurveyLocale {
     return 'nl'
 }
 
+type LocaleChangeCallback = (locale: SurveyLocale) => void
+const localeChangeListeners: LocaleChangeCallback[] = []
+
+export function onLocaleChange(callback: LocaleChangeCallback): () => void {
+    localeChangeListeners.push(callback)
+    return () => {
+        const idx = localeChangeListeners.indexOf(callback)
+        if (idx >= 0) localeChangeListeners.splice(idx, 1)
+    }
+}
+
+let currentLocale: SurveyLocale = detectLocale()
+
 export function setLocale(locale: SurveyLocale): void {
     try {
         localStorage.setItem(LOCALE_STORAGE_KEY, locale)
     } catch { /* ignore storage errors */ }
+    if (locale === currentLocale) return
+    currentLocale = locale
+    localeChangeListeners.forEach(fn => fn(locale))
 }
 
 export function getLocale(): SurveyLocale {
-    return detectLocale()
+    return currentLocale
 }
 
 export function getSurveyStrings(): SurveyStrings {
-    return translations[detectLocale()]
+    return translations[currentLocale]
 }

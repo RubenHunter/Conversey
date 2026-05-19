@@ -1,5 +1,6 @@
 import { getSurveyStrings } from '../../../i18n/survey'
 import { renderSurveyHeader } from './surveyHeader'
+import { InteractionType } from '../../../models/project'
 
 const CHAT_BUBBLE_ICON = `<svg class="layout-picker-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path d="M10 14h38a6 6 0 016 6v24a6 6 0 01-6 6H30l-8 8-2-8H10a6 6 0 01-6-6V20a6 6 0 016-6z" fill="white" fill-opacity="0.95" stroke="white" stroke-width="2" stroke-linejoin="round"/>
@@ -32,7 +33,7 @@ export async function showLayoutPicker({
     storageKey,
     organizationName,
     organizationSlug,
-}: ShowLayoutPickerParams): Promise<'chat' | 'classic'> {
+}: ShowLayoutPickerParams): Promise<typeof InteractionType.Chat | typeof InteractionType.VerticalScroll> {
     const t = getSurveyStrings()
     const headerHTML = renderSurveyHeader({ organizationName, organizationSlug })
     
@@ -47,7 +48,7 @@ export async function showLayoutPicker({
                 </div>
 
                 <div class="layout-picker-body max-[600px]:flex-col">
-                    <button class="layout-picker-side layout-picker-side--chat" data-layout="chat" type="button">
+                    <button class="layout-picker-side layout-picker-side--chat" data-layout="${InteractionType.Chat}" type="button">
                         <div class="layout-picker-bg" style="background-image: url('${chatExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
                         <div class="layout-picker-icon-wrap">${CHAT_BUBBLE_ICON}</div>
@@ -61,7 +62,7 @@ export async function showLayoutPicker({
                         <span class="layout-picker-or">or</span>
                     </div>
 
-                    <button class="layout-picker-side layout-picker-side--classic" data-layout="classic" type="button">
+                    <button class="layout-picker-side layout-picker-side--classic" data-layout="${InteractionType.VerticalScroll}" type="button">
                         <div class="layout-picker-bg" style="background-image: url('${classicExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
                         <div class="layout-picker-icon-wrap">${CLASSIC_SCROLL_ICON}</div>
@@ -95,12 +96,10 @@ export async function showLayoutPicker({
 
         container.querySelectorAll<HTMLButtonElement>('[data-layout]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const layout = btn.getAttribute('data-layout') as 'chat' | 'classic'
+                const layout = btn.getAttribute('data-layout')
+                if (layout !== InteractionType.Chat && layout !== InteractionType.VerticalScroll) return
                 const remember = checkbox?.checked ?? false
                 try {
-                    // Always persist for current session so accidental reload doesn't
-                    // throw the user back to the picker (e.g. browser refresh).
-                    sessionStorage.setItem(storageKey, layout)
                     if (remember) {
                         localStorage.setItem(storageKey, layout)
                     } else {
