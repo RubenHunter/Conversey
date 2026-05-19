@@ -5,7 +5,6 @@ import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
 import { QuestionType } from '../../../models/question'
-import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
 import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
@@ -224,7 +223,6 @@ export async function renderChatSurveyPage(
         
         setTimeout(() => chatInput.focus(), 50)
     }
-    let activeSendHandler: (() => void | Promise<void>) | null = null
     const bubbleSpeakerControllers: SpeakerButtonController[] = []
     let isChatRecording = false
     

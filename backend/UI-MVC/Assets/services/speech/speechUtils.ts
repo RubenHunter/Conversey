@@ -46,8 +46,8 @@ export interface TranscribeResponse {
 
 /** Request body for synthesize API call */
 export interface SynthesizeRequestBody {
-  Input: string;
-  Language: string;
+  input: string;
+  language: string;
 }
 
 // ============================================================================
@@ -69,7 +69,7 @@ export async function transcribe(audio: Blob, language: string, contextBias: str
   try {
     const response = await apiFetch<TranscribeResponse>('/speech/transcribe', {
       method: 'POST',
-      body: JSON.stringify({ AudioBase64: audioBase64, Language: language, ContextBias: contextBias, MimeType: mimeType })
+      body: JSON.stringify({ audioBase64: audioBase64, language: language, contextBias: contextBias, mimeType: mimeType })
     });
     return response.text || '';
   } catch (err) {
@@ -89,7 +89,7 @@ export async function synthesize(text: string, language: string): Promise<Blob> 
     const response = await fetch('/api/speech/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Input: text, Language: language } as SynthesizeRequestBody)
+      body: JSON.stringify({ input: text, language: language } as SynthesizeRequestBody)
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

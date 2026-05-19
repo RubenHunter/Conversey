@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using System.Text.Json.Serialization;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -31,7 +32,11 @@ var builder = WebApplication.CreateBuilder(args);
 // const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddRazorPages()
     .AddRazorPagesOptions(options =>
     {
