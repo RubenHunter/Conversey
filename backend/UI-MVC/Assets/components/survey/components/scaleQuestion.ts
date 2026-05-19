@@ -7,8 +7,8 @@ export function renderScaleQuestion(question: Question, index: number): Question
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
-    const lower: number = (question as any).lowerBound ?? 1
-    const upper: number = (question as any).upperBound ?? 10
+    const lower: number = question.lowerBound ?? 1
+    const upper: number = question.upperBound ?? 10
     const totalSteps = upper - lower + 1
 
     const wrapper = document.createElement('div')

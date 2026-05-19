@@ -1,6 +1,7 @@
 import { QuestionType } from '../../../models/question'
 import type { Question } from '../../../models/question'
-import type { QuestionAnswer } from '../../survey/components/singleChoiceQuestion'
+import type { ResponseAnswer } from '../../../models/response'
+import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { esc } from '../../survey/utils/surveyUtils'
 
 export { esc }
@@ -11,6 +12,38 @@ export function wait(ms: number): Promise<void> {
 
 export function hasAnswer(answer: QuestionAnswer): boolean {
     return Array.isArray(answer) ? answer.length > 0 : answer !== null && answer !== ''
+}
+
+export function mapAnswersToResponse(questions: Question[], components: QuestionComponent[]): ResponseAnswer[] {
+    return questions.reduce<ResponseAnswer[]>((acc, q, i) => {
+        const answer = components[i].getAnswer()
+        if (q.type === QuestionType.SingleChoice) {
+            const id = answer as number
+            if (id != null) {
+                acc.push({ questionId: q.id, selectedOptionId: id })
+            }
+            return acc
+        }
+        if (q.type === QuestionType.MultipleChoice) {
+            const ids = Array.isArray(answer) ? answer : []
+            ids.forEach((id) => {
+                acc.push({ questionId: q.id, selectedOptionId: id })
+            })
+            return acc
+        }
+        if (q.type === QuestionType.Scale) {
+            const val = answer as number
+            if (val != null) {
+                acc.push({ questionId: q.id, selectedOptionId: val })
+            }
+            return acc
+        }
+        const text = answer as string
+        if (text?.trim()) {
+            acc.push({ questionId: q.id, openTextValue: text })
+        }
+        return acc
+    }, [])
 }
 
 export function formatAnswerForDisplay(question: Question, answer: QuestionAnswer): string {

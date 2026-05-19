@@ -5,7 +5,6 @@ import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
 import { QuestionType } from '../../../models/question'
-import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
 import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
@@ -40,12 +39,12 @@ import { getVisibleIdeas, type DiscoveryOptions } from '../../ideas/utils/discov
 import { initIdeasContext, type IdeasInitResult } from '../../ideas/utils/ideasInit'
 import { getOrganizationBadge } from '../../shared/organizationBranding.ts'
 import { getSurveyStrings } from '../../../i18n/survey'
-import { formatAnswerForDisplay, hasAnswer, wait, esc } from '../utils/chatHelpers.ts'
+import { formatAnswerForDisplay, hasAnswer, mapAnswersToResponse, wait, esc } from '../utils/chatHelpers.ts'
 import {
-    AI_AVATAR,
     CHECKMARK_SVG,
     SPEAKER_SVG,
     renderChatShellTemplate,
+    avatarHTML,
 } from '../utils/chatTemplates.ts'
 
 interface OpenTextState {
@@ -80,19 +79,7 @@ export async function renderChatSurveyPage(
     const workspaceBadge = getOrganizationBadge(orgName, project.organizationSlug)
     const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug })
 
-    const workspaceAvatarSVG = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="18" cy="18" r="17" fill="var(--color-primary)"/>
-      <text x="18" y="18" text-anchor="middle" dy="0.35em" fill="white" font-size="${workspaceBadge.length > 2 ? '10' : '13'}" font-weight="800" font-family="system-ui, -apple-system, sans-serif">${workspaceBadge}</text>
-    </svg>`
-
     let inIdeasPhase = false
-
-    function avatarHTML(): string {
-        if (inIdeasPhase) {
-            return `${AI_AVATAR}<span class="chat-avatar-badge">AI</span>`
-        }
-        return workspaceAvatarSVG
-    }
 
     container.innerHTML = renderChatShellTemplate({
         projectTitle: project.title,
@@ -281,7 +268,7 @@ export async function renderChatSurveyPage(
         row.className = 'chat-row chat-row--ai'
         row.innerHTML = `
             <div class="chat-avatar">
-                ${avatarHTML()}
+                ${avatarHTML(workspaceBadge, inIdeasPhase)}
             </div>
             <div class="chat-bubble-group">
                 <div class="chat-bubble chat-bubble--ai chat-bubble--typing">
@@ -366,7 +353,7 @@ export async function renderChatSurveyPage(
 
         const avatarDiv = document.createElement('div')
         avatarDiv.className = 'chat-avatar'
-        avatarDiv.innerHTML = avatarHTML()
+        avatarDiv.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
 
         row.appendChild(avatarDiv)
         row.appendChild(group)
@@ -759,35 +746,7 @@ export async function renderChatSurveyPage(
             btn.disabled = true
             btn.textContent = t.submitting
 
-            const answers = questions.reduce<ResponseAnswer[]>((acc, q, i) => {
-                const answer = components[i].getAnswer()
-                if (q.type === QuestionType.SingleChoice) {
-                    const id = answer as number
-                    if (id != null) {
-                        acc.push({ questionId: q.id, selectedOptionId: id })
-                    }
-                    return acc
-                }
-                if (q.type === QuestionType.MultipleChoice) {
-                    const ids = Array.isArray(answer) ? answer : []
-                    ids.forEach((id) => {
-                        acc.push({ questionId: q.id, selectedOptionId: id })
-                    })
-                    return acc
-                }
-                if (q.type === QuestionType.Scale) {
-                    const val = answer as number
-                    if (val != null) {
-                        acc.push({ questionId: q.id, selectedOptionId: val })
-                    }
-                    return acc
-                }
-                const text = answer as string
-                if (text?.trim()) {
-                    acc.push({ questionId: q.id, openTextValue: text })
-                }
-                return acc
-            }, [])
+            const answers = mapAnswersToResponse(questions, components)
 
             try {
                 await submitAnswers(params.organizationSlug, params.projectSlug, {
