@@ -5,6 +5,7 @@ import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
 import { QuestionType } from '../../../models/question'
+import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
 import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
@@ -46,6 +47,8 @@ import {
     renderChatShellTemplate,
     avatarHTML,
 } from '../utils/chatTemplates.ts'
+import { getSTTManager, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../../services/speechService'
+import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 
 interface OpenTextState {
     questionIndex: number
@@ -121,13 +124,31 @@ export async function renderChatSurveyPage(
     let confirmedUpToIndex = 0
     let openTextState: OpenTextState | null = null
     let activeConfirmIndex: number | null = null
-        let activeSendHandler: (() => void | Promise<void>) | null = null
-        let editingBubble: HTMLElement | null = null
-        let editingPrevSendHandler: (() => void | Promise<void>) | null = null
-        let handleIdeaSubmit: () => Promise<void> = async () => { return }
+    let activeSendHandler: (() => void | Promise<void>) | null = null
+    let editingBubble: HTMLElement | null = null
+    let editingPrevSendHandler: (() => void | Promise<void>) | null = null    
+    let handleIdeaSubmit: () => Promise<void> = async () => { return }
+
+    const brainstormController: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
+        getQuestionText: () => {
+            if (openTextState && openTextState.questionIndex < questions.length) {
+                return questions[openTextState.questionIndex].text ?? ''
+            }
+            return chatInput.placeholder
+        },
+        onResult: (finalText: string) => {
+            if (finalText.trim()) {
+                chatInput.value = finalText
+                chatInput.style.height = 'auto'
+                chatInput.style.height = chatInput.scrollHeight + 'px'
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+                if (activeSendHandler) activeSendHandler()
+            }
+        }
+    })
 
     // ===== Edit handler (must be defined early for use in sendOpenTextMessage) =====
-        const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
+    const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
         
         // Cancel any current edit before starting new one
         cancelCurrentEdit()
@@ -203,6 +224,9 @@ export async function renderChatSurveyPage(
         
         setTimeout(() => chatInput.focus(), 50)
     }
+    let activeSendHandler: (() => void | Promise<void>) | null = null
+    const bubbleSpeakerControllers: SpeakerButtonController[] = []
+    let isChatRecording = false
     
     function cancelBubbleEdit(bubbleElement: HTMLElement, prevSendHandler: (() => void | Promise<void>) | null): void {
         bubbleElement.classList.remove('chat-bubble--editing')
@@ -329,9 +353,10 @@ export async function renderChatSurveyPage(
         const speakerBtn = document.createElement('button')
         speakerBtn.className = 'chat-speaker-btn'
         speakerBtn.type = 'button'
-        speakerBtn.disabled = true
         speakerBtn.setAttribute('aria-label', t.readAloud)
         speakerBtn.innerHTML = SPEAKER_SVG
+        const speakerController = createSpeakerButton(speakerBtn, () => text, getSpeechLanguage)
+        bubbleSpeakerControllers.push(speakerController)
 
         let bubbleOrWrapper: HTMLElement = bubbleEl
 
@@ -372,6 +397,11 @@ export async function renderChatSurveyPage(
 
     // ===== Input icon =====
     function updateSendIcon(): void {
+        if (isChatRecording) {
+            micIcon.classList.remove('chat-icon-hidden')
+            sendIcon.classList.add('chat-icon-hidden')
+            return
+        }
         const hasText = chatInput.value.trim().length > 0
         micIcon.classList.toggle('chat-icon-hidden', hasText)
         sendIcon.classList.toggle('chat-icon-hidden', !hasText)
@@ -597,6 +627,7 @@ export async function renderChatSurveyPage(
     }
 
     function deactivateInput(placeholder = ''): void {
+        stopChatRecording()
         activeSendHandler = null
         chatInput.disabled = true
         chatInput.value = ''
@@ -607,6 +638,34 @@ export async function renderChatSurveyPage(
         updateSendIcon()
     }
 
+    function startChatRecording(): void {
+        if (isChatRecording) return
+        isChatRecording = true
+        sendBtn.classList.add('recording')
+        const stt = getSTTManager()
+        const language = getSpeechLanguage()
+        stt.setupCallbacks({
+            onStateChange: (state) => {
+                if (state === 'idle' || state === 'error') {
+                    isChatRecording = false
+                    sendBtn.classList.remove('recording')
+                    updateSendIcon()
+                }
+            },
+        })
+        stt.start(chatInput, language, () => { updateSendIcon() }).catch(() => {
+            isChatRecording = false
+            sendBtn.classList.remove('recording')
+        })
+    }
+
+    function stopChatRecording(): void {
+        if (!isChatRecording) return
+        isChatRecording = false
+        sendBtn.classList.remove('recording')
+        getSTTManager().stop()
+    }
+
     chatInput.addEventListener('input', () => {
         updateSendIcon()
         chatInput.style.height = 'auto'
@@ -614,7 +673,15 @@ export async function renderChatSurveyPage(
     })
 
     sendBtn.addEventListener('click', () => {
-        void activeSendHandler?.()
+        if (isChatRecording) {
+            stopChatRecording()
+            return
+        }
+        if (chatInput.value.trim().length > 0) {
+            void activeSendHandler?.()
+            return
+        }
+        startChatRecording()
     })
 
     chatInput.addEventListener('keydown', (e) => {
@@ -1519,6 +1586,12 @@ export async function renderChatSurveyPage(
         await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title), { prefix: t.topicQuestionLabel })
         activateIdeaInput(t.shareIdea, handleIdeaSubmit)
     }
+
+    window.addEventListener('app:before-navigate', () => {
+        stopChatRecording()
+        bubbleSpeakerControllers.forEach(c => c.stop())
+        brainstormController.destroy()
+    }, { once: true })
 
     // ===== Start conversation =====
     if (startInIdeasMode) {

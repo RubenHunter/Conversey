@@ -1456,6 +1456,42 @@ public static class DataSeeder
                 Description = "User prompt template for idea categorization. Contains index-labeled ideas, existing category labels, and max categories per idea.",
                 CreatedAt = now,
                 UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ExtractKeyPhrasesSystem",
+                SystemPrompt = "You are a professional note-taking assistant. You ALWAYS return valid JSON. Extract concise, meaningful key phrases from spoken language in {{Language}} as if taking meeting notes. Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings.",
+                UserPromptTemplate = "",
+                Description = "System prompt for extracting key phrases from speech transcripts. Language variable injected at runtime.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ExtractKeyPhrasesUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "",
+                Description = "User prompt template for key phrase extraction. Uses hardcoded fallback when empty.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "GenerateTextFromBubblesSystem",
+                SystemPrompt = "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in {{Language}}.",
+                UserPromptTemplate = "",
+                Description = "System prompt for generating first-person text from key phrase bubbles. Language variable injected at runtime.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "GenerateTextFromBubblesUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "",
+                Description = "User prompt template for text generation from bubbles. Uses hardcoded fallback when empty.",
+                CreatedAt = now,
+                UpdatedAt = now
             }
         };
 
@@ -1557,7 +1593,7 @@ public static class DataSeeder
         var rnd = new Random(42);
         var models = new[] { "mistral-small-latest", "mistral-large-latest", "mistral-moderation-latest" };
         var types = new[] { "Completions", "Moderation" };
-        var prompts = new[] { "IdeaNudgingSystem", "IdeaNudgingUser", "IdeaRankingSystem", "IdeaRankingUser", "IdeaCategorizationSystem", "IdeaCategorizationUser", "ModerationPrompt", "ModerationGenerateAlternative" };
+        var prompts = new[] { "IdeaNudgingSystem", "IdeaNudgingUser", "IdeaRankingSystem", "IdeaRankingUser", "IdeaCategorizationSystem", "IdeaCategorizationUser", "ModerationPrompt", "ModerationGenerateAlternative", "ExtractKeyPhrasesSystem", "ExtractKeyPhrasesUser", "GenerateTextFromBubblesSystem", "GenerateTextFromBubblesUser" };
         var providers = new[] { "Mistral" };
 
         var workspaces = new[] { hogeschool, stadLinden, collegeNova };

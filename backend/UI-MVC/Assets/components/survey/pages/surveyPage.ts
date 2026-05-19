@@ -338,6 +338,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             clearTimeout(scrollTimeoutId)
             scrollTimeoutId = null
         }
+        components.forEach(c => c.destroy?.())
         scrollNav?.destroy()
         scrollNav = null
     }

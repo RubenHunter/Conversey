@@ -1,4 +1,7 @@
+using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
+
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.BL.Ai;
 
@@ -14,4 +17,17 @@ public interface IAiManager
         int maxCategoriesPerIdea,
         string? workspaceId = null,
         string? projectId = null);
+
+    Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+        string transcript,
+        Language language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null);
+
+    Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        Language language,
+        IReadOnlyList<string> rejectedPhrases = null);
 }

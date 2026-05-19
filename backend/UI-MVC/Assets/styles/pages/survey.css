@@ -310,6 +310,12 @@
     height: 16px;
 }
 
+@media screen and (max-device-width: 600px){
+    .scale-ticks{
+        display: none;
+    }
+}
+
 .scale-tick-label {
     font-size: 11px;
     color: var(--color-text-muted, var(--color-border));
@@ -725,4 +731,37 @@
 .layout-picker-toggle-label {
     font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
     color: var(--color-text-secondary);
+}
+
+/* Brainstorm Mode Feedback Styles */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
+
+.brainstorm-feedback {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1000;
+  animation: fadeInOut 3s ease-out forwards;
+}
+
+/* Brainstorm Mode Bubble Removal Animation */
+@keyframes bubbleFadeOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+.brainstorm-bubble-remove {
+  animation: bubbleFadeOut 0.2s ease-out forwards;
 }

@@ -29,6 +29,8 @@ const fieldDefaults: Record<string, string> = {
   setupKeyExpiry: '',
   setupCompletionsModel: '',
   setupModerationModel: '',
+  setupSttModel: '',
+  setupTtsModel: '',
   setupTemperature: '0.2'
 };
 

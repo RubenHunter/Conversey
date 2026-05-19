@@ -1,4 +1,6 @@
 using Conversey.BL.Ai;
+using Conversey.BL.Ai.DTOs;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 
 namespace Tests.IntegrationTests;
@@ -52,5 +54,47 @@ public class MockAiManager : IAiManager
         }
 
         return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
+    }
+
+    public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+        string transcript,
+        Language language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+            return Task.FromResult<ExtractKeyPhrasesResponse>(new ExtractKeyPhrasesResponse([]));
+
+        var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+        var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? new HashSet<string>();
+
+        var sentences = transcript
+            .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
+            .Take(maxPhrases)
+            .ToList()
+            .AsReadOnly();
+        return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
+    }
+
+    public Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        Language language,
+        IReadOnlyList<string> rejectedPhrases = null)
+    {
+        if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+            return Task.FromResult(string.Empty);
+        
+        // Simple mock: combine transcript and bubbles, filtering out rejected phrases
+        var filteredBubbles = bubbles.ToList();
+        if (rejectedPhrases != null)
+        {
+            var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+            filteredBubbles = filteredBubbles.Where(b => !rejectedSet.Contains(b)).ToList();
+        }
+        return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
     }
 }

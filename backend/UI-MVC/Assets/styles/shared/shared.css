@@ -109,11 +109,185 @@ input.survey-textarea {
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base), color var(--transition-base), box-shadow 0.4s ease;
   flex-shrink: 0;
+  position: relative;
 }
 
 .survey-mic-btn:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
   color: var(--color-primary);
+}
+
+/* Timer text - positioned over button content, shown when recording is active */
+.survey-mic-btn .timer-text {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-surface);
+  pointer-events: none;
+  animation: none;
+}
+
+/* Show timer when recording is active */
+.stt-aura--active .survey-mic-btn .timer-text {
+  display: flex;
+}
+
+/* Hide original button content (icons, text) when recording is active */
+.stt-aura--active .survey-mic-btn > :not(.timer-text) {
+  display: none !important;
+}
+
+/* Blinking animation for timer at <=10 seconds */
+@keyframes timer-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.stt-aura--active .survey-mic-btn .timer-text.timer-blink {
+  animation: timer-blink 0.5s ease-in-out infinite;
+}
+
+/* Mic button active state */
+.survey-mic-btn.active,
+.survey-mic-btn:active {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+/* Pulsing glow on the button during recording */
+.stt-aura--active .survey-mic-btn {
+  animation: stt-glow 2.2s ease-in-out infinite;
+}
+
+@keyframes stt-glow {
+  0%, 100% { box-shadow: 0 0 6px 1px color-mix(in srgb, var(--color-primary) 45%, transparent); }
+  50%       { box-shadow: 0 0 18px 5px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+}
+
+/* ─── STT aura container ─────────────────────────────────────────────────── */
+
+/* Sits in the flex row as a flex item; its pseudo-elements rotate around it */
+.stt-aura {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* Creates a stacking context so z-index: -1 pseudo-elements stay behind
+     the button's icon without escaping to the page background */
+  isolation: isolate;
+}
+
+/* Both rings hidden by default — fade in when recording starts */
+.stt-aura::before,
+.stt-aura::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.5s ease;
+}
+
+/* Inner ring — uses primary color from theme */
+.stt-aura--active::before {
+  inset: -7px;
+  background: conic-gradient(
+          transparent 0deg,
+          var(--color-primary) 100deg,
+          transparent 150deg
+  );
+  animation: stt-spin 1.8s linear infinite;
+  filter: blur(5px);
+  opacity: 1;
+}
+
+/* Outer ring — uses color mix with primary from theme */
+.stt-aura--active::after {
+  inset: -14px;
+  background: conic-gradient(
+          transparent 0deg,
+          color-mix(in srgb, var(--color-primary) 50%, #E879F9) 100deg,
+          transparent 150deg
+  );
+  animation: stt-spin 2.8s linear infinite reverse;
+  filter: blur(10px);
+  opacity: 0.65;
+}
+
+@keyframes stt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Speaker button styles */
+.survey-speaker-btn {
+  width: clamp(var(--spacing-xl), 4vw, calc(var(--spacing-xl) * 1.5));
+  height: clamp(var(--spacing-xl), 4vw, calc(var(--spacing-xl) * 1.5));
+  border-radius: var(--radius-full);
+  background-color: var(--color-disabled-bg);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.survey-speaker-btn:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-primary-light) 20%, transparent);
+  color: var(--color-primary);
+}
+
+/* Speaker button active state */
+.survey-speaker-btn.active,
+.survey-speaker-btn:active {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+/* ======================================================================== */
+/* Textarea Speech Feedback Styles */
+/* ======================================================================== */
+
+/* Shimmer effect for listening state - using theme colors */
+textarea.speech-listening,
+textarea.speech-processing {
+  position: relative;
+  background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--color-primary-light) 10%, transparent) 0%,
+          color-mix(in srgb, var(--color-primary-light) 30%, transparent) 50%,
+          color-mix(in srgb, var(--color-primary-light) 10%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: speech-shimmer 3s linear infinite;
+  cursor: wait;
+}
+
+textarea.speech-listening::placeholder,
+textarea.speech-processing::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Ensure textarea remains visible when disabled/readonly */
+textarea:read-only.speech-listening,
+textarea:read-only.speech-processing {
+  opacity: 1;
+  background-color: transparent;
+}
+
+
+
+@keyframes speech-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
