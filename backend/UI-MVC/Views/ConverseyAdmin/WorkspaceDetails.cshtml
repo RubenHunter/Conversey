@@ -192,6 +192,12 @@
 
         ]
     };
+
+    var oneTimePassword = TempData["OneTimePassword"] as string;
+    var oneTimePasswordAdminEmail = TempData["OneTimePasswordAdminEmail"] as string;
+    var oneTimePasswordWorkspaceId = TempData["OneTimePasswordWorkspaceId"] as string;
+    var showOneTimePassword = !string.IsNullOrWhiteSpace(oneTimePassword) &&
+                              string.Equals(oneTimePasswordWorkspaceId, Model.Workspace.Id.Text, StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="min-h-screen bg-background font-sans text-text" data-open-workspace-admin-modal="@openAdminModal.ToString().ToLowerInvariant()">
@@ -268,6 +274,50 @@
 </div>
 
 @await Html.PartialAsync("_DeleteModal")
+
+@if (showOneTimePassword)
+{
+    <div id="oneTimePasswordModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4"
+         data-one-time-password="@oneTimePassword"
+         data-one-time-password-email="@oneTimePasswordAdminEmail">
+        <div class="w-full max-w-lg rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-text">One-time password</h3>
+                <p class="mt-1 text-sm text-text/60">Share this password with the new workspace admin. It will only be shown once.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-text/50">Account</p>
+                    <p class="mt-1 text-sm font-semibold text-text">@oneTimePasswordAdminEmail</p>
+                </div>
+                <div class="rounded-xl border border-secondary/15 bg-background/60 px-4 py-3">
+                    <p class="text-xs uppercase tracking-widest text-text/50">Temporary password</p>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <span id="oneTimePasswordValue" class="font-mono text-base font-semibold text-text">@oneTimePassword</span>
+                        <button id="copyOneTimePassword"
+                                type="button"
+                                class="inline-flex items-center gap-2 rounded-lg border border-secondary/20 px-3 py-1.5 text-xs font-semibold text-text/70 transition hover:bg-background">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p id="oneTimePasswordCopied" class="mt-2 hidden text-xs font-semibold text-primary">Copied. Make sure you saved it.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="closeOneTimePasswordModal"
+                        type="button"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    I saved it
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <script type="module" vite-src="~/components/shared/workspaceModalForms.ts"></script>

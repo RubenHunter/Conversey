@@ -59,7 +59,7 @@ public class AdminRepository : IAdminRepository
         return _dbContext.WorkspaceAdmins.ToList().AsReadOnly();
     }
 
-    public async Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin)
+    public async Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin, string tempPassword)
     {
         var workspaceAmin = new WorkspaceAdminUser
         {
@@ -70,11 +70,28 @@ public class AdminRepository : IAdminRepository
             Workspace = workspaceAdmin.Workspace,
             FirstLogin = true
         };
-        var result = await _userManager.CreateAsync(workspaceAmin, "Test123!");
+        var result = await _userManager.CreateAsync(workspaceAmin, tempPassword);
         var roleResult = await _userManager.AddToRoleAsync(workspaceAmin, "WorkspaceAdmin");
         if (!result.Succeeded || !roleResult.Succeeded)
         {
             throw new Exception("Creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description) + string.Join(", ", roleResult.Errors.Select(e => e.Description))));
+        }
+    }
+
+    public async Task SetWorkspaceAdminFirstLogin(Guid workspaceAdminId, bool isFirstLogin)
+    {
+        var workspaceAdmin = await _dbContext.WorkspaceAdmins.FirstOrDefaultAsync(wau => wau.Id == workspaceAdminId.ToString());
+        if (workspaceAdmin == null)
+        {
+            throw new KeyNotFoundException($"Workspace Admin with ID {workspaceAdminId} not found.");
+        }
+
+        workspaceAdmin.FirstLogin = isFirstLogin;
+        var result = await _userManager.UpdateAsync(workspaceAdmin);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to update Workspace Admin: {errors}");
         }
     }
 

@@ -1,6 +1,8 @@
+using Conversey.BL.Administration;
 using Conversey.UI_MVC.Models.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Conversey.DAL;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
@@ -8,7 +10,8 @@ namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Roles = "ConverseyAdmin,WorkspaceAdmin")]
 public class AdminProfileController(
     UserManager<IdentityUser> userManager,
-    SignInManager<IdentityUser> signInManager)
+    SignInManager<IdentityUser> signInManager,
+    IAdminManager adminManager)
     : Controller
 {
     [HttpGet("/admin/profile")]
@@ -125,6 +128,11 @@ public class AdminProfileController(
                 message = "Password change failed.",
                 errors = changePasswordResult.Errors.Select(error => error.Description).ToArray()
             });
+        }
+
+        if (user is WorkspaceAdminUser workspaceAdmin)
+        {
+            await adminManager.SetWorkspaceAdminFirstLogin(Guid.Parse(workspaceAdmin.Id), false);
         }
 
         await signInManager.RefreshSignInAsync(user);

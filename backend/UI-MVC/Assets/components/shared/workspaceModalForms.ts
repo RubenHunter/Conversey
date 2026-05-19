@@ -9,6 +9,7 @@ class WorkspaceModalForms {
         this.bindWorkspaceAdminValidation("workspaceAdminCreateForm", "workspaceAdminCreateEmailInput", "workspaceAdminCreatePhoneInput", "workspaceAdminCreateServerError");
         this.bindWorkspaceAdminValidation("workspaceAdminEditForm", "workspaceAdminEditEmailInput", "workspaceAdminEditPhoneInput", "workspaceAdminEditServerError");
         this.openWorkspaceAdminModalOnLoad();
+        this.bindOneTimePasswordModal();
         this.bindEsc();
     }
 
@@ -78,6 +79,39 @@ class WorkspaceModalForms {
         }
 
         document.querySelector<HTMLElement>("[data-modal-key='workspace-admin-create']")?.click();
+    }
+
+    private bindOneTimePasswordModal() {
+        const modal = document.getElementById("oneTimePasswordModal");
+        if (!modal) {
+            return;
+        }
+
+        this.openById("oneTimePasswordModal");
+
+        const copyButton = document.getElementById("copyOneTimePassword") as HTMLButtonElement | null;
+        const passwordValue = document.getElementById("oneTimePasswordValue") as HTMLElement | null;
+        const copiedMessage = document.getElementById("oneTimePasswordCopied");
+        const closeButton = document.getElementById("closeOneTimePasswordModal");
+
+        copyButton?.addEventListener("click", async () => {
+            const password = passwordValue?.textContent ?? "";
+            if (!password) {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(password);
+                copiedMessage?.classList.remove("hidden");
+            } catch {
+                copiedMessage?.classList.remove("hidden");
+                copiedMessage!.textContent = "Copy failed. Select and copy manually.";
+            }
+        });
+
+        closeButton?.addEventListener("click", () => {
+            this.close(modal);
+        });
     }
 
     private prepareWorkspaceEdit(workspaceId: string, workspaceName: string) {

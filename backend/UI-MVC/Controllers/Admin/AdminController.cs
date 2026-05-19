@@ -32,7 +32,11 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
 
         try
         {
-            await adminManager.AddWorkspaceAdmin(email, username, phoneNumber, workspaceSlug);
+            var (admin, oneTimePassword) = await adminManager.AddWorkspaceAdmin(email, username, phoneNumber, workspaceSlug);
+
+            TempData["OneTimePassword"] = oneTimePassword;
+            TempData["OneTimePasswordAdminEmail"] = admin.Email;
+            TempData["OneTimePasswordWorkspaceId"] = workspaceSlug.Text;
 
             var redirectUrl = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceSlug });
 
