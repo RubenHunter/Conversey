@@ -45,6 +45,9 @@
   text-align: left;
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
   margin-bottom: var(--spacing-xs);
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
 }
 
 .ideas-compose-topic-button--floating {
@@ -62,13 +65,13 @@
 .ideas-compose-topic-button--floating .ideas-compose-topic-text {
   justify-content: center;
 }
-
+/*
 .ideas-compose-topic-button:hover,
 .ideas-compose-topic-button:focus {
   border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
-}
+}*/
 
 .ideas-compose-topic-text {
   display: flex;
