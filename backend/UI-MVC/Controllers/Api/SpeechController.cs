@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Conversey.BL.Ai.Speech;
+using Conversey.BL.Domain.Ai.Speech;
 using Conversey.UI_MVC.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,18 +22,13 @@ public class SpeechController : ControllerBase
     [HttpPost("transcribe")]
     public async Task<IActionResult> Transcribe([FromBody] SpeechTranscribeRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.AudioBase64))
-        {
-            return BadRequest("Audio data is required.");
-        }
-
         try
         {
             var audioBytes = Convert.FromBase64String(request.AudioBase64);
             using var audioStream = new MemoryStream(audioBytes);
 
-            var language = string.IsNullOrWhiteSpace(request.Language) ? "nl" : request.Language;
-            var text = await _speechManager.TranscribeSpeechAsync(audioStream, language, request.ContextBias, request.MimeType);
+            var mimeType = AudioMimeType.FromString(request.MimeType);
+            var text = await _speechManager.TranscribeSpeechAsync(audioStream, request.Language, request.ContextBias, mimeType);
 
             return Ok(new { text = text });
         }
@@ -54,15 +50,9 @@ public class SpeechController : ControllerBase
     [HttpPost("synthesize")]
     public async Task<IActionResult> Synthesize([FromBody] TextSynthesizeRequest synthesizeRequest)
     {
-        if (string.IsNullOrWhiteSpace(synthesizeRequest.Input))
-        {
-            return BadRequest("Text is required.");
-        }
-
         try
         {
-            var language = string.IsNullOrWhiteSpace(synthesizeRequest.Language) ? "nl" : synthesizeRequest.Language;
-            var audioStream = await _speechManager.SynthesizeSpeechAsync(synthesizeRequest.Input, language);
+            var audioStream = await _speechManager.SynthesizeSpeechAsync(synthesizeRequest.Input, synthesizeRequest.Language);
 
             return File(audioStream, "audio/mp3");
         }

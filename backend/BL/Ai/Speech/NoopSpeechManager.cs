@@ -1,4 +1,7 @@
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ai.Speech;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace Conversey.BL.Ai.Speech;
 
@@ -9,16 +12,18 @@ public class NoopSpeechManager : ISpeechManager
     public NoopSpeechManager(ILogger<NoopSpeechManager> logger)
     {
         _logger = logger;
-        _logger.LogInformation("[Speech:Noop] Speech disabled — all calls return empty");
     }
 
-    public Task<string> TranscribeSpeechAsync(Stream audioStream, string language, IEnumerable<string> contextBias = null, string mimeType = "audio/webm")
+    public Task<string> TranscribeSpeechAsync(Stream audioStream, Language language, IEnumerable<string> contextBias = null, AudioMimeType mimeType = null)
     {
-        return Task.FromResult(string.Empty);
+        _logger.LogInformation("[NoopSpeech] Fake transcribe requested ({Lang})", language);
+        return Task.FromResult("This is a simulated transcription from NoopSpeechManager.");
     }
 
-    public Task<Stream> SynthesizeSpeechAsync(string text, string language)
+    public Task<Stream> SynthesizeSpeechAsync(string text, Language language)
     {
-        return Task.FromResult<Stream>(new MemoryStream());
+        _logger.LogInformation("[NoopSpeech] Fake synthesize requested ({Lang}, length {Len})", language, text.Length);
+        var bytes = Encoding.UTF8.GetBytes("Fake MP3 Data");
+        return Task.FromResult<Stream>(new MemoryStream(bytes));
     }
 }

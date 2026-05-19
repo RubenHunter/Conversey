@@ -418,10 +418,8 @@ public sealed class AiAdminManager : IAiAdminManager
         }
 
         var (httpClient, provider) = CreateProviderFromConfig(config);
-        using (httpClient)
-        {
-            return await provider.ListModelsAsync();
-        }
+        using var hc = httpClient;
+        return await provider.ListModelsAsync();
     }
 
     public async Task<IReadOnlyList<string>> ListProviderModelsFromConfigAsync(AiProviderConfig config)
@@ -432,10 +430,8 @@ public sealed class AiAdminManager : IAiAdminManager
         }
 
         var (httpClient, provider) = CreateProviderFromConfig(config);
-        using (httpClient)
-        {
-            return await provider.ListModelsAsync();
-        }
+        using var hc = httpClient;
+        return await provider.ListModelsAsync();
     }
 
     public static (HttpClient httpClient, IAiProvider provider) CreateProviderFromConfig(AiProviderConfig config)
@@ -468,9 +464,9 @@ public sealed class AiAdminManager : IAiAdminManager
     public async Task<(AiHealthProbeResult moderation, AiHealthProbeResult completions)> ProbeProviderAsync(AiProviderConfig config)
     {
         var (httpClient, provider) = CreateProviderFromConfig(config);
-        using (httpClient)
-        {
-            var modelCount = 0;
+        using var hc = httpClient;
+
+        var modelCount = 0;
             string? listError = null;
 
             try
@@ -575,7 +571,6 @@ public sealed class AiAdminManager : IAiAdminManager
             }
 
             return (moderationProbe, completionsProbe);
-        }
     }
 
     private async Task<AiHealthProbeResult> ProbeModerationAsync()

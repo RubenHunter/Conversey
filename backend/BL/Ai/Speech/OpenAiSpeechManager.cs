@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-
 using Microsoft.Extensions.Logging;
+
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ai.Speech;
 
 namespace Conversey.BL.Ai.Speech;
 
@@ -14,11 +16,11 @@ public class OpenAiSpeechManager : ISpeechManager
     private readonly string _ttsModel;
     private readonly string _ttsVoice;
 
-    private static readonly Dictionary<string, string> VoiceMap = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<Language, string> VoiceMap = new()
     {
-        { "en", "nova" },
-        { "nl", "nova" },
-        { "fr", "nova" },
+        { Language.en, "nova" },
+        { Language.nl, "nova" },
+        { Language.fr, "nova" },
     };
 
     public OpenAiSpeechManager(
@@ -37,8 +39,9 @@ public class OpenAiSpeechManager : ISpeechManager
             _sttModel, _ttsModel, _ttsVoice, httpClient.BaseAddress);
     }
 
-    public async Task<string> TranscribeSpeechAsync(Stream audioStream, string language, IEnumerable<string> contextBias = null, string mimeType = "audio/webm")
+    public async Task<string> TranscribeSpeechAsync(Stream audioStream, Language language, IEnumerable<string> contextBias = null, AudioMimeType mimeType = null)
     {
+        mimeType ??= AudioMimeType.Webm;
         try
         {
             using var content = new MultipartFormDataContent();
@@ -47,13 +50,12 @@ public class OpenAiSpeechManager : ISpeechManager
             await audioStream.CopyToAsync(audioMemoryStream);
             var audioBytes = audioMemoryStream.ToArray();
             var audioContent = new ByteArrayContent(audioBytes);
-            var baseContentType = mimeType.Split(';')[0].Trim();
-            var fileExtension = GetAudioExtension(baseContentType);
-            audioContent.Headers.ContentType = new MediaTypeHeaderValue(baseContentType);
-            content.Add(audioContent, "file", $"audio.{fileExtension}");
+            
+            audioContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType.Value);
+            content.Add(audioContent, "file", $"audio.{mimeType.FileExtension}");
 
             content.Add(new StringContent(_sttModel), "model");
-            content.Add(new StringContent(language), "language");
+            content.Add(new StringContent(language.ToString()), "language");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "audio/transcriptions");
             request.Content = content;
@@ -88,11 +90,11 @@ public class OpenAiSpeechManager : ISpeechManager
         }
     }
 
-    public async Task<Stream> SynthesizeSpeechAsync(string text, string language)
+    public async Task<Stream> SynthesizeSpeechAsync(string text, Language language)
     {
         try
         {
-            var voice = VoiceMap.TryGetValue(language ?? "en", out var v) ? v : "nova";
+            var voice = VoiceMap.TryGetValue(language, out var v) ? v : "nova";
 
             var payload = new
             {
@@ -128,15 +130,6 @@ public class OpenAiSpeechManager : ISpeechManager
             throw new Exception($"OpenAI TTS error: {ex.Message}", ex);
         }
     }
-
-    private static string GetAudioExtension(string baseContentType) => baseContentType switch
-    {
-        "audio/mp4" or "audio/m4a" or "audio/mpeg" or "audio/mpga" => "mp4",
-        "audio/wav" or "audio/wave" or "audio/x-wav" => "wav",
-        "audio/ogg" => "ogg",
-        "audio/mp3" => "mp3",
-        _ => "webm"
-    };
 
     private class OpenAiTranscriptionResponse
     {

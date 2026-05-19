@@ -96,7 +96,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
         
         return View(EditFormVm(workspaceFormViewModel.FormItem));
@@ -138,30 +138,4 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         };
     }
     
-    private void ApplyValidationExceptionToModelState(ValidationException ex)
-    {
-        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
-        {
-            foreach (var result in results)
-            {
-                var message = result.ErrorMessage ?? "Invalid value";
-
-                if (result.MemberNames.Any())
-                {
-                    foreach (var member in result.MemberNames)
-                    {
-                        ModelState.AddModelError($"Workspace.{member}", message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, message);
-                }
-            }
-        }
-        else
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-    }
 }

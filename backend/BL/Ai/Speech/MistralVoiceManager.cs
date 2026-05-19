@@ -1,16 +1,18 @@
+using Conversey.BL.Domain.Common;
+
 namespace Conversey.BL.Ai.Speech;
 
 public class MistralVoiceManager : IVoiceManager
 {
-    private static readonly Dictionary<string, string> Voices = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<Language, MistralVoice> Voices = new()
     {
-        { "en", "en_paul_neutral" },
-        { "fr", "fr_marie_neutral" },
-        { "nl", "en_paul_neutral" }, // no Dutch preset in Mistral; Voxtral speaks Dutch from text
+        { Language.en, MistralVoice.EnPaulNeutral },
+        { Language.fr, MistralVoice.FrMarieNeutral },
+        { Language.nl, MistralVoice.EnPaulNeutral }, // no Dutch preset in Mistral; Voxtral speaks Dutch from text
     };
 
-    private const string FallbackVoice = "en_paul_neutral";
+    private static readonly MistralVoice FallbackVoice = MistralVoice.EnPaulNeutral;
 
-    public string GetVoiceForLanguage(string language) =>
-        Voices.TryGetValue(language ?? string.Empty, out var voice) ? voice : FallbackVoice;
+    public MistralVoice GetVoiceForLanguage(Language language) =>
+        Voices.TryGetValue(language, out MistralVoice voice) ? voice : FallbackVoice;
 }

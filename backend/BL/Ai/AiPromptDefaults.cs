@@ -1,3 +1,5 @@
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ai;
 using System.Text;
 using System.Text.Json;
 using Conversey.BL.Domain.Ideation;
@@ -30,20 +32,20 @@ No markdown, no code blocks, no explanation — just the raw JSON.
 """;
     }
 
-    internal static string DescribeNudgingMode(string nudgingMode)
+    internal static string DescribeNudgingMode(NudgingMode nudgingMode)
     {
-        return (nudgingMode ?? string.Empty).Trim().ToLowerInvariant() switch
+        return nudgingMode switch
         {
-            "minimal" or "verylenient" or "lenient" or "acceptable" => "Minimal: accept anything that is a real sentence; reject empty or obvious placeholder text.",
-            "light" or "gentle" => "Light: require a concrete subject; ask at most one clarifying question when needed.",
-            "medium" or "balanced" or "guided" => "Medium: require what + why; ask focused follow-ups when depth is missing.",
-            "strong" or "strict" or "thorough" => "Strong: require context or impact and concrete relevance to topic.",
-            "deep" or "relentless" => "Deep: challenge assumptions and ask for evidence or concrete elaboration.",
-            _ => "Medium: require what + why; ask focused follow-ups when depth is missing."
+            NudgingMode.Minimal => "Minimal (accept almost any valid idea, prompt only if severely incomplete)",
+            NudgingMode.Light => "Light (ask for a bit more detail if the idea is extremely brief)",
+            NudgingMode.Medium => "Medium (standard: request elaboration if the idea lacks context or motivation)",
+            NudgingMode.Strong => "Strong (demand clear impact, target audience, and concrete implementation)",
+            NudgingMode.Deep => "Deep (strict: require extensive detail, evidence, or a robust scenario to approve)",
+            _ => "Medium (standard: request elaboration if the idea lacks context or motivation)"
         };
     }
 
-    internal static string BuildNudgingSystemPrompt(string nudgingMode)
+    internal static string BuildNudgingSystemPrompt(NudgingMode nudgingMode)
     {
         return $"You help youth improve the quality of their idea before publishing. Ask exactly one concrete follow-up question when the idea is too shallow, vague, or underspecified. If the idea is already acceptable for the configured nudging strength, approve it. Never invent multiple questions. Return strict JSON only with the shape {{\"isApproved\":true}} or {{\"isApproved\":false,\"question\":\"...\"}}. Nudging strength: {DescribeNudgingMode(nudgingMode)}.";
     }
@@ -172,7 +174,7 @@ Rules:
 
     internal static string BuildKeyPhrasesUserPrompt(
         string transcript,
-        string language,
+        Language language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases,
         IReadOnlyList<string> rejectedPhrases)
@@ -222,7 +224,7 @@ Rules:
     internal static string BuildTextFromBubblesUserPrompt(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language,
+        Language language,
         IReadOnlyList<string> rejectedPhrases)
     {
         var prompt = new StringBuilder();
@@ -273,7 +275,7 @@ Rules:
 
     internal static IReadOnlyDictionary<string, string> BuildKeyPhrasesVariables(
         string transcript,
-        string language,
+        Language language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases,
         IReadOnlyList<string> rejectedPhrases)
@@ -281,7 +283,7 @@ Rules:
         return new Dictionary<string, string>
         {
             ["Transcript"] = transcript ?? string.Empty,
-            ["Language"] = language ?? string.Empty,
+            ["Language"] = language.ToString(),
             ["MaxPhrases"] = maxPhrases.ToString(),
             ["ExistingPhrases"] = JsonSerializer.Serialize(existingPhrases ?? new List<string>()),
             ["RejectedPhrases"] = JsonSerializer.Serialize(rejectedPhrases ?? new List<string>())
@@ -291,14 +293,14 @@ Rules:
     internal static IReadOnlyDictionary<string, string> BuildTextFromBubblesVariables(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language,
+        Language language,
         IReadOnlyList<string> rejectedPhrases)
     {
         return new Dictionary<string, string>
         {
             ["Transcript"] = transcript ?? string.Empty,
             ["Bubbles"] = bubbles != null ? string.Join("\n- ", bubbles) : string.Empty,
-            ["Language"] = language ?? string.Empty,
+            ["Language"] = language.ToString(),
             ["RejectedPhrases"] = rejectedPhrases != null && rejectedPhrases.Count > 0
                 ? string.Join("\n- ", rejectedPhrases)
                 : "(none)"

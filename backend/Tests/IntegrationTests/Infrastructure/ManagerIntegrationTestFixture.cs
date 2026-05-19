@@ -16,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Conversey.BL.Domain.Ai;
 using System.Runtime.CompilerServices;
 
-using Conversey.BL.Domain.Ai;
 using Conversey.BL.Ai.DTOs;
 
 namespace Tests.IntegrationTests.Infrastructure;
@@ -50,6 +49,9 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IIdeaRepository, IdeaRepository>();
         services.AddScoped<IQuestionRepository, QuestionRepository>();
+        
+        var cloudStorageMock = new Moq.Mock<ICloudStorageRepository>();
+        services.AddScoped<ICloudStorageRepository>(_ => cloudStorageMock.Object);
 
         services.AddScoped<IWorkspaceManager, WorkspaceManager>();
         services.AddScoped<IProjectManager, ProjectManager>();
@@ -288,7 +290,7 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
         public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
             string transcript,
-            string language,
+            Language language,
             int maxPhrases,
             IReadOnlyList<string>? existingPhrases = null,
             IReadOnlyList<string>? rejectedPhrases = null)
@@ -312,8 +314,8 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         public Task<string> GenerateTextFromBubbles(
             string transcript,
             IReadOnlyList<string> bubbles,
-            string language,
-            IReadOnlyList<string> rejectedPhrases = null)
+            Language language,
+            IReadOnlyList<string>? rejectedPhrases = null)
         {
             if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
                 return Task.FromResult(string.Empty);

@@ -3,6 +3,8 @@ using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 
+using Conversey.BL.Domain.Common;
+
 namespace Conversey.BL.Ai;
 
 public sealed class AiManager : IAiManager
@@ -108,7 +110,7 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = await LoadPromptAsync("ModerationPrompt");
+            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationPrompt);
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? AiPromptDefaults.BuildModerationSystemPrompt()
                 : prompt.SystemPrompt;
@@ -141,7 +143,7 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = await LoadPromptAsync("ModerationGenerateAlternative");
+            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationGenerateAlternative);
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text."
                 : prompt.SystemPrompt;
@@ -169,12 +171,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync("IdeaNudgingSystem");
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingSystem);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? AiPromptDefaults.BuildNudgingSystemPrompt(request.NudgingMode)
                 : PromptRenderer.Render(systemPrompt.SystemPrompt, new Dictionary<string, string> { ["NudgingModeDescription"] = AiPromptDefaults.DescribeNudgingMode(request.NudgingMode) });
 
-            var userPrompt = await LoadPromptAsync("IdeaNudgingUser");
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingUser);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildNudgingUserPrompt(request)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildNudgingVariables(request));
@@ -209,12 +211,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync("IdeaRankingSystem");
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingSystem);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = await LoadPromptAsync("IdeaRankingUser");
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingUser);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildIdeaRankingPrompt(referenceIdea, candidateIdeas, preferDifferent, cappedLimit)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildRankingVariables(referenceIdea, candidateIdeas, preferDifferent, cappedLimit));
@@ -254,12 +256,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync("IdeaCategorizationSystem");
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationSystem);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You assign semantic categories to youth ideas. Return only strict JSON."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = await LoadPromptAsync("IdeaCategorizationUser");
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationUser);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildCategorizationPrompt(ideas, existingCategories, cappedMax)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildCategorizationVariables(ideas, existingCategories, cappedMax));
@@ -287,7 +289,7 @@ public sealed class AiManager : IAiManager
 
     public async Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
-        string language,
+        Language language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases = null,
         IReadOnlyList<string> rejectedPhrases = null)
@@ -297,12 +299,12 @@ public sealed class AiManager : IAiManager
 
         var variables = AiPromptDefaults.BuildKeyPhrasesVariables(transcript, language, maxPhrases, existingPhrases, rejectedPhrases);
 
-        var systemPrompt = await LoadPromptAsync("ExtractKeyPhrasesSystem");
+        var systemPrompt = await LoadPromptAsync(AiPromptKeys.ExtractKeyPhrasesSystem);
         var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
             ? PromptRenderer.Render(AiPromptDefaults.BuildKeyPhrasesSystemPrompt(), variables)
             : PromptRenderer.Render(systemPrompt.SystemPrompt, variables);
 
-        var userPrompt = await LoadPromptAsync("ExtractKeyPhrasesUser");
+        var userPrompt = await LoadPromptAsync(AiPromptKeys.ExtractKeyPhrasesUser);
         var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
             ? AiPromptDefaults.BuildKeyPhrasesUserPrompt(transcript, language, maxPhrases, existingPhrases, rejectedPhrases)
             : PromptRenderer.Render(userPrompt.UserPromptTemplate, variables);
@@ -334,7 +336,7 @@ public sealed class AiManager : IAiManager
     public async Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language,
+        Language language,
         IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
@@ -342,12 +344,12 @@ public sealed class AiManager : IAiManager
 
         var variables = AiPromptDefaults.BuildTextFromBubblesVariables(transcript, bubbles, language, rejectedPhrases);
 
-        var systemPrompt = await LoadPromptAsync("GenerateTextFromBubblesSystem");
+        var systemPrompt = await LoadPromptAsync(AiPromptKeys.GenerateTextFromBubblesSystem);
         var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
             ? PromptRenderer.Render(AiPromptDefaults.BuildTextFromBubblesSystemPrompt(), variables)
             : PromptRenderer.Render(systemPrompt.SystemPrompt, variables);
 
-        var userPrompt = await LoadPromptAsync("GenerateTextFromBubblesUser");
+        var userPrompt = await LoadPromptAsync(AiPromptKeys.GenerateTextFromBubblesUser);
         var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
             ? AiPromptDefaults.BuildTextFromBubblesUserPrompt(transcript, bubbles, language, rejectedPhrases)
             : PromptRenderer.Render(userPrompt.UserPromptTemplate, variables);

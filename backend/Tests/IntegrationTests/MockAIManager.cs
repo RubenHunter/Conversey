@@ -1,5 +1,6 @@
 using Conversey.BL.Ai;
 using Conversey.BL.Ai.DTOs;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 
 namespace Tests.IntegrationTests;
@@ -57,7 +58,7 @@ public class MockAiManager : IAiManager
 
     public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
-        string language,
+        Language language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases = null,
         IReadOnlyList<string> rejectedPhrases = null)
@@ -81,7 +82,7 @@ public class MockAiManager : IAiManager
     public Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language,
+        Language language,
         IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)

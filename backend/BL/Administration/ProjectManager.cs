@@ -51,7 +51,7 @@ public class ProjectManager: IProjectManager
         var existingYouth = _projectRepository.ReadYouthByIdAndProjectId(token, projectId);
         if (existingYouth != null)
         {
-            if (ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
+            if (YouthEmailHelper.ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
             {
                 existingYouth.Email = normalizedEmail;
                 _projectRepository.UpdateYouth(existingYouth);
@@ -93,6 +93,9 @@ public class ProjectManager: IProjectManager
             throw ex;
         }
         
+        if (nudgingStrength < 1 || nudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         var project = new Project
         {
             Id = Slug.FromName(name),
@@ -102,7 +105,7 @@ public class ProjectManager: IProjectManager
             StartDate = startDate.ToUniversalTime(),
             EndDate = endDate.ToUniversalTime(),
             InteractionForm = interactionForm,
-            NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
+            NudgingStrength = nudgingStrength,
 
             Workspace = workspace
         };
@@ -121,13 +124,16 @@ public class ProjectManager: IProjectManager
         if (existing == null)
             throw new ProjectNotFoundException(updatedProject.Id);
 
+        if (updatedProject.NudgingStrength < 1 || updatedProject.NudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         existing.Name = updatedProject.Name;
         existing.Description = updatedProject.Description;
         existing.Status = updatedProject.Status;
         existing.StartDate = updatedProject.StartDate;
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
-        existing.NudgingStrength = Math.Clamp(updatedProject.NudgingStrength, 1, 5);
+        existing.NudgingStrength = updatedProject.NudgingStrength;
         existing.Workspace = updatedProject.Workspace;
         
         
@@ -149,24 +155,6 @@ public class ProjectManager: IProjectManager
         _projectRepository.UpdateProject(project);
     }
 
-    private static bool ShouldReplaceEmail(string currentEmail, string newEmail)
-    {
-        if (IsPlaceholderEmail(newEmail)) return false;
-
-        var normalizedCurrent = currentEmail?.Trim() ?? string.Empty;
-        if (normalizedCurrent.Length == 0) return true;
-
-        return normalizedCurrent.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase) ||
-               !string.Equals(normalizedCurrent, newEmail, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsPlaceholderEmail(string email)
-    {
-        var normalized = email?.Trim() ?? string.Empty;
-        return normalized.Length == 0 || normalized.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase);
-    }
-
-
     private void Validate(object obj)
     {
         var validationResults = new List<ValidationResult>();
@@ -183,3 +171,4 @@ public class ProjectManager: IProjectManager
         }
     }
 }
+

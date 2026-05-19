@@ -2,19 +2,22 @@ using Conversey.BL.Ai.DTOs;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 
+using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ai;
+
 namespace Conversey.BL.Ai;
 
 public sealed class NoopAiManager : IAiManager
 {
     private readonly IModerationKeywordRepository _moderationKeywordRepository;
 
-    private static readonly Dictionary<string, (int minWords, string placeholder)> NudgeThresholds = new()
+    private static readonly Dictionary<NudgingMode, (int minWords, string placeholder)> NudgeThresholds = new()
     {
-        ["Minimal"] = (0, "Can you say a bit more about this idea?"),
-        ["Light"] = (4, "Can you make this idea a bit more specific for this topic?"),
-        ["Medium"] = (8, "Can you elaborate on why this matters and who would benefit?"),
-        ["Strong"] = (10, "What is the concrete impact of this idea and who exactly would it help?"),
-        ["Deep"] = (14, "Can you provide specific details, evidence, or a concrete scenario that supports this idea?"),
+        [NudgingMode.Minimal] = (0, "Can you say a bit more about this idea?"),
+        [NudgingMode.Light] = (4, "Can you make this idea a bit more specific for this topic?"),
+        [NudgingMode.Medium] = (8, "Can you elaborate on why this matters and who would benefit?"),
+        [NudgingMode.Strong] = (10, "What is the concrete impact of this idea and who exactly would it help?"),
+        [NudgingMode.Deep] = (14, "Can you provide specific details, evidence, or a concrete scenario that supports this idea?"),
     };
 
     public NoopAiManager(IModerationKeywordRepository moderationKeywordRepository)
@@ -42,10 +45,9 @@ public sealed class NoopAiManager : IAiManager
 
     public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null)
     {
-        var mode = (request.NudgingMode ?? "Medium").Trim();
-        if (!NudgeThresholds.TryGetValue(mode, out var threshold))
+        if (!NudgeThresholds.TryGetValue(request.NudgingMode, out var threshold))
         {
-            threshold = NudgeThresholds["Medium"];
+            threshold = NudgeThresholds[NudgingMode.Medium];
         }
 
         var wordCount = (request.IdeaText ?? string.Empty)
@@ -127,7 +129,7 @@ public sealed class NoopAiManager : IAiManager
 
     public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
         string transcript,
-        string language,
+        Language language,
         int maxPhrases,
         IReadOnlyList<string> existingPhrases = null,
         IReadOnlyList<string> rejectedPhrases = null)
@@ -152,7 +154,7 @@ public sealed class NoopAiManager : IAiManager
     public Task<string> GenerateTextFromBubbles(
         string transcript,
         IReadOnlyList<string> bubbles,
-        string language,
+        Language language,
         IReadOnlyList<string> rejectedPhrases = null)
     {
         if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)

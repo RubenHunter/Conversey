@@ -12,9 +12,6 @@ public class BrainstormController(IAiManager aiManager, ILogger<BrainstormContro
     [HttpPost("key-phrases")]
     public async Task<IActionResult> ExtractKeyPhrases([FromBody] ExtractKeyPhrasesRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Transcript))
-            return BadRequest("Transcript is required.");
-
         try
         {
             var response = await aiManager.ExtractKeyPhrases(
@@ -34,9 +31,6 @@ public class BrainstormController(IAiManager aiManager, ILogger<BrainstormContro
     [HttpPost("generate-text")]
     public async Task<IActionResult> GenerateText([FromBody] GenerateTextFromBubblesRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Transcript) || request.Bubbles == null || request.Bubbles.Count == 0)
-            return BadRequest("Transcript and bubbles are required.");
-
         try
         {
             var text = await aiManager.GenerateTextFromBubbles(
