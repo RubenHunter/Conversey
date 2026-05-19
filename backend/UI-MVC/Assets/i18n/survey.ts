@@ -14,7 +14,7 @@ export interface SurveyStrings {
     somethingWrong: string
     offensiveLanguage: string
     readAloud: string
-    magicMode: string
+    brainstormMode: string
     communityIdeas: string
     broadSelection: string
     similarIdeas: string
@@ -22,6 +22,14 @@ export interface SurveyStrings {
     allIdeas: string
     myIdeas: string
     topicLabel: string
+    chooseTopic: string
+    langNl: string
+    langEn: string
+    langFr: string
+    switchedTopic: string
+    thanksForIdea: string
+    postIdeaNext: string
+    topicQuestionLabel: string
     ideationIntro: string
     ideaShared: string
     shareIdea: string
@@ -135,7 +143,7 @@ const nl: SurveyStrings = {
     somethingWrong: 'Er is iets misgegaan. Probeer het opnieuw.',
     offensiveLanguage: 'Aanstootgevend taalgebruik gedetecteerd',
     readAloud: 'Voorlezen',
-    magicMode: 'Magic',
+    brainstormMode: 'Brainstorm',
     communityIdeas: 'Ideeën van de community',
     broadSelection: 'Brede selectie',
     similarIdeas: 'Vergelijkbare ideeën',
@@ -236,6 +244,15 @@ const nl: SurveyStrings = {
     redirectingToIdeas: 'Omleiden naar ideeën...',
     checkmarkConfirm: 'Bevestig antwoord en ga verder',
     chatSend: 'Verstuur',
+    // Language selector
+    chooseTopic: 'Kies onderwerp',
+    langNl: 'Nederlands',
+    langEn: 'English',
+    langFr: 'Français',
+    switchedTopic: 'Naar onderwerp "{topicTitle}" gewisseld —',
+    thanksForIdea: 'Bedankt! Je idee is gedeeld.',
+    postIdeaNext: 'Je kunt nog een idee delen voor dit onderwerp, of wissel van onderwerp hierboven.',
+    topicQuestionLabel: 'Onderwerpsvraag: ',
     // Admin delete modal
     deleteFailed: 'Verwijderen mislukt',
     deletedSuccessfully: 'Succesvol verwijderd',
@@ -256,7 +273,7 @@ const en: SurveyStrings = {
     somethingWrong: 'Sorry, something went wrong. Please try again.',
     offensiveLanguage: 'Offensive language detected',
     readAloud: 'Read aloud',
-    magicMode: 'Magic',
+    brainstormMode: 'Brainstorm',
     communityIdeas: 'Community ideas',
     broadSelection: 'Broad selection',
     similarIdeas: 'Similar ideas',
@@ -357,6 +374,15 @@ const en: SurveyStrings = {
     redirectingToIdeas: 'Redirecting you to ideas...',
     checkmarkConfirm: 'Confirm answer and continue',
     chatSend: 'Send',
+    // Language selector
+    chooseTopic: 'Choose topic',
+    langNl: 'Nederlands',
+    langEn: 'English',
+    langFr: 'Français',
+    switchedTopic: 'Switched to topic "{topicTitle}" —',
+    thanksForIdea: 'Thanks! Your idea has been shared.',
+    postIdeaNext: 'You can share another idea on this topic, or switch to a different topic above.',
+    topicQuestionLabel: 'Topic question: ',
     // Admin delete modal
     deleteFailed: 'Delete failed',
     deletedSuccessfully: 'Deleted successfully',
@@ -377,7 +403,7 @@ const fr: SurveyStrings = {
     somethingWrong: `Une erreur s'est produite. Veuillez réessayer.`,
     offensiveLanguage: `Langage offensant détecté`,
     readAloud: `Lire à voix haute`,
-    magicMode: `Magic`,
+    brainstormMode: `Brainstorm`,
     communityIdeas: `Idées de la communauté`,
     broadSelection: `Large sélection`,
     similarIdeas: `Idées similaires`,
@@ -478,6 +504,15 @@ const fr: SurveyStrings = {
     redirectingToIdeas: `Redirection vers les idées...`,
     checkmarkConfirm: 'Confirmer la réponse et continuer',
     chatSend: 'Envoyer',
+    // Language selector
+    chooseTopic: 'Choisir un thème',
+    langNl: 'Nederlands',
+    langEn: 'English',
+    langFr: 'Français',
+    switchedTopic: 'Passé au thème "{topicTitle}" —',
+    thanksForIdea: 'Merci ! Votre idée a été partagée.',
+    postIdeaNext: 'Vous pouvez partager une autre idée sur ce thème, ou changer de thème ci-dessus.',
+    topicQuestionLabel: 'Question du thème : ',
     // Admin delete modal
     deleteFailed: `La suppression a échoué`,
     deletedSuccessfully: `Supprimé avec succès`,
@@ -486,11 +521,27 @@ const fr: SurveyStrings = {
 
 const translations: Record<SurveyLocale, SurveyStrings> = { nl, en, fr }
 
+const LOCALE_STORAGE_KEY = 'conversey-locale'
+
 export function detectLocale(): SurveyLocale {
+    try {
+        const stored = localStorage.getItem(LOCALE_STORAGE_KEY) as SurveyLocale | null
+        if (stored && translations[stored]) return stored
+    } catch { /* ignore storage errors */ }
     const lang = navigator.language.toLowerCase()
     if (lang.startsWith('en')) return 'en'
     if (lang.startsWith('fr')) return 'fr'
     return 'nl'
+}
+
+export function setLocale(locale: SurveyLocale): void {
+    try {
+        localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+    } catch { /* ignore storage errors */ }
+}
+
+export function getLocale(): SurveyLocale {
+    return detectLocale()
 }
 
 export function getSurveyStrings(): SurveyStrings {

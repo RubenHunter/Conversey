@@ -1,6 +1,21 @@
 import { getSurveyStrings } from '../../../i18n/survey'
 import { renderSurveyHeader } from './surveyHeader'
 
+const CHAT_BUBBLE_ICON = `<svg class="layout-picker-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M10 14h38a6 6 0 016 6v24a6 6 0 01-6 6H30l-8 8-2-8H10a6 6 0 01-6-6V20a6 6 0 016-6z" fill="white" fill-opacity="0.95" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  <ellipse cx="32" cy="24" rx="8" ry="1.5" fill="color-mix(in srgb, var(--color-primary) 25%, transparent)" opacity="0.7"/>
+  <circle cx="32" cy="32" r="3" fill="color-mix(in srgb, var(--color-primary) 25%, transparent)" opacity="0.7"/>
+</svg>`
+
+const CLASSIC_SCROLL_ICON = `<svg class="layout-picker-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="14" y="8" width="36" height="48" rx="5" fill="white" fill-opacity="0.95" stroke="white" stroke-width="2"/>
+  <rect x="21" y="16" width="22" height="6" rx="1.5" fill="color-mix(in srgb, var(--color-primary) 25%, transparent)" opacity="0.7"/>
+  <rect x="21" y="26" width="22" height="2" rx="1" fill="color-mix(in srgb, var(--color-primary) 18%, transparent)" opacity="0.7"/>
+  <rect x="21" y="32" width="22" height="2" rx="1" fill="color-mix(in srgb, var(--color-primary) 18%, transparent)" opacity="0.7"/>
+  <rect x="21" y="38" width="15" height="2" rx="1" fill="color-mix(in srgb, var(--color-primary) 18%, transparent)" opacity="0.7"/>
+  <rect x="21" y="44" width="22" height="2" rx="1" fill="color-mix(in srgb, var(--color-primary) 18%, transparent)" opacity="0.5"/>
+</svg>`
+
 const chatExampleImage = new URL('../../../chat_example.png', import.meta.url).href
 const classicExampleImage = new URL('../../../classic_example.png', import.meta.url).href
 
@@ -35,6 +50,7 @@ export async function showLayoutPicker({
                     <button class="layout-picker-side layout-picker-side--chat" data-layout="chat" type="button">
                         <div class="layout-picker-bg" style="background-image: url('${chatExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
+                        <div class="layout-picker-icon-wrap">${CHAT_BUBBLE_ICON}</div>
                         <div class="layout-picker-label">
                             <span class="layout-picker-label-title">${t.layoutPickerChat}</span>
                             <p class="layout-picker-label-desc">${t.layoutPickerChatDesc}</p>
@@ -48,6 +64,7 @@ export async function showLayoutPicker({
                     <button class="layout-picker-side layout-picker-side--classic" data-layout="classic" type="button">
                         <div class="layout-picker-bg" style="background-image: url('${classicExampleImage}')"></div>
                         <div class="layout-picker-overlay"></div>
+                        <div class="layout-picker-icon-wrap">${CLASSIC_SCROLL_ICON}</div>
                         <div class="layout-picker-label">
                             <span class="layout-picker-label-title">${t.layoutPickerClassic}</span>
                             <p class="layout-picker-label-desc">${t.layoutPickerClassicDesc}</p>
@@ -81,6 +98,9 @@ export async function showLayoutPicker({
                 const layout = btn.getAttribute('data-layout') as 'chat' | 'classic'
                 const remember = checkbox?.checked ?? false
                 try {
+                    // Always persist for current session so accidental reload doesn't
+                    // throw the user back to the picker (e.g. browser refresh).
+                    sessionStorage.setItem(storageKey, layout)
                     if (remember) {
                         localStorage.setItem(storageKey, layout)
                     } else {

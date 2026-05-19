@@ -1,12 +1,26 @@
 import { getOrganizationBranding } from '../../shared/organizationBranding'
+import { getLocale, type SurveyLocale } from '../../../i18n/survey'
 
 interface RenderSurveyHeaderParams {
     organizationName: string
     organizationSlug: string
 }
 
+const LANG_LABELS: Record<SurveyLocale, string> = {
+    nl: 'NL',
+    en: 'EN',
+    fr: 'FR',
+}
+
 export function renderSurveyHeader({ organizationName, organizationSlug }: RenderSurveyHeaderParams): string {
     const { badge, displayName } = getOrganizationBranding(organizationName, organizationSlug)
+    const currentLang = getLocale()
+    const langOptions = (['nl', 'en', 'fr'] as SurveyLocale[])
+        .map((locale) => {
+            const selected = locale === currentLang ? ' class="lang-option--selected"' : ''
+            return `<button class="lang-option" data-lang="${locale}"${selected}>${LANG_LABELS[locale]}</button>`
+        })
+        .join('')
 
     return `
         <div class="survey-topbar">
@@ -14,9 +28,22 @@ export function renderSurveyHeader({ organizationName, organizationSlug }: Rende
                 <div class="survey-topbar-logo"><img src="/Assets/Conversey_logo.png" alt="Conversey" /></div>
                 <div class="survey-topbar-logo-title">CONVERSEY</div>
             </div>
-            <div class="survey-topbar-brand">
-                <div class="survey-topbar-logo-badge">${badge}</div>
-                <div class="survey-topbar-name">${displayName}</div>
+            <div class="survey-topbar-right">
+                <div class="lang-dropdown">
+                    <button class="lang-toggle" aria-label="Change language" aria-haspopup="true" aria-expanded="false">
+                        <svg class="lang-globe-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/>
+                        </svg>
+                        <span>${LANG_LABELS[currentLang]}</span>
+                        <span class="lang-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="lang-menu hidden" role="menu">${langOptions}</div>
+                </div>
+                <div class="survey-topbar-brand">
+                    <div class="survey-topbar-logo-badge">${badge}</div>
+                    <div class="survey-topbar-name">${displayName}</div>
+                </div>
             </div>
         </div>
     `

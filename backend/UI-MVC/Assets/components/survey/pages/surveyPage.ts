@@ -422,7 +422,8 @@ render(async (container, params) => {
 
     if (project.interactionType === InteractionType.UserDefined) {
         const layoutKey = `survey-layout-${params.projectSlug}`
-        const savedLayout = localStorage.getItem(layoutKey)
+        // Session persists across language-change reload; localStorage for "remember"
+        const savedLayout = sessionStorage.getItem(layoutKey) || localStorage.getItem(layoutKey)
 
         if (savedLayout === 'chat') {
             const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')

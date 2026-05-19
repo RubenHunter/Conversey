@@ -10,7 +10,7 @@ interface RenderComposerParams {
     prompt: HTMLParagraphElement
     textarea: HTMLTextAreaElement
     submitBtn: HTMLButtonElement
-    magicBtn: HTMLButtonElement
+    brainstormBtn: HTMLButtonElement
     speakBtn: HTMLButtonElement
 }
 
@@ -23,7 +23,7 @@ export function renderIdeasComposer({
     prompt,
     textarea,
     submitBtn,
-    magicBtn,
+    brainstormBtn,
     speakBtn,
 }: RenderComposerParams): void {
     const isMyIdeasView = activeView.type === 'my-ideas'
@@ -38,7 +38,7 @@ export function renderIdeasComposer({
         textarea.value = ''
         textarea.disabled = true
         submitBtn.disabled = true
-        magicBtn.disabled = true
+        brainstormBtn.disabled = true
         speakBtn.disabled = true
         return
     }
@@ -47,7 +47,7 @@ export function renderIdeasComposer({
     prompt.textContent = topic.prompt
     textarea.disabled = false
     submitBtn.disabled = textarea.value.trim().length === 0
-    magicBtn.disabled = false
+    brainstormBtn.disabled = false
     speakBtn.disabled = false
 }
 

@@ -26,12 +26,12 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
                 ></textarea>
 
                 <div class="survey-textarea-actions">
-                    <button class="survey-magic-btn" title="Answer in Magic Mode (coming soon)">
+                    <button class="survey-brainstorm-btn" title="Answer in Brainstorm Mode (coming soon)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                         </svg>
-                        <span class="survey-magic-btn-text">Magic Mode</span>
+                        <span class="survey-brainstorm-btn-text">Brainstorm Mode</span>
                     </button>
                     <button
                         class="survey-mic-btn"
@@ -54,7 +54,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
 
     const textarea = wrapper.querySelector<HTMLTextAreaElement>(`#textarea-${question.id}`)!
 
-    const magicBtn = wrapper.querySelector<HTMLElement>('.survey-magic-btn')
+    const brainstormBtn = wrapper.querySelector<HTMLElement>('.survey-brainstorm-btn')
 
     function applyTextValue(nextValue: string): void {
         textValue = nextValue
@@ -68,11 +68,11 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
     
     textarea.addEventListener('focus', () => {
         if (isLocked) return
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {

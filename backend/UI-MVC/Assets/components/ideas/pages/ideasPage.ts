@@ -127,7 +127,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         <div class="ideas-compose-head">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
-                                    <span class="ideas-compose-topic-kicker">Topic:</span>
+                                    <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                                     <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
@@ -139,11 +139,11 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         <div class="survey-textarea-wrapper">
                             <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="Share your idea for this topic..."></textarea>
                             <div class="survey-textarea-actions">
-                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
+                                <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="Answer in Brainstorm Mode (coming soon)">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    <span class="survey-magic-btn-text">Magic Mode</span>
+                                    <span class="survey-brainstorm-btn-text">Brainstorm Mode</span>
                                 </button>
                                 <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -165,7 +165,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     hidden
                 >
                     <span class="ideas-compose-topic-text">
-                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                         <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
                         <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                     </span>
@@ -226,7 +226,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
-                                class="survey-magic-btn idea-panel-edit-cta"
+                                class="survey-brainstorm-btn idea-panel-edit-cta"
                                 type="button"
                                 aria-label="${t.editIdea}"
                                 title="${t.editIdea}"
@@ -236,7 +236,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">${t.editIdea}</span>
+                                <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                             </button>
                         </div>
                     </div>
@@ -371,7 +371,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const textareaWrapper = container.querySelector<HTMLDivElement>('.survey-textarea-wrapper')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
-    const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
+    const brainstormBtn = container.querySelector<HTMLButtonElement>('#ideas-brainstorm')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
@@ -719,7 +719,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             prompt,
             textarea,
             submitBtn,
-            magicBtn,
+            brainstormBtn,
             speakBtn,
         })
 
@@ -959,13 +959,13 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         }
     }, { once: false })
 
-    // Magic button focus behavior
+    // Brainstorm button focus behavior
     textarea.addEventListener('focus', () => {
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {
