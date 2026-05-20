@@ -1,39 +1,26 @@
-type ProviderSetupState = {
-    getCurrentStep?: () => number;
-    setCurrentStep?: (step: number) => void;
-};
-
-type ProviderSetupWindow = Window & {
-    __ProviderSetupState?: ProviderSetupState;
-};
-
-function getProviderSetupState(): ProviderSetupState | undefined {
-    return (window as ProviderSetupWindow).__ProviderSetupState;
-}
-
 export class Stepper {
-     private currentStep: number = 1;
-     private totalSteps: number;
-     private entityName: string;
+    private currentStep: number = 1;
+    private totalSteps: number;
+    private entityName: string;
 
-     private container: HTMLElement;
-     private nextBtn: HTMLButtonElement;
-     private prevBtn: HTMLButtonElement;
-     private progressLine: HTMLElement;
-     private trackContainer: HTMLElement;
+    private container: HTMLElement;
+    private nextBtn: HTMLButtonElement;
+    private prevBtn: HTMLButtonElement;
+    private progressLine: HTMLElement;
+    private trackContainer: HTMLElement;
 
-     constructor(containerId: string) {
-         this.container = document.getElementById(containerId)!;
-         this.totalSteps = parseInt(this.container.dataset.totalSteps || "1");
-         this.entityName = this.container.dataset.entity || "Item";
+    constructor(containerId: string) {
+        this.container = document.getElementById(containerId)!;
+        this.totalSteps = parseInt(this.container.dataset.totalSteps || "1");
+        this.entityName = this.container.dataset.entity || "Item";
 
-         this.nextBtn = this.container.querySelector('#nextBtn')!;
-         this.prevBtn = this.container.querySelector('#prevBtn')!;
-         this.progressLine = this.container.querySelector('#progress-line')!;
-         this.trackContainer = this.container.querySelector('[class*="relative"][class*="flex"]')!;
+        this.nextBtn = this.container.querySelector('#nextBtn')!;
+        this.prevBtn = this.container.querySelector('#prevBtn')!;
+        this.progressLine = this.container.querySelector('#progress-line')!;
+        this.trackContainer = this.container.querySelector('[class*="relative"][class*="flex"]')!;
 
-         this.init();
-     }
+        this.init();
+    }
 
      private getInitialStep(): number {
          const persistedStep = getProviderSetupState()?.getCurrentStep?.() ?? 1;
@@ -77,16 +64,16 @@ export class Stepper {
          this.dispatchStepEnter(this.currentStep);
      }
 
-     private positionTrack() {
-         const steps = this.container.querySelectorAll('.step-indicator');
-         if (steps.length < 2) return;
+    private positionTrack() {
+        const steps = this.container.querySelectorAll('.step-indicator');
+        if (steps.length < 2) return;
 
-         const firstStep = steps[0] as HTMLElement;
-         const lastStep = steps[steps.length - 1] as HTMLElement;
+        const firstStep = steps[0] as HTMLElement;
+        const lastStep = steps[steps.length - 1] as HTMLElement;
 
-         const firstRect = firstStep.getBoundingClientRect();
-         const lastRect = lastStep.getBoundingClientRect();
-         const containerRect = this.trackContainer.getBoundingClientRect();
+        const firstRect = firstStep.getBoundingClientRect();
+        const lastRect = lastStep.getBoundingClientRect();
+        const containerRect = this.trackContainer.getBoundingClientRect();
 
          const leftOffset = firstRect.left - containerRect.left + firstRect.width / 2;
          const rightOffset = containerRect.right - lastRect.right + lastRect.width / 2;
@@ -102,8 +89,9 @@ export class Stepper {
         if (step < 1 || step > this.totalSteps) return;
         this.currentStep = step;
         this.updateUI();
-         this.persistCurrentStep();
-         this.dispatchStepEnter(step);
+        this.persistCurrentStep();
+        this.dispatchStepEnter(step);
+        this.container.dispatchEvent(new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true }));
     }
 
     private updateUI() {

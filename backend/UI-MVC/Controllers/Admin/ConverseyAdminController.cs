@@ -38,8 +38,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [HttpPost("/admin/workspaces/new")]
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
-        workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
-        return RedirectToAction("Workspaces");
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
+        return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 
     [HttpGet("/admin/workspaces/{id}")]
@@ -138,4 +138,30 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         };
     }
     
+    private void ApplyValidationExceptionToModelState(ValidationException ex)
+    {
+        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
+        {
+            foreach (var result in results)
+            {
+                var message = result.ErrorMessage ?? "Invalid value";
+
+                if (result.MemberNames.Any())
+                {
+                    foreach (var member in result.MemberNames)
+                    {
+                        ModelState.AddModelError($"Workspace.{member}", message);
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, message);
+                }
+            }
+        }
+        else
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+        }
+    }
 }

@@ -14,4 +14,7 @@ public class WorkspaceAdminUser : AdminUser
     public Workspace Workspace { get; set; }
 }
 
-public class AdminUser : IdentityUser;
+public class AdminUser : IdentityUser
+{
+    public bool FirstLogin { get; set; } = false;
+}

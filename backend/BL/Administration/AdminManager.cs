@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.DAL.Administration;
@@ -26,25 +27,39 @@ public class AdminManager : IAdminManager
         return _adminRepository.ReadAllWorkspaceAdminsByWorkspaceIdWithWorkspace(id);
     }
 
-    public async Task<WorkspaceAdmin> AddWorkspaceAdmin(string email, Slug workspaceId)
+    public async Task<(WorkspaceAdmin Admin, string OneTimePassword)> AddWorkspaceAdmin(string email, string username, string phoneNumber, Slug workspaceId)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
 
         var workspaceAdmin = new WorkspaceAdmin
         {
-            Email = email,
-            Workspace = workspace
+            Email = email?.Trim(),
+            Username = username?.Trim(),
+            PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
+            Workspace = workspace,
+            FirstLogin = true
         };
+        await EnsureWorkspaceAdminUnique(workspace.Id, workspaceAdmin.Email, workspaceAdmin.Username);
         Validate(workspaceAdmin);
-        await _adminRepository.CreateWorkspaceAdmin(workspaceAdmin);
-        return workspaceAdmin;
+        var oneTimePassword = GenerateOneTimePassword();
+        await _adminRepository.CreateWorkspaceAdmin(workspaceAdmin, oneTimePassword);
+        return (workspaceAdmin, oneTimePassword);
+    }
+
+    public Task SetWorkspaceAdminFirstLogin(Guid workspaceAdminId, bool isFirstLogin)
+    {
+        return _adminRepository.SetWorkspaceAdminFirstLogin(workspaceAdminId, isFirstLogin);
     }
 
     public async Task EditWorkspaceAdmin(WorkspaceAdmin workspaceAdmin)
     {
         try
         {
+            workspaceAdmin.Email = workspaceAdmin.Email?.Trim();
+            workspaceAdmin.Username = workspaceAdmin.Username?.Trim();
+            workspaceAdmin.PhoneNumber = string.IsNullOrWhiteSpace(workspaceAdmin.PhoneNumber) ? null : workspaceAdmin.PhoneNumber;
             workspaceAdmin.Workspace = _workspaceManager.GetWorkspaceById(workspaceAdmin.Workspace.Id);
+            await EnsureWorkspaceAdminUnique(workspaceAdmin.Workspace.Id, workspaceAdmin.Email, workspaceAdmin.Username, workspaceAdmin.Id);
             Validate(workspaceAdmin);
             await _adminRepository.UpdateWorkspaceAdmin(workspaceAdmin);
         }
@@ -83,5 +98,69 @@ public class AdminManager : IAdminManager
 
             throw ex;
         }
+    }
+
+    private async Task EnsureWorkspaceAdminUnique(Slug workspaceId, string email, string username, Guid? excludeWorkspaceAdminId = null)
+    {
+        var (emailExists, usernameExists) = await _adminRepository.CheckWorkspaceAdminConflicts(
+            workspaceId,
+            email,
+            username,
+            excludeWorkspaceAdminId);
+
+        if (!emailExists && !usernameExists)
+        {
+            return;
+        }
+
+        var validationResults = new List<ValidationResult>();
+        if (emailExists)
+        {
+            validationResults.Add(new ValidationResult(
+                "Email already exists in this workspace.",
+                [nameof(Admin.Email)]));
+        }
+
+        if (usernameExists)
+        {
+            validationResults.Add(new ValidationResult(
+                "Username already exists in this workspace.",
+                [nameof(Admin.Username)]));
+        }
+
+        var ex = new ValidationException("Validation failed");
+        ex.Data["ValidationResults"] = validationResults;
+        throw ex;
+    }
+
+    private static string GenerateOneTimePassword()
+    {
+        const int length = 12;
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string symbols = "!@#$%^&*-_+";
+        var all = string.Concat(upper, lower, digits, symbols);
+
+        var chars = new List<char>
+        {
+            upper[RandomNumberGenerator.GetInt32(upper.Length)],
+            lower[RandomNumberGenerator.GetInt32(lower.Length)],
+            digits[RandomNumberGenerator.GetInt32(digits.Length)],
+            symbols[RandomNumberGenerator.GetInt32(symbols.Length)]
+        };
+
+        for (var i = chars.Count; i < length; i++)
+        {
+            chars.Add(all[RandomNumberGenerator.GetInt32(all.Length)]);
+        }
+
+        for (var i = chars.Count - 1; i > 0; i--)
+        {
+            var swapIndex = RandomNumberGenerator.GetInt32(i + 1);
+            (chars[i], chars[swapIndex]) = (chars[swapIndex], chars[i]);
+        }
+
+        return new string(chars.ToArray());
     }
 }
