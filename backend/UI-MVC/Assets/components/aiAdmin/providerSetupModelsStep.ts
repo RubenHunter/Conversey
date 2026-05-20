@@ -103,6 +103,19 @@ function initSetupModelsStep(): void {
     }
   };
 
+  const speechProviders = new Set(['mistral', 'openai']);
+  const speechSection = document.getElementById('speechModelsSection');
+
+  const toggleSpeechSection = (): void => {
+    if (!speechSection) return;
+    const provider = (document.getElementById('setupProvider') as HTMLInputElement | null)?.value?.trim().toLowerCase() ?? '';
+    speechSection.classList.toggle('hidden', !speechProviders.has(provider));
+  };
+
+  toggleSpeechSection();
+
+  document.getElementById('setupProvider')?.addEventListener('input', toggleSpeechSection);
+
   statusEl.addEventListener('click', (event) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest('.js-step-back')) {

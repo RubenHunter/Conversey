@@ -16,7 +16,7 @@ if (input) {
 
 if (projectSelect) {
   projectSelect.addEventListener('change', () => {
-    const base = (window as any).__PromptsBaseUrl || window.location.pathname;
+    const base = (window as { __PromptsBaseUrl?: string }).__PromptsBaseUrl || window.location.pathname;
     const url =
       base +
       '?search=' + encodeURIComponent(input?.value || '') +

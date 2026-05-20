@@ -21,6 +21,12 @@ public class AiProviderConfig
     [MaxLength(100)]
     public string ModerationModel { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string SttModel { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string TtsModel { get; set; } = string.Empty;
+
     [MaxLength(20)]
     public string ApiVersion { get; set; } = string.Empty;
 

@@ -107,6 +107,14 @@
                             <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.ModerationModel) ? "—" : config.ModerationModel)</p>
                         </div>
                         <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="STT Model">STT Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.SttModel) ? "—" : config.SttModel)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="TTS Model">TTS Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.TtsModel) ? "—" : config.TtsModel)</p>
+                        </div>
+                        <div>
                             <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="API Key">API Key</span>
                             <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.ApiKey) ? "—" : new string('*', Math.Min(config.ApiKey.Length, 20)))</p>
                         </div>

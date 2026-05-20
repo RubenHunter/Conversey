@@ -7,6 +7,9 @@
 @import "./styles/pages/landing.css";
 @import "./styles/pages/survey.css";
 @import "./styles/pages/projects.css";
+@import "./styles/pages/brainstorm.css";
+@import "./styles/pages/chat-survey.css";
+@import "./styles/pages/ideas.css";
 
 /** {*/
 /*	margin: 0;*/

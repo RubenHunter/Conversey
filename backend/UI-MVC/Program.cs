@@ -15,6 +15,7 @@ using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.RateLimiting;
+using Conversey.BL.Ai.Speech;
 using Conversey.UI_MVC.Resources;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using System.Text.Json.Serialization;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -30,7 +32,11 @@ var builder = WebApplication.CreateBuilder(args);
 // const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddRazorPages()
     .AddRazorPagesOptions(options =>
     {
@@ -138,6 +144,12 @@ builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
     }
 });
 
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
+
 builder.Services.AddScoped<IAiManager>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
@@ -180,6 +192,51 @@ builder.Services.AddScoped<IAiManager>(provider =>
     }
 
     throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
+});
+
+builder.Services.AddSingleton<IVoiceManager, MistralVoiceManager>();
+builder.Services.AddScoped<ISpeechManager>(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var speechDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled && !string.IsNullOrWhiteSpace(c.SttModel));
+
+    if (speechDbConfig != null)
+    {
+        return BuildSpeechManagerFromDbConfig(provider, speechDbConfig);
+    }
+
+    var speechProvider = (config["AI:Speech:Provider"] ?? config["AI:Provider"] ?? "Noop").Trim();
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (speechProvider.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        return new NoopSpeechManager(logFactory.CreateLogger<NoopSpeechManager>());
+    }
+
+    if (speechProvider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ||
+        speechProvider.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        var openAiKey = config["AI:OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(openAiKey))
+        {
+            throw new InvalidOperationException("AI:Speech:Provider is set to OpenAI but AI:OpenAI:ApiKey is missing.");
+        }
+
+        var sttModel = config["AI:OpenAI:SttModel"] ?? "whisper-1";
+        var ttsModel = config["AI:OpenAI:TtsModel"] ?? "tts-1";
+        var httpClient = factory.CreateClient("OpenAI");
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiKey);
+        return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
+    }
+
+    return new MistralSpeechManager(
+        factory.CreateClient("MistralAPI"),
+        provider.GetRequiredService<IVoiceManager>(),
+        logFactory.CreateLogger<MistralSpeechManager>());
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
@@ -442,4 +499,41 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
     var moderationModel = config.ModerationModel;
 
     return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
+}
+
+static ISpeechManager BuildSpeechManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    if (!string.IsNullOrWhiteSpace(config.ApiKey))
+    {
+        if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+        else
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+    }
+
+    var sttModel = string.IsNullOrWhiteSpace(config.SttModel) ? "whisper-1" : config.SttModel;
+    var ttsModel = string.IsNullOrWhiteSpace(config.TtsModel) ? "tts-1" : config.TtsModel;
+
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        return new MistralSpeechManager(
+            httpClient,
+            provider.GetRequiredService<IVoiceManager>(),
+            logFactory.CreateLogger<MistralSpeechManager>(),
+            sttModel,
+            ttsModel);
+    }
+
+    return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
 }

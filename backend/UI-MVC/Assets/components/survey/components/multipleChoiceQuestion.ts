@@ -1,6 +1,6 @@
 import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
-import { generateQuestionHeader } from '../utils/surveyUtils'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
 
 export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
     let selectedOptionIds: number[] = []
@@ -35,6 +35,8 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
             Please select an option to continue.
         </p>
     `
+
+    initQuestionSpeakerForWrapper(wrapper)
 
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')
