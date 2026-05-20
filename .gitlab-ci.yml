@@ -20,7 +20,7 @@ validate-code:
 # 2. Build & Push naar Productie (Google Artifact Registry)
 build-backend:
   stage: build
-  image: google/cloud-sdk:alpine
+  image: google/cloud-sdk:latest
   before_script:
     - echo "$GCP_SERVICE_KEY" > gcp-key.json
     - gcloud auth activate-service-account --key-file=gcp-key.json
@@ -35,12 +35,12 @@ build-backend:
 # 3. Security Scanning & SBOM (DevSecOps)
 security-scan:
   stage: security
-  image: google/cloud-sdk:alpine
+  image: google/cloud-sdk:latest
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
-    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache trivy --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+    - apt-get update && apt-get install -y wget gnupg lsb-release
+    - wget -qO - https://aquasecurity.github.io/trivy-repo/dabian/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null
+    - echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/debian $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
+    - apt-get update && apt-get install -y trivy
   script:
     - echo "🛡️ Scanning image for vulnerabilities..."
     - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
@@ -51,14 +51,13 @@ security-scan:
 
 generate-sbom:
   stage: security
-  image: google/cloud-sdk:alpine
+  image: google/cloud-sdk:latest
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
-    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache syft --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+    - apt-get update && apt-get install -y curl
+    - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
+    - gcloud auth activate-service-account --key-file=<(echo "$GCP_SERVICE_KEY")
     - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
     - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
   artifacts:
@@ -71,12 +70,11 @@ generate-sbom:
 # 4. Image Signing (Cosign)
 sign-image:
   stage: sign
-  image: google/cloud-sdk:alpine
+  image: google/cloud-sdk:latest
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
-    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache cosign --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+    - apt-get update && apt-get install -y curl
+    - curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - chmod +x /usr/local/bin/cosign
   script:
     - echo "🖋️ Cosign verification ready."
     - cosign version
@@ -86,7 +84,7 @@ sign-image:
 # 5. Herstart Servers
 deploy-to-cloud:
   stage: deploy
-  image: google/cloud-sdk:alpine
+  image: google/cloud-sdk:latest
   before_script:
     - echo "$GCP_SERVICE_KEY" > gcp-key.json
     - gcloud auth activate-service-account --key-file=gcp-key.json
