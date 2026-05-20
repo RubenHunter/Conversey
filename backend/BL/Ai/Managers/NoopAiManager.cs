@@ -14,10 +14,10 @@ public sealed class NoopAiManager : IAiManager
     private static readonly Dictionary<NudgingMode, (int minWords, string placeholder)> NudgeThresholds = new()
     {
         [NudgingMode.Minimal] = (0, "Can you say a bit more about this idea?"),
-        [NudgingMode.Light] = (4, "Can you make this idea a bit more specific for this topic?"),
-        [NudgingMode.Medium] = (8, "Can you elaborate on why this matters and who would benefit?"),
-        [NudgingMode.Strong] = (10, "What is the concrete impact of this idea and who exactly would it help?"),
-        [NudgingMode.Deep] = (14, "Can you provide specific details, evidence, or a concrete scenario that supports this idea?"),
+        [NudgingMode.Light] = (3, "Can you make this idea a bit more specific for this topic?"),
+        [NudgingMode.Medium] = (5, "Can you elaborate on why this matters and who would benefit?"),
+        [NudgingMode.Strong] = (8, "What is the concrete impact of this idea and who exactly would it help?"),
+        [NudgingMode.Deep] = (10, "Can you provide specific details or a concrete scenario that supports this idea?"),
     };
 
     public NoopAiManager(IModerationKeywordRepository moderationKeywordRepository)

@@ -82,6 +82,8 @@ export async function renderChatSurveyPage(
     const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug })
 
     let inIdeasPhase = false
+    let activeViewForBrainstorm: ActiveView | null = null
+    let topicsForBrainstorm: { id: number; prompt?: string | null }[] = []
 
     container.innerHTML = renderChatShellTemplate({
         projectTitle: project.title,
@@ -130,6 +132,12 @@ export async function renderChatSurveyPage(
 
     const brainstormController: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
         getQuestionText: () => {
+            const av = activeViewForBrainstorm
+            if (inIdeasPhase && av && av.type === 'topic') {
+                const topic = topicsForBrainstorm?.find((item) => item.id === av.topicId)
+                if (topic?.prompt?.trim()) return topic.prompt.trim()
+                return chatInput.placeholder
+            }
             if (openTextState && openTextState.questionIndex < questions.length) {
                 return questions[openTextState.questionIndex].text ?? ''
             }
@@ -529,6 +537,8 @@ export async function renderChatSurveyPage(
         }
 
         // If no messages but question is not required, show an empty bubble so user can click to edit
+        // Place empty bubble BEFORE the confirm row (above the checkmark)
+        let emptyBubble: HTMLElement | null = null
         if (openTextState.messages.length === 0 && !questions[index].isRequired) {
             const row = document.createElement('div')
             row.className = 'chat-row chat-row--user'
@@ -537,13 +547,19 @@ export async function renderChatSurveyPage(
             bubble.textContent = '\u200B' // Zero-width space to maintain bubble height
             bubble.addEventListener('click', createEditHandler(index, bubble))
             row.appendChild(bubble)
-            messagesEl.appendChild(row)
-            scrollToBottom()
+            emptyBubble = row
         }
 
         const bundled = openTextState.messages.join('\n\n')
         components[index].setAnswer(bundled || null)
         openTextDraftsByQuestionId.delete(questions[index].id)
+
+        // Insert empty bubble before the confirm row, not after
+        if (emptyBubble && openTextState.floatingConfirmRow) {
+            openTextState.floatingConfirmRow.before(emptyBubble)
+        } else if (emptyBubble) {
+            messagesEl.appendChild(emptyBubble)
+        }
 
         openTextState.floatingConfirmRow?.classList.add('chat-confirm-row--confirmed')
         answeredState[index] = bundled.trim().length > 0
@@ -934,6 +950,7 @@ export async function renderChatSurveyPage(
 
         const initResult: IdeasInitResult = await initIdeasContext(params.organizationSlug, params.projectSlug, project)
         const { allIdeas, topics, youthToken, firstTopic } = initResult
+        topicsForBrainstorm = topics
 
         if (!firstTopic) {
             await appendAiBubble(t.surveyCompleted)
@@ -944,6 +961,7 @@ export async function renderChatSurveyPage(
         surveyHeaderEl.hidden = true
 
         let activeView: ActiveView = { type: 'topic', topicId: firstTopic.id }
+        activeViewForBrainstorm = activeView
         let discoveryMode: DiscoveryMode = DiscoveryMode.All
         let selectedSemanticCategory: string | null = null
         let showPostPreviewPair = false
@@ -1116,6 +1134,7 @@ export async function renderChatSurveyPage(
             onSelect: async (nextView) => {
                 chatNudgeFlow.cancelIfTopicChanged()
                 activeView = nextView
+                activeViewForBrainstorm = nextView
                 if (nextView.type === 'topic') {
                     discoveryMode = DiscoveryMode.All
                     selectedSemanticCategory = null
@@ -1176,8 +1195,10 @@ export async function renderChatSurveyPage(
                 else if (mode === 'similar') discoveryMode = DiscoveryMode.Similar
                 else if (mode === 'different') discoveryMode = DiscoveryMode.Different
                 selectedSemanticCategory = null
+                showPostPreviewPair = false
             } else if (category) {
                 selectedSemanticCategory = category
+                showPostPreviewPair = false
             }
 
             discoveryMenu.hidden = true
@@ -1288,15 +1309,15 @@ export async function renderChatSurveyPage(
                 return
             }
 
-            if (!hasOwnIdeaInTopic(activeView.topicId)) {
-                const categories = getTopicSemanticCategories(activeView.topicId)
-                const semanticButtons = categories
-                    .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-                    .join('')
-                const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>${semanticButtons}`
-                    : ''
+            const categories = getTopicSemanticCategories(activeView.topicId)
+            const semanticButtons = categories
+                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+                .join('')
+            const categoriesSection = categories.length > 0
+                ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>${semanticButtons}`
+                : ''
 
+            if (!hasOwnIdeaInTopic(activeView.topicId)) {
                 discoveryMenu.innerHTML = `<button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.broadSelection)}</button>${categoriesSection}`
                 return
             }
@@ -1304,7 +1325,8 @@ export async function renderChatSurveyPage(
             discoveryMenu.innerHTML = `
                 <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${esc(t.similarIdeas)}</button>
                 <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${esc(t.differingIdeas)}</button>
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>`
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>
+                ${categoriesSection}`
         }
 
         function closeDiscoveryMenu(): void {
@@ -1396,11 +1418,14 @@ export async function renderChatSurveyPage(
             }
 
             if (pagedIdeas.length === 0) {
+                ideasListEl.classList.remove('ideas-list--preview')
                 ideasListEl.innerHTML = `<p class="ideas-empty-state">${esc(t.noIdeas)}</p>`
                 updateLoadMoreButton()
                 listController = null
                 return
             }
+
+            ideasListEl.classList.toggle('ideas-list--preview', showPostPreviewPair)
 
             listController = createIdeasListController({
                 list: ideasListEl,
@@ -1443,15 +1468,13 @@ export async function renderChatSurveyPage(
             runNudgingFlow: async (input: string, activeView: ActiveView, _context: IdeaNudgingContext) => {
                 return chatNudgeFlow.start(input, activeView)
             },
-             onIdeaSubmitted: (idea: Idea) => {
-                 allIdeas.unshift(idea)
-                 latestSubmittedIdea = idea
-                 discoveryMode = DiscoveryMode.All
-                 selectedSemanticCategory = null
-                 showPostPreviewPair = false
-                 resetPaging()
-                 closeDiscoveryMenu()
-                 void renderIdeasList()
+            onIdeaSubmitted: (idea: Idea) => {
+                allIdeas.unshift(idea)
+                latestSubmittedIdea = idea
+                showPostPreviewPair = false
+                resetPaging()
+                closeDiscoveryMenu()
+                void renderIdeasList()
 
                  if (!firstIdeaContactDialog.hasStoredDecision()) {
                      void firstIdeaContactDialog.open().then((choice) => {
@@ -1637,20 +1660,44 @@ export async function renderChatSurveyPage(
                  required: q.isRequired,
              })
 
-             // For open text questions, show as clickable editable bubble
+             // For open text questions, show as clickable editable bubble(s)
              if (q.type === QuestionType.OpenText) {
+                 const questionId = questions[i].id
+                 const drafts = openTextDraftsByQuestionId.get(questionId)
                  const answer = components[i].getAnswer()
-                 const displayText = formatAnswerForDisplay(q, answer)
                  
-                 // Always show a bubble for open text (filled or empty) so it can be edited
-                 const row = document.createElement('div')
-                 row.className = 'chat-row chat-row--user'
-                 const bubble = document.createElement('div')
-                 bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                 bubble.textContent = displayText || '\u200B' // Use zero-width space if empty to maintain bubble height
-                 row.appendChild(bubble)
-                 bubble.addEventListener('click', createEditHandler(i, bubble))
-                 messagesEl.appendChild(row)
+                 if (drafts && drafts.length > 0) {
+                     drafts.forEach((message) => {
+                         const row = document.createElement('div')
+                         row.className = 'chat-row chat-row--user'
+                         const bubble = document.createElement('div')
+                         bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                         bubble.textContent = message
+                         bubble.addEventListener('click', createEditHandler(i, bubble))
+                         row.appendChild(bubble)
+                         messagesEl.appendChild(row)
+                     })
+                 } else {
+                     const displayText = formatAnswerForDisplay(q, answer)
+                     const row = document.createElement('div')
+                     row.className = 'chat-row chat-row--user'
+                     const bubble = document.createElement('div')
+                     bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                     bubble.textContent = displayText || '\u200B'
+                     bubble.addEventListener('click', createEditHandler(i, bubble))
+                     row.appendChild(bubble)
+                     messagesEl.appendChild(row)
+                 }
+
+                 // Show confirmed checkmark row for open text
+                 const confirmRow = document.createElement('div')
+                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                 confirmRow.setAttribute('data-confirm-for', String(i))
+                 confirmRow.innerHTML = `
+                     <div class="chat-confirm-line"></div>
+                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                     <div class="chat-confirm-line"></div>`
+                 messagesEl.appendChild(confirmRow)
              } else {
                  // For other question types, show the actual question component with answer pre-selected
                  const block = document.createElement('div')
@@ -1675,6 +1722,12 @@ export async function renderChatSurveyPage(
                  block.appendChild(answerRegion)
                  block.appendChild(confirmRow)
                  messagesEl.appendChild(block)
+
+                 // Re-apply answer after DOM append so range slider positions correctly
+                 const saved = savedProgress!.answersByQuestionId.get(q.id)
+                 if (saved !== undefined && saved !== null) {
+                     components[i].setAnswer(saved)
+                 }
              }
          }
 

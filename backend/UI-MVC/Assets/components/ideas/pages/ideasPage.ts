@@ -256,7 +256,9 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="idea-panel-footer">
                 <textarea id="idea-panel-input" class="idea-panel-input" placeholder="${t.writeComment}" rows="2"></textarea>
-                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
+                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled aria-label="${t.post}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
             </div>
         </div>
 
@@ -312,10 +314,10 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                 <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
                 <label class="idea-nudge-input-wrap" for="idea-nudge-input">
                     <span class="idea-nudge-input-label">${t.yourAnswer}</span>
-                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder="${t.answerContinue}..."></textarea>
                 </label>
             </div>
-            <div class="first-idea-contact-actions idea-nudge-actions">
+            <div class="idea-nudge-actions-wrap">
                 <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">${t.answerContinue}</button>
             </div>
         </div>
@@ -470,17 +472,17 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             return
         }
 
-        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
-            const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
-            const semanticButtons = categories
-                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-                .join('')
-                const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator">
-                       <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
-                       ${semanticButtons}`
-                    : ''
+        const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
+        const semanticButtons = categories
+            .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+            .join('')
+        const categoriesSection = categories.length > 0
+            ? `<hr class="ideas-discovery-separator" role="separator">
+               <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
+               ${semanticButtons}`
+            : ''
 
+        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
             discoveryMenu.innerHTML = `
                 <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.broadSelection}</button>
                 ${categoriesSection}
@@ -492,6 +494,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
+            ${categoriesSection}
         `
     }
 
@@ -656,8 +659,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = DiscoveryMode.All
-            selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
             discoveryCache.clear()
@@ -703,6 +704,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         if (listController) {
             listController.cleanup()
         }
+
+        list.classList.toggle('ideas-list--preview', showPostPreviewPair)
 
         // Create new list controller
         listController = createIdeasListController({

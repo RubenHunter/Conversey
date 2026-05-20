@@ -297,7 +297,7 @@
 
 .idea-nudge-input {
   width: 100%;
-  min-height: 96px;
+  min-height: 64px;
   resize: vertical;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
@@ -314,9 +314,47 @@
   border-color: var(--color-primary);
 }
 
+.idea-nudge-actions-wrap {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: center;
+}
+
+.idea-nudge-actions-wrap .safety-review-btn {
+  width: 100%;
+  max-width: 320px;
+}
+
 .idea-nudge-actions {
   border-top: 1px solid var(--color-border);
   justify-content: flex-end;
+}
+
+.idea-nudge-actions .safety-review-btn {
+  width: 100%;
+}
+
+.idea-nudge-context {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.idea-nudge-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.idea-nudge-actions {
+  border-top: 1px solid var(--color-border);
+  justify-content: flex-end;
+}
+
+.idea-nudge-actions .safety-review-btn {
+  width: 100%;
 }
 
 .first-idea-contact-field {
@@ -698,6 +736,11 @@
   text-align: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Re-enable pointer events for interactive cards */
@@ -787,6 +830,46 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ideas-card.active .ideas-card-body {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.ideas-card.near .ideas-card-body {
+  -webkit-line-clamp: 1;
+}
+
+.ideas-card.far .ideas-card-body {
+  -webkit-line-clamp: 0;
+  color: transparent;
+  text-shadow: none;
+  background: linear-gradient(90deg, var(--color-border) 25%, transparent 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+  min-height: 1em;
+  user-select: none;
+  max-height: 1em;
+  padding: 0.3em 0;
+}
+
+/* Preview mode: show all text */
+.ideas-list--preview .ideas-card-body {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  color: inherit;
+  background: none;
+  animation: none;
+  min-height: auto;
+  max-height: none;
+  user-select: text;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Reactions row on each card — click affordance */
@@ -912,7 +995,21 @@
 
 /* Override textarea min-height for ideas compose */
 .ideas-compose .survey-textarea {
-  min-height: calc(var(--spacing-xl) * 8.5);
+  min-height: calc(var(--spacing-xl) * 5.5);
+}
+
+/* Smaller textarea on phone landscape */
+@media (max-height: 450px) {
+  .ideas-compose .survey-textarea {
+    min-height: calc(var(--spacing-xl) * 3);
+  }
+  .ideas-compose {
+    padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs);
+  }
+  .ideas-compose-head {
+    gap: 0;
+    margin-bottom: 0;
+  }
 }
 
 .ideas-compose-topic {
@@ -944,6 +1041,12 @@
   font-size: var(--font-size-sm);
   font-weight: 400;
   color: var(--color-text);
+}
+
+.ideas-prompt-prefix {
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-right: 2px;
 }
 
 .ideas-speaker-btn {

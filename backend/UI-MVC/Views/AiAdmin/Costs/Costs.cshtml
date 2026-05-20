@@ -13,8 +13,9 @@
         ("Costs & Audit", null, true)
     };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
-    var timelineData = Model.Timeline.DailyCosts.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), calls = d.CallCount }).ToList();
-    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToLocalTime().ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6) }).ToList();
+    var tlDaily = Model.Timeline.DailyCosts;
+    var timelineData = tlDaily.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), tokens = d.InputTokens + d.OutputTokens, calls = d.CallCount }).ToList();
+    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToLocalTime().ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6), tokens = l.InputTokens + l.OutputTokens }).ToList();
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -34,7 +35,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
-                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Total Cost">Total Cost</span>
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Est. Total Cost">Est. Total Cost</span>
                 <div class="text-2xl font-bold text-text mt-1">@Model.Summary.TotalCost.ToString("C", nlBe)</div>
             </div>
             <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
@@ -53,11 +54,15 @@
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-8 p-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-sm font-semibold text-text" data-i18n="Cost Overview">Cost Overview</h2>
+                <h2 class="text-sm font-semibold text-text" data-i18n="Estimated Cost Overview">Estimated Cost Overview</h2>
                 <div class="flex bg-secondary/5 rounded-lg p-1 gap-0.5">
                     <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-type="line" data-i18n="Line">Line</button>
                     <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="bar" data-i18n="Bar">Bar</button>
                     <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="pie" data-i18n="Pie">Pie</button>
+                </div>
+                <div class="flex bg-secondary/5 rounded-lg p-1 gap-0.5 ml-2">
+                    <button class="chart-unit-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-unit="eur" data-i18n="EUR">&euro;</button>
+                    <button class="chart-unit-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-unit="tokens" data-i18n="Tokens">Tokens</button>
                 </div>
             </div>
             <div class="w-full h-72"><canvas id="cost-timeline-chart"></canvas></div>

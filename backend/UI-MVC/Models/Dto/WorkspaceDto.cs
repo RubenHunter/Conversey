@@ -7,7 +7,7 @@ public class WorkspaceDto
 {
     public Slug Id { get; set; }
     public string Name { get; set; }
-    
+    public string? Logo { get; set; }
 
     public static WorkspaceDto From(Workspace workspace)
     {
@@ -15,6 +15,7 @@ public class WorkspaceDto
         {
             Id = workspace.Id,
             Name = workspace.Name,
+            Logo = workspace.Logo,
         };
     }
 }

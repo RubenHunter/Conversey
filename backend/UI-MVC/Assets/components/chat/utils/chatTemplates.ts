@@ -202,10 +202,10 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
         <div id="idea-nudge-thread" class="idea-nudge-thread" aria-live="polite"></div>
         <label class="idea-nudge-input-wrap" for="idea-nudge-input">
             <span class="idea-nudge-input-label">${t.yourAnswer}</span>
-            <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>
+            <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder="${t.answerContinue}..."></textarea>
         </label>
     </div>
-    <div class="first-idea-contact-actions idea-nudge-actions">
+    <div class="idea-nudge-actions-wrap">
         <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">${t.answerContinue}</button>
     </div>
 </div>`

@@ -107,13 +107,13 @@ export function createIdeaNudgeDialogController({
         resolved = false
         const context = getContext(activeView)
         contextElEl.textContent = context
-            ? `${context.projectTitle} · ${context.topicTitle}${context.topicPrompt ? ` — ${context.topicPrompt}` : ''}`
+            ? `${context.topicTitle}`
             : ''
         inputEl.value = ''
         inputEl.disabled = false
-        inputEl.placeholder = 'Type your answer here...'
+        inputEl.placeholder = 'Answer the AI question here...'
         setActionState('Answer & continue', true)
-        setStatus('The AI will ask one question at a time. Close the dialog to post the current version as pending review.')
+        setStatus('The AI checks your idea quality. Close to post as-is.')
     }
 
     async function askNextQuestion(activeView: ActiveView): Promise<void> {

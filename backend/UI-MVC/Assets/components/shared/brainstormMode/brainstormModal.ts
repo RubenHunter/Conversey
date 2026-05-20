@@ -132,8 +132,13 @@ export function createBrainstormModal(): BrainstormModalController {
         const questionEl = document.createElement('h4');
         questionEl.className = 'brainstorm-question text-base font-medium text-base-content';
 
+        const instructionEl = document.createElement('p');
+        instructionEl.className = 'brainstorm-instruction text-sm text-base-content/60 text-center mt-2';
+        instructionEl.textContent = t.micClickToSpeak;
+
         body.appendChild(questionEl);
         body.appendChild(bubbleList.element);
+        body.appendChild(instructionEl);
 
         // Ring container - use RingController for status ring animations
         body.appendChild(ringController.element);

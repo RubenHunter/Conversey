@@ -24,7 +24,9 @@
             <div>
                 <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Model Pricing">Model Pricing</h1>
                 <p class="mt-1 text-sm text-text/60"><span data-i18n="Cost per million tokens in USD.">Cost per million tokens in USD.</span> <span data-i18n="EUR rate:">EUR rate:</span> 1 USD = @eurRate.ToString("F4") EUR.</p>
-                <p class="mt-1 text-sm text-text/60" data-i18n="Refresh to get todays prices">Refresh to get todays prices</p>
+                <p class="mt-1 text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200 inline-block">
+                    <span data-i18n="These are cost ESTIMATIONS based on publicly available model pricing databases. Actual costs may vary.">These are cost ESTIMATIONS based on publicly available model pricing databases. Actual costs may vary.</span>
+                </p>
             </div>
             <div class="flex items-center gap-3">
                 <form asp-action="RefreshPricing" method="post">

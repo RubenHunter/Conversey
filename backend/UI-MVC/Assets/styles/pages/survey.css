@@ -598,7 +598,7 @@
 /* Icon above text */
 .layout-picker-icon-wrap {
   position: absolute;
-  top: 38%;
+  top: clamp(30%, 38%, 38%);
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
@@ -608,15 +608,18 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-xl);
-  padding: clamp(16px, 3vw, 28px);
+  padding: clamp(12px, 3vw, 28px);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  max-height: 50%;
 }
 
 .layout-picker-icon {
-  width: clamp(72px, 12vw, 120px);
-  height: clamp(72px, 12vw, 120px);
+  width: clamp(64px, 12vw, 120px);
+  height: clamp(64px, 12vw, 120px);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Text label */
@@ -642,11 +645,11 @@
 
 .layout-picker-label-desc {
   font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
   line-height: 1.5;
-  max-width: 200px;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  max-width: 260px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Vertical divider + OR badge ── */
