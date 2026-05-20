@@ -1,14 +1,15 @@
+
 <div id="deleteModal"
      class="fixed inset-0 hidden items-center justify-center bg-black/50">
 
     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
 
-        <h2 class="text-lg font-semibold text-gray-900">
+        <h2 class="text-lg font-semibold text-gray-900" data-i18n="Confirm deletion">
             Confirm deletion
         </h2>
 
         <p class="mt-2 text-sm text-gray-600">
-            Are you sure you want to delete
+            <span data-i18n="Are you sure you want to delete">Are you sure you want to delete</span>
             <span id="deleteItemName" class="font-medium text-gray-900"></span>?
         </p>
 
@@ -16,13 +17,13 @@
 
             <button id="cancelDelete"
                     type="button"
-                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-i18n="Cancel">
                 Cancel
             </button>
 
             <button id="confirmDelete"
                     type="button"
-                    class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
+                    class="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700" data-i18n="Delete">
                 Delete
             </button>
 

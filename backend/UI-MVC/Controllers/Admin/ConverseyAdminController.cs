@@ -5,6 +5,7 @@ using Conversey.BL.Domain.Common;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -37,8 +38,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [HttpPost("/admin/workspaces/new")]
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
-        workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
-        return RedirectToAction("Workspaces");
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
+        return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 
     [HttpGet("/admin/workspaces/{id}")]
@@ -95,7 +96,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
         
         return View(EditFormVm(workspaceFormViewModel.FormItem));
@@ -135,32 +136,5 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
             FormAction = "EditWorkspace",
             SubmitLabel = "Edit Workspace",
         };
-    }
-    
-    private void ApplyValidationExceptionToModelState(ValidationException ex)
-    {
-        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
-        {
-            foreach (var result in results)
-            {
-                var message = result.ErrorMessage ?? "Invalid value";
-
-                if (result.MemberNames.Any())
-                {
-                    foreach (var member in result.MemberNames)
-                    {
-                        ModelState.AddModelError($"Workspace.{member}", message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, message);
-                }
-            }
-        }
-        else
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
     }
 }

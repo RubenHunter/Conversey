@@ -21,4 +21,6 @@ export interface Question {
     order?: number
     backendType?: string
     options?: AnswerOption[]
+    lowerBound?: number
+    upperBound?: number
 }

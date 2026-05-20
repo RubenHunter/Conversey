@@ -14,9 +14,17 @@ using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.RateLimiting;
+using Conversey.BL.Ai.Speech;
+using Conversey.UI_MVC.Resources;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using System.Text.Json.Serialization;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 
@@ -24,14 +32,17 @@ var builder = WebApplication.CreateBuilder(args);
 // const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddRazorPages()
     .AddRazorPagesOptions(options =>
     {
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
     });
 
 builder.Services.AddViteServices(options =>
@@ -48,6 +59,13 @@ builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IPromptRepository, PromptRepository>();
+builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
+builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
+builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
+builder.Services.AddScoped<ICostLimitRepository, CostLimitRepository>();
+builder.Services.AddScoped<IModelPricingRepository, ModelPricingRepository>();
+builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -55,6 +73,8 @@ builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
+builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
+builder.Services.AddScoped<IAiPricingService, AiPricingService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -76,6 +96,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/access-denied";
     options.LogoutPath = "/logout";
 });
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
@@ -120,17 +143,33 @@ builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
     }
 });
 
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
+
 builder.Services.AddScoped<IAiManager>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
-    var providerName = (config["AI:Provider"] ?? "Noop").Trim();
+    var appsettingsProviderName = (config["AI:Provider"] ?? "Noop").Trim();
 
-    if (providerName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var activeDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled);
+
+    if (activeDbConfig != null)
     {
-        return new NoopAiManager();
+        return BuildAiManagerFromDbConfig(provider, activeDbConfig);
     }
 
-    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        return new NoopAiManager(keywordRepo);
+    }
+
+    if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -138,25 +177,101 @@ builder.Services.AddScoped<IAiManager>(provider =>
             throw new InvalidOperationException("AI provider is set to Mistral but AI:Mistral:ApiKey is missing.");
         }
 
-        var aiConfig = new AiManagerConfig
-        {
-            ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest"
-        };
+        var completionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest";
+        var moderationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest";
 
-        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
+        var promptRepo = provider.GetRequiredService<IPromptRepository>();
+        var auditRepo = provider.GetRequiredService<IAuditRepository>();
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        var pricingService = provider.GetRequiredService<IAiPricingService>();
+
+        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
     }
 
-    throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
+    throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
+});
+
+builder.Services.AddSingleton<IVoiceManager, MistralVoiceManager>();
+builder.Services.AddScoped<ISpeechManager>(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var speechDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled && !string.IsNullOrWhiteSpace(c.SttModel));
+
+    if (speechDbConfig != null)
+    {
+        return BuildSpeechManagerFromDbConfig(provider, speechDbConfig);
+    }
+
+    var speechProvider = (config["AI:Speech:Provider"] ?? config["AI:Provider"] ?? "Noop").Trim();
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (speechProvider.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        return new NoopSpeechManager(logFactory.CreateLogger<NoopSpeechManager>());
+    }
+
+    if (speechProvider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ||
+        speechProvider.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        var openAiKey = config["AI:OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(openAiKey))
+        {
+            throw new InvalidOperationException("AI:Speech:Provider is set to OpenAI but AI:OpenAI:ApiKey is missing.");
+        }
+
+        var sttModel = config["AI:OpenAI:SttModel"] ?? "whisper-1";
+        var ttsModel = config["AI:OpenAI:TtsModel"] ?? "tts-1";
+        var httpClient = factory.CreateClient("OpenAI");
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiKey);
+        return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
+    }
+
+    return new MistralSpeechManager(
+        factory.CreateClient("MistralAPI"),
+        provider.GetRequiredService<IVoiceManager>(),
+        logFactory.CreateLogger<MistralSpeechManager>());
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
+builder.Services.AddSingleton<AdminContext>();
+builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AdminI18nService>();
+builder.Services.AddSingleton<IAdminI18nService>(p => p.GetRequiredService<AdminI18nService>());
+
+builder.Services.AddSingleton<RateLimitConfigCache>();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { "en-US", "nl-BE", "fr-BE" };
+    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.SupportedUICultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider
+    {
+        CookieName = ".Conversey.Admin.Culture",
+        Options = options
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy<string, AiUserRateLimiterPolicy>("AiFixedPolicy");
+    options.AddPolicy<string, AiAdminRateLimiterPolicy>("AiAdminPolicy");
+});
 
 
 TypeDescriptor.AddAttributes(
@@ -169,6 +284,9 @@ var app = builder.Build();
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
 
+var rateLimitCache = app.Services.GetRequiredService<RateLimitConfigCache>();
+await rateLimitCache.InitializeAsync();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -178,8 +296,19 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
+    RequestPath = "/Assets"
+});
 app.UseMiddleware<WorkspaceMiddleware>();
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.UseRequestLocalization();
+});
 app.UseRouting();
+
+app.UseRateLimiter();
 
 // if (app.Environment.IsDevelopment())
 // {
@@ -222,8 +351,12 @@ void InitializeDatabase(bool drop)
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         if (created)
         {
-            DataSeeder.Seed(dbCtx);
+            var config = services.GetRequiredService<IConfiguration>();
+            DataSeeder.Seed(dbCtx, config);
             SeedIdentity(userManager, roleManager, dbCtx);
+
+            var pricingService = services.GetRequiredService<IAiPricingService>();
+            pricingService.RefreshPricingAsync().GetAwaiter().GetResult();
         }
     }
 }
@@ -313,4 +446,93 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
     {
         userManager.AddToRoleAsync(user, role).Wait();
     }
+}
+
+static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    if (string.IsNullOrWhiteSpace(config.BaseUrl))
+    {
+        throw new InvalidOperationException($"AI provider '{config.ProviderName}' is enabled but has no BaseUrl configured.");
+    }
+
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    IAiProvider aiProvider;
+
+    if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+
+        aiProvider = new AzureOpenAiProvider(httpClient, config.CompletionsModel, config.ApiVersion);
+    }
+    else if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new MistralAiProvider(httpClient);
+    }
+    else
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new OpenAiCompatibleProvider(httpClient, config.ProviderName);
+    }
+
+    var promptRepo = provider.GetRequiredService<IPromptRepository>();
+    var auditRepo = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+    var pricingService = provider.GetRequiredService<IAiPricingService>();
+    var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
+    var moderationModel = config.ModerationModel;
+
+    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
+}
+
+static ISpeechManager BuildSpeechManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    if (!string.IsNullOrWhiteSpace(config.ApiKey))
+    {
+        if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+        else
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+    }
+
+    var sttModel = string.IsNullOrWhiteSpace(config.SttModel) ? "whisper-1" : config.SttModel;
+    var ttsModel = string.IsNullOrWhiteSpace(config.TtsModel) ? "tts-1" : config.TtsModel;
+
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        return new MistralSpeechManager(
+            httpClient,
+            provider.GetRequiredService<IVoiceManager>(),
+            logFactory.CreateLogger<MistralSpeechManager>(),
+            sttModel,
+            ttsModel);
+    }
+
+    return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
 }

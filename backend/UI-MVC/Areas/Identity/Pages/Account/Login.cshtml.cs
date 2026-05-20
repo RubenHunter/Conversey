@@ -24,17 +24,21 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
         private readonly UserManager<IdentityUser> _userManager;
         private readonly WorkspaceContext _workspaceContext;
         private readonly ILogger<LoginModel> _logger;
+        private readonly AdminContext _adminContext;
 
         public LoginModel(
             SignInManager<IdentityUser> signInManager,
             UserManager<IdentityUser> userManager,
             WorkspaceContext workspaceContext,
-            ILogger<LoginModel> logger)
+            ILogger<LoginModel> logger,
+            AdminContext adminContext
+            )
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _workspaceContext = workspaceContext;
             _logger = logger;
+            _adminContext = adminContext;
         }
 
         /// <summary>
@@ -132,6 +136,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         {
                             await _signInManager.SignInAsync(user, Input.RememberMe);
                             _logger.LogInformation("ConverseyAdmin logged in.");
+                            _adminContext.CurrentAdmin = AdminContext.ToDomain(converseyAdmin);
                             return LocalRedirect(Url.Content("~/admin/conversey"));
                         }
                     }
@@ -167,6 +172,11 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                     {
                         await _signInManager.SignInAsync(user, Input.RememberMe);
                         _logger.LogInformation("WorkspaceAdmin logged in.");
+                        _adminContext.CurrentAdmin = AdminContext.ToDomain(workspaceAdmin);
+                        if (workspaceAdmin.FirstLogin)
+                        {
+                            TempData["ForcePasswordChange"] = true;
+                        }
                         return LocalRedirect(Url.Content("~/admin/workspace"));
                     }
                 }

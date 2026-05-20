@@ -1,13 +1,16 @@
 ﻿using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Ai;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
 [ApiController]
 [Route("api/workspaces/{workspaceId}/projects/{projectId}/topics/{topicId:int}/ideas")]
+[EnableRateLimiting("AiFixedPolicy")]
 public class IdeasController : ControllerBase
 {
     private readonly IIdeaManager _manager;
@@ -18,16 +21,44 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<SubmissionResponseDto> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
+    public async Task<ActionResult<SubmissionResponseDto>> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
     {
         try
         {
-            SubmissionResponse response = _manager.SubmitIdea(workspaceId, projectId, topicId, idea.YouthId, idea.Content);
+            SubmissionResponse response = await _manager.SubmitIdeaAsync(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(IdeaDto.From(approved.Idea)),
                 SubmissionResponse.Pending pending => new SubmissionResponseDto.Pending(IdeaDto.From(pending.Idea), pending.Decision),
                 _ => throw new InvalidOperationException("Unknown submission response type")
+            });
+        }
+        catch (NotFoundException e)
+        {
+            return NotFound(e.Message);
+        }
+    }
+
+    [HttpPost("nudge")]
+    public async Task<ActionResult<IdeaNudgeResponseDto>> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
+    {
+        try
+        {
+            var decision = await _manager.AssessIdeaNudgeAsync(
+                workspaceId,
+                projectId,
+                topicId,
+                request.IdeaText,
+                request.Conversation.Select(turn => new IdeaNudgeTurn
+                {
+                    Question = turn.Question,
+                    Answer = turn.Answer,
+                }).ToList());
+
+            return Ok(new IdeaNudgeResponseDto
+            {
+                IsApproved = decision.IsApproved,
+                Question = decision.Question,
             });
         }
         catch (NotFoundException e)
@@ -56,7 +87,7 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("discover")]
-    public ActionResult<IEnumerable<IdeaDto>> DiscoverIdeas(
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> DiscoverIdeas(
         Slug workspaceId,
         Slug projectId,
         int topicId,
@@ -72,7 +103,7 @@ public class IdeasController : ControllerBase
 
         try
         {
-            var ideas = _manager.GetIdeaDiscoverySuggestions(
+            var ideas = await _manager.GetIdeaDiscoverySuggestionsAsync(
                 workspaceId,
                 projectId,
                 topicId,

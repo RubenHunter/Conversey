@@ -10,11 +10,13 @@ public class ProjectManager: IProjectManager
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IWorkspaceManager _workspaceManager;
+    private readonly ICloudStorageRepository _cloudStorageRepository;
 
-    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager)
+    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager, ICloudStorageRepository cloudStorageRepository)
     {
         _projectRepository = projectRepository;
         _workspaceManager = workspaceManager;
+        _cloudStorageRepository = cloudStorageRepository;
     }
 
     public Project GetProject(Workspace workspace, Slug projectId)
@@ -49,7 +51,7 @@ public class ProjectManager: IProjectManager
         var existingYouth = _projectRepository.ReadYouthByIdAndProjectId(token, projectId);
         if (existingYouth != null)
         {
-            if (ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
+            if (YouthEmailHelper.ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
             {
                 existingYouth.Email = normalizedEmail;
                 _projectRepository.UpdateYouth(existingYouth);
@@ -74,11 +76,28 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }
 
-    public Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm)
+    public Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3)
+    {
+        return SaveProject(
+            workspaceId,
+            name,
+            description,
+            startDate,
+            endDate,
+            interactionForm,
+            imageUrl,
+            nudgingStrength,
+            Status.Active,
+            null
+        );
+    }
+
+    public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string? slug)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
-        
+
         if (string.IsNullOrWhiteSpace(name))
         {
             var results = new List<ValidationResult>
@@ -90,24 +109,47 @@ public class ProjectManager: IProjectManager
             ex.Data["ValidationResults"] = results;
             throw ex;
         }
-        
-        var project = new Project
+
+        var resolvedSlug = string.IsNullOrWhiteSpace(slug) ? Slug.FromName(name) : Slug.FromName(slug);
+        var existing = _projectRepository.ReadProjectByIdAndWorkspaceId(resolvedSlug, workspaceId);
+
+        if (nudgingStrength < 1 || nudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
+        if (existing == null)
         {
-            Id = Slug.FromName(name),
-            Name = name,
-            Description = description,
-            Status = status,
-            StartDate = startDate.ToUniversalTime(),
-            EndDate = endDate.ToUniversalTime(),
-            InteractionForm = interactionForm,
+            var project = new Project
+            {
+                Id = resolvedSlug,
+                Name = name,
+                Description = description,
+                ImageUrl = imageUrl?.Trim() ?? string.Empty,
+                Status = status,
+                StartDate = startDate.ToUniversalTime(),
+                EndDate = endDate.ToUniversalTime(),
+                InteractionForm = interactionForm,
+                NudgingStrength = nudgingStrength,
+                Workspace = workspace
+            };
 
-            Workspace = workspace
-        };
-        
-        Validate(project);
+            Validate(project);
+            _projectRepository.CreateProject(project);
+            return project;
+        }
 
-        _projectRepository.CreateProject(project);
-        return project;
+        existing.Name = name;
+        existing.Description = description;
+        existing.ImageUrl = imageUrl?.Trim() ?? string.Empty;
+        existing.Status = status;
+        existing.StartDate = startDate.ToUniversalTime();
+        existing.EndDate = endDate.ToUniversalTime();
+        existing.InteractionForm = interactionForm;
+        existing.NudgingStrength = Math.Clamp(nudgingStrength, 1, 5);
+        existing.Workspace = workspace;
+
+        Validate(existing);
+        _projectRepository.UpdateProject(existing);
+        return existing;
     }
 
     public void EditProject(Project updatedProject)
@@ -118,12 +160,16 @@ public class ProjectManager: IProjectManager
         if (existing == null)
             throw new ProjectNotFoundException(updatedProject.Id);
 
+        if (updatedProject.NudgingStrength < 1 || updatedProject.NudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         existing.Name = updatedProject.Name;
         existing.Description = updatedProject.Description;
         existing.Status = updatedProject.Status;
         existing.StartDate = updatedProject.StartDate;
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
+        existing.NudgingStrength = updatedProject.NudgingStrength;
         existing.Workspace = updatedProject.Workspace;
         
         
@@ -133,6 +179,21 @@ public class ProjectManager: IProjectManager
     public void RemoveProject(Slug projectId, Slug workspaceId)
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
+    }
+
+    public async Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType)
+    {
+        // TODO image file validation
+        var imageUrl = await UploadProjectImage(stream, fileName, contentType);
+        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, worspaceId);
+        project.ImageUrl = imageUrl;
+        Validate(project);
+        _projectRepository.UpdateProject(project);
+    }
+
+    public async Task<string> UploadProjectImage(Stream stream, string fileName, string contentType)
+    {
+        return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
 
     private static bool ShouldReplaceEmail(string currentEmail, string newEmail)

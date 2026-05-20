@@ -1,9 +1,10 @@
 import "./main.css";
+import { onLocaleChange } from './i18n/survey'
 
-let app: HTMLDivElement;
+let app: HTMLDivElement | null = null;
 
 function init(): void {
-	app = document.querySelector<HTMLDivElement>('#app')
+	app = document.querySelector<HTMLDivElement>('#app')!
 }
 
 export interface ProjectContext {
@@ -20,7 +21,6 @@ function parseProject() {
 }
 
 function parseRoute(): ProjectContext {
-	const path = window.location.pathname
 	const domain = window.location.hostname
 
 	const organizationSlug = domain.split(".")[0]
@@ -37,8 +37,21 @@ function getApp():HTMLDivElement {
 }
 
 type ViewRenderer = (container: HTMLElement, params: ProjectContext) => void | Promise<void>
+
+let currentRenderer: ViewRenderer | null = null
+let reRenderGuard = false
+
 export function render(renderer: ViewRenderer): void {
+	currentRenderer = renderer
 	renderer(getApp(), parseRoute());
 }
+
+onLocaleChange(() => {
+	if (reRenderGuard || !currentRenderer) return
+	reRenderGuard = true
+	window.dispatchEvent(new CustomEvent('app:before-navigate'))
+	currentRenderer(getApp(), parseRoute())
+	reRenderGuard = false
+})
 
 init()

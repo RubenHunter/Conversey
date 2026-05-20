@@ -26,7 +26,7 @@ public class WorkspaceRepository : IWorkspaceRepository
 
     public Workspace ReadWorkspaceById(Slug id)
     {
-        return _context.Workspaces.SingleOrDefault(w => w.Id == id);
+        return _context.Workspaces.Include(w => w.Projects).SingleOrDefault(w => w.Id == id);
     }
 
 

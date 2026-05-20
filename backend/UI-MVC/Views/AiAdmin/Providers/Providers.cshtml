@@ -1,0 +1,140 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@model Conversey.UI_MVC.Models.AiAdmin.AiProvidersViewModel
+@inject AdminContext AdminContext
+@{
+    ViewData["Title"] = "Providers & Models";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Providers & Models", null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Providers & Models">Providers & Models</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="Configure AI service providers. Only one provider active at a time.">Configure AI service providers. Only one provider active at a time.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="healthCheckBtn" type="button" class="px-4 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span data-i18n="Test Health">Test Health</span>
+                </button>
+                <a href="@Url.Action("Providers", new { setup = true })" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <span data-i18n="Add Provider">Add Provider</span>
+                </a>
+            </div>
+        </div>
+
+        <div id="healthCheckResult" class="hidden mb-6 rounded-xl border p-4"></div>
+
+        @if (!Model.Providers.Any())
+        {
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-8 text-center">
+                <svg class="w-12 h-12 text-secondary/30 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+                <p class="text-text/60 text-sm" data-i18n="No providers configured.">No providers configured.</p>
+                <a href="@Url.Action("Providers", new { setup = true })" class="mt-4 inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Add your first provider">Add your first provider</a>
+            </div>
+        }
+
+        <div class="space-y-4">
+            @foreach (var config in Model.Providers)
+            {
+                var daysUntilExpiry = config.ApiKeyExpiresAt.HasValue
+                    ? (int)(config.ApiKeyExpiresAt.Value - DateTime.UtcNow).TotalDays
+                    : (int?)null;
+                var isExpired = daysUntilExpiry.HasValue && daysUntilExpiry.Value <= 0;
+                var isExpiringSoon = daysUntilExpiry.HasValue && daysUntilExpiry.Value > 0 && daysUntilExpiry.Value <= 7;
+
+                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm @(config.IsEnabled ? "ring-2 ring-primary/20" : "") @(isExpired ? "opacity-60" : "")">
+                    <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-sm font-semibold text-text">@config.ProviderName</h2>
+                            @if (isExpired)
+                            {
+                                <span class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 uppercase tracking-wider" data-i18n="Expired">Expired</span>
+                            }
+                            else if (isExpiringSoon)
+                            {
+                                <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase tracking-wider" data-i18n="Expiring Soon">Expiring Soon</span>
+                            }
+                            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider @(config.IsEnabled ? "bg-green-50 text-green-600" : "bg-background text-text/40")">
+                                @if (config.IsEnabled)
+                                {
+                                    <span data-i18n="Active">Active</span>
+                                }
+                                else
+                                {
+                                    <span data-i18n="Disabled">Disabled</span>
+                                }
+                            </span>
+                            @if (config.IsDefault)
+                            {
+                                <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase tracking-wider" data-i18n="Default">Default</span>
+                            }
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="@Url.Action("ConfigureModels", new { id = config.Id })" class="px-3 py-1.5 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-xs font-medium text-text/70" data-i18n="Models">Models</a>
+                            <a href="@Url.Action("EditProvider", new { id = config.Id })" class="px-3 py-1.5 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-xs font-medium text-text/70" data-i18n="Edit">Edit</a>
+                            @if (!config.IsDefault)
+                            {
+                                <form asp-action="DeleteProvider" asp-route-id="@config.Id" method="post" class="inline" data-confirm-delete-provider data-provider-name="@config.ProviderName">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="px-3 py-1.5 border border-accent/20 rounded-lg hover:bg-accent/5 transition-colors text-xs font-medium text-accent" data-i18n="Delete">Delete</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Base URL">Base URL</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.BaseUrl) ? "—" : config.BaseUrl)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Completions Model">Completions Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.CompletionsModel) ? "—" : config.CompletionsModel)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Moderation Model">Moderation Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.ModerationModel) ? "—" : config.ModerationModel)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="STT Model">STT Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.SttModel) ? "—" : config.SttModel)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="TTS Model">TTS Model</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.TtsModel) ? "—" : config.TtsModel)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="API Key">API Key</span>
+                            <p class="mt-1 text-sm font-mono text-text/80">@(string.IsNullOrWhiteSpace(config.ApiKey) ? "—" : new string('*', Math.Min(config.ApiKey.Length, 20)))</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Temperature">Temperature</span>
+                            <p class="mt-1 text-sm text-text/80">@config.Temperature</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Key Expiry">Key Expiry</span>
+                            <p class="mt-1 text-sm text-text/80">
+                                @if (!config.ApiKeyExpiresAt.HasValue) { <span class="text-text/40" data-i18n="No expiry">No expiry</span> }
+                                else if (isExpired) { <span class="text-red-600"><span data-i18n="Expired">Expired</span> @config.ApiKeyExpiresAt.Value.ToString("yyyy-MM-dd")</span> }
+                                else { <span>@config.ApiKeyExpiresAt.Value.ToString("yyyy-MM-dd") (@daysUntilExpiry.Value <span data-i18n="days">days</span>)</span> }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+<script type="module" vite-src="~/components/aiAdmin/providersPage.ts"></script>

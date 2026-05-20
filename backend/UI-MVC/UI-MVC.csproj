@@ -3,9 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);CS8632;CS8669</NoWarn>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     <RootNamespace>Conversey.UI_MVC</RootNamespace>
     <AssemblyName>Conversey.UI_MVC</AssemblyName>
+    <UserSecretsId>f4540dc8-15f9-4cd7-a204-9e449373b7b1</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,13 +39,11 @@
     <Content Include="wwwroot\.vite\**" />
     
     <Content Remove="Assets\*.ico" />
-    <Contenty Remove="Assets\*.svg" />
+    <Content Remove="Assets\*.svg" />
     <Content Remove="Assets\*.png" />
     <Content Remove="Assets\*.jpg" />
     <Content Remove="Assets\*.gif" />
     <None Update="Assets\*.ico;Assets\*.svg;Assets\*.png;Assets\*.jpg;Assets\*.gif">
-      <Link>wwwroot\%(Filename)%(Extension)</Link>
-      <TargetPath>wwwroot\%(Filename)%(Extension)</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
@@ -63,6 +64,10 @@
 
   <ItemGroup>
     <AdditionalFiles Include="Views\WorkspaceAdmin\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="dp-keys\" />
   </ItemGroup>
 
 

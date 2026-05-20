@@ -1,7 +1,23 @@
-@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject WorkspaceContext WorkspaceContext
+@inject IAdminI18nService I18n
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
-    ViewData["Title"] = "Edit Project";
+    ViewData["Title"] = I18n["Edit Project"];
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    {
+        (I18n["Projects"], "/admin/projects", false),
+        (I18n["Edit"], null, false),
+        (Model.AdminFormViewModel.FormItem.Name, null, true)
+    };
 }
+<div class="min-h-screen bg-background">
+    @await Html.PartialAsync("_AdminHeader")
+    
+    @await Html.PartialAsync("_Stepper", Model)
+</div>
 
-@await Html.PartialAsync("_ProjectForm", Model)
+@await Html.PartialAsync("_DraftExitModal")

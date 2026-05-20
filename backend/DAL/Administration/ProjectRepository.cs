@@ -91,6 +91,7 @@ public class ProjectRepository : IProjectRepository
         var projects = ReadAllProjectsFromWorkspaceId(workspaceId);
         _dbContext.Projects.RemoveRange(projects);
     }
+
 }
 
 #region ProjectConfig
@@ -122,6 +123,10 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
         builder
             .Property(p => p.ImageUrl)
             .HasMaxLength(2048);
+
+        builder
+            .Property(p => p.NudgingStrength)
+            .HasDefaultValue(3);
 
         #endregion
 
@@ -175,4 +180,3 @@ public class YouthConfig : IEntityTypeConfiguration<Youth>
     }
 }
 #endregion
-

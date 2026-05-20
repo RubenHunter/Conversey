@@ -1,11 +1,16 @@
 @import "tailwindcss" source("..");
 @import "./styles/theme.css";
 @import "./styles/shared/shared.css";
+@import "./styles/shared/adminLayout.css";
 @import "./styles/shared/topbar.css";
 @import "./styles/shared/redirect.css";
 @import "./styles/pages/completed.css";
 @import "./styles/pages/landing.css";
 @import "./styles/pages/survey.css";
+@import "./styles/pages/projects.css";
+@import "./styles/pages/brainstorm.css";
+@import "./styles/pages/chat-survey.css";
+@import "./styles/pages/ideas.css";
 @import "./icons.css";
 
 /** {*/
@@ -13,6 +18,16 @@
 /*	padding: 0;*/
 /*	box-sizing: border-box;*/
 /*}*/
+
+@plugin "tailwindcss-animate";
+
+@theme {
+	--color-text: #05030a;
+	--color-background: #f8f7fc;
+	--color-primary: #6c5ce7;
+	--color-secondary: #db99c8;
+	--color-accent: #cd6f88;
+}
 
 html,
 body {

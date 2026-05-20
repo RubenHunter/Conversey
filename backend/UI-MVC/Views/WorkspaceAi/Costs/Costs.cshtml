@@ -1,0 +1,196 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@using System.Text.Json
+@model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiCostsViewModel
+@inject AdminContext AdminContext
+@{
+    ViewData["Title"] = "AI Costs & Audit";
+    var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
+    var timelineData = Model.Timeline.DailyCosts.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), calls = d.CallCount }).ToList();
+    var auditData = Model.AuditLogs.Select(l => new { date = l.StartTime.ToLocalTime().ToString("yyyy-MM-dd"), model = l.ModelName ?? "", cost = Math.Round((double)l.Cost, 6) }).ToList();
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Costs & Audit">Costs & Audit</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="AI API usage, token consumption, and costs for this workspace.">AI API usage, token consumption, and costs for this workspace.</p>
+            </div>
+            <a href="@Url.Action("Dashboard", new { workspaceSlug = Model.WorkspaceId })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span data-i18n="Back to AI Settings">Back to AI Settings</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Total Cost">Total Cost</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.Summary.TotalCost.ToString("C", nlBe)</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Total Calls">Total Calls</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.Timeline.TotalCalls</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Input Tokens">Input Tokens</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.Timeline.DailyCosts.Sum(d => d.InputTokens).ToString("N0")</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm">
+                <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Output Tokens">Output Tokens</span>
+                <div class="text-2xl font-bold text-text mt-1">@Model.Timeline.DailyCosts.Sum(d => d.OutputTokens).ToString("N0")</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-8 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-text" data-i18n="Cost Overview">Cost Overview</h2>
+                <div class="flex gap-2 mt-2">
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-type="line" data-i18n="Line">Line</button>
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="bar" data-i18n="Bar">Bar</button>
+                    <button class="chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-type="pie" data-i18n="Pie">Pie</button>
+                </div>
+            </div>
+            <div class="w-full h-72"><canvas id="cost-timeline-chart"></canvas></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-8">
+            <div class="px-6 py-4 border-b border-secondary/10">
+                <h2 class="text-sm font-semibold text-text" data-i18n="Filters">Filters</h2>
+            </div>
+            <form method="get" asp-action="Costs" asp-route-workspaceSlug="@Model.WorkspaceId" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Project">Project</label>
+                        <select id="projectFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="" data-i18n="All projects">All projects</option>
+                            @foreach (var p in Model.Projects)
+                            {
+                                <option value="@p.Id.ToString()" selected="@(Model.Filter.ProjectId == p.Id.ToString())">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Model">Model</label>
+                        <select id="modelFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="" data-i18n="All models">All models</option>
+                            @foreach (var m in Model.Models)
+                            {
+                                <option value="@m" selected="@(Model.Filter.ModelName == m)">@m</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Type">Type</label>
+                        <select id="typeFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="" data-i18n="All types">All types</option>
+                            @foreach (var t in Model.ModelTypes)
+                            {
+                                <option value="@t" selected="@(Model.Filter.ModelType == t)">@t</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Provider">Provider</label>
+                        <select id="providerFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="" data-i18n="All providers">All providers</option>
+                            @foreach (var p in Model.Providers)
+                            {
+                                <option value="@p" selected="@(Model.Filter.ProviderName == p)">@p</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Prompt">Prompt</label>
+                        <select id="promptFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="" data-i18n="All prompts">All prompts</option>
+                            @foreach (var p in Model.Prompts)
+                            {
+                                <option value="@p" selected="@(Model.Filter.PromptName == p)">@p</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Date From">Date From</label>
+                        <input type="date" id="dateFromFilter" value="@(Model.Filter.DateFrom?.ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Date To">Date To</label>
+                        <input type="date" id="dateToFilter" value="@(Model.Filter.DateTo?.ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Timeline Days">Timeline Days</label>
+                        <select id="timelineDaysFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            @foreach (var days in new[] { 7, 14, 30, 60, 90 })
+                            {
+                                <option value="@days" selected="@(Model.Filter.TimelineDays == days)">@days <span data-i18n="days">days</span></option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-3">
+                    <button type="button" onclick="applyFilters()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Apply Filters">Apply Filters</button>
+                    <a href="@Url.Action("Costs", new { workspaceSlug = Model.WorkspaceId })" class="px-6 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70" data-i18n="Clear">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+            <div class="px-6 py-4 border-b border-secondary/10">
+                <h2 class="text-sm font-semibold text-text"><span data-i18n="Audit Log">Audit Log</span> (@Model.AuditLogs.Count <span data-i18n="entries">entries</span>)</h2>
+            </div>
+            <div class="costs-audit-table max-[1500px]:overflow-x-auto">
+                <table class="w-full table-fixed divide-y divide-secondary/10 text-xs min-w-[1000px]">
+                    <colgroup>
+                        <col style="width:8%"><col style="width:14%">
+                        <col style="width:16%"><col style="width:8%"><col style="width:18%">
+                        <col style="width:7%"><col style="width:7%"><col style="width:10%"><col style="width:12%">
+                    </colgroup>
+                    <thead class="bg-background/50">
+                        <tr>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Time">Time</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Project">Project</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Model">Model</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Type">Type</th>
+                            <th class="px-2 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Prompt">Prompt</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="In">In</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Out">Out</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Cost">Cost</th>
+                            <th class="px-2 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Dur.">Dur.</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-secondary/10">
+                        @if (!Model.AuditLogs.Any())
+                        {
+                            <tr><td colspan="9" class="px-6 py-8 text-center text-sm text-text/50" data-i18n="No AI calls recorded.">No AI calls recorded.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.AuditLogs)
+                            {
+                                var project = Model.Projects.FirstOrDefault(p => p.Id == log.ProjectId);
+                                <tr class="hover:bg-background/30">
+                                    <td class="px-2 py-2 text-xs text-text/70">@log.StartTime.ToLocalTime().ToString("MM-dd HH:mm")</td>
+                                    <td class="px-2 py-2 text-xs text-text/70"><span class="block truncate" title="@(project?.Name ?? log.ProjectId?.Text)">@(project?.Name ?? log.ProjectId?.Text)</span></td>
+                                    <td class="px-2 py-2 font-mono text-xs text-text"><span class="block truncate" title="@log.ModelName">@log.ModelName</span></td>
+                                    <td class="px-2 py-2 text-xs text-text/60">@log.ModelType</td>
+                                    <td class="px-2 py-2 text-xs text-text/60"><span class="block truncate" title="@log.PromptName">@log.PromptName</span></td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@log.InputTokens.ToString("N0")</td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@log.OutputTokens.ToString("N0")</td>
+                                    <td class="px-2 py-2 text-right text-xs font-semibold text-text">@log.Cost.ToString("C", nlBe)</td>
+                                    <td class="px-2 py-2 text-right text-xs text-text/60">@(log.Duration.TotalSeconds < 1 ? "< 1s" : $"{log.Duration.TotalSeconds:F1}s")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="application/json" id="cost-chart-data">@Html.Raw(JsonSerializer.Serialize(new { timeline = timelineData, audit = auditData, timelineDays = Model.Filter.TimelineDays }))</script>
+<script type="module" vite-src="~/components/shared/costCharts.ts"></script>

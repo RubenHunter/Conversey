@@ -8,4 +8,6 @@ public class AiManagerConfig
     public string ApiKey { get; set; }
     public string CompletionsModel { get; set; }
     public string ModerationModel { get; set; }
+    public string KeyPhraseModel { get; set; }
+    public string NudgingMode { get; set; } = "Balanced";
 }
