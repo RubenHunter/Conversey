@@ -11,9 +11,9 @@ function createQuestionComponent(question: Question): QuestionComponent {
 
     const component: QuestionComponent = createDraggableComponent(htmlToElement<QuestionComponent>(`
 <article class="question flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm hover:bg-zinc-50">
-    <img src="../../../drag.svg" alt="drag-icon" class="icon"/>
+    <img src="/Assets/drag.svg" alt="drag-icon" class="icon"/>
     
-    <img src="../../../multiple_choice.svg" alt="single-choice-icon" class="icon w-6 h-6"/>
+    <img src="/Assets/multiple_choice.svg" alt="single-choice-icon" class="icon w-6 h-6"/>
 
     <h3 class="grow font-medium">
         ${question.text}
@@ -22,13 +22,13 @@ function createQuestionComponent(question: Question): QuestionComponent {
     <menu class="flex gap-1">
         <li>
             <button class="icon-btn">
-                <img src="../../../trash.svg" alt="trash-icon" class="icon"/>
+                <img src="/Assets/trash.svg" alt="trash-icon" class="icon"/>
             </button>
         </li>
 
         <li>
             <button class="icon-btn">
-                <img src="../../../pencil.svg" alt="pencil-icon" class="icon"/>
+                <img src="/Assets/pencil.svg" alt="pencil-icon" class="icon"/>
             </button>
         </li>
 
