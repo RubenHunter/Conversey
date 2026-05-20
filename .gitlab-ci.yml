@@ -1,9 +1,23 @@
+include:
+  - template: Security/Container-Scanning.gitlab-ci.yml
+
 stages:
   - validate
   - build
+  - test # De template gebruikt de 'test' stage voor scanning
   - security
   - sign
   - deploy
+
+# Configuratie voor de officiële GitLab Container Scanning
+container_scanning:
+  stage: test
+  variables:
+    CS_IMAGE: europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+    CS_REGISTRY_USER: "oauth2accesstoken"
+    CS_REGISTRY_PASSWORD: "$GCP_SERVICE_KEY" # Vereist access key
+  only:
+    - main
 
 # 1. Validatie op Merge Requests
 validate-code:
@@ -17,7 +31,7 @@ validate-code:
   only:
     - merge_requests
 
-# 2. Build & Push naar Productie (Google Artifact Registry)
+# 2. Build & Push naar Productie
 build-backend:
   stage: build
   image: google/cloud-sdk:latest
@@ -32,36 +46,19 @@ build-backend:
   only:
     - main
 
-# 3. Security Scanning & SBOM (DevSecOps)
-security-scan:
-  stage: security
-  image: google/cloud-sdk:latest
-  before_script:
-    - apt-get update && apt-get install -y curl tar
-    - echo "📥 Download Trivy v0.49.1..."
-    - curl -L https://github.com/aquasecurity/trivy/releases/download/v0.49.1/trivy_0.49.1_Linux-64bit.tar.gz -o trivy.tar.gz
-    - tar xzf trivy.tar.gz -C /usr/local/bin trivy
-  script:
-    - echo "🛡️ Scanning image for vulnerabilities..."
-    - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
-    - export TRIVY_USERNAME=oauth2accesstoken
-    - /usr/local/bin/trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
-  only:
-    - main
-
+# 3. SBOM & Signing (DevSecOps)
 generate-sbom:
   stage: security
   image: google/cloud-sdk:latest
   before_script:
     - apt-get update && apt-get install -y curl tar
-    - echo "📥 Download Syft v1.0.0..."
-    - curl -L https://github.com/anchore/syft/releases/download/v1.0.0/syft_1.0.0_linux_amd64.tar.gz -o syft.tar.gz
+    - curl -sSfL https://github.com/anchore/syft/releases/download/v1.0.0/syft_1.0.0_linux_amd64.tar.gz -o syft.tar.gz
     - tar xzf syft.tar.gz -C /usr/local/bin syft
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
     - gcloud auth activate-service-account --key-file=<(echo "$GCP_SERVICE_KEY")
     - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
-    - /usr/local/bin/syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
+    - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
   artifacts:
     paths:
       - sbom.json
@@ -69,22 +66,20 @@ generate-sbom:
   only:
     - main
 
-# 4. Image Signing (Cosign)
 sign-image:
   stage: sign
   image: google/cloud-sdk:latest
   before_script:
     - apt-get update && apt-get install -y curl
-    - echo "📥 Download Cosign..."
-    - curl -L https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64 -o /usr/local/bin/cosign
+    - curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
     - chmod +x /usr/local/bin/cosign
   script:
     - echo "🖋️ Cosign verification ready."
-    - /usr/local/bin/cosign version
+    - cosign version
   only:
     - main
 
-# 5. Herstart Servers
+# 4. Herstart Servers
 deploy-to-cloud:
   stage: deploy
   image: google/cloud-sdk:latest
