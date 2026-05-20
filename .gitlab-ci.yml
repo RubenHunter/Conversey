@@ -1,7 +1,23 @@
 stages:
+  - validate
   - build
+  - security
+  - sign
   - deploy
 
+# 1. Validatie op Merge Requests
+validate-code:
+  stage: validate
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - echo "🔍 Code controleren..."
+    - cd backend
+    - dotnet restore
+    - dotnet build --no-restore
+  only:
+    - merge_requests
+
+# 2. Build & Push naar Productie (Google Artifact Registry)
 build-backend:
   stage: build
   image: google/cloud-sdk:alpine
@@ -13,7 +29,56 @@ build-backend:
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
     - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --quiet
+  only:
+    - main
 
+# 3. Security Scanning & SBOM (DevSecOps)
+security-scan:
+  stage: security
+  image: 
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - echo "🛡️ Scanning image for vulnerabilities..."
+    - trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+  only:
+    - main
+
+generate-sbom:
+  stage: security
+  image: 
+    name: anchore/syft:latest
+    entrypoint: [""]
+  script:
+    - echo "📦 Generating SBOM (Software Bill of Materials)..."
+    - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
+  artifacts:
+    paths:
+      - sbom.json
+    expire_in: 1 week
+  only:
+    - main
+
+# 4. Image Signing (Cosign)
+sign-image:
+  stage: sign
+  image: 
+    name: bitnami/cosign:latest
+    entrypoint: [""]
+  before_script:
+    - echo "$GCP_SERVICE_KEY" > gcp-key.json
+    - gcloud auth activate-service-account --key-file=gcp-key.json
+    - gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+  script:
+    - echo "🖋️ Signing the image with Cosign..."
+    # Gebruik Keyless signing (vereist Workload Identity) of een geveildigde key. 
+    # Voor nu simuleren we de stap, aangezien cosign setup vaak extra project secrets vereist.
+    - cosign version
+    - echo "Image signed (Simulated - requires COSIGN_PASSWORD and COSIGN_KEY or OIDC)"
+  only:
+    - main
+
+# 5. Herstart Servers
 deploy-to-cloud:
   stage: deploy
   image: google/cloud-sdk:alpine
