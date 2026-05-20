@@ -35,16 +35,17 @@ build-backend:
 # 3. Security Scanning & SBOM (DevSecOps)
 security-scan:
   stage: security
-  image: 
-    name: aquasec/trivy:latest
-    entrypoint: [""]
-  variables:
-    TRIVY_USERNAME: "oauth2accesstoken"
-    TRIVY_PASSWORD: "$GCP_SERVICE_KEY" # Vereist access tot registry
+  image: google/cloud-sdk:alpine
   before_script:
+    - echo "$GCP_SERVICE_KEY" > gcp-key.json
+    - gcloud auth activate-service-account --key-file=gcp-key.json
+    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
     - apk add --no-cache curl
-    # Geen shell in trivy image? We gebruiken de binary direct via entrypoint override
+    - curl -sfL https://raw.githubusercontent.com/aquasec/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
   script:
+    - echo "🛡️ Scanning image for vulnerabilities..."
+    - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
+    - export TRIVY_USERNAME=oauth2accesstoken
     - trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
   only:
     - main
@@ -52,12 +53,16 @@ security-scan:
 
 generate-sbom:
   stage: security
-  image: alpine:latest
+  image: google/cloud-sdk:alpine
   before_script:
+    - echo "$GCP_SERVICE_KEY" > gcp-key.json
+    - gcloud auth activate-service-account --key-file=gcp-key.json
+    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
     - apk add --no-cache curl
     - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
+    - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
     - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
   artifacts:
     paths:
@@ -69,15 +74,17 @@ generate-sbom:
 # 4. Image Signing (Cosign)
 sign-image:
   stage: sign
-  image: alpine:latest
+  image: google/cloud-sdk:alpine
   before_script:
+    - echo "$GCP_SERVICE_KEY" > gcp-key.json
+    - gcloud auth activate-service-account --key-file=gcp-key.json
+    - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
     - apk add --no-cache curl
     - curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
     - chmod +x /usr/local/bin/cosign
   script:
-    - echo "🖋️ Signing the image with Cosign (Validation Step)..."
+    - echo "🖋️ Signing verification stage..."
     - cosign version
-    - echo "Signing stage ready for production keys."
   only:
     - main
 
