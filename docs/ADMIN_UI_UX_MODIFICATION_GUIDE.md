@@ -396,6 +396,8 @@ public class StepItem
 - [2025-01-17] - Files: `AiAdmin/Index.cshtml` - Fixed breadcrumb link: changed Dashboard URL from `/admin` to `/admin/conversey`. Previous value `/admin` was non-existent route causing 404 errors when clicked. - Assistant: Mistral Vibe
 - [2025-01-17] - Files: `Assets/main.ts` - Added admin page detection to prevent project-based route parsing on admin pages. Added `isAdminPage()` function to check pathname, updated `navigate()` and `render()` to handle admin pages differently. Admin pages now receive empty context instead of incorrectly parsed project slugs from domain hostname. - Assistant: Mistral Vibe
 - [2025-01-17] - Files: `Controllers/Admin/ConverseyAdminController.cs` - Added redirect action for `/admin` route. Method `RedirectToDashboard()` redirects all requests from `/admin` to `/admin/conversey` to prevent 404 errors from legacy links or manual navigation. - Assistant: Mistral Vibe
+- [2025-01-17] - Files: `AiAdmin/Index.cshtml` - Fixed link text from 'Setup Provider & Model' to 'Setup New Provider' for consistency with destination page title. - Assistant: Mistral Vibe
+- [2025-01-17] - Files: `AiAdmin/Providers/Setup.cshtml` - Fixed breadcrumb link: changed Dashboard URL from `/admin` to `/admin/conversey` (same issue as AiAdmin/Index.cshtml). - Assistant: Mistral Vibe
 
 ---
 
@@ -466,4 +468,4 @@ pnpm build
 ---
 
 *Last verified: 2025-01-17*
-*Document version: 1.4*
+*Document version: 1.5*
