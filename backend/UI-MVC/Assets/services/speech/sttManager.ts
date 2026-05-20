@@ -430,7 +430,7 @@ export class STTManager {
           this.contextBias
       );
       if (finalText?.trim()) {
-        this.notifyText(finalText, this.hadExistingText);
+        this.notifyText(finalText, true);
       }
     }
   }

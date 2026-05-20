@@ -15,7 +15,6 @@
     flex-direction: column;
     background: var(--color-surface);
     animation: brainstorm-dialog-in 0.22s ease-out forwards;
-    min-height: 70vh;
 }
 
 @media (min-width: 640px) {
@@ -37,17 +36,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: clamp(var(--spacing-sm), 3vh, var(--spacing-md)) clamp(var(--spacing-md), 4vw, var(--spacing-lg));
     flex-shrink: 0;
 }
 
 .brainstorm-dialog-body {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-md) 0;
+    padding: clamp(0, 2vh, var(--spacing-md)) 0;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: clamp(var(--spacing-xs), 1.5vh, var(--spacing-md));
 }
 
 .brainstorm-question {
@@ -58,7 +57,7 @@
 }
 
 .brainstorm-dialog-footer {
-    padding: var(--spacing-lg);
+    padding: clamp(var(--spacing-sm), 3vh, var(--spacing-lg));
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -68,10 +67,10 @@
 
 .brainstorm-bubble-area {
     flex: 1 1 auto;
-    min-height: 6rem;
+    min-height: 3rem;
     border-radius: var(--radius-lg);
     overflow-y: auto;
-    padding: 1rem 0;
+    padding: 0.5rem 0;
     text-align: center;
     display: flex;
     flex-wrap: wrap;
@@ -81,8 +80,8 @@
 }
 
 .brainstorm-ring-container {
-    flex: 0 0 40%;
-    min-height: 250px;
+    flex: 0 0 auto;
+    min-height: 120px;
     position: relative;
     pointer-events: none;
     margin-top: auto;

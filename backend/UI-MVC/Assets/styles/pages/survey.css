@@ -598,7 +598,7 @@
 /* Icon above text */
 .layout-picker-icon-wrap {
   position: absolute;
-  top: clamp(30%, 38%, 38%);
+  top: clamp(18%, 32%, 38%);
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
@@ -608,15 +608,15 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-xl);
-  padding: clamp(12px, 3vw, 28px);
+  padding: clamp(8px, 3vw, 28px);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  max-height: 50%;
+  max-height: 40%;
 }
 
 .layout-picker-icon {
-  width: clamp(64px, 12vw, 120px);
-  height: clamp(64px, 12vw, 120px);
+  width: clamp(48px, 10vw, 110px);
+  height: clamp(48px, 10vw, 110px);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
   max-width: 100%;
   max-height: 100%;
@@ -644,12 +644,12 @@
 }
 
 .layout-picker-label-desc {
-  font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
-  color: rgba(255, 255, 255, 0.85);
+  font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-base));
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   line-height: 1.5;
-  max-width: 260px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  max-width: 280px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Vertical divider + OR badge ── */

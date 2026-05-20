@@ -29,6 +29,7 @@ export interface SurveyStrings {
     micStopRecording: string
     micClickToSpeak: string
     micClickToStop: string
+    brainstormInstruction: string
     brainstormModeEmptyState: string
     remove: string
     rejectedFeedbackPrefix: string
@@ -203,6 +204,7 @@ const nl: SurveyStrings = {
     micStopRecording: 'Stop opname',
     micClickToSpeak: 'Klik om te spreken',
     micClickToStop: 'Klik om te stoppen',
+    brainstormInstruction: 'Spreek je gedachten uit en de AI haalt er de belangrijkste kernwoorden uit. Klik daarna op de microfoon om te beginnen.',
     brainstormModeEmptyState: 'Spreek om sleutelwoorden te genereren...',
     remove: 'Verwijder',
     rejectedFeedbackPrefix: '❌ ',
@@ -378,6 +380,7 @@ const en: SurveyStrings = {
     micStopRecording: 'Stop recording',
     micClickToSpeak: 'Click to speak',
     micClickToStop: 'Click to stop',
+    brainstormInstruction: 'Speak your thoughts freely and the AI will extract the most important keywords. Press the microphone button to begin.',
     brainstormModeEmptyState: 'Speak to generate keywords...',
     remove: 'Remove',
     rejectedFeedbackPrefix: '❌ ',
@@ -552,6 +555,7 @@ const fr: SurveyStrings = {
     micStopRecording: 'Arrêter l\'enregistrement',
     micClickToSpeak: 'Cliquez pour parler',
     micClickToStop: 'Cliquez pour arrêter',
+    brainstormInstruction: 'Exprimez vos idées librement et l\'IA en extraira les mots-clés les plus importants. Appuyez sur le micro pour commencer.',
     brainstormModeEmptyState: 'Parlez pour générer des mots-clés...',
     remove: 'Supprimer',
     rejectedFeedbackPrefix: '❌ ',

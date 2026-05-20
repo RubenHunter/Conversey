@@ -126,7 +126,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     </section>
 
                     <section class="ideas-compose" aria-label="Create idea">
-                        <div class="ideas-compose-head">
+                        <div class="ideas-compose-head max-[450px]:flex-row max-[450px]:items-center max-[450px]:flex-wrap max-[450px]:gap-0 max-[450px]:mb-0">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
                                     <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
@@ -134,8 +134,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
                             </button>
-                            <div class="survey-question-title ideas-prompt-title-row">
-                                <span id="ideas-prompt" class="ideas-prompt"></span>
+                            <div class="survey-question-title ideas-prompt-title-row max-[450px]:text-xs">
+                                <span id="ideas-prompt" class="ideas-prompt max-[450px]:text-xs"></span>
                                 <button id="ideas-prompt-speaker" class="survey-speaker-btn"
                                         title="${t.readAloud}" aria-label="${t.readAloud}" disabled>
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -145,7 +145,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="${t.shareIdea}"></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)] max-[450px]:h-10 max-[450px]:min-h-0 max-[450px]:max-h-10" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
                                 <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -160,7 +160,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 </button>
                             </div>
                         </div>
-                        <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
+                        <button id="ideas-submit" class="ideas-submit max-[450px]:py-1 max-[450px]:text-xs" type="button">Submit Idea</button>
                     </section>
                 </div>
                 <button

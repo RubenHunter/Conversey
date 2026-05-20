@@ -134,7 +134,7 @@ export function createBrainstormModal(): BrainstormModalController {
 
         const instructionEl = document.createElement('p');
         instructionEl.className = 'brainstorm-instruction text-sm text-base-content/60 text-center mt-2';
-        instructionEl.textContent = t.micClickToSpeak;
+        instructionEl.textContent = t.brainstormInstruction;
 
         body.appendChild(questionEl);
         body.appendChild(bubbleList.element);
