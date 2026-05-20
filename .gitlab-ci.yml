@@ -40,14 +40,12 @@ security-scan:
     - echo "$GCP_SERVICE_KEY" > gcp-key.json
     - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache curl tar gzip
-    # Trivy installatie (Directe binary download van stabiele versie)
-    - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
+    - apk add --no-cache trivy --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
   script:
     - echo "🛡️ Scanning image for vulnerabilities..."
     - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
     - export TRIVY_USERNAME=oauth2accesstoken
-    - trivy image --severity HIGH,CRITICAL --exit-code 0 europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+    - trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
   only:
     - main
 
@@ -58,9 +56,7 @@ generate-sbom:
     - echo "$GCP_SERVICE_KEY" > gcp-key.json
     - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache curl tar gzip
-    # Syft installatie (Directe binary download)
-    - curl -sSfL https://github.com/anchore/syft/releases/download/v0.100.0/syft_0.100.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin
+    - apk add --no-cache syft --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
     - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
@@ -80,12 +76,9 @@ sign-image:
     - echo "$GCP_SERVICE_KEY" > gcp-key.json
     - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
-    - apk add --no-cache curl
-    # Cosign installatie
-    - curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
-    - chmod +x /usr/local/bin/cosign
+    - apk add --no-cache cosign --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
   script:
-    - echo "🖋️ Image integrity verification ready."
+    - echo "🖋️ Cosign verification ready."
     - cosign version
   only:
     - main
