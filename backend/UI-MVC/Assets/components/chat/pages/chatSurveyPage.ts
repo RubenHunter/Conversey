@@ -70,6 +70,9 @@ export async function renderChatSurveyPage(
 
     if (startInIdeasMode) {
         clearSurveyProgress(projectSlugKey)
+        // Clear saved history HTML so it gets rebuilt with current locale strings
+        const surveyHistoryKey = `survey-history-${projectSlugKey}`
+        localStorage.removeItem(surveyHistoryKey)
     } else {
         // Clear saved survey history when starting a new survey
         const surveyHistoryKey = `survey-history-${projectSlugKey}`
@@ -874,6 +877,13 @@ export async function renderChatSurveyPage(
         const historyHTML = messagesEl.innerHTML
         localStorage.setItem(surveyHistoryKey, historyHTML)
 
+        // Save answers snapshot for language-independent history reconstruction
+        const snapshot: Record<number, QuestionAnswer> = {}
+        for (let i = 0; i < questions.length; i++) {
+            snapshot[questions[i].id] = components[i].getAnswer()
+        }
+        localStorage.setItem(`survey-answers-snapshot-${projectSlugKey}`, JSON.stringify(snapshot))
+
         Array.from(messagesEl.children).forEach((el) => {
             if (!(el instanceof HTMLElement)) return
             el.classList.add('chat-survey-history-locked')
@@ -921,7 +931,7 @@ export async function renderChatSurveyPage(
     }
 
     // ===== Restore survey history =====
-    function restoreSurveyHistory(): void {
+    function restoreSurveyHistory(): boolean {
         const surveyHistoryKey = `survey-history-${projectSlugKey}`
         const savedHistory = localStorage.getItem(surveyHistoryKey)
         if (savedHistory) {
@@ -931,15 +941,160 @@ export async function renderChatSurveyPage(
                 if (!(el instanceof HTMLElement)) return
                 el.classList.add('chat-survey-history-locked')
             })
+            return true
         }
+        return false
+    }
+
+    // ===== Rebuild survey history from answers snapshot =====
+    function rebuildHistoryFromSnapshot(): void {
+        const snapshotKey = `survey-answers-snapshot-${projectSlugKey}`
+        const raw = localStorage.getItem(snapshotKey)
+        if (!raw) {
+            messagesEl.innerHTML = ''
+            return
+        }
+
+        let snapshot: Record<number, QuestionAnswer>
+        try {
+            snapshot = JSON.parse(raw) as Record<number, QuestionAnswer>
+        } catch {
+            messagesEl.innerHTML = ''
+            return
+        }
+
+        messagesEl.innerHTML = ''
+
+        // Project title
+        const titleRow = document.createElement('div')
+        titleRow.className = 'chat-row chat-row--ai'
+        const titleAvatar = document.createElement('div')
+        titleAvatar.className = 'chat-avatar'
+        titleAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+        const titleBubbleGroup = document.createElement('div')
+        titleBubbleGroup.className = 'chat-bubble-group'
+        const titleBubble = document.createElement('div')
+        titleBubble.className = 'chat-bubble chat-bubble--ai chat-bubble--project-title'
+        titleBubble.textContent = project.title
+        titleBubbleGroup.appendChild(titleBubble)
+        titleRow.appendChild(titleAvatar)
+        titleRow.appendChild(titleBubbleGroup)
+        messagesEl.appendChild(titleRow)
+
+        // Project description
+        if (project.description) {
+            const descRow = document.createElement('div')
+            descRow.className = 'chat-row chat-row--ai'
+            const descAvatar = document.createElement('div')
+            descAvatar.className = 'chat-avatar'
+            descAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            const descBubbleGroup = document.createElement('div')
+            descBubbleGroup.className = 'chat-bubble-group'
+            const descBubble = document.createElement('div')
+            descBubble.className = 'chat-bubble chat-bubble--ai'
+            descBubble.textContent = project.description
+            descBubbleGroup.appendChild(descBubble)
+            descRow.appendChild(descAvatar)
+            descRow.appendChild(descBubbleGroup)
+            messagesEl.appendChild(descRow)
+        }
+
+        // Questions
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i]
+            const answer = snapshot[q.id]
+            if (answer === undefined || answer === null) continue
+
+            // AI bubble: question text
+            const qRow = document.createElement('div')
+            qRow.className = 'chat-row chat-row--ai'
+            const qAvatar = document.createElement('div')
+            qAvatar.className = 'chat-avatar'
+            qAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            const qBubbleGroup = document.createElement('div')
+            qBubbleGroup.className = 'chat-bubble-group'
+            const qBubble = document.createElement('div')
+            qBubble.className = 'chat-bubble chat-bubble--ai chat-bubble--question-title'
+            const numEl = document.createElement('span')
+            numEl.className = 'chat-question-num'
+            numEl.textContent = `${i + 1}.`
+            qBubble.appendChild(numEl)
+            qBubble.appendChild(document.createTextNode(' ' + q.text))
+
+            const speakerBtn = document.createElement('button')
+            speakerBtn.className = 'chat-speaker-btn'
+            speakerBtn.type = 'button'
+            speakerBtn.setAttribute('aria-label', t.readAloud)
+            speakerBtn.innerHTML = SPEAKER_SVG
+
+            let bubbleOrWrapper: HTMLElement = qBubble
+            if (q.isRequired) {
+                const wrapper = document.createElement('div')
+                wrapper.className = 'chat-bubble-wrapper'
+                wrapper.appendChild(qBubble)
+                const badge = document.createElement('span')
+                badge.className = 'chat-required-float'
+                badge.textContent = t.requiredLabel
+                wrapper.appendChild(badge)
+                bubbleOrWrapper = wrapper
+            }
+
+            qBubbleGroup.appendChild(bubbleOrWrapper)
+            qBubbleGroup.appendChild(speakerBtn)
+            qRow.appendChild(qAvatar)
+            qRow.appendChild(qBubbleGroup)
+            messagesEl.appendChild(qRow)
+
+            // User answer
+            if (q.type === QuestionType.OpenText) {
+                const text = (answer ?? '') as string
+                const userRow = document.createElement('div')
+                userRow.className = 'chat-row chat-row--user'
+                const userBubble = document.createElement('div')
+                userBubble.className = 'chat-bubble chat-bubble--user'
+                userBubble.textContent = text || '\u200B'
+                userRow.appendChild(userBubble)
+                messagesEl.appendChild(userRow)
+            } else {
+                const userRow = document.createElement('div')
+                userRow.className = 'chat-row chat-row--user'
+                const userBubble = document.createElement('div')
+                userBubble.className = 'chat-bubble chat-bubble--user'
+                userBubble.textContent = formatAnswerForDisplay(q, answer)
+                userRow.appendChild(userBubble)
+                messagesEl.appendChild(userRow)
+            }
+
+            // Confirm checkmark row
+            const confirmRow = document.createElement('div')
+            confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+            confirmRow.setAttribute('data-confirm-for', String(i))
+            confirmRow.innerHTML = `
+                <div class="chat-confirm-line"></div>
+                <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                <div class="chat-confirm-line"></div>`
+            messagesEl.appendChild(confirmRow)
+        }
+
+        // Success message
+        const successRow = document.createElement('div')
+        successRow.className = 'chat-submit-success'
+        successRow.innerHTML = `
+            <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
+            <p class="chat-submit-success-title">${esc(t.submittedTitle)}</p>
+            <p class="chat-submit-success-sub">${esc(t.submittedSub)}</p>`
+        messagesEl.appendChild(successRow)
     }
 
     // ===== Ideation phase =====
     async function enterIdeasPhase(): Promise<void> {
         inIdeasPhase = true
 
-        // Restore survey history if available
-        restoreSurveyHistory()
+        // Restore survey history: try saved HTML first, fallback to rebuilding from answers snapshot
+        const hasRestoredHTML = restoreSurveyHistory()
+        if (!hasRestoredHTML) {
+            rebuildHistoryFromSnapshot()
+        }
         lockSurveyHistory()
 
         // Keep organization branding anchored at the top of the full page in ideation mode.
