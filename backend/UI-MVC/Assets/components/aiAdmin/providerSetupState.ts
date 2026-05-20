@@ -1,3 +1,5 @@
+import { Stepper, type StepperHooks } from '../shared/universalStepper';
+
 type ProviderSetupState = {
   version: number;
   currentStep: number;
@@ -31,7 +33,7 @@ const fieldDefaults: Record<string, string> = {
   setupModerationModel: '',
   setupSttModel: '',
   setupTtsModel: '',
-  setupTemperature: '0.2'
+  setupTemperature: '0.2',
 };
 
 const fieldIds = Object.keys(fieldDefaults);
@@ -107,7 +109,7 @@ function setCurrentStep(step: number): void {
   const state = readState() ?? {
     version: STORAGE_VERSION,
     currentStep: 1,
-    fields: getCurrentFieldValues()
+    fields: getCurrentFieldValues(),
   };
 
   state.version = STORAGE_VERSION;
@@ -122,6 +124,20 @@ function clearState(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+function createProviderHooks(): StepperHooks {
+  return {
+    setup: (reset) => {
+      document.addEventListener('provider-setup:reset', reset);
+    },
+    getInitialStep: () => getCurrentStep(),
+    onStepChange: (step: number) => setCurrentStep(step),
+    onComplete: () => {
+      const saveBtn = document.getElementById('saveProviderBtn') as HTMLButtonElement | null;
+      saveBtn?.click();
+    },
+  };
+}
+
 function initProviderSetupState(): void {
   window.__ProviderSetupState = {
     saveFields,
@@ -129,7 +145,7 @@ function initProviderSetupState(): void {
     getCurrentStep,
     setCurrentStep,
     clear: clearState,
-    storageKey: STORAGE_KEY
+    storageKey: STORAGE_KEY,
   };
 
   restoreFields();
@@ -148,10 +164,14 @@ function initProviderSetupState(): void {
       document.dispatchEvent(new CustomEvent('provider-setup:reset'));
     }
   });
+
+  const container = document.getElementById('dynamic-stepper');
+  const hasProjectForm = document.getElementById('create-project-step1-form');
+  if (container && !hasProjectForm) {
+    new Stepper('dynamic-stepper', createProviderHooks());
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initProviderSetupState);
 
 export {};
-
-

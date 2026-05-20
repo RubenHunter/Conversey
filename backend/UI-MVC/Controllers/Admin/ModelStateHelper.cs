@@ -5,7 +5,10 @@ namespace Conversey.UI_MVC.Controllers.Admin;
 
 public static class ModelStateHelper
 {
-    public static void ApplyValidationException(ModelStateDictionary modelState, ValidationException ex)
+    public static void ApplyValidationException(
+        ModelStateDictionary modelState,
+        ValidationException ex,
+        string? memberPrefix = null)
     {
         if (ex.Data.Contains("ValidationResults") && ex.Data["ValidationResults"] is IEnumerable<ValidationResult> results)
         {
@@ -15,7 +18,8 @@ public static class ModelStateHelper
                 {
                     foreach (var memberName in validationResult.MemberNames)
                     {
-                        modelState.AddModelError(memberName, validationResult.ErrorMessage ?? "Invalid value");
+                        var key = string.IsNullOrEmpty(memberPrefix) ? memberName : $"{memberPrefix}.{memberName}";
+                        modelState.AddModelError(key, validationResult.ErrorMessage ?? "Invalid value");
                     }
                 }
                 else
