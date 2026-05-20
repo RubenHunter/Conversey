@@ -2,8 +2,17 @@
 @using Conversey.BL.Domain.Administration
 @model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiLimitsViewModel
 @inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
 @{
     ViewData["Title"] = "AI Cost Limits";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    var workspaceSlug = ViewContext.RouteData.Values["workspaceSlug"]?.ToString() ?? Model.WorkspaceId.ToString();
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
+        ("Cost Limits", null, true)
+    };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
 }
 

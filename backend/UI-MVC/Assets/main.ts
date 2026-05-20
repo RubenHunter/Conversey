@@ -11,7 +11,17 @@ export interface ProjectContext {
 	projectSlug: string
 }
 
+// Check if current path is an admin page
+export function isAdminPage(): boolean {
+	return window.location.pathname.startsWith('/admin');
+}
+
 export function navigate(to: string) {
+	// Don't use project-based navigation for admin pages
+	if (isAdminPage()) {
+		window.location.href = `/admin/${to}`;
+		return;
+	}
 	window.location.href = `/${parseProject()}/${to}`;
 }
 
@@ -37,6 +47,13 @@ function getApp():HTMLDivElement {
 
 type ViewRenderer = (container: HTMLElement, params: ProjectContext) => void | Promise<void>
 export function render(renderer: ViewRenderer): void {
+	// Don't parse route for admin pages - they don't use project context
+	if (isAdminPage()) {
+		// For admin pages, create a minimal context
+		const adminContext = { organizationSlug: '', projectSlug: '' };
+		renderer(getApp(), adminContext);
+		return;
+	}
 	renderer(getApp(), parseRoute());
 }
 
