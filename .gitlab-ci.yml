@@ -4,20 +4,10 @@ include:
 stages:
   - validate
   - build
-  - test # De template gebruikt de 'test' stage voor scanning
+  - test
   - security
   - sign
   - deploy
-
-# Configuratie voor de officiële GitLab Container Scanning
-container_scanning:
-  stage: test
-  variables:
-    CS_IMAGE: europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
-    CS_REGISTRY_USER: "oauth2accesstoken"
-    CS_REGISTRY_PASSWORD: "$GCP_SERVICE_KEY" # Vereist access key
-  only:
-    - main
 
 # 1. Validatie op Merge Requests
 validate-code:
@@ -28,8 +18,8 @@ validate-code:
     - cd backend
     - dotnet restore
     - dotnet build --no-restore
-  only:
-    - merge_requests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 # 2. Build & Push naar Productie
 build-backend:
@@ -43,28 +33,39 @@ build-backend:
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
     - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --quiet
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
-# 3. SBOM & Signing (DevSecOps)
+# 3. Native GitLab Container Scanning (Trivy)
+container_scanning:
+  stage: test
+  variables:
+    CS_IMAGE: europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+    CS_REGISTRY_USER: "oauth2accesstoken"
+    CS_REGISTRY_PASSWORD: "$GCP_SERVICE_KEY"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# 4. SBOM & Signing (DevSecOps)
 generate-sbom:
   stage: security
   image: google/cloud-sdk:latest
   before_script:
     - apt-get update && apt-get install -y curl tar
+    - echo "📥 Download Syft..."
     - curl -sSfL https://github.com/anchore/syft/releases/download/v1.0.0/syft_1.0.0_linux_amd64.tar.gz -o syft.tar.gz
     - tar xzf syft.tar.gz -C /usr/local/bin syft
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
     - gcloud auth activate-service-account --key-file=<(echo "$GCP_SERVICE_KEY")
     - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
-    - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
+    - /usr/local/bin/syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
   artifacts:
     paths:
       - sbom.json
     expire_in: 1 week
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
 sign-image:
   stage: sign
@@ -75,11 +76,11 @@ sign-image:
     - chmod +x /usr/local/bin/cosign
   script:
     - echo "🖋️ Cosign verification ready."
-    - cosign version
-  only:
-    - main
+    - /usr/local/bin/cosign version
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
-# 4. Herstart Servers
+# 5. Herstart Servers
 deploy-to-cloud:
   stage: deploy
   image: google/cloud-sdk:latest
@@ -91,5 +92,5 @@ deploy-to-cloud:
   script:
     - echo "🔄 Rolling update van de Managed Instance Group..."
     - gcloud compute instance-groups managed rolling-action restart conversey-mig --zone=europe-west1-b --project=$GCP_PROJECT_ID --quiet
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
