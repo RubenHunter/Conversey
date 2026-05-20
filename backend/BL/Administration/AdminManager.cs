@@ -27,6 +27,11 @@ public class AdminManager : IAdminManager
         return _adminRepository.ReadAllWorkspaceAdminsByWorkspaceIdWithWorkspace(id);
     }
 
+    public IEnumerable<WorkspaceAdmin> GetAllWorkspaceAdmins()
+    {
+        return _adminRepository.ReadAllWorkspaceAdmins();
+    }
+
     public async Task<(WorkspaceAdmin Admin, string OneTimePassword)> AddWorkspaceAdmin(string email, string username, string phoneNumber, Slug workspaceId)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
@@ -81,7 +86,68 @@ public class AdminManager : IAdminManager
         }
     }
     
-    
+    public async Task<ConverseyAdmin> GetConverseyAdminById(Guid id)
+    {
+        var admin = await _adminRepository.ReadConverseyAdminById(id);
+        if (admin == null) throw new ConverseyAdminNotFoundException(id);
+        return admin;
+    }
+
+    public IEnumerable<ConverseyAdmin> GetAllConverseyAdmins()
+    {
+        return _adminRepository.ReadAllConverseyAdmins();
+    }
+
+    public async Task<(ConverseyAdmin Admin, string OneTimePassword)> AddConverseyAdmin(string email, string username, string phoneNumber)
+    {
+        var converseyAdmin = new ConverseyAdmin
+        {
+            Email = email?.Trim(),
+            Username = username?.Trim(),
+            PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
+            FirstLogin = true
+        };
+        await EnsureConverseyAdminUnique(converseyAdmin.Email, converseyAdmin.Username);
+        Validate(converseyAdmin);
+        var oneTimePassword = GenerateOneTimePassword();
+        await _adminRepository.CreateConverseyAdmin(converseyAdmin, oneTimePassword);
+        return (converseyAdmin, oneTimePassword);
+    }
+
+    public Task SetConverseyAdminFirstLogin(Guid converseyAdminId, bool isFirstLogin)
+    {
+        return _adminRepository.SetConverseyAdminFirstLogin(converseyAdminId, isFirstLogin);
+    }
+
+    public async Task EditConverseyAdmin(ConverseyAdmin converseyAdmin)
+    {
+        try
+        {
+            converseyAdmin.Email = converseyAdmin.Email?.Trim();
+            converseyAdmin.Username = converseyAdmin.Username?.Trim();
+            converseyAdmin.PhoneNumber = string.IsNullOrWhiteSpace(converseyAdmin.PhoneNumber) ? null : converseyAdmin.PhoneNumber;
+            
+            await EnsureConverseyAdminUnique(converseyAdmin.Email, converseyAdmin.Username, converseyAdmin.Id);
+            Validate(converseyAdmin);
+            await _adminRepository.UpdateConverseyAdmin(converseyAdmin);
+        }
+        catch (KeyNotFoundException)
+        {
+            throw new ConverseyAdminNotFoundException(converseyAdmin.Id);
+        }
+    }
+
+    public async Task RemoveConverseyAdmin(Guid converseyAdminId)
+    {
+        try
+        {
+            await _adminRepository.DeleteConverseyAdmin(converseyAdminId);
+        }
+        catch (KeyNotFoundException)
+        {
+            throw new ConverseyAdminNotFoundException(converseyAdminId);
+        }
+    }
 
 
     private void Validate(object obj)
@@ -125,6 +191,38 @@ public class AdminManager : IAdminManager
         {
             validationResults.Add(new ValidationResult(
                 "Username already exists in this workspace.",
+                [nameof(Admin.Username)]));
+        }
+
+        var ex = new ValidationException("Validation failed");
+        ex.Data["ValidationResults"] = validationResults;
+        throw ex;
+    }
+
+    private async Task EnsureConverseyAdminUnique(string email, string username, Guid? excludeConverseyAdminId = null)
+    {
+        var (emailExists, usernameExists) = await _adminRepository.CheckConverseyAdminConflicts(
+            email,
+            username,
+            excludeConverseyAdminId);
+
+        if (!emailExists && !usernameExists)
+        {
+            return;
+        }
+
+        var validationResults = new List<ValidationResult>();
+        if (emailExists)
+        {
+            validationResults.Add(new ValidationResult(
+                "Email already exists.",
+                [nameof(Admin.Email)]));
+        }
+
+        if (usernameExists)
+        {
+            validationResults.Add(new ValidationResult(
+                "Username already exists.",
                 [nameof(Admin.Username)]));
         }
 

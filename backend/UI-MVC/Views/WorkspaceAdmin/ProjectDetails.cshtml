@@ -9,7 +9,7 @@
 @{
     ViewData["Title"] = I18n["Project Details"];
     ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
     {
         (I18n["Projects"], "/admin/projects", false),
         (Model.Name, null, true)

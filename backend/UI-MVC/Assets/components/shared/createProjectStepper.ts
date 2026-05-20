@@ -44,7 +44,6 @@ class CreateProjectStepper {
     private readonly step1ImageUploadError: HTMLElement | null;
     private readonly step1Slug: HTMLInputElement | null;
     private readonly step1Status: HTMLSelectElement | null;
-    private readonly step1NudgingStrength: HTMLInputElement | null;
     private readonly step1NameWarning: HTMLElement | null;
 
     constructor(containerId: string) {

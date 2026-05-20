@@ -3,6 +3,8 @@ using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.Models.AdminManagement;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -11,12 +13,34 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.UI_MVC.Controllers.Admin;
 
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
-public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdminManager adminManager) : Controller
+public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdminManager adminManager, AdminContext adminContext) : Controller
 {
     [HttpGet("/admin/conversey")]
     public IActionResult Index()
     {
+        var admin = adminContext.CurrentAdmin;
+        if (admin is { FirstLogin: true })
+        {
+            TempData["ForcePasswordChange"] = true;
+        }
         return View();
+    }
+
+    [HttpGet("/admin/conversey/admins")]
+    public IActionResult AdminManagement()
+    {
+        var converseyAdmins = adminManager.GetAllConverseyAdmins();
+        var workspaceAdmins = adminManager.GetAllWorkspaceAdmins();
+        
+        var groupedWorkspaceAdmins = workspaceAdmins.GroupBy(wa => wa.Workspace);
+
+        var model = new AdminManagementViewModel
+        {
+            ConverseyAdmins = converseyAdmins,
+            WorkspaceAdminsByWorkspace = groupedWorkspaceAdmins
+        };
+
+        return View(model);
     }
 
     [HttpGet("admin/workspaces")]

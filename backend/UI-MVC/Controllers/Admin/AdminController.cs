@@ -145,6 +145,105 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
     }
     
+    [HttpPost("/admin/conversey-user/delete/{id}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConverseyAdmin(Guid id)
+    {
+        try
+        {
+            await adminManager.RemoveConverseyAdmin(id);
+            return RedirectToAction("AdminManagement", "ConverseyAdmin");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("/admin/conversey-admins/new")]
+    public async Task<IActionResult> CreateConverseyAdmin(
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
+    {
+        try
+        {
+            var (admin, oneTimePassword) = await adminManager.AddConverseyAdmin(email, username, phoneNumber);
+
+            TempData["OneTimePassword"] = oneTimePassword;
+            TempData["OneTimePasswordAdminEmail"] = admin.Email;
+
+            var redirectUrl = Url.Action("AdminManagement", "ConverseyAdmin");
+
+            if (IsAjaxRequest())
+            {
+                return Ok(new { redirectUrl });
+            }
+
+            return RedirectToAction("AdminManagement", "ConverseyAdmin");
+        }
+        catch (ValidationException ex)
+        {
+            ApplyValidationExceptionToModelState(ex);
+        }
+
+        if (IsAjaxRequest())
+        {
+            return BadRequest(new { errors = ToErrorPayload(ModelState) });
+        }
+
+        return View(CreateConverseyAdminFormVm(new ConverseyAdmin
+        {
+            Email = email,
+            Username = username,
+            PhoneNumber = phoneNumber
+        }));
+    }
+
+    [HttpPost("/admin/conversey-admin/{id}")]
+    public async Task<IActionResult> EditConverseyAdmin(
+        Guid id,
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
+    {
+        var converseyAdmin = new ConverseyAdmin
+        {
+            Id = id,
+            Email = email,
+            Username = username,
+            PhoneNumber = phoneNumber
+        };
+
+        try
+        {
+            await adminManager.EditConverseyAdmin(converseyAdmin);
+
+            if (IsAjaxRequest())
+            {
+                var redirectUrl = Url.Action("AdminManagement", "ConverseyAdmin");
+                return Ok(new { redirectUrl });
+            }
+
+            return RedirectToAction("AdminManagement", "ConverseyAdmin");
+        }
+        catch (NotFoundException notFoundException)
+        {
+            ModelState.AddModelError(string.Empty, notFoundException.Message);
+        }
+        catch (ValidationException ex)
+        {
+            ApplyValidationExceptionToModelState(ex);
+        }
+
+        if (IsAjaxRequest())
+        {
+            return BadRequest(new { errors = ToErrorPayload(ModelState) });
+        }
+
+        return View(EditConverseyAdminFormVm(converseyAdmin));
+    }
+    
     private AdminFormViewModel<WorkspaceAdmin> CreateFormVm(WorkspaceAdmin workspaceAdmin)
     {
         return new AdminFormViewModel<WorkspaceAdmin>
@@ -162,6 +261,26 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
             FormItem = workspaceAdmin,
             FormAction = "EditWorkspaceAdmin",
             SubmitLabel = "Edit WorkspaceAdmin",
+        };
+    }
+
+    private AdminFormViewModel<ConverseyAdmin> CreateConverseyAdminFormVm(ConverseyAdmin admin)
+    {
+        return new AdminFormViewModel<ConverseyAdmin>
+        {
+            FormItem = admin,
+            FormAction = "CreateConverseyAdmin",
+            SubmitLabel = "Create Conversey Admin"
+        };
+    }
+
+    private AdminFormViewModel<ConverseyAdmin> EditConverseyAdminFormVm(ConverseyAdmin admin)
+    {
+        return new AdminFormViewModel<ConverseyAdmin>
+        {
+            FormItem = admin,
+            FormAction = "EditConverseyAdmin",
+            SubmitLabel = "Save changes"
         };
     }
     

@@ -134,6 +134,10 @@ public class AdminProfileController(
         {
             await adminManager.SetWorkspaceAdminFirstLogin(Guid.Parse(workspaceAdmin.Id), false);
         }
+        else if (user is ConverseyAdminUser converseyAdmin)
+        {
+            await adminManager.SetConverseyAdminFirstLogin(Guid.Parse(converseyAdmin.Id), false);
+        }
 
         await signInManager.RefreshSignInAsync(user);
         return Ok(new { message = "Password updated." });

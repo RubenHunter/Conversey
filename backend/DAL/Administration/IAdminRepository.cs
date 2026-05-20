@@ -6,7 +6,7 @@ namespace Conversey.DAL.Administration;
 public interface IAdminRepository
 {
     IReadOnlyCollection<WorkspaceAdmin> ReadAllWorkspaceAdminsByWorkspaceIdWithWorkspace(Slug id);
-    IReadOnlyCollection<WorkspaceAdminUser> ReadAllWorkspaceAdmins();
+    IReadOnlyCollection<WorkspaceAdmin> ReadAllWorkspaceAdmins();
 
     Task<WorkspaceAdmin> ReadWorkspaceAdminById(Guid id);
     Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin, string tempPassword);
@@ -15,4 +15,11 @@ public interface IAdminRepository
     Task DeleteWorkspaceAdmin(Guid workspaceAdminId);
     Task<(bool EmailExists, bool UsernameExists)> CheckWorkspaceAdminConflicts(Slug workspaceId, string email, string username, Guid? excludeWorkspaceAdminId = null);
 
+    IReadOnlyCollection<ConverseyAdmin> ReadAllConverseyAdmins();
+    Task<ConverseyAdmin> ReadConverseyAdminById(Guid id);
+    Task CreateConverseyAdmin(ConverseyAdmin converseyAdmin, string tempPassword);
+    Task SetConverseyAdminFirstLogin(Guid converseyAdminId, bool isFirstLogin);
+    Task UpdateConverseyAdmin(ConverseyAdmin converseyAdmin);
+    Task DeleteConverseyAdmin(Guid converseyAdminId);
+    Task<(bool EmailExists, bool UsernameExists)> CheckConverseyAdminConflicts(string email, string username, Guid? excludeConverseyAdminId = null);
 }
