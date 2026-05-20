@@ -3,7 +3,7 @@ using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 
-namespace Conversey.BL.Ai;
+namespace Conversey.BL.Ai.Managers;
 
 public sealed class AiManager : IAiManager
 {
