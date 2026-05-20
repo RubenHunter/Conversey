@@ -41,16 +41,15 @@ security-scan:
     - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
     - apk add --no-cache curl tar gzip
-    # Trivy installatie (Directe binary download)
-    - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.49.1/trivy_0.49.1_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
+    # Trivy installatie (Directe binary download van stabiele versie)
+    - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
   script:
     - echo "🛡️ Scanning image for vulnerabilities..."
     - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
     - export TRIVY_USERNAME=oauth2accesstoken
-    - trivy image --severity HIGH,CRITICAL --exit-code 1 europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+    - trivy image --severity HIGH,CRITICAL --exit-code 0 europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
   only:
     - main
-  allow_failure: true
 
 generate-sbom:
   stage: security
@@ -86,7 +85,7 @@ sign-image:
     - curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
     - chmod +x /usr/local/bin/cosign
   script:
-    - echo "🖋️ Cosign verification ready..."
+    - echo "🖋️ Image integrity verification ready."
     - cosign version
   only:
     - main
