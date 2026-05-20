@@ -343,7 +343,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     new StepItem
                     {
                         Label = "Survey",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_AddQuestions"
                     },
                     new StepItem
                     {

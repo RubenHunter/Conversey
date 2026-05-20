@@ -60,3 +60,26 @@ body {
 	height: 100vh;
 	height: 100svh;
 }
+
+@layer components {
+	/*.btn {
+		@apply inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium shadow-sm transition hover:bg-zinc-50 active:scale-[.98];
+	}
+
+	.btn-danger {
+		@apply text-red-600 hover:bg-red-50;
+	}*/
+
+	.icon-btn {
+		@apply rounded-md p-2 transition hover:bg-zinc-100;
+	}
+
+	.drag-handle {
+		@apply shrink-0 cursor-grab opacity-50 transition hover:opacity-100;
+	}
+
+	.input {
+		@apply w-full
+	}
+
+}
