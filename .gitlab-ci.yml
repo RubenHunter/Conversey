@@ -37,15 +37,14 @@ security-scan:
   stage: security
   image: google/cloud-sdk:latest
   before_script:
-    - apt-get update && apt-get install -y wget gnupg lsb-release
-    - wget -qO - https://aquasecurity.github.io/trivy-repo/debian/public.key | gpg --dearmor | tee /usr/share/keyrings/trivy.gpg > /dev/null
-    - echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/debian $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
-    - apt-get update && apt-get install -y trivy
+    - apt-get update && apt-get install -y curl tar
+    # Trivy installatie (Directe binary download - DEBIAN VERSIE)
+    - curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.49.1/trivy_0.49.1_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
   script:
     - echo "🛡️ Scanning image for vulnerabilities..."
     - export TRIVY_PASSWORD=$(gcloud auth print-access-token)
     - export TRIVY_USERNAME=oauth2accesstoken
-    - trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
+    - /usr/local/bin/trivy image --severity HIGH,CRITICAL europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest
   only:
     - main
 
@@ -53,13 +52,13 @@ generate-sbom:
   stage: security
   image: google/cloud-sdk:latest
   before_script:
-    - apt-get update && apt-get install -y curl
-    - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+    - apt-get update && apt-get install -y curl tar
+    - curl -sSfL https://github.com/anchore/syft/releases/download/v0.100.0/syft_0.100.0_linux_amd64.tar.gz | tar xz -C /usr/local/bin
   script:
     - echo "📦 Generating SBOM (Software Bill of Materials)..."
     - gcloud auth activate-service-account --key-file=<(echo "$GCP_SERVICE_KEY")
     - export SYFT_REGISTRY_AUTH_TOKEN=$(gcloud auth print-access-token)
-    - syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
+    - /usr/local/bin/syft europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest -o cyclonedx-json > sbom.json
   artifacts:
     paths:
       - sbom.json
@@ -77,7 +76,7 @@ sign-image:
     - chmod +x /usr/local/bin/cosign
   script:
     - echo "🖋️ Cosign verification ready."
-    - cosign version
+    - /usr/local/bin/cosign version
   only:
     - main
 
