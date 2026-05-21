@@ -1,4 +1,6 @@
 class WorkspaceModalForms {
+    private readonly imageUploadInFlight = new Map<HTMLFormElement, Promise<string | null>>();
+
     constructor() {
         this.bindModal("workspaceCreateModal", ["closeWorkspaceCreateModal", "closeWorkspaceCreateModalSecondary"]);
         this.bindModal("workspaceEditModal", ["closeWorkspaceEditModal", "closeWorkspaceEditModalSecondary"]);
@@ -6,6 +8,7 @@ class WorkspaceModalForms {
         this.bindModal("workspaceAdminCreateModal", ["closeWorkspaceAdminCreateModal", "closeWorkspaceAdminCreateModalSecondary"]);
         this.bindModal("workspaceAdminEditModal", ["closeWorkspaceAdminEditModal", "closeWorkspaceAdminEditModalSecondary"]);
         this.bindOpeners();
+        this.bindWorkspaceImageUploads();
         this.bindWorkspaceAdminValidation("workspaceAdminCreateForm", "workspaceAdminCreateEmailInput", "workspaceAdminCreatePhoneInput", "workspaceAdminCreateServerError");
         this.bindWorkspaceAdminValidation("workspaceAdminEditForm", "workspaceAdminEditEmailInput", "workspaceAdminEditPhoneInput", "workspaceAdminEditServerError");
         this.openWorkspaceAdminModalOnLoad();
@@ -43,7 +46,8 @@ class WorkspaceModalForms {
                 event.preventDefault();
                 const workspaceId = element.dataset.workspaceId ?? "";
                 const workspaceName = element.dataset.workspaceName ?? "";
-                this.prepareWorkspaceEdit(workspaceId, workspaceName);
+                const workspaceImageUrl = element.dataset.workspaceImageUrl ?? "";
+                this.prepareWorkspaceEdit(workspaceId, workspaceName, workspaceImageUrl);
             });
         });
 
@@ -70,6 +74,149 @@ class WorkspaceModalForms {
                 this.prepareWorkspaceAdminEdit(workspaceAdminId, workspaceAdminEmail, workspaceAdminUsername, workspaceAdminPhone);
             });
         });
+    }
+
+    private bindWorkspaceImageUploads() {
+        document.querySelectorAll<HTMLFormElement>("form[data-image-upload-url]").forEach((form) => {
+            const fileInput = form.querySelector<HTMLInputElement>("[data-workspace-image-file]");
+            if (!fileInput) {
+                return;
+            }
+
+            fileInput.addEventListener("change", () => {
+                void this.uploadWorkspaceImageIfNeeded(form, fileInput);
+            });
+
+            form.addEventListener("submit", async (event) => {
+                const selectedFile = fileInput.files?.[0];
+                if (!selectedFile) {
+                    return;
+                }
+
+                const signatureInput = form.querySelector<HTMLInputElement>("[data-workspace-image-signature]");
+                const imageUrlInput = form.querySelector<HTMLInputElement>("[data-workspace-image-url]");
+                const existingSignature = signatureInput?.value ?? "";
+                const existingUrl = imageUrlInput?.value.trim() ?? "";
+                const currentSignature = this.createFileSignature(selectedFile);
+
+                if (currentSignature === existingSignature && existingUrl.length > 0) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const imageUrl = await this.uploadWorkspaceImageIfNeeded(form, fileInput);
+                if (imageUrl === null) {
+                    return;
+                }
+
+                form.submit();
+            });
+        });
+    }
+
+    private async uploadWorkspaceImageIfNeeded(form: HTMLFormElement, fileInput: HTMLInputElement): Promise<string | null> {
+        const existing = this.imageUploadInFlight.get(form);
+        if (existing) {
+            return existing;
+        }
+
+        const task = this.executeWorkspaceImageUpload(form, fileInput);
+        this.imageUploadInFlight.set(form, task);
+
+        try {
+            return await task;
+        } finally {
+            this.imageUploadInFlight.delete(form);
+        }
+    }
+
+    private async executeWorkspaceImageUpload(form: HTMLFormElement, fileInput: HTMLInputElement): Promise<string | null> {
+        const selectedFile = fileInput.files?.[0];
+        const imageUrlInput = form.querySelector<HTMLInputElement>("[data-workspace-image-url]");
+        const signatureInput = form.querySelector<HTMLInputElement>("[data-workspace-image-signature]");
+        const statusEl = form.querySelector<HTMLElement>("[data-workspace-image-status]");
+        const errorEl = form.querySelector<HTMLElement>("[data-workspace-image-error]");
+
+        if (!selectedFile) {
+            if (errorEl) errorEl.textContent = "";
+            if (statusEl) statusEl.textContent = "";
+            return imageUrlInput?.value.trim() ?? "";
+        }
+
+        const uploadUrl = form.dataset.imageUploadUrl ?? "";
+        if (!uploadUrl) {
+            if (errorEl) errorEl.textContent = "Image upload endpoint missing.";
+            return null;
+        }
+
+        const antiForgeryToken = form.querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value;
+        if (!antiForgeryToken) {
+            if (errorEl) errorEl.textContent = "Security token missing. Refresh page and retry.";
+            return null;
+        }
+
+        const signature = this.createFileSignature(selectedFile);
+        const existingSignature = signatureInput?.value ?? "";
+        const existingUrl = imageUrlInput?.value.trim() ?? "";
+        if (signature === existingSignature && existingUrl.length > 0) {
+            if (errorEl) errorEl.textContent = "";
+            if (statusEl) statusEl.textContent = "Image already uploaded.";
+            return existingUrl;
+        }
+
+        if (errorEl) errorEl.textContent = "";
+        if (statusEl) statusEl.textContent = "Uploading image...";
+
+        const payload = new FormData();
+        payload.append("imageFile", selectedFile);
+        payload.append("__RequestVerificationToken", antiForgeryToken);
+
+        try {
+            const response = await fetch(uploadUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: payload
+            });
+
+            const result = await this.parseUploadResponse(response);
+            if (!response.ok) {
+                if (errorEl) errorEl.textContent = result.errorMessage;
+                if (statusEl) statusEl.textContent = "";
+                return null;
+            }
+
+            if (!result.imageUrl) {
+                if (errorEl) errorEl.textContent = "Upload succeeded but no image URL returned.";
+                if (statusEl) statusEl.textContent = "";
+                return null;
+            }
+
+            if (imageUrlInput) imageUrlInput.value = result.imageUrl;
+            if (signatureInput) signatureInput.value = signature;
+            if (statusEl) statusEl.textContent = "Image uploaded.";
+            return result.imageUrl;
+        } catch {
+            if (errorEl) errorEl.textContent = "Image upload failed. Check connection and retry.";
+            if (statusEl) statusEl.textContent = "";
+            return null;
+        }
+    }
+
+    private async parseUploadResponse(response: Response): Promise<{ imageUrl: string; errorMessage: string }> {
+        let parsed: { imageUrl?: unknown; error?: unknown } | null = null;
+        try {
+            parsed = (await response.json()) as { imageUrl?: unknown; error?: unknown };
+        } catch {
+            parsed = null;
+        }
+
+        const imageUrl = parsed && typeof parsed.imageUrl === "string" ? parsed.imageUrl : "";
+        const errorMessage = parsed && typeof parsed.error === "string"
+            ? parsed.error
+            : `Image upload failed (${response.status}).`;
+
+        return { imageUrl, errorMessage };
     }
 
     private openWorkspaceAdminModalOnLoad() {
@@ -114,7 +261,7 @@ class WorkspaceModalForms {
         });
     }
 
-    private prepareWorkspaceEdit(workspaceId: string, workspaceName: string) {
+    private prepareWorkspaceEdit(workspaceId: string, workspaceName: string, workspaceImageUrl: string) {
         const editModalId = document.getElementById("workspaceEditModal") ? "workspaceEditModal" : "workspaceEditFromDetailsModal";
         const formId = editModalId === "workspaceEditModal" ? "workspaceEditForm" : "workspaceEditFromDetailsForm";
         const nameInputId = editModalId === "workspaceEditModal" ? "workspaceEditNameInput" : "workspaceEditFromDetailsNameInput";
@@ -140,7 +287,31 @@ class WorkspaceModalForms {
             idInput.value = workspaceId;
         }
 
+        const imageUrlInput = form.querySelector<HTMLInputElement>("[data-workspace-image-url]");
+        if (imageUrlInput) {
+            imageUrlInput.value = workspaceImageUrl;
+        }
+
+        const signatureInput = form.querySelector<HTMLInputElement>("[data-workspace-image-signature]");
+        if (signatureInput) {
+            signatureInput.value = "";
+        }
+
+        const statusEl = form.querySelector<HTMLElement>("[data-workspace-image-status]");
+        if (statusEl) {
+            statusEl.textContent = workspaceImageUrl ? "Current image loaded." : "";
+        }
+
+        const errorEl = form.querySelector<HTMLElement>("[data-workspace-image-error]");
+        if (errorEl) {
+            errorEl.textContent = "";
+        }
+
         this.openById(editModalId);
+    }
+
+    private createFileSignature(file: File): string {
+        return `${file.name}:${file.size}:${file.lastModified}`;
     }
 
     private prepareWorkspaceAdminEdit(workspaceAdminId: string, workspaceAdminEmail: string, workspaceAdminUsername: string, workspaceAdminPhone: string) {

@@ -175,16 +175,7 @@ public class ProjectManager: IProjectManager
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
     }
-
-    public async Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType)
-    {
-        // TODO image file validation
-        var imageUrl = await UploadProjectImage(stream, fileName, contentType);
-        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, worspaceId);
-        project.ImageUrl = imageUrl;
-        Validate(project);
-        _projectRepository.UpdateProject(project);
-    }
+    
 
     public async Task<string> UploadProjectImage(Stream stream, string fileName, string contentType)
     {

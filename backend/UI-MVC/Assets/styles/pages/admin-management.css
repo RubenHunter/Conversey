@@ -1,0 +1,49 @@
+@layer components {
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .workspace-accordion-content {
+    @apply overflow-hidden;
+  }
+
+  .workspace-accordion > :not(summary) {
+    display: block;
+  }
+
+  .workspace-accordion[data-state="open"] .workspace-accordion-content {
+    animation: accordion-down 240ms ease-out;
+    height: var(--radix-accordion-content-height);
+  }
+
+  .workspace-accordion[data-state="closing"] .workspace-accordion-content {
+    animation: accordion-up 240ms ease-out;
+    height: var(--radix-accordion-content-height);
+  }
+
+  .workspace-accordion[data-state="closed"] .workspace-accordion-content {
+    height: 0;
+  }
+
+  .workspace-accordion-chevron {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  .workspace-accordion[data-state="open"] .workspace-accordion-chevron {
+    @apply rotate-180;
+  }
+}

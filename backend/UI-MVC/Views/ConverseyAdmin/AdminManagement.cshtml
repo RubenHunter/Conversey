@@ -223,19 +223,21 @@
                                 ]
                             };
 
-                            <details class="group rounded-2xl border border-secondary/10 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                            <details class="group rounded-2xl border border-secondary/10 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden workspace-accordion"
+                                     data-workspace-accordion>
                                 <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-4">
                                     <div>
                                         <h3 class="text-lg font-bold text-text">@workspace.Name</h3>
                                         <p class="mt-1 text-sm text-text/60">@group.Count() admin(s)</p>
                                     </div>
-                                    <div class="rounded-full bg-secondary/10 p-2 text-secondary transition group-open:rotate-180">
+                                    <div class="workspace-accordion-chevron rounded-full bg-secondary/10 p-2 text-secondary">
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                         </svg>
                                     </div>
                                 </summary>
-                                <div class="px-6 pb-6">
+                                <div class="px-6 pb-6 workspace-accordion-content"
+                                     data-workspace-accordion-content>
                                     @await Html.PartialAsync("_AdminTableWithCreate", workspaceTableModel)
                                 </div>
                             </details>

@@ -8,6 +8,7 @@ class AdminManagementModals {
         this.openAdminModalOnLoad();
         this.bindOneTimePasswordModal();
         this.bindEsc();
+        this.bindWorkspaceAccordions();
     }
 
     private bindModal(modalId: string, closeButtonIds: string[]) {
@@ -217,6 +218,68 @@ class AdminManagementModals {
                     this.close(modal);
                 }
             });
+        });
+    }
+
+    private bindWorkspaceAccordions() {
+        const accordions = document.querySelectorAll<HTMLDetailsElement>("[data-workspace-accordion]");
+        accordions.forEach((accordion) => {
+            const content = accordion.querySelector<HTMLElement>("[data-workspace-accordion-content]");
+            const summary = accordion.querySelector<HTMLElement>("summary");
+            if (!content) {
+                return;
+            }
+
+            let closeTimer: number | undefined;
+            const animationDuration = 180;
+
+            const updateHeight = () => {
+                content.style.setProperty("--radix-accordion-content-height", `${content.scrollHeight}px`);
+            };
+
+            const updateState = (isOpen: boolean) => {
+                accordion.dataset.state = isOpen ? "open" : "closed";
+            };
+
+            updateHeight();
+            updateState(accordion.open);
+
+            summary?.addEventListener("click", (event) => {
+                if (!accordion.open) {
+                    return;
+                }
+
+                event.preventDefault();
+                if (closeTimer) {
+                    window.clearTimeout(closeTimer);
+                }
+
+                updateHeight();
+                accordion.dataset.state = "closing";
+                closeTimer = window.setTimeout(() => {
+                    accordion.open = false;
+                    updateState(false);
+                }, animationDuration);
+            });
+
+            accordion.addEventListener("toggle", () => {
+                if (closeTimer) {
+                    window.clearTimeout(closeTimer);
+                }
+
+                updateHeight();
+                if (accordion.open) {
+                    updateState(true);
+                    return;
+                }
+
+                accordion.dataset.state = "closing";
+                closeTimer = window.setTimeout(() => {
+                    updateState(false);
+                }, animationDuration);
+            });
+
+            window.addEventListener("resize", updateHeight);
         });
     }
 

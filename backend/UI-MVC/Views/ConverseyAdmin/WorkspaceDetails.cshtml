@@ -79,7 +79,8 @@
         ["FormActionTemplate"] = editWorkspaceActionTemplate,
         ["WorkspaceNameInputId"] = "workspaceEditFromDetailsNameInput",
         ["WorkspaceIdInputId"] = "workspaceEditFromDetailsIdInput",
-        ["SubmitLabel"] = "Save changes"
+        ["SubmitLabel"] = "Save changes",
+        ["ImageUploadUrl"] = Url.Action("UploadCreateWorkspaceImage", "ConverseyAdmin") ?? "/admin/workspaces/new/upload-image"
     };
 
     var openAdminModal = string.Equals(Context.Request.Query["openAdminModal"], "true", StringComparison.OrdinalIgnoreCase);
@@ -215,9 +216,15 @@
                     <div class="text-xs uppercase tracking-widest text-secondary font-semibold">
                         Workspace Details
                     </div>
-                    <h1 class="mt-1 text-3xl font-bold text-text tracking-tight">
-                        @Model.Workspace.Name
-                    </h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-bold text-text tracking-tight">
+                            @Model.Workspace.Name
+                        </h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Workspace.ImageUrl))
+                        {
+                            <img src="@Model.Workspace.ImageUrl" alt="@Model.Workspace.Name logo" class="w-12 h-12 rounded-xl object-contain border border-secondary/10 shrink-0" />
+                        }
+                    </div>
                     <p class="mt-1 text-sm text-text/60">
                         Workspace ID: <span class="font-semibold text-text">@Model.Workspace.Id.Text</span>
                     </p>
@@ -239,6 +246,7 @@
                    data-open-workspace-edit-modal="true"
                    data-workspace-id="@Model.Workspace.Id.Text"
                    data-workspace-name="@Model.Workspace.Name"
+                   data-workspace-image-url="@Model.Workspace.ImageUrl"
                    class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
                     Edit
                 </button>
@@ -315,8 +323,8 @@
                         class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
                     I saved it
                 </button>
+                </div>
             </div>
-        </div>
     </div>
 }
 

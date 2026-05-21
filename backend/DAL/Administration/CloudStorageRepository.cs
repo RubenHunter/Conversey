@@ -10,21 +10,21 @@ public class CloudStorageRepository : ICloudStorageRepository
     private readonly StorageClient _storageClient;
     private readonly string _bucketName;
 
-    /*public CloudStorageRepository(IConfiguration config)
-    {
-        _bucketName = config["GoogleCloud:BucketName"] 
-                      ?? throw new InvalidOperationException("GoogleCloud:BucketName is missing from configuration.");
+     public CloudStorageRepository(IConfiguration config)
+     {
+         _bucketName = config["GoogleCloud:BucketName"] 
+                       ?? throw new InvalidOperationException("GoogleCloud:BucketName is missing from configuration.");
 
-        var keyPath = config["GoogleCloud:JsonFilePath"] 
-                      ?? throw new InvalidOperationException("GoogleCloud:JsonFilePath is missing from configuration.");
-        
-        using var stream = new FileStream(keyPath, FileMode.Open, FileAccess.Read);
-        
-        var serviceAccount = CredentialFactory.FromStream<ServiceAccountCredential>(stream);
-        var credential = serviceAccount.ToGoogleCredential();
+         var keyPath = config["GoogleCloud:JsonFilePath"] 
+                       ?? throw new InvalidOperationException("GoogleCloud:JsonFilePath is missing from configuration.");
+         
+         using var stream = new FileStream(keyPath, FileMode.Open, FileAccess.Read);
+         
+         var serviceAccount = CredentialFactory.FromStream<ServiceAccountCredential>(stream);
+         var credential = serviceAccount.ToGoogleCredential();
 
-        _storageClient = StorageClient.Create(credential);
-    }*/
+         _storageClient = StorageClient.Create(credential);
+     }
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType)
     {

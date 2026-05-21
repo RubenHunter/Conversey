@@ -24,6 +24,4 @@ public interface IProjectManager
     void RemoveProject(Slug projectId, Slug workspaceId);
     
     Task<string> UploadProjectImage(Stream stream, string fileName, string contentType);
-    Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType);
-
 }

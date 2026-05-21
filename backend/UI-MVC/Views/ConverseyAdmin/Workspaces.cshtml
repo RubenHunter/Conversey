@@ -34,7 +34,8 @@
         ["FormPostUrl"] = Url.Action("CreateWorkspace", "ConverseyAdmin") ?? "/admin/workspaces/new",
         ["WorkspaceNameInputId"] = "workspaceCreateNameInput",
         ["WorkspaceIdInputId"] = "workspaceCreateIdInput",
-        ["SubmitLabel"] = "Create workspace"
+        ["SubmitLabel"] = "Create workspace",
+        ["ImageUploadUrl"] = Url.Action("UploadCreateWorkspaceImage", "ConverseyAdmin") ?? "/admin/workspaces/new/upload-image"
     };
     var editWorkspaceViewData = new ViewDataDictionary(ViewData)
     {
@@ -44,7 +45,8 @@
         ["FormActionTemplate"] = editWorkspaceActionTemplate,
         ["WorkspaceNameInputId"] = "workspaceEditNameInput",
         ["WorkspaceIdInputId"] = "workspaceEditIdInput",
-        ["SubmitLabel"] = "Save changes"
+        ["SubmitLabel"] = "Save changes",
+        ["ImageUploadUrl"] = Url.Action("UploadCreateWorkspaceImage", "ConverseyAdmin") ?? "/admin/workspaces/new/upload-image"
     };
 }
 
@@ -94,7 +96,7 @@
                 <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative" data-search-item data-search-text="@workspace.Name @workspace.Id.Text">
                     <a class="absolute inset-0 z-10" href="@Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspace.Id.Text })" aria-label="View workspace @workspace.Name"></a>
 
-                    <div class="project-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden" style="--card-image: none;">
+                    <div class="project-card-header workspace-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden" style="--card-image: url('@workspace.ImageUrl');">
                         <div class="text-center px-4 relative z-0">
                             <span class="block font-bold text-xl text-primary tracking-tight">@workspace.Name</span>
                             <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">Workspace</span>
@@ -121,6 +123,7 @@
                                     data-open-workspace-edit-modal="true"
                                     data-workspace-id="@workspace.Id.Text"
                                     data-workspace-name="@workspace.Name"
+                                    data-workspace-image-url="@workspace.ImageUrl"
                                     aria-label="Edit workspace @workspace.Name">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>

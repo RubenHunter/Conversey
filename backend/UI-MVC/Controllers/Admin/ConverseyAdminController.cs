@@ -59,7 +59,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [HttpPost("/admin/workspaces/new")]
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
-        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
+        var imageUrl = workspaceFormViewModel.FormItem?.ImageUrl ?? string.Empty;
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name, imageUrl);
         return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 
@@ -136,6 +137,26 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         {
             return BadRequest(ex.Message);
         }
+    }
+    
+    [HttpPost("/admin/workspaces/new/upload-image")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadCreateWorkspaceImage(IFormFile imageFile)
+    {
+        if (imageFile == null || imageFile.Length == 0)
+        {
+            return BadRequest(new { error = "Please select an image file." });
+        }
+
+        if (string.IsNullOrWhiteSpace(imageFile.ContentType) ||
+            !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { error = "Only image files are allowed." });
+        }
+
+        await using var stream = imageFile.OpenReadStream();
+        var imageUrl = await workspaceManager.UploadWorkspaceImage(stream, imageFile.FileName, imageFile.ContentType);
+        return Json(new { imageUrl });
     }
     
     
