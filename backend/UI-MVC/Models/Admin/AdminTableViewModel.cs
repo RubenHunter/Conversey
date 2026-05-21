@@ -8,6 +8,8 @@ public class AdminTableViewModel<T>
     public string TableDescription { get; init; } = "Overview";
     public string CreateUrl { get; init; } = "#";
     public string CreateButtonLabel { get; init; } = "Add item";
+    public string CreateButtonId { get; init; } = string.Empty;
+    public string CreateButtonModalKey { get; init; } = string.Empty;
     public string EmptyState { get; init; } = "No items yet.";
     
     public IReadOnlyList<AdminTableColumn<T>> Columns { get; init; } = [];

@@ -4,7 +4,7 @@
 
 @{
     ViewData["Title"] = I18n["Create Project"];
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
     {
         (I18n["Projects"], "/admin/projects", false),
         (I18n["Create"], null, true)
@@ -14,6 +14,26 @@
 <div class="min-h-screen bg-background">
     @await Html.PartialAsync("_AdminHeader")
     
-    @await Html.PartialAsync("_Stepper", Model)
+@await Html.PartialAsync("_Stepper", Model)
 </div>
+
+@await Html.PartialAsync("_DraftExitModal")
+
+@if (Model.StepperViewModel.IsCopyFlow)
+{
+    <div id="copyDraftPayload" data-payload='@System.Text.Json.JsonSerializer.Serialize(new {
+        currentStep = 1,
+        name = Model.CreateStep1ViewModel.Name,
+        description = Model.CreateStep1ViewModel.Description,
+        interactionForm = Model.CreateStep1ViewModel.InteractionForm.ToString(),
+        startDate = Model.CreateStep1ViewModel.StartDate.ToString("yyyy-MM-dd"),
+        endDate = Model.CreateStep1ViewModel.EndDate.ToString("yyyy-MM-dd"),
+        imageUrl = Model.CreateStep1ViewModel.ImageUrl,
+        imageUploadSignature = "",
+        nudgingStrength = Model.CreateStep1ViewModel.NudgingStrength.ToString(),
+        status = Model.CreateStep1ViewModel.Status.ToString(),
+        slug = "",
+        draftSynced = false
+    })'></div>
+}
     

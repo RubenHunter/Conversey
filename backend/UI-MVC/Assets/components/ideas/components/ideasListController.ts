@@ -69,7 +69,7 @@ export function createIdeasListController({
         rotationTimer = window.setInterval(() => {
             const nextIndex = (activeIdeaOriginalIndex + 1) % ideas.length
             setActive(nextIndex, true)
-        }, 5000)
+        }, 8000)
     }
 
     function stopRotation(): void {

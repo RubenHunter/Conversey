@@ -1,4 +1,5 @@
 import { assessIdeaNudging } from '../../../services/ideaService'
+import { getSurveyStrings } from '../../../i18n/survey'
 import type { ActiveView } from '../types'
 import type { IdeaNudgingContext, IdeaNudgingTurn } from '../../../services/ideaService'
 
@@ -29,6 +30,11 @@ function composeDraft(initialText: string, conversation: IdeaNudgingTurn[]): str
     return fragments.join(' ').replace(/\s+/g, ' ').trim()
 }
 
+function truncate(desc: string | null | undefined, maxChars: number): string {
+    if (!desc) return ''
+    return desc.length > maxChars ? desc.slice(0, maxChars) + '…' : desc
+}
+
 export function createIdeaNudgeDialogController({
     root,
     workspaceSlug,
@@ -36,6 +42,7 @@ export function createIdeaNudgeDialogController({
     isCurrentView,
     getContext,
 }: CreateIdeaNudgeDialogParams): IdeaNudgeDialogController {
+    const t = getSurveyStrings()
     const backdrop = root.querySelector<HTMLDivElement>('#idea-nudge-backdrop')
     const dialog = root.querySelector<HTMLDivElement>('#idea-nudge-dialog')
     const closeBtnEl = root.querySelector<HTMLButtonElement>('#idea-nudge-close')
@@ -52,7 +59,6 @@ export function createIdeaNudgeDialogController({
         }
     }
 
-    // Non-null assertions after guard clause
     const backdropEl = backdrop!
     const dialogEl = dialog!
     const threadEl = thread!
@@ -84,7 +90,27 @@ export function createIdeaNudgeDialogController({
     function appendThread(role: 'assistant' | 'user', text: string): void {
         const row = document.createElement('div')
         row.className = `idea-nudge-thread-row idea-nudge-thread-row--${role}`
-        row.innerHTML = `<div class="idea-nudge-thread-bubble idea-nudge-thread-bubble--${role}">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+        const bubble = document.createElement('div')
+        bubble.className = `idea-nudge-thread-bubble idea-nudge-thread-bubble--${role}`
+        bubble.textContent = text
+
+        if (role === 'assistant') {
+            const avatar = document.createElement('span')
+            avatar.className = 'idea-nudge-avatar'
+            avatar.setAttribute('aria-hidden', 'true')
+            avatar.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>'
+            row.prepend(avatar)
+        }
+
+        row.appendChild(bubble)
+        threadEl.appendChild(row)
+        threadEl.scrollTop = threadEl.scrollHeight
+    }
+
+    function appendStatus(text: string, className: string = ''): void {
+        const row = document.createElement('div')
+        row.className = `idea-nudge-thread-row idea-nudge-thread-row--status${className ? ' ' + className : ''}`
+        row.textContent = text
         threadEl.appendChild(row)
         threadEl.scrollTop = threadEl.scrollHeight
     }
@@ -106,14 +132,27 @@ export function createIdeaNudgeDialogController({
         approved = false
         resolved = false
         const context = getContext(activeView)
-        contextElEl.textContent = context
-            ? `${context.projectTitle} · ${context.topicTitle}${context.topicPrompt ? ` — ${context.topicPrompt}` : ''}`
-            : ''
+        if (context) {
+            const truncatedDesc = truncate(context.projectDescription, 500)
+            contextElEl.innerHTML = `<span class="idea-nudge-context-project">${escapeHtml(context.projectTitle)}</span> · <span class="idea-nudge-context-topic">${escapeHtml(context.topicTitle)}</span>`
+            if (truncatedDesc) {
+                contextElEl.innerHTML += `<span class="idea-nudge-context-desc">${escapeHtml(truncatedDesc)}</span>`
+            }
+        } else {
+            contextElEl.innerHTML = ''
+        }
         inputEl.value = ''
-        inputEl.disabled = false
-        inputEl.placeholder = 'Type your answer here...'
-        setActionState('Answer & continue', true)
-        setStatus('The AI will ask one question at a time. Close the dialog to post the current version as pending review.')
+        inputEl.disabled = true
+        inputEl.placeholder = ''
+        setActionState('', false)
+
+        // Show the user's draft as the first message
+        if (initialIdea) {
+            appendThread('user', initialIdea)
+        }
+        appendStatus(t.nudgeThinking, 'idea-nudge-thread-row--thinking')
+        setStatus(t.nudgeThinking)
+        actionBtnEl.style.display = 'none'
     }
 
     async function askNextQuestion(activeView: ActiveView): Promise<void> {
@@ -129,33 +168,47 @@ export function createIdeaNudgeDialogController({
             return
         }
 
+        // Truncate project description to prevent dominating the AI prompt
+        const trimmedContext: IdeaNudgingContext = {
+            ...context,
+            projectDescription: truncate(context.projectDescription, 500),
+        }
+
         const decision = await assessIdeaNudging(
             workspaceSlug,
             projectSlug,
             activeView.topicId,
             composeDraft(initialIdea, conversation),
-            context,
+            trimmedContext,
             conversation,
         )
 
         if (resolved) return
 
+        // Remove thinking status
+        const thinkingRow = threadEl.querySelector('.idea-nudge-thread-row--thinking')
+        thinkingRow?.remove()
+
         if (decision.isApproved) {
             approved = true
             inputEl.disabled = true
-            inputEl.placeholder = 'AI approved this idea.'
-            setActionState('Post final idea', true)
-            setStatus('The AI is happy with this idea. Click to post the final version.')
+            inputEl.placeholder = ''
+            actionBtnEl.style.display = ''
+            setActionState(t.post, true)
+            setStatus(t.nudgeApproved)
+            appendStatus(t.nudgeApproved, 'idea-nudge-thread-row--approved')
             return
         }
 
-        const question = decision.question ?? 'Could you make this idea more specific for this topic?'
+        const question = decision.question ?? t.pleaseFill
         lastQuestion = question
         appendThread('assistant', question)
-        setStatus('Answer the question below to continue.')
-        inputEl.value = ''
+        setStatus(t.nudgeQuestionStatus)
         inputEl.disabled = false
+        inputEl.placeholder = question
         inputEl.focus()
+        actionBtnEl.style.display = ''
+        setActionState(t.answerContinue, true)
     }
 
     async function submitAnswer(activeView: ActiveView): Promise<void> {
@@ -166,11 +219,12 @@ export function createIdeaNudgeDialogController({
         appendThread('user', answer)
         conversation.push({ question: lastQuestion, answer })
         inputEl.value = ''
-        setActionState('Checking...', false)
+        inputEl.disabled = true
+        setActionState('', false)
+        actionBtnEl.style.display = 'none'
+        appendStatus(t.nudgeThinking, 'idea-nudge-thread-row--thinking')
+        setStatus(t.nudgeThinking)
         await askNextQuestion(activeView)
-        if (!resolved && !approved) {
-            setActionState('Answer & continue', true)
-        }
     }
 
     function open(text: string, activeView: ActiveView): Promise<IdeaNudgingResult> {
@@ -222,4 +276,6 @@ export function createIdeaNudgeDialogController({
     }
 }
 
-
+function escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}

@@ -106,6 +106,18 @@ export async function getVisibleIdeas(options: DiscoveryOptions): Promise<Discov
     }
 
     const ownIdeaExists = hasOwnIdeaInTopic(allIdeas, topicId)
+
+    if (ownIdeaExists && selectedSemanticCategory) {
+        const topicIdeas = allIdeas.filter((idea) => idea.topicId === topicId)
+        const categoryFilter = selectedSemanticCategory.toLowerCase()
+        const filtered = topicIdeas.filter((idea) =>
+            idea.semanticCategories.some((category) => category.toLowerCase() === categoryFilter),
+        )
+        let result = createDiscoveryFeed(filtered, new Map())
+        discoveryCache.set(`${topicId}:${discoveryMode}:category:${selectedSemanticCategory}:full`, result)
+        return result
+    }
+
     const categorySuffix = ownIdeaExists ? 'own' : (selectedSemanticCategory ?? 'broad')
     const cacheSuffix = getCacheSuffix(ownIdeaExists, selectedSemanticCategory, discoveryMode, showPostPreviewPair)
     const cacheKey = buildCacheKey(topicId, discoveryMode, categorySuffix, cacheSuffix)

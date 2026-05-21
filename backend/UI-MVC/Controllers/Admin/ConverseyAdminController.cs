@@ -38,8 +38,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [HttpPost("/admin/workspaces/new")]
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
-        workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
-        return RedirectToAction("Workspaces");
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name);
+        return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 
     [HttpGet("/admin/workspaces/{id}")]
@@ -137,5 +137,4 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
             SubmitLabel = "Edit Workspace",
         };
     }
-    
 }

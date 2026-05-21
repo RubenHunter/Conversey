@@ -2,20 +2,96 @@
 @using Conversey.DAL
 @using Conversey.UI_MVC.Models.Admin
 @using Microsoft.AspNetCore.Identity
+@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.AdminWorkspaceDetailsViewModel
 @Html.AntiForgeryToken()
+@inject IAdminI18nService I18n
 
 @{
     ViewData["Title"] = "Workspace Details";
+    ViewData["WorkspaceName"] = "Conversey";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Workspaces", "/admin/workspaces", false),
+        (Model.Workspace.Name, null, true)
+    };
     var users = Model.WorkspaceAdmins ?? [];
+    var createWorkspaceAdminForm = new AdminFormViewModel<WorkspaceAdmin>
+    {
+        FormItem = new WorkspaceAdmin
+        {
+            Workspace = Model.Workspace
+        },
+        FormAction = "CreateWorkspaceAdmin",
+        SubmitLabel = "Create admin"
+    };
+    var editWorkspaceAdminForm = new AdminFormViewModel<WorkspaceAdmin>
+    {
+        FormItem = new WorkspaceAdmin
+        {
+            Workspace = Model.Workspace
+        },
+        FormAction = "EditWorkspaceAdmin",
+        SubmitLabel = "Save changes"
+    };
+    var createWorkspaceAdminViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Create workspace admin",
+        ["FormId"] = "workspaceAdminCreateForm",
+        ["CloseButtonId"] = "closeWorkspaceAdminCreateModal",
+        ["FormPostUrl"] = Url.Action("CreateWorkspaceAdmin", "Admin") ?? "/admin/workspaces/admins/new",
+        ["WorkspaceAdminIdInputId"] = "workspaceAdminCreateIdInput",
+        ["WorkspaceAdminEmailInputId"] = "workspaceAdminCreateEmailInput",
+        ["WorkspaceAdminUsernameInputId"] = "workspaceAdminCreateUsernameInput",
+        ["WorkspaceAdminPhoneInputId"] = "workspaceAdminCreatePhoneInput",
+        ["WorkspaceAdminServerErrorId"] = "workspaceAdminCreateServerError",
+        ["WorkspaceIdValue"] = Model.Workspace.Id.Text,
+        ["SubmitLabel"] = "Create admin"
+    };
+    var editWorkspaceAdminActionTemplate = Url.Action("EditWorkspaceAdmin", "Admin", new { id = "__workspaceAdminId__" }) ?? "/admin/workspace/admin/__workspaceAdminId__";
+    var editWorkspaceAdminViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Edit workspace admin",
+        ["FormId"] = "workspaceAdminEditForm",
+        ["CloseButtonId"] = "closeWorkspaceAdminEditModal",
+        ["FormActionTemplate"] = editWorkspaceAdminActionTemplate,
+        ["WorkspaceAdminIdInputId"] = "workspaceAdminEditIdInput",
+        ["WorkspaceAdminEmailInputId"] = "workspaceAdminEditEmailInput",
+        ["WorkspaceAdminUsernameInputId"] = "workspaceAdminEditUsernameInput",
+        ["WorkspaceAdminPhoneInputId"] = "workspaceAdminEditPhoneInput",
+        ["WorkspaceAdminServerErrorId"] = "workspaceAdminEditServerError",
+        ["WorkspaceIdValue"] = Model.Workspace.Id.Text,
+        ["SubmitLabel"] = "Save changes"
+    };
+    var createWorkspaceForm = new AdminFormViewModel<Workspace>
+    {
+        FormItem = Model.Workspace,
+        FormAction = "EditWorkspace",
+        SubmitLabel = "Save changes"
+    };
+    var editWorkspaceActionTemplate = Url.Action("EditWorkspace", "ConverseyAdmin", new { id = "__workspaceId__" }) ?? "/admin/workspace/__workspaceId__";
+    var workspaceEditViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Edit workspace",
+        ["FormId"] = "workspaceEditFromDetailsForm",
+        ["CloseButtonId"] = "closeWorkspaceEditFromDetailsModal",
+        ["FormActionTemplate"] = editWorkspaceActionTemplate,
+        ["WorkspaceNameInputId"] = "workspaceEditFromDetailsNameInput",
+        ["WorkspaceIdInputId"] = "workspaceEditFromDetailsIdInput",
+        ["SubmitLabel"] = "Save changes"
+    };
+
+    var openAdminModal = string.Equals(Context.Request.Query["openAdminModal"], "true", StringComparison.OrdinalIgnoreCase);
 
     var tableModel = new AdminTableViewModel<WorkspaceAdmin>
     {
         SectionTitle = "All workspace admins",
         TableDescription = $"Manage all admins for workspace {Model.Workspace.Name}",
-        CreateUrl = Url.Action("CreateWorkspaceAdmin", "Admin", new { workspaceId = Model.Workspace.Id.Text}),
+        CreateUrl = "#",
         CreateButtonLabel = "Create new Workspace Admin",
-        EmptyState = $"Workspace Admins for {Model.Workspace} will show up here once they are created",
+        CreateButtonId = "openWorkspaceAdminCreateModal",
+        CreateButtonModalKey = "workspace-admin-create",
+        EmptyState = $"Workspace Admins for {Model.Workspace.Name} will show up here once they are created",
         RowId = u => u.Id.ToString(),
 
         Items = users.ToList(),
@@ -43,6 +119,26 @@
                     return span;
                 }
             },
+            new()
+            {
+                Header = "Username",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Username.ToString() ?? "-");
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Phone",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.PhoneNumber?.ToString() ?? "-");
+                    return span;
+                }
+            },
 
             new()
             {
@@ -52,14 +148,20 @@
                     var container = new TagBuilder("div");
                     container.AddCssClass("flex gap-3");
 
-                    var edit = new TagBuilder("a")
+                    // EDIT BUTTON
+                    var edit = new TagBuilder("button")
                     {
                         Attributes =
                         {
-                            ["href"] = Url.Action("EditWorkspaceAdmin", "Admin", new { id = u.Id })!
+                            ["type"] = "button",
+                            ["data-open-workspace-admin-edit-modal"] = "true",
+                            ["data-workspace-admin-id"] = u.Id.ToString(),
+                            ["data-workspace-admin-email"] = u.Email ?? string.Empty,
+                            ["data-workspace-admin-username"] = u.Username ?? string.Empty,
+                            ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty
                         }
                     };
-                    edit.AddCssClass("text-blue-600 hover:underline");
+                    edit.AddCssClass("font-semibold text-primary transition hover:text-primary/80");
                     edit.InnerHtml.Append("Edit");
 
                     var divider = new TagBuilder("p");
@@ -76,7 +178,7 @@
                         }
                     };
 
-                    delete.AddCssClass("text-red-600 hover:underline");
+                    delete.AddCssClass("font-semibold text-accent transition hover:text-accent/80");
                     delete.InnerHtml.Append("Delete");
 
                     container.InnerHtml.AppendHtml(edit);
@@ -89,56 +191,132 @@
 
         ]
     };
+
+    var oneTimePassword = TempData["OneTimePassword"] as string;
+    var oneTimePasswordAdminEmail = TempData["OneTimePasswordAdminEmail"] as string;
+    var oneTimePasswordWorkspaceId = TempData["OneTimePasswordWorkspaceId"] as string;
+    var showOneTimePassword = !string.IsNullOrWhiteSpace(oneTimePassword) &&
+                              string.Equals(oneTimePasswordWorkspaceId, Model.Workspace.Id.Text, StringComparison.OrdinalIgnoreCase);
 }
 
-<div class="min-h-screen bg-gray-50 px-4 py-10">
-    <div class="mx-auto max-w-4xl">
+<div class="min-h-screen bg-background font-sans text-text" data-open-workspace-admin-modal="@openAdminModal.ToString().ToLowerInvariant()">
+    @await Html.PartialAsync("_AdminHeader")
 
-        <div class="mb-6">
-            <a href="@Url.Action("Workspaces", "ConverseyAdmin")"
-               class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                ← Back to workspaces
-            </a>
-        </div>
+    <main class="p-8 w-full max-w-400 mx-auto">
 
-        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <!-- Card -->
+        <div class="rounded-2xl border border-secondary/10 bg-white shadow-sm overflow-hidden">
 
-            <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+            <!-- Header -->
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-secondary/10 px-8 py-6 bg-linear-to-br from-primary/5 to-secondary/5">
                 <div>
-                    <h1 class="text-2xl font-semibold text-gray-900">
+                    <div class="text-xs uppercase tracking-widest text-secondary font-semibold">
+                        Workspace Details
+                    </div>
+                    <h1 class="mt-1 text-3xl font-bold text-text tracking-tight">
                         @Model.Workspace.Name
                     </h1>
-
-                    <p class="mt-1 text-sm text-gray-500">
-                        Project ID: @Model.Workspace.Id.Text
+                    <p class="mt-1 text-sm text-text/60">
+                        Workspace ID: <span class="font-semibold text-text">@Model.Workspace.Id.Text</span>
                     </p>
                 </div>
             </div>
 
-            <div class="px-6 py-6 space-y-6">
+            <!-- Body -->
+            <div class="px-8 py-8 space-y-6">
 
                 @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
 
             </div>
 
-            <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+            <!-- Footer actions -->
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end border-t border-secondary/10 px-8 py-5 bg-background">
 
-                <a href="@Url.Action("EditWorkspace", "ConverseyAdmin", new { id = Model.Workspace.Id.Text })"
-                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                <button type="button"
+                   data-open-workspace-edit-modal="true"
+                   data-workspace-id="@Model.Workspace.Id.Text"
+                   data-workspace-name="@Model.Workspace.Name"
+                   class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
                     Edit
-                </a>
+                </button>
 
                 <button type="button"
                         data-delete-id="@Model.Workspace.Id.Text"
                         data-delete-name="@Model.Workspace.Name"
                         data-delete-endpoint="/admin/workspace/delete/@Model.Workspace.Id.Text"
-                        class="inline-flex items-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                        class="inline-flex items-center justify-center rounded-xl border border-accent/30 px-5 py-2.5 text-sm font-bold text-accent hover:bg-accent/5 transition-all">
                     Delete
                 </button>
             </div>
 
         </div>
+    </main>
+</div>
+
+<div id="workspaceAdminCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("~/Views/Admin/_WorkspaceAdminForm.cshtml", createWorkspaceAdminForm, createWorkspaceAdminViewData)
+    </div>
+</div>
+
+<div id="workspaceAdminEditModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("~/Views/Admin/_WorkspaceAdminForm.cshtml", editWorkspaceAdminForm, editWorkspaceAdminViewData)
+    </div>
+</div>
+
+<div id="workspaceEditFromDetailsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("_WorkspaceForm", createWorkspaceForm, workspaceEditViewData)
     </div>
 </div>
 
 @await Html.PartialAsync("_DeleteModal")
+
+@if (showOneTimePassword)
+{
+    <div id="oneTimePasswordModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4"
+         data-one-time-password="@oneTimePassword"
+         data-one-time-password-email="@oneTimePasswordAdminEmail">
+        <div class="w-full max-w-lg rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-text">One-time password</h3>
+                <p class="mt-1 text-sm text-text/60">Share this password with the new workspace admin. It will only be shown once.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-text/50">Account</p>
+                    <p class="mt-1 text-sm font-semibold text-text">@oneTimePasswordAdminEmail</p>
+                </div>
+                <div class="rounded-xl border border-secondary/15 bg-background/60 px-4 py-3">
+                    <p class="text-xs uppercase tracking-widest text-text/50">Temporary password</p>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <span id="oneTimePasswordValue" class="font-mono text-base font-semibold text-text">@oneTimePassword</span>
+                        <button id="copyOneTimePassword"
+                                type="button"
+                                class="inline-flex items-center gap-2 rounded-lg border border-secondary/20 px-3 py-1.5 text-xs font-semibold text-text/70 transition hover:bg-background">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p id="oneTimePasswordCopied" class="mt-2 hidden text-xs font-semibold text-primary">Copied. Make sure you saved it.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="closeOneTimePasswordModal"
+                        type="button"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    I saved it
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/workspaceModalForms.ts"></script>
+}

@@ -173,6 +173,10 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         await _signInManager.SignInAsync(user, Input.RememberMe);
                         _logger.LogInformation("WorkspaceAdmin logged in.");
                         _adminContext.CurrentAdmin = AdminContext.ToDomain(workspaceAdmin);
+                        if (workspaceAdmin.FirstLogin)
+                        {
+                            TempData["ForcePasswordChange"] = true;
+                        }
                         return LocalRedirect(Url.Content("~/admin/workspace"));
                     }
                 }

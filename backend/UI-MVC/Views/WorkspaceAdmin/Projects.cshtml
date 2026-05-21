@@ -1,16 +1,18 @@
 @using Conversey.BL.Domain.Administration
 @using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
+@using Conversey.UI_MVC.Resources
 @using Microsoft.AspNetCore.Html
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model IEnumerable<Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectCardViewModel>
 @Html.AntiForgeryToken()
 @inject WorkspaceContext WorkspaceContext
+@inject IAdminI18nService I18n
 @{
     ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Projects", null, true)
+        (I18n["Projects"], null, true)
     };
 }
 
@@ -18,12 +20,14 @@
     
     @await Html.PartialAsync("_AdminHeader")
 
-    <main class="p-8 w-full max-w-400 mx-auto">
+    <!-- Container widened to w-full with a max-width of 1600px for ultra-wide screens -->
+    <main class="p-8 w-full max-w-400 mx-auto" data-search-root data-search-input="#projectSearchInput" data-search-count="#projectSearchCount">
         
+        <!-- Top Stats Row: Occupies horizontal space and adds immediate utility -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <div class="bg-white p-5 rounded-xl border border-secondary/10 shadow-sm flex items-center justify-between">
                 <div>
-                    <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block" data-i18n="Total Projects">Total Projects</span>
+                    <span class="text-[10px] text-secondary uppercase font-bold tracking-wider block">@I18n["Total Projects"]</span>
                     <div class="text-2xl font-bold text-text">@Model.Count()</div>
                 </div>
                 <div class="p-2 bg-primary/5 rounded-lg text-primary">
@@ -32,53 +36,73 @@
             </div>
         </div>
 
+        <!-- Toolbar -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div class="flex items-center space-x-4">
                 <div class="relative w-80">
-                    <input type="text" placeholder="Search projects..." data-i18n-placeholder="Search projects..."
+                    <input id="projectSearchInput" type="text" placeholder="@I18n["Search projects..."]" 
                            class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm" />
                     <span class="absolute left-3 top-2.5 text-secondary">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-accent transition-colors" data-i18n="Delete">Delete</button>
-                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-primary transition-colors" data-i18n="Select all">Select all</button>
+                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-accent transition-colors">@I18n["Delete"]</button>
+                    <button class="px-3 py-2 text-sm font-medium text-text/60 hover:text-primary transition-colors">@I18n["Select all"]</button>
                 </div>
             </div>
             
             <div class="text-sm text-text/50">
-                <span data-i18n="Showing">Showing</span> <strong>@Model.Count()</strong> <span data-i18n="projects">projects</span>
+                @I18n["Showing"] <strong id="projectSearchCount">@Model.Count()</strong> @I18n["projects"]
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <!-- Project Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" data-search-items>
             @foreach (var project in Model)
             {
-                <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative">
-                <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id"></a>
+                <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-secondary/10 relative" data-search-item data-search-text="@project.Title @project.Status">
+                @* The main link covers the whole card *@
+                <a class="absolute inset-0 z-10" href="/admin/projects/@project.Id" aria-label="@(string.Format(I18n["View project {0}"], project.Title))"></a>
                 
+                @* TOP SECTION: Now includes the image variable and the custom class *@
                 <div class="project-card-header h-44 relative flex items-center justify-center bg-linear-to-br from-primary/5 to-secondary/5 overflow-hidden"
                      style="--card-image: url('@project.ImageUrl');">
                     
                     <div class="text-center px-4 relative z-0">
                         <span class="block font-bold text-xl text-primary tracking-tight">@project.Title</span>
-                        <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block" data-i18n="Project Workspace">Project Workspace</span>
+                        <span class="text-xs uppercase tracking-widest text-secondary font-semibold mt-1 block">@I18n["Project Workspace"]</span>
+                    </div>
+
+                    <div class="absolute top-3 right-3 flex gap-2 z-20">
+                        <span class="text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full border border-secondary/20 bg-white/90 text-secondary">
+                            @project.Status
+                        </span>
                     </div>
                     
+                    @* Hover tint overlay *@
                     <div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-300"></div>
                 </div>
 
+                @* FOOTER SECTION: Restored to original layout *@
                 <div class="p-4 flex items-center justify-between border-t border-secondary/10 relative z-20">
+                    @* Avatars *@
                     <div class="flex -space-x-2">
                         <div class="w-8 h-8 rounded-full bg-secondary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold">JD</div>
                         <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-white flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
                     </div>
 
+                    @* Action Buttons *@
                     <div class="flex items-center space-x-1">
-                        <a title="Edit" data-i18n="Edit" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id">
+                        <a title="@I18n["Edit"]" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" href="/admin/project/@project.Id" aria-label="@(string.Format(I18n["Edit project {0}"], project.Title))">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </a>
+                        <button title="Archive" class="p-2 text-text/40 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" data-archive-id="@project.Id" data-archive-name="@project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-2 12a2 2 0 01-2 2H8a2 2 0 01-2-2L4 7m16 0H4m16 0-1-3H5L4 7"></path></svg>
+                        </button>
+                        <button title="Copy" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" data-copy-id="@project.Id" data-copy-name="@project.Title" aria-label="Copy project @project.Title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 8h8a2 2 0 002-2V8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
                         <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         </button>
@@ -90,24 +114,85 @@
             </div>
             }
 
-            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" data-i18n="Create project">
+            <!-- Persistent "Add New" Card: Ensures the layout never looks empty -->
+            <a class="group border-2 border-dashed border-secondary/20 rounded-xl h-60.25 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all" href="/admin/projects/new" aria-label="@I18n["Create project"]">
                 <div class="w-12 h-12 rounded-full bg-white shadow-sm border border-secondary/10 flex items-center justify-center text-secondary group-hover:text-primary group-hover:scale-110 transition-all">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                 </div>
-                <span class="mt-4 font-bold text-sm text-secondary group-hover:text-primary" data-i18n="Create New Project">Create New Project</span>
+                <span class="mt-4 font-bold text-sm text-secondary group-hover:text-primary">@I18n["Create New Project"]</span>
             </a>
         </div>
     </main>
 
-    <a class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" href="/admin/projects/new" data-i18n="New Project">
+    <!-- Floating Action Button remains for quick access -->
+    <a class="fixed bottom-8 right-8 bg-primary text-white flex items-center space-x-2 px-6 py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all group" href="/admin/projects/new" aria-label="@I18n["New Project"]">
         <svg class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
-        <span data-i18n="New Project">New Project</span>
+        <span>@I18n["New Project"]</span>
     </a>
 </div>
 
 
 @await Html.PartialAsync("_DeleteModal")
+
+<div id="archiveModal"
+     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+
+        <h2 class="text-lg font-semibold text-gray-900">
+            Archive project
+        </h2>
+
+        <p class="mt-2 text-sm text-gray-600">
+            <span id="archiveItemName" class="font-medium text-gray-900"></span>
+            project not publicly accessible anymore, only visible to admins.
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <button id="cancelArchive"
+                    type="button"
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button id="confirmArchive"
+                    type="button"
+                    class="rounded-md bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-700">
+                Archive
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="copyModal"
+     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+
+        <h2 class="text-lg font-semibold text-gray-900">
+            Copy project
+        </h2>
+
+        <p class="mt-2 text-sm text-gray-600">
+            Copy <span id="copyItemName" class="font-medium text-gray-900"></span> into a new draft?
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <button id="cancelCopy"
+                    type="button"
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button id="confirmCopy"
+                    type="button"
+                    class="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90">
+                Copy
+            </button>
+        </div>
+    </div>
+</div>

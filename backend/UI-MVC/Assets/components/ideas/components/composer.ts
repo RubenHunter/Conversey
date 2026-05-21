@@ -1,4 +1,5 @@
-﻿import type { IdeaTopic } from '../../../models/idea'
+﻿import { getSurveyStrings } from '../../../i18n/survey'
+import type { IdeaTopic } from '../../../models/idea'
 import type { ActiveView } from '../types'
 
 interface RenderComposerParams {
@@ -47,7 +48,8 @@ export function renderIdeasComposer({
     }
 
     composeTopic.textContent = topic.title
-    prompt.textContent = topic.prompt
+    const t = getSurveyStrings()
+    prompt.innerHTML = `<span class="ideas-prompt-prefix">${t.topicQuestionLabel}</span> ${topic.prompt}`
     textarea.disabled = false
     submitBtn.disabled = textarea.value.trim().length === 0
     brainstormBtn.disabled = false
