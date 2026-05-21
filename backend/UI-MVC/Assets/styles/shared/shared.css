@@ -271,6 +271,8 @@ textarea.speech-processing {
   background-size: 200% 100%;
   animation: speech-shimmer 3s linear infinite;
   cursor: wait;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 textarea.speech-listening::placeholder,

@@ -67,6 +67,9 @@ public class WorkspaceConfig: IEntityTypeConfiguration<Workspace>
                 slug => slug.Text,
                 str => new Slug { Text = str }
             );
+
+        builder.Property(w => w.Logo)
+            .HasMaxLength(2048);
         #endregion
 
 

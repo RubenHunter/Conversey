@@ -6,6 +6,7 @@ using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 
@@ -21,13 +22,48 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
     }
     
     [HttpPost("/admin/workspaces/admins/new")]
-    public async Task<IActionResult> CreateWorkspaceAdmin(AdminFormViewModel<WorkspaceAdmin> workspaceAdminFormViewModel)
+    public async Task<IActionResult> CreateWorkspaceAdmin(
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber,
+        [FromForm] string workspaceId)
     {
-        await adminManager.AddWorkspaceAdmin(workspaceAdminFormViewModel.FormItem.Email,
-            workspaceAdminFormViewModel.FormItem.Workspace.Id);
-        return RedirectToAction("WorkspaceDetails", "ConverseyAdmin",
-            new { id = workspaceAdminFormViewModel.FormItem.Workspace.Id});
-        
+        var workspaceSlug = new Slug { Text = workspaceId };
+
+        try
+        {
+            var (admin, oneTimePassword) = await adminManager.AddWorkspaceAdmin(email, username, phoneNumber, workspaceSlug);
+
+            TempData["OneTimePassword"] = oneTimePassword;
+            TempData["OneTimePasswordAdminEmail"] = admin.Email;
+            TempData["OneTimePasswordWorkspaceId"] = workspaceSlug.Text;
+
+            var redirectUrl = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceSlug });
+
+            if (IsAjaxRequest())
+            {
+                return Ok(new { redirectUrl });
+            }
+
+            return RedirectToAction("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceSlug });
+        }
+        catch (ValidationException ex)
+        {
+            ModelStateHelper.ApplyValidationException(ModelState, ex, "FormItem");
+        }
+
+        if (IsAjaxRequest())
+        {
+            return BadRequest(new { errors = ToErrorPayload(ModelState) });
+        }
+
+        return View(CreateFormVm(new WorkspaceAdmin
+        {
+            Email = email,
+            Username = username,
+            PhoneNumber = phoneNumber,
+            Workspace = workspaceManager.GetWorkspaceById(workspaceSlug)
+        }));
     }
     
     [HttpGet("/admin/workspace/admin/{id}")]
@@ -46,12 +82,32 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
     }
 
     [HttpPost("/admin/workspace/admin/{id}")]
-    public async Task<IActionResult> EditWorkspaceAdmin(Guid id, AdminFormViewModel<WorkspaceAdmin> workspaceAdminViewModel)
+    public async Task<IActionResult> EditWorkspaceAdmin(
+        Guid id,
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber,
+        [FromForm] string workspaceId)
     {
+        var workspaceSlug = new Slug { Text = workspaceId };
+        var workspaceAdmin = new WorkspaceAdmin
+        {
+            Id = id,
+            Email = email,
+            Username = username,
+            PhoneNumber = phoneNumber,
+            Workspace = workspaceManager.GetWorkspaceById(workspaceSlug)
+        };
+
         try
         {
-            var workspaceAdmin = workspaceAdminViewModel.FormItem;
             await adminManager.EditWorkspaceAdmin(workspaceAdmin);
+
+            if (IsAjaxRequest())
+            {
+                var redirectUrl = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceAdmin.Workspace.Id });
+                return Ok(new { redirectUrl });
+            }
 
             return RedirectToAction("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceAdmin.Workspace.Id });
         }
@@ -64,7 +120,12 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
             ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
-        return View(EditFormVm(workspaceAdminViewModel.FormItem));
+        if (IsAjaxRequest())
+        {
+            return BadRequest(new { errors = ToErrorPayload(ModelState) });
+        }
+
+        return View(EditFormVm(workspaceAdmin));
     }
     
     [HttpPost("/admin/workspace-user/delete/{id}")]
@@ -104,4 +165,20 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         };
     }
     
+    private bool IsAjaxRequest()
+    {
+        return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Dictionary<string, string[]> ToErrorPayload(ModelStateDictionary modelState)
+    {
+        return modelState
+            .Where(entry => entry.Value != null && entry.Value.Errors.Count > 0)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value!.Errors
+                    .Select(error => error.ErrorMessage)
+                    .Where(message => !string.IsNullOrWhiteSpace(message))
+                    .ToArray());
+    }
 }

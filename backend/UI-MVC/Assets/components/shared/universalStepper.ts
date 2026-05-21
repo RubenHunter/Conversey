@@ -1,114 +1,92 @@
-type ProviderSetupState = {
-    getCurrentStep?: () => number;
-    setCurrentStep?: (step: number) => void;
-};
-
-type ProviderSetupWindow = Window & {
-    __ProviderSetupState?: ProviderSetupState;
-};
-
-function getProviderSetupState(): ProviderSetupState | undefined {
-    return (window as ProviderSetupWindow).__ProviderSetupState;
+export interface StepperHooks {
+    setup?: (reset: () => void) => void;
+    getInitialStep?: () => number;
+    onStepChange?: (step: number) => void;
+    onStepEnter?: (step: number) => void;
+    canAdvance?: (currentStep: number) => Promise<boolean>;
+    onComplete?: () => void;
 }
 
 export class Stepper {
-     private currentStep: number = 1;
-     private totalSteps: number;
-     private entityName: string;
+    private currentStep: number = 1;
+    private readonly totalSteps: number;
+    private readonly entityName: string;
+    private readonly hooks: StepperHooks;
 
-     private container: HTMLElement;
-     private nextBtn: HTMLButtonElement;
-     private prevBtn: HTMLButtonElement;
-     private progressLine: HTMLElement;
-     private trackContainer: HTMLElement;
+    private readonly container: HTMLElement;
+    private readonly nextBtn: HTMLButtonElement;
+    private readonly prevBtn: HTMLButtonElement;
+    private readonly progressLine: HTMLElement;
+    private readonly trackContainer: HTMLElement;
 
-     constructor(containerId: string) {
-         this.container = document.getElementById(containerId)!;
-         this.totalSteps = parseInt(this.container.dataset.totalSteps || "1");
-         this.entityName = this.container.dataset.entity || "Item";
+    constructor(containerId: string, hooks?: StepperHooks) {
+        this.hooks = hooks ?? {};
 
-         this.nextBtn = this.container.querySelector('#nextBtn')!;
-         this.prevBtn = this.container.querySelector('#prevBtn')!;
-         this.progressLine = this.container.querySelector('#progress-line')!;
-         this.trackContainer = this.container.querySelector('[class*="relative"][class*="flex"]')!;
+        this.container = document.getElementById(containerId)!;
+        this.totalSteps = parseInt(this.container.dataset.totalSteps || '1', 10);
+        this.entityName = this.container.dataset.entity || 'Item';
 
-         this.init();
-     }
+        this.nextBtn = this.container.querySelector('#nextBtn')!;
+        this.prevBtn = this.container.querySelector('#prevBtn')!;
+        this.progressLine = this.container.querySelector('#progress-line')!;
+        this.trackContainer = this.container.querySelector('[class*="relative"][class*="flex"]')!;
 
-     private getInitialStep(): number {
-         const persistedStep = getProviderSetupState()?.getCurrentStep?.() ?? 1;
-         if (!Number.isFinite(persistedStep)) {
-             return 1;
-         }
+        this.init();
+    }
 
-         return Math.min(Math.max(Math.floor(persistedStep), 1), this.totalSteps);
-     }
+    private init() {
+        this.currentStep = this.clampStep(this.hooks.getInitialStep?.() ?? 1);
 
-     private persistCurrentStep() {
-         getProviderSetupState()?.setCurrentStep?.(this.currentStep);
-     }
+        this.nextBtn.addEventListener('click', () => void this.handleNext());
+        this.prevBtn.addEventListener('click', () => void this.handlePrev());
 
-     private dispatchStepEnter(step: number) {
-         this.container.dispatchEvent(new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true }));
-     }
+        this.hooks.setup?.(() => this.reset());
 
-     private init() {
-         this.currentStep = this.getInitialStep();
+        setTimeout(() => this.positionTrack(), 0);
+        this.updateUI();
+        this.dispatchStepEnter(this.currentStep);
+    }
 
-         this.nextBtn.addEventListener('click', () => {
-             if (this.currentStep === this.totalSteps) {
-                 const saveBtn = document.getElementById('saveProviderBtn') as HTMLButtonElement | null;
-                 if (saveBtn) {
-                     saveBtn.click();
-                 }
-                 return;
-             }
-             this.goToStep(this.currentStep + 1);
-         });
-         this.prevBtn.addEventListener('click', () => this.goToStep(this.currentStep - 1));
-         document.addEventListener('provider-setup:reset', () => {
-             this.currentStep = 1;
-             this.updateUI();
-             this.dispatchStepEnter(this.currentStep);
-         });
-         
-         setTimeout(() => this.positionTrack(), 0);
-         this.updateUI();
-         this.dispatchStepEnter(this.currentStep);
-     }
+    reset() {
+        this.goToStep(1);
+    }
 
-     private positionTrack() {
-         const steps = this.container.querySelectorAll('.step-indicator');
-         if (steps.length < 2) return;
+    private async handleNext() {
+        if (this.currentStep === this.totalSteps) {
+            this.hooks.onComplete?.();
+            return;
+        }
 
-         const firstStep = steps[0] as HTMLElement;
-         const lastStep = steps[steps.length - 1] as HTMLElement;
+        const next = this.currentStep + 1;
+        const canAdvance = await this.hooks.canAdvance?.(this.currentStep);
+        if (canAdvance === false) return;
 
-         const firstRect = firstStep.getBoundingClientRect();
-         const lastRect = lastStep.getBoundingClientRect();
-         const containerRect = this.trackContainer.getBoundingClientRect();
+        this.goToStep(next);
+    }
 
-         const leftOffset = firstRect.left - containerRect.left + firstRect.width / 2;
-         const rightOffset = containerRect.right - lastRect.right + lastRect.width / 2;
-         const trackWidth = containerRect.width - leftOffset - rightOffset;
-
-         const track = this.progressLine.parentElement!;
-         track.style.left = `${leftOffset}px`;
-         track.style.right = `${rightOffset}px`;
-         track.style.width = `${trackWidth}px`;
-     }
+    private handlePrev() {
+        if (this.currentStep <= 1) return;
+        this.goToStep(this.currentStep - 1);
+    }
 
     private goToStep(step: number) {
         if (step < 1 || step > this.totalSteps) return;
         this.currentStep = step;
         this.updateUI();
-         this.persistCurrentStep();
-         this.dispatchStepEnter(step);
+        this.hooks.onStepChange?.(step);
+        this.dispatchStepEnter(step);
+    }
+
+    private dispatchStepEnter(step: number) {
+        this.hooks.onStepEnter?.(step);
+        this.container.dispatchEvent(
+            new CustomEvent('stepper:step-enter', { detail: { step }, bubbles: true })
+        );
     }
 
     private updateUI() {
-         const progressPercent = ((this.currentStep - 1) / (this.totalSteps - 1)) * 100;
-         this.progressLine.style.width = `${progressPercent}%`;
+        const progressPercent = ((this.currentStep - 1) / (this.totalSteps - 1)) * 100;
+        this.progressLine.style.width = `${progressPercent}%`;
 
         this.container.querySelectorAll('.step-indicator').forEach((el, idx) => {
             const stepIdx = idx + 1;
@@ -116,7 +94,7 @@ export class Stepper {
             const dot = el.querySelector('.step-dot')!;
             const pane = document.getElementById(`step-content-${stepIdx}`)!;
 
-            circle.className = "step-circle w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300";
+            circle.className = 'step-circle w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300';
             dot.classList.add('scale-0');
             pane.classList.add('hidden');
 
@@ -142,10 +120,29 @@ export class Stepper {
             this.nextBtn.classList.replace('bg-primary', 'bg-text');
         }
     }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('dynamic-stepper')) {
-        new Stepper('dynamic-stepper');
+    private positionTrack() {
+        const steps = this.container.querySelectorAll('.step-indicator');
+        if (steps.length < 2) return;
+
+        const firstStep = steps[0] as HTMLElement;
+        const lastStep = steps[steps.length - 1] as HTMLElement;
+
+        const firstRect = firstStep.getBoundingClientRect();
+        const lastRect = lastStep.getBoundingClientRect();
+        const containerRect = this.trackContainer.getBoundingClientRect();
+
+        const leftOffset = firstRect.left - containerRect.left + firstRect.width / 2;
+        const rightOffset = containerRect.right - lastRect.right + lastRect.width / 2;
+        const trackWidth = containerRect.width - leftOffset - rightOffset;
+
+        const track = this.progressLine.parentElement!;
+        track.style.left = `${leftOffset}px`;
+        track.style.right = `${rightOffset}px`;
+        track.style.width = `${trackWidth}px`;
     }
-});
+
+    private clampStep(step: number): number {
+        return Math.min(Math.max(Math.floor(step), 1), this.totalSteps);
+    }
+}

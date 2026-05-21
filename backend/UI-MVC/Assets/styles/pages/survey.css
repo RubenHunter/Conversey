@@ -434,7 +434,7 @@
     max-width: calc(var(--spacing-xl) * 40);
     width: calc(100% - var(--spacing-2xl) * 2);
     padding: var(--spacing-xl) var(--spacing-2xl);
-    background: color-mix(in srgb, var(--color-surface) 47%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 58%, transparent);
     border-radius: var(--radius-xl);
     text-align: center;
     backdrop-filter: blur(5px);
@@ -451,7 +451,9 @@
 .survey-hero-description {
     font-size: clamp(var(--font-size-base), 2vw, var(--font-size-lg));
     line-height: 1.6;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
+    font-weight: 500;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .survey-shell.survey-hero-collapsed .survey-hero-image {
@@ -598,7 +600,7 @@
 /* Icon above text */
 .layout-picker-icon-wrap {
   position: absolute;
-  top: 38%;
+  top: clamp(18%, 32%, 38%);
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
@@ -608,15 +610,18 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-xl);
-  padding: clamp(16px, 3vw, 28px);
+  padding: clamp(8px, 3vw, 28px);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  max-height: 40%;
 }
 
 .layout-picker-icon {
-  width: clamp(72px, 12vw, 120px);
-  height: clamp(72px, 12vw, 120px);
+  width: clamp(48px, 10vw, 110px);
+  height: clamp(48px, 10vw, 110px);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Text label */
@@ -641,12 +646,12 @@
 }
 
 .layout-picker-label-desc {
-  font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
-  color: rgba(255, 255, 255, 0.75);
+  font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-base));
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   line-height: 1.5;
-  max-width: 200px;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  max-width: 280px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Vertical divider + OR badge ── */

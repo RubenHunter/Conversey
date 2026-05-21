@@ -126,7 +126,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     </section>
 
                     <section class="ideas-compose" aria-label="Create idea">
-                        <div class="ideas-compose-head">
+                        <div class="ideas-compose-head max-[450px]:flex-row max-[450px]:items-center max-[450px]:flex-wrap max-[450px]:gap-0 max-[450px]:mb-0">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
                                     <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
@@ -134,8 +134,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
                             </button>
-                            <div class="survey-question-title ideas-prompt-title-row">
-                                <span id="ideas-prompt" class="ideas-prompt"></span>
+                            <div class="survey-question-title ideas-prompt-title-row max-[450px]:text-xs">
+                                <span id="ideas-prompt" class="ideas-prompt max-[450px]:text-xs"></span>
                                 <button id="ideas-prompt-speaker" class="survey-speaker-btn"
                                         title="${t.readAloud}" aria-label="${t.readAloud}" disabled>
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -145,7 +145,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="${t.shareIdea}"></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)] max-[450px]:h-10 max-[450px]:min-h-0 max-[450px]:max-h-10" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
                                 <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -160,7 +160,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                 </button>
                             </div>
                         </div>
-                        <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
+                        <button id="ideas-submit" class="ideas-submit max-[450px]:py-1 max-[450px]:text-xs" type="button">Submit Idea</button>
                     </section>
                 </div>
                 <button
@@ -256,7 +256,9 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="idea-panel-footer">
                 <textarea id="idea-panel-input" class="idea-panel-input" placeholder="${t.writeComment}" rows="2"></textarea>
-                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
+                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled aria-label="${t.post}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
             </div>
         </div>
 
@@ -308,14 +310,14 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="modal-body idea-nudge-body">
                 <p id="idea-nudge-context" class="idea-nudge-context"></p>
-                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeStatus}</p>
+                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeThinking}</p>
                 <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
                 <label class="idea-nudge-input-wrap" for="idea-nudge-input">
                     <span class="idea-nudge-input-label">${t.yourAnswer}</span>
-                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder=""></textarea>
                 </label>
             </div>
-            <div class="first-idea-contact-actions idea-nudge-actions">
+            <div class="idea-nudge-actions-wrap">
                 <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">${t.answerContinue}</button>
             </div>
         </div>
@@ -470,17 +472,17 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             return
         }
 
-        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
-            const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
-            const semanticButtons = categories
-                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-                .join('')
-                const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator">
-                       <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
-                       ${semanticButtons}`
-                    : ''
+        const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
+        const semanticButtons = categories
+            .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+            .join('')
+        const categoriesSection = categories.length > 0
+            ? `<hr class="ideas-discovery-separator" role="separator">
+               <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
+               ${semanticButtons}`
+            : ''
 
+        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
             discoveryMenu.innerHTML = `
                 <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.broadSelection}</button>
                 ${categoriesSection}
@@ -492,6 +494,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
+            ${categoriesSection}
         `
     }
 
@@ -656,8 +659,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = DiscoveryMode.All
-            selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
             discoveryCache.clear()
@@ -703,6 +704,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         if (listController) {
             listController.cleanup()
         }
+
+        list.classList.toggle('ideas-list--preview', showPostPreviewPair)
 
         // Create new list controller
         listController = createIdeasListController({

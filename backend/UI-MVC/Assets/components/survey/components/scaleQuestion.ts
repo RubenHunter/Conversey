@@ -232,7 +232,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
     requestAnimationFrame(() => {
         buildTicks()
         applyBubblePos()
-        selectorEl.style.opacity = '0'
+        if (scaleValue === null) selectorEl.style.opacity = '0'
     })
 
     function applyScaleValue(val: number | null): void {

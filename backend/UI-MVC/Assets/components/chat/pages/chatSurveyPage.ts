@@ -70,6 +70,9 @@ export async function renderChatSurveyPage(
 
     if (startInIdeasMode) {
         clearSurveyProgress(projectSlugKey)
+        // Clear saved history HTML so it gets rebuilt with current locale strings
+        const surveyHistoryKey = `survey-history-${projectSlugKey}`
+        localStorage.removeItem(surveyHistoryKey)
     } else {
         // Clear saved survey history when starting a new survey
         const surveyHistoryKey = `survey-history-${projectSlugKey}`
@@ -82,6 +85,8 @@ export async function renderChatSurveyPage(
     const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug })
 
     let inIdeasPhase = false
+    let activeViewForBrainstorm: ActiveView | null = null
+    let topicsForBrainstorm: { id: number; prompt?: string | null }[] = []
 
     container.innerHTML = renderChatShellTemplate({
         projectTitle: project.title,
@@ -130,6 +135,12 @@ export async function renderChatSurveyPage(
 
     const brainstormController: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
         getQuestionText: () => {
+            const av = activeViewForBrainstorm
+            if (inIdeasPhase && av && av.type === 'topic') {
+                const topic = topicsForBrainstorm?.find((item) => item.id === av.topicId)
+                if (topic?.prompt?.trim()) return topic.prompt.trim()
+                return chatInput.placeholder
+            }
             if (openTextState && openTextState.questionIndex < questions.length) {
                 return questions[openTextState.questionIndex].text ?? ''
             }
@@ -529,6 +540,8 @@ export async function renderChatSurveyPage(
         }
 
         // If no messages but question is not required, show an empty bubble so user can click to edit
+        // Place empty bubble BEFORE the confirm row (above the checkmark)
+        let emptyBubble: HTMLElement | null = null
         if (openTextState.messages.length === 0 && !questions[index].isRequired) {
             const row = document.createElement('div')
             row.className = 'chat-row chat-row--user'
@@ -537,13 +550,19 @@ export async function renderChatSurveyPage(
             bubble.textContent = '\u200B' // Zero-width space to maintain bubble height
             bubble.addEventListener('click', createEditHandler(index, bubble))
             row.appendChild(bubble)
-            messagesEl.appendChild(row)
-            scrollToBottom()
+            emptyBubble = row
         }
 
         const bundled = openTextState.messages.join('\n\n')
         components[index].setAnswer(bundled || null)
         openTextDraftsByQuestionId.delete(questions[index].id)
+
+        // Insert empty bubble before the confirm row, not after
+        if (emptyBubble && openTextState.floatingConfirmRow) {
+            openTextState.floatingConfirmRow.before(emptyBubble)
+        } else if (emptyBubble) {
+            messagesEl.appendChild(emptyBubble)
+        }
 
         openTextState.floatingConfirmRow?.classList.add('chat-confirm-row--confirmed')
         answeredState[index] = bundled.trim().length > 0
@@ -724,6 +743,7 @@ export async function renderChatSurveyPage(
     // ===== Reveal question =====
     async function revealQuestion(index: number): Promise<void> {
         const q = questions[index]
+        if (!q) return
 
         await appendAiBubble(q.text, {
             bubbleClass: 'chat-bubble--question-title',
@@ -858,6 +878,13 @@ export async function renderChatSurveyPage(
         const historyHTML = messagesEl.innerHTML
         localStorage.setItem(surveyHistoryKey, historyHTML)
 
+        // Save answers snapshot for language-independent history reconstruction
+        const snapshot: Record<number, QuestionAnswer> = {}
+        for (let i = 0; i < questions.length; i++) {
+            snapshot[questions[i].id] = components[i].getAnswer()
+        }
+        localStorage.setItem(`survey-answers-snapshot-${projectSlugKey}`, JSON.stringify(snapshot))
+
         Array.from(messagesEl.children).forEach((el) => {
             if (!(el instanceof HTMLElement)) return
             el.classList.add('chat-survey-history-locked')
@@ -905,7 +932,7 @@ export async function renderChatSurveyPage(
     }
 
     // ===== Restore survey history =====
-    function restoreSurveyHistory(): void {
+    function restoreSurveyHistory(): boolean {
         const surveyHistoryKey = `survey-history-${projectSlugKey}`
         const savedHistory = localStorage.getItem(surveyHistoryKey)
         if (savedHistory) {
@@ -915,15 +942,160 @@ export async function renderChatSurveyPage(
                 if (!(el instanceof HTMLElement)) return
                 el.classList.add('chat-survey-history-locked')
             })
+            return true
         }
+        return false
+    }
+
+    // ===== Rebuild survey history from answers snapshot =====
+    function rebuildHistoryFromSnapshot(): void {
+        const snapshotKey = `survey-answers-snapshot-${projectSlugKey}`
+        const raw = localStorage.getItem(snapshotKey)
+        if (!raw) {
+            messagesEl.innerHTML = ''
+            return
+        }
+
+        let snapshot: Record<number, QuestionAnswer>
+        try {
+            snapshot = JSON.parse(raw) as Record<number, QuestionAnswer>
+        } catch {
+            messagesEl.innerHTML = ''
+            return
+        }
+
+        messagesEl.innerHTML = ''
+
+        // Project title
+        const titleRow = document.createElement('div')
+        titleRow.className = 'chat-row chat-row--ai'
+        const titleAvatar = document.createElement('div')
+        titleAvatar.className = 'chat-avatar'
+        titleAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+        const titleBubbleGroup = document.createElement('div')
+        titleBubbleGroup.className = 'chat-bubble-group'
+        const titleBubble = document.createElement('div')
+        titleBubble.className = 'chat-bubble chat-bubble--ai chat-bubble--project-title'
+        titleBubble.textContent = project.title
+        titleBubbleGroup.appendChild(titleBubble)
+        titleRow.appendChild(titleAvatar)
+        titleRow.appendChild(titleBubbleGroup)
+        messagesEl.appendChild(titleRow)
+
+        // Project description
+        if (project.description) {
+            const descRow = document.createElement('div')
+            descRow.className = 'chat-row chat-row--ai'
+            const descAvatar = document.createElement('div')
+            descAvatar.className = 'chat-avatar'
+            descAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            const descBubbleGroup = document.createElement('div')
+            descBubbleGroup.className = 'chat-bubble-group'
+            const descBubble = document.createElement('div')
+            descBubble.className = 'chat-bubble chat-bubble--ai'
+            descBubble.textContent = project.description
+            descBubbleGroup.appendChild(descBubble)
+            descRow.appendChild(descAvatar)
+            descRow.appendChild(descBubbleGroup)
+            messagesEl.appendChild(descRow)
+        }
+
+        // Questions
+        for (let i = 0; i < questions.length; i++) {
+            const q = questions[i]
+            const answer = snapshot[q.id]
+            if (answer === undefined || answer === null) continue
+
+            // AI bubble: question text
+            const qRow = document.createElement('div')
+            qRow.className = 'chat-row chat-row--ai'
+            const qAvatar = document.createElement('div')
+            qAvatar.className = 'chat-avatar'
+            qAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            const qBubbleGroup = document.createElement('div')
+            qBubbleGroup.className = 'chat-bubble-group'
+            const qBubble = document.createElement('div')
+            qBubble.className = 'chat-bubble chat-bubble--ai chat-bubble--question-title'
+            const numEl = document.createElement('span')
+            numEl.className = 'chat-question-num'
+            numEl.textContent = `${i + 1}.`
+            qBubble.appendChild(numEl)
+            qBubble.appendChild(document.createTextNode(' ' + q.text))
+
+            const speakerBtn = document.createElement('button')
+            speakerBtn.className = 'chat-speaker-btn'
+            speakerBtn.type = 'button'
+            speakerBtn.setAttribute('aria-label', t.readAloud)
+            speakerBtn.innerHTML = SPEAKER_SVG
+
+            let bubbleOrWrapper: HTMLElement = qBubble
+            if (q.isRequired) {
+                const wrapper = document.createElement('div')
+                wrapper.className = 'chat-bubble-wrapper'
+                wrapper.appendChild(qBubble)
+                const badge = document.createElement('span')
+                badge.className = 'chat-required-float'
+                badge.textContent = t.requiredLabel
+                wrapper.appendChild(badge)
+                bubbleOrWrapper = wrapper
+            }
+
+            qBubbleGroup.appendChild(bubbleOrWrapper)
+            qBubbleGroup.appendChild(speakerBtn)
+            qRow.appendChild(qAvatar)
+            qRow.appendChild(qBubbleGroup)
+            messagesEl.appendChild(qRow)
+
+            // User answer
+            if (q.type === QuestionType.OpenText) {
+                const text = (answer ?? '') as string
+                const userRow = document.createElement('div')
+                userRow.className = 'chat-row chat-row--user'
+                const userBubble = document.createElement('div')
+                userBubble.className = 'chat-bubble chat-bubble--user'
+                userBubble.textContent = text || '\u200B'
+                userRow.appendChild(userBubble)
+                messagesEl.appendChild(userRow)
+            } else {
+                const userRow = document.createElement('div')
+                userRow.className = 'chat-row chat-row--user'
+                const userBubble = document.createElement('div')
+                userBubble.className = 'chat-bubble chat-bubble--user'
+                userBubble.textContent = formatAnswerForDisplay(q, answer)
+                userRow.appendChild(userBubble)
+                messagesEl.appendChild(userRow)
+            }
+
+            // Confirm checkmark row
+            const confirmRow = document.createElement('div')
+            confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+            confirmRow.setAttribute('data-confirm-for', String(i))
+            confirmRow.innerHTML = `
+                <div class="chat-confirm-line"></div>
+                <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                <div class="chat-confirm-line"></div>`
+            messagesEl.appendChild(confirmRow)
+        }
+
+        // Success message
+        const successRow = document.createElement('div')
+        successRow.className = 'chat-submit-success'
+        successRow.innerHTML = `
+            <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
+            <p class="chat-submit-success-title">${esc(t.submittedTitle)}</p>
+            <p class="chat-submit-success-sub">${esc(t.submittedSub)}</p>`
+        messagesEl.appendChild(successRow)
     }
 
     // ===== Ideation phase =====
     async function enterIdeasPhase(): Promise<void> {
         inIdeasPhase = true
 
-        // Restore survey history if available
-        restoreSurveyHistory()
+        // Restore survey history: try saved HTML first, fallback to rebuilding from answers snapshot
+        const hasRestoredHTML = restoreSurveyHistory()
+        if (!hasRestoredHTML) {
+            rebuildHistoryFromSnapshot()
+        }
         lockSurveyHistory()
 
         // Keep organization branding anchored at the top of the full page in ideation mode.
@@ -934,6 +1106,7 @@ export async function renderChatSurveyPage(
 
         const initResult: IdeasInitResult = await initIdeasContext(params.organizationSlug, params.projectSlug, project)
         const { allIdeas, topics, youthToken, firstTopic } = initResult
+        topicsForBrainstorm = topics
 
         if (!firstTopic) {
             await appendAiBubble(t.surveyCompleted)
@@ -944,6 +1117,7 @@ export async function renderChatSurveyPage(
         surveyHeaderEl.hidden = true
 
         let activeView: ActiveView = { type: 'topic', topicId: firstTopic.id }
+        activeViewForBrainstorm = activeView
         let discoveryMode: DiscoveryMode = DiscoveryMode.All
         let selectedSemanticCategory: string | null = null
         let showPostPreviewPair = false
@@ -1116,6 +1290,7 @@ export async function renderChatSurveyPage(
             onSelect: async (nextView) => {
                 chatNudgeFlow.cancelIfTopicChanged()
                 activeView = nextView
+                activeViewForBrainstorm = nextView
                 if (nextView.type === 'topic') {
                     discoveryMode = DiscoveryMode.All
                     selectedSemanticCategory = null
@@ -1176,8 +1351,10 @@ export async function renderChatSurveyPage(
                 else if (mode === 'similar') discoveryMode = DiscoveryMode.Similar
                 else if (mode === 'different') discoveryMode = DiscoveryMode.Different
                 selectedSemanticCategory = null
+                showPostPreviewPair = false
             } else if (category) {
                 selectedSemanticCategory = category
+                showPostPreviewPair = false
             }
 
             discoveryMenu.hidden = true
@@ -1288,15 +1465,15 @@ export async function renderChatSurveyPage(
                 return
             }
 
-            if (!hasOwnIdeaInTopic(activeView.topicId)) {
-                const categories = getTopicSemanticCategories(activeView.topicId)
-                const semanticButtons = categories
-                    .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-                    .join('')
-                const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>${semanticButtons}`
-                    : ''
+            const categories = getTopicSemanticCategories(activeView.topicId)
+            const semanticButtons = categories
+                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+                .join('')
+            const categoriesSection = categories.length > 0
+                ? `<hr class="ideas-discovery-separator" role="separator"><p class="ideas-discovery-section-label">${esc(t.ideaCategories)}</p>${semanticButtons}`
+                : ''
 
+            if (!hasOwnIdeaInTopic(activeView.topicId)) {
                 discoveryMenu.innerHTML = `<button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.broadSelection)}</button>${categoriesSection}`
                 return
             }
@@ -1304,7 +1481,8 @@ export async function renderChatSurveyPage(
             discoveryMenu.innerHTML = `
                 <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${esc(t.similarIdeas)}</button>
                 <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${esc(t.differingIdeas)}</button>
-                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>`
+                <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${esc(t.allIdeas)}</button>
+                ${categoriesSection}`
         }
 
         function closeDiscoveryMenu(): void {
@@ -1396,11 +1574,14 @@ export async function renderChatSurveyPage(
             }
 
             if (pagedIdeas.length === 0) {
+                ideasListEl.classList.remove('ideas-list--preview')
                 ideasListEl.innerHTML = `<p class="ideas-empty-state">${esc(t.noIdeas)}</p>`
                 updateLoadMoreButton()
                 listController = null
                 return
             }
+
+            ideasListEl.classList.toggle('ideas-list--preview', showPostPreviewPair)
 
             listController = createIdeasListController({
                 list: ideasListEl,
@@ -1443,15 +1624,13 @@ export async function renderChatSurveyPage(
             runNudgingFlow: async (input: string, activeView: ActiveView, _context: IdeaNudgingContext) => {
                 return chatNudgeFlow.start(input, activeView)
             },
-             onIdeaSubmitted: (idea: Idea) => {
-                 allIdeas.unshift(idea)
-                 latestSubmittedIdea = idea
-                 discoveryMode = DiscoveryMode.All
-                 selectedSemanticCategory = null
-                 showPostPreviewPair = false
-                 resetPaging()
-                 closeDiscoveryMenu()
-                 void renderIdeasList()
+            onIdeaSubmitted: (idea: Idea) => {
+                allIdeas.unshift(idea)
+                latestSubmittedIdea = idea
+                showPostPreviewPair = false
+                resetPaging()
+                closeDiscoveryMenu()
+                void renderIdeasList()
 
                  if (!firstIdeaContactDialog.hasStoredDecision()) {
                      void firstIdeaContactDialog.open().then((choice) => {
@@ -1637,20 +1816,44 @@ export async function renderChatSurveyPage(
                  required: q.isRequired,
              })
 
-             // For open text questions, show as clickable editable bubble
+             // For open text questions, show as clickable editable bubble(s)
              if (q.type === QuestionType.OpenText) {
+                 const questionId = questions[i].id
+                 const drafts = openTextDraftsByQuestionId.get(questionId)
                  const answer = components[i].getAnswer()
-                 const displayText = formatAnswerForDisplay(q, answer)
                  
-                 // Always show a bubble for open text (filled or empty) so it can be edited
-                 const row = document.createElement('div')
-                 row.className = 'chat-row chat-row--user'
-                 const bubble = document.createElement('div')
-                 bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                 bubble.textContent = displayText || '\u200B' // Use zero-width space if empty to maintain bubble height
-                 row.appendChild(bubble)
-                 bubble.addEventListener('click', createEditHandler(i, bubble))
-                 messagesEl.appendChild(row)
+                 if (drafts && drafts.length > 0) {
+                     drafts.forEach((message) => {
+                         const row = document.createElement('div')
+                         row.className = 'chat-row chat-row--user'
+                         const bubble = document.createElement('div')
+                         bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                         bubble.textContent = message
+                         bubble.addEventListener('click', createEditHandler(i, bubble))
+                         row.appendChild(bubble)
+                         messagesEl.appendChild(row)
+                     })
+                 } else {
+                     const displayText = formatAnswerForDisplay(q, answer)
+                     const row = document.createElement('div')
+                     row.className = 'chat-row chat-row--user'
+                     const bubble = document.createElement('div')
+                     bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                     bubble.textContent = displayText || '\u200B'
+                     bubble.addEventListener('click', createEditHandler(i, bubble))
+                     row.appendChild(bubble)
+                     messagesEl.appendChild(row)
+                 }
+
+                 // Show confirmed checkmark row for open text
+                 const confirmRow = document.createElement('div')
+                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                 confirmRow.setAttribute('data-confirm-for', String(i))
+                 confirmRow.innerHTML = `
+                     <div class="chat-confirm-line"></div>
+                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                     <div class="chat-confirm-line"></div>`
+                 messagesEl.appendChild(confirmRow)
              } else {
                  // For other question types, show the actual question component with answer pre-selected
                  const block = document.createElement('div')
@@ -1675,6 +1878,12 @@ export async function renderChatSurveyPage(
                  block.appendChild(answerRegion)
                  block.appendChild(confirmRow)
                  messagesEl.appendChild(block)
+
+                 // Re-apply answer after DOM append so range slider positions correctly
+                 const saved = savedProgress!.answersByQuestionId.get(q.id)
+                 if (saved !== undefined && saved !== null) {
+                     components[i].setAnswer(saved)
+                 }
              }
          }
 

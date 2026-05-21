@@ -43,7 +43,6 @@ builder.Services.AddRazorPages()
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
         options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
-        options.Conventions.AddAreaPageRoute("Identity", "/Account/Manage/ChangePassword", "/change-password");
     });
 
 builder.Services.AddViteServices(options =>
