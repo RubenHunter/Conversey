@@ -889,52 +889,6 @@
   min-height: 0;
 }
 
-/* Desktop: side-by-side layout (left 50% chat, right 50% ideas) */
-@media (min-width: 1024px) {
-  .chat-shell--ideas {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
-  }
-
-  .chat-shell--ideas > .survey-topbar {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .chat-shell--ideas .chat-scroll-area {
-    grid-column: 1;
-    grid-row: 2;
-    flex: none;
-    min-height: 0;
-    height: auto;
-    overflow-y: auto;
-  }
-
-  .chat-shell--ideas .chat-input-wrap {
-    grid-column: 1;
-    grid-row: 3;
-    order: unset;
-    width: auto;
-  }
-
-  .chat-shell--ideas .chat-ideas-area {
-    grid-column: 2;
-    grid-row: 2 / 4;
-    flex: none;
-    height: auto;
-    min-height: 0;
-    max-height: none;
-    border-top: none;
-    border-bottom: none;
-    border-left: 1px solid var(--color-border);
-    order: unset;
-    width: auto;
-    min-width: 0;
-    overflow: hidden;
-  }
-}
-
 .chat-shell--ideas .chat-ideas-top-row {
   display: flex;
   align-items: stretch;
@@ -1015,14 +969,51 @@
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-/* Wide screen: button stays inside chat column (left side) */
-@media (min-width: 1024px) {
-  .chat-shell--ideas .chat-scroll-bottom {
-    position: absolute;
-    bottom: 68px;
-    right: calc(50% + var(--spacing-md));
-    left: auto;
-  }
+.chat-shell--ideas-desktop {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+}
+
+.chat-shell--ideas-desktop > .survey-topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.chat-shell--ideas-desktop .chat-scroll-area {
+  grid-column: 1;
+  grid-row: 2;
+  flex: none;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+}
+
+.chat-shell--ideas-desktop .chat-input-wrap {
+  grid-column: 1;
+  grid-row: 3;
+  order: unset;
+  width: auto;
+}
+
+.chat-shell--ideas-desktop .chat-ideas-area {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  flex: none;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  border-top: none;
+  border-bottom: none;
+  border-left: 1px solid var(--color-border);
+  order: unset;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat-shell--ideas-desktop .chat-scroll-bottom {
+  right: calc(50% + var(--spacing-md));
 }
 
 .chat-scroll-bottom--visible {

@@ -39,7 +39,7 @@ import { getVisibleIdeas, type DiscoveryOptions } from '../../ideas/utils/discov
 import { initIdeasContext, type IdeasInitResult } from '../../ideas/utils/ideasInit'
 import { getOrganizationBadge } from '../../shared/organizationBranding.ts'
 import { getSurveyStrings } from '../../../i18n/survey'
-import { formatAnswerForDisplay, hasAnswer, mapAnswersToResponse, wait, esc } from '../utils/chatHelpers.ts'
+import { bindChatIdeasDesktopLayout, formatAnswerForDisplay, hasAnswer, mapAnswersToResponse, wait, esc } from '../utils/chatHelpers.ts'
 import {
     CHECKMARK_SVG,
     SPEAKER_SVG,
@@ -96,6 +96,7 @@ export async function renderChatSurveyPage(
     })
 
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
+    const cleanupDesktopLayout = bindChatIdeasDesktopLayout(chatShell)
     if (project.imageUrl) {
         chatShell.style.setProperty('--project-bg', `url(${project.imageUrl})`);
     } else {
@@ -1768,6 +1769,7 @@ export async function renderChatSurveyPage(
         stopChatRecording()
         bubbleSpeakerControllers.forEach(c => c.stop())
         brainstormController.destroy()
+        cleanupDesktopLayout()
     }, { once: true })
 
     // ===== Start conversation =====
@@ -1783,7 +1785,8 @@ export async function renderChatSurveyPage(
     const shouldResume = savedProgress && (savedProgress.currentQuestionIndex > 0 || hasAnsweredQuestions) && questions.length > 0
 
     if (shouldResume) {
-        const resumeAt = Math.min(savedProgress!.currentQuestionIndex, questions.length)
+        const answeredQuestionCount = Array.from(savedProgress!.answersByQuestionId.values()).filter((answer) => hasAnswer(answer)).length
+        const resumeAt = Math.min(Math.max(savedProgress!.currentQuestionIndex, answeredQuestionCount), questions.length)
         confirmedUpToIndex = resumeAt
         const savedOpenTextDrafts = savedProgress!.openTextDraftsByQuestionId ?? new Map<number, string[]>()
         savedOpenTextDrafts.forEach((messages, questionId) => {

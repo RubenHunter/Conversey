@@ -1,10 +1,3 @@
-function initAdminLayoutClass(): void {
-	const appRoot = document.getElementById("app");
-	if (appRoot) {
-		appRoot.classList.add("admin-layout");
-	}
-}
-
 function initAdminHeaderHeight(header: HTMLElement): void {
 	const syncAdminHeaderHeight = (): void => {
 		document.documentElement.style.setProperty("--admin-header-height", `${header.offsetHeight}px`);
@@ -42,7 +35,6 @@ function initAdminHeader(): void {
 		return;
 	}
 
-	initAdminLayoutClass();
 	initAdminHeaderHeight(adminHeader);
 	initLanguageDropdowns();
 }

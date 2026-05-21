@@ -33,7 +33,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
                         value="${Math.round((lower + upper) / 2)}"
                     />
                 </div>
-                <div class="scale-ticks" id="scale-ticks-${question.id}"></div>
+                <div class="scale-ticks max-[600px]:hidden" id="scale-ticks-${question.id}"></div>
             </div>
             <input
                 id="scale-num-${question.id}"
