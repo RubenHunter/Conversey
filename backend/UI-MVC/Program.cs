@@ -70,6 +70,7 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 builder.Services.AddScoped<IAiPricingService, AiPricingService>();
+builder.Services.AddScoped<IAdminStatsService, AdminStatsService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
