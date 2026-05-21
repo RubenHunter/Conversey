@@ -17,6 +17,8 @@ public class AiProviderFormViewModel
     public string ApiKey { get; set; } = string.Empty;
     public string CompletionsModel { get; set; } = string.Empty;
     public string ModerationModel { get; set; } = string.Empty;
+    public string SttModel { get; set; } = string.Empty;
+    public string TtsModel { get; set; } = string.Empty;
     public string ApiVersion { get; set; } = string.Empty;
     public decimal Temperature { get; set; } = 1.0m;
     public bool IsEnabled { get; set; }

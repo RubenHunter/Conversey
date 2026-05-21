@@ -169,7 +169,6 @@
                     var divider = new TagBuilder("p");
                     divider.InnerHtml.Append("|");
 
-                    // DELETE BUTTON
                     var delete = new TagBuilder("button")
                     {
                         Attributes =
@@ -234,7 +233,6 @@
             <!-- Body -->
             <div class="px-8 py-8 space-y-6">
 
-                <!-- Workspace Admins -->
                 @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
 
             </div>

@@ -17,6 +17,8 @@ import {getSurveyStrings} from '../../../i18n/survey'
 import {renderScrollNav} from '../../shared/scrollNav'
 import {hasAnswer} from '../../chat/utils/chatHelpers'
 
+const sessionLayoutCache = new Map<string, typeof InteractionType.Chat | typeof InteractionType.VerticalScroll>()
+
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
@@ -336,6 +338,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             clearTimeout(scrollTimeoutId)
             scrollTimeoutId = null
         }
+        components.forEach(c => c.destroy?.())
         scrollNav?.destroy()
         scrollNav = null
     }
@@ -422,15 +425,15 @@ render(async (container, params) => {
 
     if (project.interactionType === InteractionType.UserDefined) {
         const layoutKey = `survey-layout-${params.projectSlug}`
-        const savedLayout = localStorage.getItem(layoutKey)
+        const savedLayout = sessionLayoutCache.get(layoutKey) || localStorage.getItem(layoutKey)
 
-        if (savedLayout === 'chat') {
+        if (savedLayout === InteractionType.Chat) {
             const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
             return
         }
 
-        if (savedLayout === 'classic') {
+        if (savedLayout === InteractionType.VerticalScroll) {
             await renderSurveyPage(container, params)
             return
         }
@@ -442,7 +445,8 @@ render(async (container, params) => {
             organizationName,
             organizationSlug: project.organizationSlug,
         })
-        if (choice === 'chat') {
+        sessionLayoutCache.set(layoutKey, choice)
+        if (choice === InteractionType.Chat) {
             const { renderChatSurveyPage } = await import('../../chat/pages/chatSurveyPage')
             await renderChatSurveyPage(container, params, project)
         } else {

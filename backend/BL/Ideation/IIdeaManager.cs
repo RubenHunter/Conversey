@@ -22,7 +22,7 @@ public interface IIdeaManager
    /// <param name="ideaContent">The content of the idea.</param>
    /// <returns>Whether the idea is <see cref="SubmissionResponse.Pending">Pending</see> or <see cref="SubmissionResponse.Approved">Approved</see>.</returns>
     Task<SubmissionResponse> SubmitIdeaAsync(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false);
-    Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation);
+    Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IEnumerable<IdeaNudgeTurn> conversation);
     Idea GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     Idea GetIdea(Topic topic, int ideaId);
     Idea GetIdeaByIdWithProjectAndResponses(Slug workspaceId, Slug projectId, int topicId, int ideaId);

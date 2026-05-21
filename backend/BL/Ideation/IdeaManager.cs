@@ -66,13 +66,14 @@ public class IdeaManager: IIdeaManager
             : new SubmissionResponse.Pending(idea, decision);
     }
 
-    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IReadOnlyList<IdeaNudgeTurn> conversation)
+    public async Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IEnumerable<IdeaNudgeTurn> conversation)
     {
         Project project = _projectManager.GetProjectById(workspaceId, projectId);
         Topic topic = _projectManager.GetTopic(project, topicId);
         var nudgingStrength = Math.Clamp(project.NudgingStrength, 1, 5);
         var maxRounds = GetMaxNudgingRounds(nudgingStrength);
-        var roundCount = conversation?.Count ?? 0;
+        var convoList = conversation?.ToList() ?? new List<IdeaNudgeTurn>();
+        var roundCount = convoList.Count;
 
         // Guardrail against endless follow-up loops.
         if (roundCount >= maxRounds)
@@ -89,7 +90,7 @@ public class IdeaManager: IIdeaManager
                 TopicTitle = topic.Name,
                 TopicPrompt = topic.Context,
                 IdeaText = ideaContent,
-                Conversation = conversation ?? Array.Empty<IdeaNudgeTurn>(),
+                Conversation = convoList,
                 NudgingMode = MapStrengthToNudgingMode(nudgingStrength),
             };
 
@@ -126,16 +127,16 @@ public class IdeaManager: IIdeaManager
         };
     }
 
-    private static string MapStrengthToNudgingMode(int nudgingStrength)
+    private static NudgingMode MapStrengthToNudgingMode(int nudgingStrength)
     {
         return nudgingStrength switch
         {
-            1 => "Minimal",
-            2 => "Light",
-            3 => "Medium",
-            4 => "Strong",
-            5 => "Deep",
-            _ => "Medium"
+            1 => NudgingMode.Minimal,
+            2 => NudgingMode.Light,
+            3 => NudgingMode.Medium,
+            4 => NudgingMode.Strong,
+            5 => NudgingMode.Deep,
+            _ => NudgingMode.Medium
         };
     }
 

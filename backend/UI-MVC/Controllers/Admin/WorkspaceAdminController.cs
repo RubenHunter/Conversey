@@ -66,6 +66,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             return View(CreateFormVm(projectStep1, null, false));
         }
     }
+    
+    [HttpGet("/admin/projects/new/questions")]
+    public IActionResult AddQuestions()
+    {
+        return View("AddQuestions/AddQuestions");
+    }
 
     [HttpPost("/admin/projects/new")]
     [ValidateAntiForgeryToken]
@@ -110,7 +116,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex, "CreateStep1ViewModel");
+            ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
         return View(CreateFormVm(projectStep1));
@@ -214,7 +220,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex, "CreateStep1ViewModel");
+            ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
         return View(CreateFormVm(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
@@ -337,7 +343,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     new StepItem
                     {
                         Label = "Survey",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_AddQuestions"
                     },
                     new StepItem
                     {
@@ -378,33 +384,6 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         await using var stream = projectStep1.ImageFile.OpenReadStream();
         return await projectManager.UploadProjectImage(stream, projectStep1.ImageFile.FileName, projectStep1.ImageFile.ContentType);
-    }
-
-    private void ApplyValidationExceptionToModelState(ValidationException ex, string memberPrefix = "Project")
-    {
-        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
-        {
-            foreach (var result in results)
-            {
-                var message = result.ErrorMessage ?? "Invalid value";
-
-                if (result.MemberNames.Any())
-                {
-                    foreach (var member in result.MemberNames)
-                    {
-                        ModelState.AddModelError($"{memberPrefix}.{member}", message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, message);
-                }
-            }
-        }
-        else
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
     }
 
     private bool ProjectExistsAsNonDraft(CreateProjectIntroAndPresentationViewModel projectStep1)

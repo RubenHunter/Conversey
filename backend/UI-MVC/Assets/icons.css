@@ -1,0 +1,14 @@
+@layer components {
+
+    .icon {
+        @apply w-4 h-4;
+    }
+
+    .checkbox {
+        @apply relative shrink-0
+        appearance-none w-4 h-4 border-2 border-blue-500 rounded-sm bg-white
+        mt-1
+        checked:bg-blue-800 checked:border-0
+        focus:outline-none focus:ring-offset-0 focus:ring-2 focus:ring-blue-100
+    }
+}

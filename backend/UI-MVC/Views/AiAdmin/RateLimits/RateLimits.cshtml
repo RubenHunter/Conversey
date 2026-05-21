@@ -1,18 +1,16 @@
 @using Conversey.UI_MVC.Models
-@using Conversey.UI_MVC.Resources
 @using Conversey.BL.Domain.Administration
 @using Conversey.BL.Domain.Ai
 @model IReadOnlyList<RateLimitConfig>
 @inject AdminContext AdminContext
-@inject IAdminI18nService I18n
 @{
-    ViewData["Title"] = I18n["Rate Limits"];
+    ViewData["Title"] = "Rate Limits";
     ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        (I18n["Dashboard"], "/admin", false),
-        (I18n["AI Settings"], "/admin/ai", false),
-        (I18n["Rate Limits"], null, true)
+        ("Dashboard", "/admin", false),
+        ("AI Settings", "/admin/ai", false),
+        ("Rate Limits", null, true)
     };
 }
 
@@ -22,46 +20,46 @@
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["Rate Limits"]</h1>
-                <p class="mt-1 text-sm text-text/60">@I18n["Configure request rate limits for AI-powered API endpoints. Changes take effect immediately."]</p>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Rate Limits">Rate Limits</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="Configure request rate limits for AI-powered API endpoints. Changes take effect immediately.">Configure request rate limits for AI-powered API endpoints. Changes take effect immediately.</p>
             </div>
             <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                @I18n["Back to AI Settings"]
+                <span data-i18n="Back to AI Settings">Back to AI Settings</span>
             </a>
         </div>
 
         <div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
             <svg class="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
-                <p class="text-sm font-medium text-primary">@I18n["How it works"]</p>
-                <p class="text-xs text-text/60 mt-1">@I18n["Permit limit = max requests per window. Global partition: one limit shared by all users. User partition: each user (or IP for anonymous) gets their own independent limit bucket. Queue limit > 0 allows requests to queue instead of immediate rejection."]</p>
+                <p class="text-sm font-medium text-primary" data-i18n="How it works">How it works</p>
+                <p class="text-xs text-text/60 mt-1" data-i18n="Permit limit = max requests per window. Global partition: one limit shared by all users. User partition: each user (or IP for anonymous) gets their own independent limit bucket. Queue limit > 0 allows requests to queue instead of immediate rejection.">Permit limit = max requests per window. Global partition: one limit shared by all users. User partition: each user (or IP for anonymous) gets their own independent limit bucket. Queue limit > 0 allows requests to queue instead of immediate rejection.</p>
             </div>
         </div>
 
         @if (Model.Count == 0)
         {
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm px-6 py-12 text-center">
-                <p class="text-sm text-text/50">@I18n["No rate limit configurations found. Run the application with Database:ResetOnStart set to true to seed defaults."]</p>
+                <p class="text-sm text-text/50" data-i18n="No rate limit configurations found. Run the application with Database:ResetOnStart set to true to seed defaults.">No rate limit configurations found. Run the application with Database:ResetOnStart set to true to seed defaults.</p>
             </div>
         }
         else
         {
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
                 <div class="px-6 py-4 border-b border-secondary/10">
-                    <h2 class="text-sm font-semibold text-text">@I18n["Configured Policies"] (@Model.Count)</h2>
+                    <h2 class="text-sm font-semibold text-text"><span data-i18n="Configured Policies">Configured Policies</span> (@Model.Count)</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-secondary/10 text-sm">
                         <thead class="bg-background/50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Policy"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Permit Limit"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Window (s)"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Queue"]</th>
-                                <th class="px-6 py-3 text-center text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Partition"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Updated"]</th>
-                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider">@I18n["Actions"]</th>
+                                <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Policy">Policy</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Permit Limit">Permit Limit</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Window (s)">Window (s)</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Queue">Queue</th>
+                                <th class="px-6 py-3 text-center text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Partition">Partition</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Updated">Updated</th>
+                                <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-secondary/10">
@@ -70,8 +68,8 @@
                                 <tr class="hover:bg-background/30">
                                     <td class="px-6 py-4">
                                         <span class="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-xs font-medium text-primary">@config.PolicyName</span>
-                                        <p class="mt-1 text-xs text-text/40">
-                                            @(config.PolicyName == "AiFixedPolicy" ? I18n["User-facing AI endpoints (ideas, nudging, discovery)"] : I18n["Admin AI endpoints (health, costs, model listing)"])
+                                        <p class="mt-1 text-xs text-text/40" data-i18n="@(config.PolicyName == "AiFixedPolicy" ? "User-facing AI endpoints (ideas, nudging, discovery)" : "Admin AI endpoints (health, costs, model listing)")">
+                                            @(config.PolicyName == "AiFixedPolicy" ? "User-facing AI endpoints (ideas, nudging, discovery)" : "Admin AI endpoints (health, costs, model listing)")
                                         </p>
                                     </td>
                                     <td class="px-6 py-4 text-right font-mono text-sm text-text">@config.PermitLimit</td>
@@ -84,7 +82,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-right text-xs text-text/40">@config.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="@Url.Action("EditRateLimit", new { id = config.Id })" class="text-sm font-medium text-primary hover:text-primary/80">@I18n["Edit"]</a>
+                                        <a href="@Url.Action("EditRateLimit", new { id = config.Id })" class="text-sm font-medium text-primary hover:text-primary/80" data-i18n="Edit">Edit</a>
                                     </td>
                                 </tr>
                             }

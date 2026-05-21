@@ -49,7 +49,7 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex, "FormItem");
         }
 
         if (IsAjaxRequest())
@@ -117,7 +117,7 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
         if (IsAjaxRequest())
@@ -284,33 +284,6 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         };
     }
     
-    private void ApplyValidationExceptionToModelState(ValidationException ex)
-    {
-        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
-        {
-            foreach (var result in results)
-            {
-                var message = result.ErrorMessage ?? "Invalid value";
-
-                if (result.MemberNames.Any())
-                {
-                    foreach (var member in result.MemberNames)
-                    {
-                        ModelState.AddModelError($"FormItem.{member}", message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError("FormError", message);
-                }
-            }
-        }
-        else
-        {
-            ModelState.AddModelError("FormError", ex.Message);
-        }
-    }
-
     private bool IsAjaxRequest()
     {
         return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);

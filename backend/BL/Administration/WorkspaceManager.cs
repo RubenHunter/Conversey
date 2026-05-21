@@ -32,6 +32,11 @@ public class WorkspaceManager: IWorkspaceManager
         };
         
         Validate(workspace);
+
+        if (_workspaceRepository.ReadWorkspaceById(workspace.Id) != null)
+        {
+            throw new ValidationException($"A workspace with the slug '{workspace.Id}' already exists.");
+        }
         
         _workspaceRepository.CreateWorkspace(workspace);
         return workspace;

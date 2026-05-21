@@ -14,6 +14,8 @@ interface CreateChatIdeaNudgeFlowParams {
     setInputPlaceholder: (text: string) => void
     clearInput: () => void
     focusInput: () => void
+    showTyping?: () => void
+    hideTyping?: () => void
 }
 
 export interface ChatIdeaNudgeFlowController {
@@ -41,6 +43,8 @@ export function createChatIdeaNudgeFlow({
     setInputPlaceholder,
     clearInput,
     focusInput,
+    showTyping,
+    hideTyping,
 }: CreateChatIdeaNudgeFlowParams): ChatIdeaNudgeFlowController {
     let active = false
     let initialText = ''
@@ -87,6 +91,7 @@ export function createChatIdeaNudgeFlow({
             return
         }
 
+        showTyping?.()
         const decision = await assessIdeaNudging(
             workspaceSlug,
             projectSlug,
@@ -95,6 +100,7 @@ export function createChatIdeaNudgeFlow({
             context,
             conversation,
         )
+        hideTyping?.()
 
         if (!active) return
 

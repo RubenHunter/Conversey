@@ -51,7 +51,7 @@ public class ProjectManager: IProjectManager
         var existingYouth = _projectRepository.ReadYouthByIdAndProjectId(token, projectId);
         if (existingYouth != null)
         {
-            if (ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
+            if (YouthEmailHelper.ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
             {
                 existingYouth.Email = normalizedEmail;
                 _projectRepository.UpdateYouth(existingYouth);
@@ -113,6 +113,9 @@ public class ProjectManager: IProjectManager
         var resolvedSlug = string.IsNullOrWhiteSpace(slug) ? Slug.FromName(name) : Slug.FromName(slug);
         var existing = _projectRepository.ReadProjectByIdAndWorkspaceId(resolvedSlug, workspaceId);
 
+        if (nudgingStrength < 1 || nudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         if (existing == null)
         {
             var project = new Project
@@ -125,8 +128,7 @@ public class ProjectManager: IProjectManager
                 StartDate = startDate.ToUniversalTime(),
                 EndDate = endDate.ToUniversalTime(),
                 InteractionForm = interactionForm,
-                NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
-
+                NudgingStrength = nudgingStrength,
                 Workspace = workspace
             };
 
@@ -158,13 +160,16 @@ public class ProjectManager: IProjectManager
         if (existing == null)
             throw new ProjectNotFoundException(updatedProject.Id);
 
+        if (updatedProject.NudgingStrength < 1 || updatedProject.NudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         existing.Name = updatedProject.Name;
         existing.Description = updatedProject.Description;
         existing.Status = updatedProject.Status;
         existing.StartDate = updatedProject.StartDate;
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
-        existing.NudgingStrength = Math.Clamp(updatedProject.NudgingStrength, 1, 5);
+        existing.NudgingStrength = updatedProject.NudgingStrength;
         existing.Workspace = updatedProject.Workspace;
         
         

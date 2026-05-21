@@ -1,205 +1,20 @@
-@using Conversey.UI_MVC.Resources
-@inject IAdminI18nService I18n
-
 <div class="max-w-2xl mx-auto">
     <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-text mb-4">@I18n["Verify & Save"]</h2>
+        <h2 class="text-lg font-semibold text-text mb-4" data-i18n="Verify & Save">Verify & Save</h2>
 
         <div id="healthCheckBar" class="rounded-lg p-3 mb-4 text-xs hidden">
         </div>
 
         <div id="setupSummary" class="space-y-3 mb-6 text-sm">
-            <p class="text-text/60">@I18n["Fill in the previous steps to see a summary here."]</p>
+            <p class="text-text/60" data-i18n="Fill in the previous steps to see a summary here.">Fill in the previous steps to see a summary here.</p>
         </div>
 
         <div class="flex gap-3">
             <button id="saveProviderBtn" type="button" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                @I18n["Save Provider"]
+                <span data-i18n="Save Provider">Save Provider</span>
             </button>
         </div>
     </div>
 </div>
 
-<script>
-var i18nFillInSteps = '@I18n["Fill in the previous steps to see a summary here."]';
-var i18nProviderName = '@I18n["Provider name"]';
-var i18nBaseURL = '@I18n["Base URL"]';
-var i18nAPIKey = '@I18n["API Key"]';
-var i18nNotSet = '@I18n["Not set"]';
-var i18nCompletionsModel = '@I18n["Completions model"]';
-var i18nNotSelected = '@I18n["Not selected"]';
-var i18nModerationModel = '@I18n["Moderation model"]';
-var i18nPromptFallback = '@I18n["prompt fallback"]';
-var i18nCompletionsFallbackMsg = '@I18n["Completions model will be used for moderation via prompt."]';
-var i18nTemperature = '@I18n["Temperature"]';
-var i18nTestingProviderConnection = '@I18n["Testing provider connection..."]';
-var i18nConnection = '@I18n["Connection:"]';
-var i18nOKModelsAvailable = '@I18n["OK"]';
-var i18nModelSuffix = '@I18n["model(s) available"]';
-var i18nHealth = '@I18n["Health:"]';
-var i18nAllProbesPassed = '@I18n["All probes passed"]';
-var i18nProbesFailed = '@I18n["Probes failed"]';
-var i18nModerationLabel = '@I18n["Moderation:"]';
-var i18nCompletionsLabel = '@I18n["Completions:"]';
-var i18nConnectionFailed = '@I18n["Connection failed:"]';
-var i18nGoBackToStep1 = '@I18n["Go back to step 1"]';
-var i18nOKStatus = '@I18n["OK"]';
-var i18nFailedStatus = '@I18n["Failed"]';
-
-(function() {
-    function getVal(id) { var el = document.getElementById(id); return el ? el.value || '' : ''; }
-
-    function updateSummary() {
-        var provider = getVal('setupProvider');
-        var baseUrl = getVal('setupBaseUrl');
-        var apiKey = getVal('setupApiKey');
-        var compModel = getVal('setupCompletionsModel');
-        var modModel = getVal('setupModerationModel');
-        var temp = getVal('setupTemperature');
-
-        var badge = function(text, color) {
-            return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ' + color + '">' + text + '</span>';
-        };
-
-        var html = '';
-        if (provider) html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nProviderName + '</span><span class="font-medium text-text">' + provider + '</span></div>';
-        if (baseUrl) html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nBaseURL + '</span><span class="font-mono text-[11px] text-text break-all max-w-[60%] text-right">' + baseUrl + '</span></div>';
-        html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nAPIKey + '</span><span class="font-mono text-[11px] text-text">' + (apiKey ? apiKey.substring(0, 8) + '...' : '<span class="text-amber-600">' + i18nNotSet + '</span>') + '</span></div>';
-        html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nCompletionsModel + '</span><span class="font-mono text-[11px] text-text">' + (compModel || '<span class="text-red-500">' + i18nNotSelected + '</span>') + '</span></div>';
-        if (modModel) {
-            html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nModerationModel + '</span><span class="font-mono text-[11px] text-text">' + modModel + '</span></div>';
-        } else {
-            html += '<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">' + i18nModerationModel + '</span><span class="text-[11px] text-text/40">' + badge(i18nPromptFallback, 'bg-amber-50 text-amber-700') + ' <span class="text-text/40">' + i18nCompletionsFallbackMsg + '</span></span></div>';
-        }
-        html += '<div class="flex justify-between items-center py-2"><span class="text-text/50 text-xs">' + i18nTemperature + '</span><span class="text-text">' + (temp || '0.2') + '</span></div>';
-
-        document.getElementById('setupSummary').innerHTML = html || '<p class="text-text/60">' + i18nFillInSteps + '</p>';
-    }
-
-    function runHealthCheck() {
-        var bar = document.getElementById('healthCheckBar');
-        var provider = getVal('setupProvider');
-        var baseUrl = getVal('setupBaseUrl');
-        var apiKey = getVal('setupApiKey');
-        var compModel = getVal('setupCompletionsModel');
-        var modModel = getVal('setupModerationModel');
-        var temp = getVal('setupTemperature') || '0.2';
-
-        if (!baseUrl) {
-            bar.className = 'rounded-lg p-3 mb-4 text-xs bg-amber-50 text-amber-700 border border-amber-200 hidden';
-            return;
-        }
-
-        bar.className = 'rounded-lg p-3 mb-4 text-xs bg-secondary/5 text-text/50 border border-secondary/10';
-        bar.innerHTML = '<span class="flex items-center gap-2"><svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> ' + i18nTestingProviderConnection + '</span>';
-
-        var body = JSON.stringify({
-            providerName: provider, baseUrl: baseUrl, apiKey: apiKey,
-            completionsModel: compModel, moderationModel: modModel,
-            temperature: parseFloat(temp)
-        });
-
-        Promise.all([
-            fetch('/admin/ai/providers/test-models', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ providerName: provider, baseUrl: baseUrl, apiKey: apiKey })
-            }).then(function(r) { return r.json(); }),
-            fetch('/admin/ai/providers/test-health', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: body
-            }).then(function(r) { return r.json(); })
-        ])
-        .then(function(results) {
-            var modelsData = results[0];
-            var healthData = results[1];
-            var models = modelsData.models || [];
-            var modelError = modelsData.error;
-
-            var lines = [];
-            if (modelError) {
-                lines.push('<span class="text-red-600"><strong>' + i18nConnection + '</strong> ' + modelError + '</span>');
-            } else {
-                lines.push('<span class="text-green-600"><strong>' + i18nConnection + '</strong> ' + i18nOKStatus + ', ' + models.length + ' ' + i18nModelSuffix + '</span>');
-            }
-
-            var healthy = healthData.healthy;
-            lines.push('<span class="' + (healthy ? 'text-green-600' : 'text-red-600') + '"><strong>' + i18nHealth + '</strong> ' + (healthy ? i18nAllProbesPassed : i18nProbesFailed) + '</span>');
-
-            if (healthData.moderation) {
-                var mod = healthData.moderation;
-                lines.push('<span class="' + (mod.ok ? 'text-green-600' : 'text-red-600') + '">  ' + i18nModerationLabel + ' ' + (mod.ok ? i18nOKStatus : mod.error || i18nFailedStatus) + ' (' + mod.durationMs + 'ms)</span>');
-            }
-            if (healthData.completions) {
-                var comp = healthData.completions;
-                var compDetail = comp.ok && comp.preview ? ' → \"' + comp.preview + '\"' : '';
-                lines.push('<span class="' + (comp.ok ? 'text-green-600' : 'text-red-600') + '">  ' + i18nCompletionsLabel + ' ' + (comp.ok ? i18nOKStatus + compDetail : comp.error || i18nFailedStatus) + ' (' + comp.durationMs + 'ms)</span>');
-            }
-
-            var allOk = !modelError && healthy;
-            bar.className = 'rounded-lg p-3 mb-4 text-xs border ' + (allOk ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200');
-            bar.innerHTML = '<div class="flex flex-col gap-1">' + lines.join('<br>') + '</div>';
-        })
-        .catch(function(e) {
-            bar.className = 'rounded-lg p-3 mb-4 text-xs bg-red-50 text-red-700 border border-red-200';
-            bar.innerHTML = '<span class="flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><strong>' + i18nConnectionFailed + '</strong> ' + e.message + ' <button type="button" onclick="document.getElementById(\'prevBtn\').click()" class="underline ml-1 font-medium">' + i18nGoBackToStep1 + '</button></span>';
-        });
-    }
-
-    document.querySelectorAll('#setupProvider, #setupBaseUrl, #setupApiKey, #setupCompletionsModel, #setupModerationModel, #setupTemperature').forEach(function(el) {
-        el.addEventListener('input', updateSummary);
-        el.addEventListener('change', updateSummary);
-    });
-    updateSummary();
-
-    document.addEventListener('stepper:step-enter', function(e) {
-        if (e.detail && e.detail.step === 3) {
-            runHealthCheck();
-        }
-    });
-
-    document.getElementById('saveProviderBtn').addEventListener('click', function() {
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/ai/providers';
-
-        var compModel = getVal('setupCompletionsModel');
-        var modModel = getVal('setupModerationModel');
-
-        var fields = {
-            ProviderName: getVal('setupProvider'),
-            BaseUrl: getVal('setupBaseUrl'),
-            ApiKey: getVal('setupApiKey'),
-            CompletionsModel: compModel,
-            ModerationModel: modModel,
-            Temperature: getVal('setupTemperature') || '0.2',
-            IsEnabled: 'true'
-        };
-
-        var expiry = getVal('setupKeyExpiry');
-        if (expiry) fields.ApiKeyExpiresAt = expiry;
-
-        for (var key in fields) {
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = fields[key];
-            form.appendChild(input);
-        }
-
-        var token = document.querySelector('input[name="__RequestVerificationToken"]');
-        if (token) {
-            var tokenInput = document.createElement('input');
-            tokenInput.type = 'hidden';
-            tokenInput.name = '__RequestVerificationToken';
-            tokenInput.value = token.value;
-            form.appendChild(tokenInput);
-        }
-
-        document.body.appendChild(form);
-        form.submit();
-    });
-})();
-</script>

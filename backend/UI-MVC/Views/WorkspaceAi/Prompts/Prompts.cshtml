@@ -1,11 +1,9 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
-@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiPromptsViewModel
 @inject AdminContext AdminContext
-@inject IAdminI18nService I18n
 @{
-    ViewData["Title"] = I18n["AI Prompts"];
+    ViewData["Title"] = "AI Prompts";
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -14,26 +12,26 @@
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["Prompts"]</h1>
-                <p class="mt-1 text-sm text-text/60">@I18n["Manage AI prompt templates. Global prompts apply to all projects. Project-specific prompts override globals."]</p>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Prompts">Prompts</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="Manage AI prompt templates. Global prompts apply to all projects. Project-specific prompts override globals.">Manage AI prompt templates. Global prompts apply to all projects. Project-specific prompts override globals.</p>
             </div>
             <a href="@Url.Action("Dashboard", new { workspaceSlug = Model.WorkspaceId })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                @I18n["Back to AI Settings"]
+                <span data-i18n="Back to AI Settings">Back to AI Settings</span>
             </a>
         </div>
 
         <div class="flex flex-col md:flex-row gap-4 mb-6">
             <div class="relative flex-1">
-                <input type="text" id="promptSearch" placeholder="@I18n["Search prompts..."]" value="@Model.SearchQuery"
-                       class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm text-sm" />
+                <input type="text" id="promptSearch" placeholder="Search prompts..." value="@Model.SearchQuery"
+                       class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm text-sm" data-i18n-placeholder="Search prompts..." />
                 <span class="absolute left-3 top-2.5 text-secondary">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </span>
             </div>
             <div class="w-full md:w-64">
                 <select id="projectFilter" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
-                    <option value="">@I18n["Global (all projects)"]</option>
+                    <option value="" data-i18n="Global (all projects)">Global (all projects)</option>
                     @foreach (var p in Model.Projects)
                     {
                         <option value="@p.Id.ToString()" selected="@(Model.SelectedProjectId == p.Id.ToString())">@p.Name</option>
@@ -46,12 +44,12 @@
             <span class="text-xs font-medium text-text/50">
                 @if (string.IsNullOrEmpty(Model.SelectedProjectId))
                 {
-                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary"></span> @I18n["Showing global prompts"] — @I18n["used as defaults for all projects"]</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary"></span> <span data-i18n="Showing global prompts">Showing global prompts</span> — <span data-i18n="used as defaults for all projects">used as defaults for all projects</span></span>
                 }
                 else
                 {
                     var proj = Model.Projects.FirstOrDefault(p => p.Id.ToString() == Model.SelectedProjectId);
-                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> @I18n["Showing project-specific prompts for"] <strong class="text-text">@proj?.Name</strong></span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> <span data-i18n="Showing project-specific prompts for">Showing project-specific prompts for</span> <strong class="text-text">@proj?.Name</strong></span>
                 }
             </span>
         </div>
@@ -63,21 +61,21 @@
                     <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
                         <div>
                             <h2 class="text-sm font-semibold text-text">@prompt.Name</h2>
-                            <p class="mt-1 text-xs text-text/50">@(string.IsNullOrWhiteSpace(prompt.Description) ? I18n["No description"] : prompt.Description)</p>
+                            <p class="mt-1 text-xs text-text/50">@(string.IsNullOrWhiteSpace(prompt.Description) ? "No description" : prompt.Description)</p>
                         </div>
-                        <a href="@Url.Action("EditPrompt", new { workspaceSlug = Model.WorkspaceId, id = prompt.Id, projectId = Model.SelectedProjectId })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0">@I18n["Edit"]</a>
+                        <a href="@Url.Action("EditPrompt", new { workspaceSlug = Model.WorkspaceId, id = prompt.Id, projectId = Model.SelectedProjectId })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0" data-i18n="Edit">Edit</a>
                     </div>
                     <div class="px-6 py-4">
                         @if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
                         {
                             <div>
-                                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1">@I18n["User Prompt Template"]</h3>
+                                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="User Prompt Template">User Prompt Template</h3>
                                 <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@prompt.UserPromptTemplate</pre>
                             </div>
                         }
                         else
                         {
-                            <span class="text-xs text-text/40">@I18n["No custom user prompt configured. Default is used."]</span>
+                            <span class="text-xs text-text/40" data-i18n="No custom user prompt configured. Default is used.">No custom user prompt configured. Default is used.</span>
                         }
                     </div>
                 </div>
@@ -86,25 +84,5 @@
     </main>
 </div>
 
-<script>
-(function() {
-    var input = document.getElementById('promptSearch');
-    var projectSelect = document.getElementById('projectFilter');
-    var items = document.querySelectorAll('.prompt-item');
-
-    input.addEventListener('input', function() {
-        var query = input.value.toLowerCase().trim();
-        items.forEach(function(item) {
-            var name = item.getAttribute('data-name');
-            var desc = item.getAttribute('data-desc');
-            var match = !query || name.indexOf(query) !== -1 || desc.indexOf(query) !== -1;
-            item.style.display = match ? '' : 'none';
-        });
-    });
-
-    projectSelect.addEventListener('change', function() {
-        var url = '@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId })' + '?search=' + encodeURIComponent(input.value) + '&projectId=' + encodeURIComponent(projectSelect.value);
-        window.location.href = url;
-    });
-})();
-</script>
+<script>window.__PromptsBaseUrl = '@Url.Action("Prompts", new { workspaceSlug = Model.WorkspaceId })';</script>
+<script type="module" vite-src="~/components/aiAdmin/promptsPage.ts"></script>

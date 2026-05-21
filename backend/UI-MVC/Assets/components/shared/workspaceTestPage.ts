@@ -8,7 +8,6 @@ export async function renderWorkspaceTestPage(container: HTMLElement): Promise<v
                 Hits the real backend — open DevTools Network tab to inspect requests.
             </p>
 
-            <!-- Create workspace -->
             <section style="margin-bottom: 40px;">
                 <h2 style="font-size: 1rem; margin-bottom: 12px;">POST /api/Workspaces — create</h2>
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
@@ -28,7 +27,6 @@ export async function renderWorkspaceTestPage(container: HTMLElement): Promise<v
                 <pre id="create-result" style="background: #f4f4f4; padding: 12px; border-radius: 6px; min-height: 48px; white-space: pre-wrap; font-size: 0.8rem;"></pre>
             </section>
 
-            <!-- List workspaces -->
             <section>
                 <h2 style="font-size: 1rem; margin-bottom: 12px;">GET /api/Workspaces — list all</h2>
                 <button
@@ -46,13 +44,11 @@ export async function renderWorkspaceTestPage(container: HTMLElement): Promise<v
     const createResult = container.querySelector<HTMLElement>('#create-result')!
     const listResult = container.querySelector<HTMLElement>('#list-result')!
 
-    // Live slug preview
     nameInput.addEventListener('input', () => {
         const slug = toSlugPreview(nameInput.value)
         slugPreview.textContent = slug ? `slug: "${slug}"` : ''
     })
 
-    // Create workspace
     container.querySelector('#btn-create')!.addEventListener('click', async () => {
         const name = nameInput.value.trim()
         if (!name) {
@@ -68,7 +64,6 @@ export async function renderWorkspaceTestPage(container: HTMLElement): Promise<v
         }
     })
 
-    // List workspaces
     container.querySelector('#btn-list')!.addEventListener('click', async () => {
         listResult.textContent = 'Fetching...'
         try {

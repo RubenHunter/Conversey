@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
+using Conversey.BL.Domain.Ai;
 
 namespace Conversey.BL.Ai;
 
@@ -36,7 +38,7 @@ public class IdeaNudgeAssessmentRequest
     public string TopicPrompt { get; set; }
     public string IdeaText { get; set; }
     public IReadOnlyList<IdeaNudgeTurn> Conversation { get; set; } = Array.Empty<IdeaNudgeTurn>();
-    public string NudgingMode { get; set; }
+    public NudgingMode NudgingMode { get; set; }
 }
 
 public class IdeaNudgeDecision

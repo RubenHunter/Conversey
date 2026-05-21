@@ -1,5 +1,6 @@
 import type { Question } from '../../../models/question'
 import { generateQuestionHeader } from '../utils/surveyUtils'
+import {initQuestionSpeakerForWrapper} from '../utils/surveyUtils'
 
 export type QuestionAnswer = number | string | number[] | null
 
@@ -11,6 +12,7 @@ export interface QuestionComponent {
     onAnswer(callback: () => void): void
     setAnswer(answer: QuestionAnswer): void
     getElement(): HTMLElement
+    destroy?(): void
 }
 
 export function renderSingleChoiceQuestion(question: Question, index: number): QuestionComponent {
@@ -46,6 +48,8 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
             Please select an option to continue.
         </p>
     `
+    // Initialize TTS for speaker button in question header
+    initQuestionSpeakerForWrapper(wrapper)
 
     const optionsContainer = wrapper.querySelector(`#options-${question.id}`)!
     const labels = optionsContainer.querySelectorAll<HTMLLabelElement>('.survey-option-label')

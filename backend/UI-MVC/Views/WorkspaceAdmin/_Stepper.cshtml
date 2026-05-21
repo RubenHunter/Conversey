@@ -18,14 +18,14 @@
         
         <div class="flex items-center gap-3">
             <button id="saveDraftBtn" type="button" class="px-6 py-2 border border-text/20 rounded-lg hover:bg-text/5 transition-colors">
-                @I18n["Save as draft"]
+                Save as draft
             </button>
             <div class="flex gap-2">
-                <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all">
-                    @I18n["< Back"]
+                <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all" data-i18n="< Back">
+                    < Back
                 </button>
-                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all">
-                    @I18n["Next >"]
+                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all" data-i18n="Next >">
+                    Next >
                 </button>
             </div>
         </div>
@@ -54,7 +54,7 @@
                      <div class="step-dot w-2 h-2 rounded-full bg-text scale-0 transition-transform duration-300"></div>
                  </div>
              
-                 <span class="mt-4 text-xs uppercase text-text/50 font-medium">@I18n["step"] @stepNum</span>
+                 <span class="mt-4 text-xs uppercase text-text/50 font-medium" data-i18n="step">step</span><span> @stepNum</span>
                  <span class="text-sm font-bold text-center">@Model.StepperViewModel.Steps[i].Label</span>
              </div>
          }
@@ -66,8 +66,7 @@
         {
             <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
                 @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
-            </div>
+                </div>
         }
     </div>
 </div>
-

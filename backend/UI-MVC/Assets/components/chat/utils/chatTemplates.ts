@@ -5,13 +5,15 @@ export const SPEAKER_SVG = `<svg class="chat-speaker-icon" fill="currentColor" v
   <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
 </svg>`
 
-export const AI_AVATAR = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="18" cy="18" r="18" fill="var(--color-primary)"/>
-  <circle cx="18" cy="14" r="5" fill="white" fill-opacity="0.9"/>
-  <path d="M6 32c0-5.523 5.373-9 12-9s12 3.477 12 9" fill="white" fill-opacity="0.9"/>
+export const AI_AVATAR = `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="18" cy="18" r="17" fill="var(--color-primary)" stroke="color-mix(in srgb, var(--color-primary) 85%, white)" stroke-width="2"/>
+  <rect x="9" y="12" width="18" height="12" rx="2" fill="white" fill-opacity="0.95"/>
+  <circle cx="14" cy="18" r="1.8" fill="var(--color-primary)"/>
+  <circle cx="22" cy="18" r="1.8" fill="var(--color-primary)"/>
+  <path d="M13 24h10" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round"/>
 </svg>`
 
-export const MAGIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+export const BRAINSTORM_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
   <path d="M20 3v4m2-2h-4M4 17v2m1-1H3"/>
 </svg>`
@@ -19,6 +21,28 @@ export const MAGIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 export const CHECKMARK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
   <polyline points="20 6 9 17 4 12"/>
 </svg>`
+
+export const SEND_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+</svg>`
+
+export const ARROW_DOWN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="6 9 12 15 18 9"/>
+</svg>`
+
+export function workspaceAvatarHTML(workspaceBadge: string): string {
+    return `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="18" cy="18" r="17" fill="var(--color-primary)"/>
+      <text x="18" y="18" text-anchor="middle" dy="0.35em" fill="white" font-size="${workspaceBadge.length > 2 ? '10' : '13'}" font-weight="800" font-family="system-ui, -apple-system, sans-serif">${workspaceBadge}</text>
+    </svg>`
+}
+
+export function avatarHTML(workspaceBadge: string, inIdeasPhase: boolean): string {
+    if (inIdeasPhase) {
+        return `${AI_AVATAR}<span class="chat-avatar-badge">AI</span>`
+    }
+    return workspaceAvatarHTML(workspaceBadge)
+}
 
 export function getIdeationModalsHtml(t: SurveyStrings): string {
     return `
@@ -63,12 +87,12 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
                         </svg>
                         <span>${t.useAsStartingPoint}</span>
                     </button>
-                    <button id="idea-panel-edit-toggle" class="survey-magic-btn idea-panel-edit-cta" type="button" aria-label="${t.editIdea}" hidden>
+                    <button id="idea-panel-edit-toggle" class="survey-brainstorm-btn idea-panel-edit-cta" type="button" aria-label="${t.editIdea}" hidden>
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                         </svg>
-                        <span class="survey-magic-btn-text">${t.editIdea}</span>
+                        <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                     </button>
                 </div>
             </div>
@@ -80,7 +104,9 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
     </div>
     <div class="idea-panel-footer">
         <textarea id="idea-panel-input" class="idea-panel-input" placeholder="${t.writeComment}" rows="2"></textarea>
-        <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
+        <button id="idea-panel-send" class="idea-panel-send" type="button" disabled aria-label="${t.post}">
+            ${SEND_SVG}
+        </button>
     </div>
 </div>
 <div id="safety-review-backdrop" class="safety-review-backdrop" hidden aria-hidden="true"></div>
@@ -187,7 +213,7 @@ export function getIdeationModalsHtml(t: SurveyStrings): string {
 
 export interface ChatShellStrings {
     selectAbove: string
-    magicMode: string
+    brainstormMode: string
 }
 
 interface RenderChatShellParams {
@@ -220,10 +246,13 @@ export function renderChatShellTemplate({
                 </div>
                 <div class="chat-messages min-[832px]:px-[var(--spacing-xl)]" id="chat-messages"></div>
             </div>
+            <button id="chat-scroll-bottom" class="chat-scroll-bottom" type="button" aria-label="Scroll to bottom">
+                ${ARROW_DOWN_SVG}
+            </button>
             <div class="chat-input-wrap">
                 <div class="chat-input-bar">
-                    <button id="chat-magic-btn" class="survey-magic-btn chat-magic-btn" type="button" aria-label="${esc(t.magicMode)}" hidden>
-                        ${MAGIC_SVG}
+                    <button id="chat-brainstorm-btn" class="survey-brainstorm-btn chat-brainstorm-btn" type="button" aria-label="${esc(t.brainstormMode)}" hidden>
+                        ${BRAINSTORM_SVG}
                     </button>
                     <textarea
                         id="chat-input"

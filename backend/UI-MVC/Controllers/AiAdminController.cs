@@ -158,6 +158,8 @@ public class AiAdminController : Controller
             ApiKey = config.ApiKey,
             CompletionsModel = config.CompletionsModel,
             ModerationModel = config.ModerationModel,
+            SttModel = config.SttModel,
+            TtsModel = config.TtsModel,
             ApiVersion = config.ApiVersion,
             Temperature = config.Temperature,
             IsEnabled = config.IsEnabled,
@@ -183,6 +185,8 @@ public class AiAdminController : Controller
         config.BaseUrl = form.BaseUrl;
         config.CompletionsModel = form.CompletionsModel;
         config.ModerationModel = form.ModerationModel;
+        config.SttModel = form.SttModel;
+        config.TtsModel = form.TtsModel;
         config.ApiVersion = form.ApiVersion;
         config.Temperature = form.Temperature;
         config.IsEnabled = form.IsEnabled;
@@ -196,6 +200,11 @@ public class AiAdminController : Controller
         }
 
         await _aiAdminManager.SaveProviderConfigAsync(config);
+
+        if (!id.HasValue || id.Value <= 0)
+        {
+            return RedirectToAction("Providers", new { setupCleared = 1 });
+        }
 
         return RedirectToAction("Providers");
     }
@@ -248,13 +257,15 @@ public class AiAdminController : Controller
 
     [HttpPost]
     [Route("admin/ai/providers/{id:int}/models")]
-    public async Task<IActionResult> SaveModels(int id, string CompletionsModel, string ModerationModel, decimal Temperature)
+    public async Task<IActionResult> SaveModels(int id, string CompletionsModel, string ModerationModel, string SttModel, string TtsModel, decimal Temperature)
     {
         var existing = await _aiAdminManager.GetProviderConfigByIdAsync(id);
         if (existing == null) return NotFound();
 
         existing.CompletionsModel = CompletionsModel;
         existing.ModerationModel = ModerationModel;
+        existing.SttModel = SttModel;
+        existing.TtsModel = TtsModel;
         existing.Temperature = Temperature;
 
         await _aiAdminManager.SaveProviderConfigAsync(existing);

@@ -45,6 +45,9 @@
   text-align: left;
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
   margin-bottom: var(--spacing-xs);
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
 }
 
 .ideas-compose-topic-button--floating {
@@ -62,13 +65,13 @@
 .ideas-compose-topic-button--floating .ideas-compose-topic-text {
   justify-content: center;
 }
-
+/*
 .ideas-compose-topic-button:hover,
 .ideas-compose-topic-button:focus {
   border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 35%, transparent);
-}
+}*/
 
 .ideas-compose-topic-text {
   display: flex;
@@ -786,6 +789,67 @@
   text-overflow: ellipsis;
 }
 
+/* Reactions row on each card — click affordance */
+.ideas-card-reactions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: var(--spacing-xs);
+  opacity: 0.65;
+  font-size: var(--font-size-xs);
+  transition: opacity var(--transition-base);
+}
+
+.ideas-card.active .ideas-card-reactions {
+  opacity: 0.85;
+}
+
+.ideas-card-reactions-emoji {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.ideas-card-reactions-count {
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.ideas-card-reactions-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+}
+
+.ideas-card-reactions-hint-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.ideas-card-reaction-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background var(--transition-base);
+  margin-left: auto;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ideas-card.active .ideas-card-reaction-add-btn {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
 .ideas-card.active {
   border-color: var(--color-primary);
   background-color: color-mix(in srgb, var(--color-primary-light) 22%, white);
@@ -897,7 +961,7 @@
   opacity: 0.35;
 }
 
-.ideas-magic-row {
+.ideas-brainstorm-row {
   margin-bottom: var(--spacing-xs);
 }
 
@@ -1124,7 +1188,7 @@
   flex: 0 0 auto;
 }
 
-.idea-panel-edit-cta .survey-magic-btn-text {
+.idea-panel-edit-cta .survey-brainstorm-btn-text {
   white-space: nowrap;
 }
 
@@ -1364,18 +1428,35 @@
 
 .idea-panel-send {
   border: none;
-  border-radius: var(--radius-lg);
-  padding: calc(var(--spacing-md) * 0.55) var(--spacing-xl);
-  font-weight: 700;
-  font-size: var(--font-size-sm);
+  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--color-primary);
   color: var(--color-text-on-primary);
   flex-shrink: 0;
-  transition: opacity var(--transition-base);
+  transition: opacity var(--transition-base), background var(--transition-base);
+}
+
+.idea-panel-send svg {
+  width: 20px;
+  height: 20px;
 }
 
 .idea-panel-send:disabled {
   opacity: 0.45;
+}
+
+.idea-panel-send--loading {
+  animation: ideaSendPulse 1s ease-in-out infinite;
+}
+
+@keyframes ideaSendPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.75; }
 }
 
 .idea-panel-edit-region {

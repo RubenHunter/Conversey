@@ -43,6 +43,7 @@ function init(): void {
 
 	const ctx = canvas.getContext('2d');
 	if (!ctx) return;
+	const chartCtx: CanvasRenderingContext2D = ctx;
 
 	let currentType = 'line';
 	let chart: ChartInstance | null = null;
@@ -147,7 +148,7 @@ function init(): void {
 			};
 		}
 
-		chart = new Chart(ctx, config);
+		chart = new Chart(chartCtx, config);
 	}
 
 	renderChart('line');
