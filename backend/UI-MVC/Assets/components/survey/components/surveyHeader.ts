@@ -26,7 +26,7 @@ export function renderSurveyHeader({ organizationName, organizationSlug }: Rende
         <div class="survey-topbar">
             <div class="survey-topbar-left">
                 <div class="survey-topbar-logo"><img src="/Assets/Conversey_logo.png" alt="Conversey" /></div>
-                <div class="survey-topbar-logo-title">CONVERSEY</div>
+                <div class="survey-topbar-logo-title max-[440px]:hidden">CONVERSEY</div>
             </div>
             <div class="survey-topbar-right">
                 <div class="lang-dropdown">
@@ -42,7 +42,7 @@ export function renderSurveyHeader({ organizationName, organizationSlug }: Rende
                 </div>
                 <div class="survey-topbar-brand">
                     <div class="survey-topbar-logo-badge">${badge}</div>
-                    <div class="survey-topbar-name">${displayName}</div>
+                    <div class="survey-topbar-name max-[340px]:hidden">${displayName}</div>
                 </div>
             </div>
         </div>
@@ -79,4 +79,3 @@ export function createSurveyHeaderController({
         getProgressBar: () => progressBar || null,
     }
 }
-

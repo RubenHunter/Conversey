@@ -60,3 +60,16 @@ export function formatAnswerForDisplay(question: Question, answer: QuestionAnswe
     }
     return ''
 }
+
+export function bindChatIdeasDesktopLayout(root: HTMLElement): () => void {
+    const sync = (): void => {
+        root.classList.toggle('chat-shell--ideas-desktop', window.innerWidth >= 1024)
+    }
+
+    sync()
+    window.addEventListener('resize', sync)
+
+    return () => {
+        window.removeEventListener('resize', sync)
+    }
+}

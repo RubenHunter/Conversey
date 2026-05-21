@@ -56,6 +56,7 @@ export function createBrainstormModal(): BrainstormModalController {
     
     // Track full transcript for final text generation
     let fullTranscript = '';
+    let removeDialogModeListener: (() => void) | null = null;
 
     // Sync UI state with STT state changes
     function handleSTTStateChange(state: string): void {
@@ -88,6 +89,9 @@ export function createBrainstormModal(): BrainstormModalController {
     }
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
+        removeDialogModeListener?.();
+        removeDialogModeListener = null;
+
         const backdrop = document.createElement('div');
         backdrop.className = 'brainstorm-backdrop';
 
@@ -96,6 +100,13 @@ export function createBrainstormModal(): BrainstormModalController {
         dialog.setAttribute('role', 'dialog');
         dialog.setAttribute('aria-modal', 'true');
         dialog.setAttribute('aria-label', t.brainstormModeAriaLabel);
+
+        const syncDialogMode = (): void => {
+            dialog.classList.toggle('brainstorm-dialog--desktop', window.innerWidth >= 640);
+        };
+        syncDialogMode();
+        window.addEventListener('resize', syncDialogMode);
+        removeDialogModeListener = () => window.removeEventListener('resize', syncDialogMode);
 
         // Header
         const header = document.createElement('div');
@@ -325,6 +336,8 @@ export function createBrainstormModal(): BrainstormModalController {
             stt.stop();
             isRecording = false;
         }
+        removeDialogModeListener?.();
+        removeDialogModeListener = null;
         // Clean up volume callback
         if (unsubscribeVolume) {
             unsubscribeVolume();
@@ -383,6 +396,8 @@ export function createBrainstormModal(): BrainstormModalController {
         },
         destroy(): void {
             if (isRecording) stt.stop();
+            removeDialogModeListener?.();
+            removeDialogModeListener = null;
             // Clean up volume callback
             if (unsubscribeVolume) {
                 unsubscribeVolume();

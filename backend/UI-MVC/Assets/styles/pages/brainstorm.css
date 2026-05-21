@@ -14,22 +14,21 @@
     display: flex;
     flex-direction: column;
     background: var(--color-surface);
-    animation: brainstorm-dialog-in 0.22s ease-out forwards;
+    animation: brainstorm-dialog-in-mobile 0.22s ease-out forwards;
 }
 
-@media (min-width: 640px) {
-    .brainstorm-dialog {
-        inset: auto;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: min(640px, calc(100vw - 2rem));
-        min-height: 500px;
-        max-height: min(88svh, 88vh);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--color-border);
-        box-shadow: var(--shadow-lg);
-    }
+.brainstorm-dialog--desktop {
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(640px, calc(100vw - 2rem));
+    min-height: 500px;
+    max-height: min(88svh, 88vh);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg);
+    animation: brainstorm-dialog-in-desktop 0.22s ease-out forwards;
 }
 
 .brainstorm-dialog-header {
@@ -92,16 +91,14 @@
     to { opacity: 1; }
 }
 
-@keyframes brainstorm-dialog-in {
+@keyframes brainstorm-dialog-in-mobile {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@media (min-width: 640px) {
-    @keyframes brainstorm-dialog-in {
-        from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
-        to { opacity: 1; transform: translate(-50%, -50%); }
-    }
+@keyframes brainstorm-dialog-in-desktop {
+    from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
 }
 
 @keyframes cloud-puff {
