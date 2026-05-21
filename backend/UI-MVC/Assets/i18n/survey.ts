@@ -25,6 +25,7 @@ export interface SurveyStrings {
     voiceInput: string
     brainstormModeActivated: string
     brainstormModeAriaLabel: string
+    saveAndExit: string
     micStartRecording: string
     micStopRecording: string
     micClickToSpeak: string
@@ -204,6 +205,7 @@ const nl: SurveyStrings = {
     voiceInput: 'Spraakinput',
     brainstormModeActivated: '<b>Brainstorm mode</b> geactiveerd',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Opslaan en sluiten',
     micStartRecording: 'Start opname',
     micStopRecording: 'Stop opname',
     micClickToSpeak: 'Klik om te spreken',
@@ -384,6 +386,7 @@ const en: SurveyStrings = {
     voiceInput: 'Voice input',
     brainstormModeActivated: '<b>Brainstorm mode</b> activated',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Save and exit',
     micStartRecording: 'Start recording',
     micStopRecording: 'Stop recording',
     micClickToSpeak: 'Click to speak',
@@ -563,6 +566,7 @@ const fr: SurveyStrings = {
     voiceInput: 'Saisie vocale',
     brainstormModeActivated: '<b>Brainstorm mode</b> activé',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Enregistrer et quitter',
     micStartRecording: 'Démarrer l\'enregistrement',
     micStopRecording: 'Arrêter l\'enregistrement',
     micClickToSpeak: 'Cliquez pour parler',
