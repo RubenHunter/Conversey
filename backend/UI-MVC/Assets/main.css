@@ -1,7 +1,6 @@
 @import "tailwindcss" source("..");
 @import "./styles/theme.css";
 @import "./styles/shared/shared.css";
-@import "./styles/shared/adminLayout.css";
 @import "./styles/shared/topbar.css";
 @import "./styles/shared/redirect.css";
 @import "./styles/pages/completed.css";

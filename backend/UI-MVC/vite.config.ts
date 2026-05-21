@@ -18,10 +18,10 @@ export default defineConfig(async () => {
     // Add entry points from view files (vite-src attributes)
     // These are referenced in _Layout.cshtml and other views
     const additionalEntries = {
-        'components_adminDeleteModal': './Assets/components/adminDeleteModal.ts',
-        'components_completedPage': './Assets/components/completedPage.ts',
-        'components_ideas_ideasPage': './Assets/components/ideas/ideasPage.ts',
-        'components_survey_surveyPage': './Assets/components/survey/surveyPage.ts',
+        'components_adminDeleteModal': './Assets/components/shared/adminDeleteModal.ts',
+        'components_completedPage': './Assets/components/shared/completedPage.ts',
+        'components_ideas_ideasPage': './Assets/components/ideas/pages/ideasPage.ts',
+        'components_survey_surveyPage': './Assets/components/survey/pages/surveyPage.ts',
     };
     
     Object.assign(inputEntries, additionalEntries);
