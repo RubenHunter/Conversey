@@ -1,7 +1,5 @@
 import { getSurveyStrings } from "../../i18n/survey";
 
-const t = getSurveyStrings();
-
 class DeleteModal {
     private modal = document.getElementById("deleteModal")!;
     private nameEl = document.getElementById("deleteItemName")!;
@@ -50,6 +48,7 @@ class DeleteModal {
     }
 
     private async deleteItem(endpoint: string, id: string) {
+        const t = getSurveyStrings()
         const token = (document.querySelector(
             "input[name='__RequestVerificationToken']"
         ) as HTMLInputElement).value;

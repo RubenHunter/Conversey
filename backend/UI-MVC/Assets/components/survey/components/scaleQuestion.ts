@@ -1,14 +1,14 @@
 import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
-import { generateQuestionHeader } from '../utils/surveyUtils'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
 
 export function renderScaleQuestion(question: Question, index: number): QuestionComponent {
     let scaleValue: number | null = null
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
-    const lower: number = (question as any).lowerBound ?? 1
-    const upper: number = (question as any).upperBound ?? 10
+    const lower: number = question.lowerBound ?? 1
+    const upper: number = question.upperBound ?? 10
     const totalSteps = upper - lower + 1
 
     const wrapper = document.createElement('div')
@@ -48,6 +48,8 @@ export function renderScaleQuestion(question: Question, index: number): Question
             Please select a value to continue.
         </p>
     `
+
+    initQuestionSpeakerForWrapper(wrapper)
 
     const rangeInput = wrapper.querySelector<HTMLInputElement>(`#scale-${question.id}`)!
     const numInput = wrapper.querySelector<HTMLInputElement>(`#scale-num-${question.id}`)!

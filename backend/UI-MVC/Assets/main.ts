@@ -1,4 +1,5 @@
 import "./main.css";
+import { onLocaleChange } from './i18n/survey'
 
 let app: HTMLDivElement | null = null;
 
@@ -36,8 +37,21 @@ function getApp():HTMLDivElement {
 }
 
 type ViewRenderer = (container: HTMLElement, params: ProjectContext) => void | Promise<void>
+
+let currentRenderer: ViewRenderer | null = null
+let reRenderGuard = false
+
 export function render(renderer: ViewRenderer): void {
+	currentRenderer = renderer
 	renderer(getApp(), parseRoute());
 }
+
+onLocaleChange(() => {
+	if (reRenderGuard || !currentRenderer) return
+	reRenderGuard = true
+	window.dispatchEvent(new CustomEvent('app:before-navigate'))
+	currentRenderer(getApp(), parseRoute())
+	reRenderGuard = false
+})
 
 init()

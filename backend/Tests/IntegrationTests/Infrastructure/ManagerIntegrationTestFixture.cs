@@ -14,6 +14,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Conversey.BL.Domain.Ai;
+using System.Runtime.CompilerServices;
+
+using Conversey.BL.Ai.DTOs;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -46,6 +49,9 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IIdeaRepository, IdeaRepository>();
         services.AddScoped<IQuestionRepository, QuestionRepository>();
+        
+        var cloudStorageMock = new Moq.Mock<ICloudStorageRepository>();
+        services.AddScoped<ICloudStorageRepository>(_ => cloudStorageMock.Object);
 
         services.AddScoped<IWorkspaceManager, WorkspaceManager>();
         services.AddScoped<IProjectManager, ProjectManager>();
@@ -280,6 +286,47 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 .ToLowerInvariant()
                 .Where(char.IsLetterOrDigit)
                 .ToArray());
+        }
+
+        public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+            string transcript,
+            Language language,
+            int maxPhrases,
+            IReadOnlyList<string>? existingPhrases = null,
+            IReadOnlyList<string>? rejectedPhrases = null)
+        {
+            if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+                return Task.FromResult(new ExtractKeyPhrasesResponse([]));
+
+            var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
+            var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
+
+            var sentences = transcript
+                .Split(['.', '!', '?'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
+                .Take(maxPhrases)
+                .ToList()
+                .AsReadOnly();
+            return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
+        }
+
+        public Task<string> GenerateTextFromBubbles(
+            string transcript,
+            IReadOnlyList<string> bubbles,
+            Language language,
+            IReadOnlyList<string>? rejectedPhrases = null)
+        {
+            if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+                return Task.FromResult(string.Empty);
+            // Filter out rejected phrases
+            var filteredBubbles = bubbles.ToList();
+            if (rejectedPhrases != null)
+            {
+                var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+                filteredBubbles = filteredBubbles.Where(b => !rejectedSet.Contains(b)).ToList();
+            }
+            return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
         }
     }
 

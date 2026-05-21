@@ -137,6 +137,36 @@
                         <input asp-for="ModerationModel" type="text" placeholder="Or type a model name..." data-i18n-placeholder="Or type a model name..." class="mt-2 w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
                         <p class="mt-1 text-xs text-text/40" data-i18n="Used for content moderation. Leave empty for prompt-based fallback.">Used for content moderation. Leave empty for prompt-based fallback.</p>
                     </div>
+
+                    @{
+                        var providerName = Model.ProviderName?.Trim();
+                        var supportsSpeech = string.Equals(providerName, "Mistral", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(providerName, "OpenAI", StringComparison.OrdinalIgnoreCase);
+                    }
+                    @if (supportsSpeech)
+                    {
+                        <div class="border-t border-secondary/10 pt-3 mt-2">
+                            <p class="text-[10px] text-secondary/60 uppercase tracking-wider font-bold mb-3" data-i18n="Speech Models (optional)">Speech Models (optional)</p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="STT Model (speech-to-text)">STT Model (speech-to-text)</label>
+                                    <input asp-for="SttModel" type="text" placeholder="whisper-1" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                    <p class="mt-1 text-xs text-text/40" data-i18n="Model for transcribing speech to text. Leave empty for default.">Model for transcribing speech to text. Leave empty for default.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="TTS Model (text-to-speech)">TTS Model (text-to-speech)</label>
+                                    <input asp-for="TtsModel" type="text" placeholder="tts-1" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                    <p class="mt-1 text-xs text-text/40" data-i18n="Model for synthesizing text into speech audio. Leave empty for default.">Model for synthesizing text into speech audio. Leave empty for default.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(Model.SttModel) || !string.IsNullOrEmpty(Model.TtsModel))
+                    {
+                        <div class="border-t border-amber-200 pt-3 mt-2">
+                            <p class="text-xs text-amber-600"><strong data-i18n="Note:">Note:</strong> <span data-i18n="This provider does not support speech. STT/TTS models will be ignored.">This provider (@providerName) does not support speech via the built-in providers. STT/TTS model values will be ignored.</span></p>
+                        </div>
+                    }
                 </div>
             </div>
 

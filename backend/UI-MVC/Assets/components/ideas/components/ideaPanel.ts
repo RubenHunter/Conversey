@@ -638,7 +638,7 @@ export function createIdeaPanelController({
 
         isSubmittingResponse = true
         panelSend.disabled = true
-        panelSend.textContent = 'Posting...'
+        panelSend.classList.add('idea-panel-send--loading')
 
         try {
             const submitResult = await submitResponse(currentIdea, localDecision.text)
@@ -679,7 +679,7 @@ export function createIdeaPanelController({
             renderPanel(currentIdea)
         } finally {
             isSubmittingResponse = false
-            panelSend.textContent = 'Post'
+            panelSend.classList.remove('idea-panel-send--loading')
             panelSend.disabled = panelInput.value.trim().length === 0
         }
     })

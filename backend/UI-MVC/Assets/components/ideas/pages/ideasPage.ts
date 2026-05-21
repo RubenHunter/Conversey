@@ -16,6 +16,7 @@ import {
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
 } from '../../../services/ideaResponseService'
+import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../../services/speechService'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import { resolveInitialIdeasView } from '../utils/initialView'
 import { createIdeaPanelController } from '../components/ideaPanel'
@@ -27,6 +28,7 @@ import { renderIdeasHeader } from "../utils/ideasHeader"
 import {createTopicModalController} from "../components/topicModal";
 import {createIdeasListController} from "../components/ideasListController";
 import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
+import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import type { ActiveView } from '../types'
 import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
 import { IdeaAuthorType } from '../../../models/idea'
@@ -127,25 +129,31 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                         <div class="ideas-compose-head">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
-                                    <span class="ideas-compose-topic-kicker">Topic:</span>
+                                    <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                                     <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
                             </button>
                             <div class="survey-question-title ideas-prompt-title-row">
                                 <span id="ideas-prompt" class="ideas-prompt"></span>
+                                <button id="ideas-prompt-speaker" class="survey-speaker-btn"
+                                        title="${t.readAloud}" aria-label="${t.readAloud}" disabled>
+                                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="Share your idea for this topic..."></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
-                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
+                                <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    <span class="survey-magic-btn-text">Magic Mode</span>
+                                    <span class="survey-brainstorm-btn-text">${t.brainstormModeButton}</span>
                                 </button>
-                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
+                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="${t.voiceInput}" title="${t.voiceInput}">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                                     </svg>
@@ -165,7 +173,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     hidden
                 >
                     <span class="ideas-compose-topic-text">
-                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                         <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
                         <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                     </span>
@@ -226,7 +234,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
-                                class="survey-magic-btn idea-panel-edit-cta"
+                                class="survey-brainstorm-btn idea-panel-edit-cta"
                                 type="button"
                                 aria-label="${t.editIdea}"
                                 title="${t.editIdea}"
@@ -236,7 +244,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">${t.editIdea}</span>
+                                <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                             </button>
                         </div>
                     </div>
@@ -371,8 +379,19 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const textareaWrapper = container.querySelector<HTMLDivElement>('.survey-textarea-wrapper')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
-    const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
+    const brainstormBtn = container.querySelector<HTMLButtonElement>('#ideas-brainstorm')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
+    const promptSpeakerBtn = container.querySelector<HTMLButtonElement>('#ideas-prompt-speaker')!
+    const unbindMic = bindMicButton(speakBtn, textarea, getSpeechLanguage, (text) => {
+        textarea.value = text
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+        submitBtn.disabled = textarea.value.trim().length === 0
+    })
+    const promptSpeaker: SpeakerButtonController = createSpeakerButton(
+        promptSpeakerBtn,
+        () => prompt.textContent ?? '',
+        getSpeechLanguage
+    )
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const ideasShell = container.querySelector<HTMLDivElement>('.ideas-shell')!
@@ -385,6 +404,29 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         storageKey: firstIdeaContactStorageKey,
     })
+
+    const brainstormModal: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
+        getQuestionText: () => prompt.textContent ?? '',
+        onResult: (finalText: string) => {
+            if (finalText.trim()) {
+                textarea.value = finalText
+                textarea.dispatchEvent(new Event('input', { bubbles: true }))
+                submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
+            }
+        }
+    })
+
+    function getNudgingContext(view: ActiveView) {
+        if (view.type !== 'topic') return null
+        const topic = topics.find((item) => item.id === view.topicId)
+        if (!topic) return null
+        return {
+            projectTitle: project.title,
+            projectDescription: project.description,
+            topicTitle: topic.title,
+            topicPrompt: topic.prompt,
+        }
+    }
 
     function resetIdeasListToTop(): void {
         list.scrollTop = 0
@@ -530,18 +572,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         }, 850)
     }
 
-    function getNudgingContext(view: ActiveView) {
-        if (view.type !== 'topic') return null
-        const topic = topics.find((item) => item.id === view.topicId)
-        if (!topic) return null
-        return {
-            projectTitle: project.title,
-            projectDescription: project.description,
-            topicTitle: topic.title,
-            topicPrompt: topic.prompt,
-        }
-    }
-
     // Create controllers
     const safetyReviewDialog = createSafetyReviewDialogController({root: container})
     const ideaNudgeDialog = createIdeaNudgeDialogController({
@@ -597,6 +627,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         topics,
         onSelect: (nextView) => {
+            promptSpeaker.stop()
             activeView = nextView
             if (nextView.type === 'topic') {
                 discoveryMode = DiscoveryMode.All
@@ -717,9 +748,10 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             ideasCompose,
             composeTopic: topicTriggerValue,
             prompt,
+            promptSpeakerBtn,
             textarea,
             submitBtn,
-            magicBtn,
+            brainstormBtn,
             speakBtn,
         })
 
@@ -950,22 +982,25 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     // Cleanup on navigation
     window.addEventListener('app:before-navigate', () => {
+        unbindMic()
+        promptSpeaker.stop()
         listController?.cleanup()
         resizeObserver.disconnect()
         discoveryRequestToken += 1
         document.removeEventListener('keydown', handleKeyDown)
+        brainstormModal.destroy()
         if (copyPulseTimeout !== null) {
             window.clearTimeout(copyPulseTimeout)
         }
     }, { once: false })
 
-    // Magic button focus behavior
+    // Brainstorm button focus behavior
     textarea.addEventListener('focus', () => {
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {

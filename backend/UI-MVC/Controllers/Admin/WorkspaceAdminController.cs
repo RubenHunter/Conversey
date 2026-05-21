@@ -55,7 +55,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
         return View(CreateFormVm(projectFormViewModel.FormItem));
@@ -114,7 +114,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
         return View(EditFormVm(projectFormViewModel.FormItem));
@@ -192,30 +192,4 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         };
     }
     
-    private void ApplyValidationExceptionToModelState(ValidationException ex)
-    {
-        if (ex.Data["ValidationResults"] is List<ValidationResult> results)
-        {
-            foreach (var result in results)
-            {
-                var message = result.ErrorMessage ?? "Invalid value";
-
-                if (result.MemberNames.Any())
-                {
-                    foreach (var member in result.MemberNames)
-                    {
-                        ModelState.AddModelError($"Project.{member}", message);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, message);
-                }
-            }
-        }
-        else
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-        }
-    }
 }

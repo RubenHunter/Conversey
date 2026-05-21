@@ -29,6 +29,8 @@ function initSetupVerifyStep(): void {
     const apiKey = getVal('setupApiKey');
     const compModel = getVal('setupCompletionsModel');
     const modModel = getVal('setupModerationModel');
+    const sttModel = getVal('setupSttModel');
+    const ttsModel = getVal('setupTtsModel');
     const temp = getVal('setupTemperature');
 
     let html = '';
@@ -43,6 +45,12 @@ function initSetupVerifyStep(): void {
       html += `<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">${t('Moderation model', 'Moderation model')}</span><span class="text-[11px] text-text/40">${badge(t('prompt fallback', 'prompt fallback'), 'bg-amber-50 text-amber-700')} <span class="text-text/40">${t('Completions model will be used for moderation via prompt.', 'Completions model will be used for moderation via prompt.')}</span></span></div>`;
     }
 
+    if (sttModel) {
+      html += `<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">${t('STT Model', 'STT Model')}</span><span class="font-mono text-[11px] text-text">${sttModel}</span></div>`;
+    }
+    if (ttsModel) {
+      html += `<div class="flex justify-between items-center py-2 border-b border-secondary/5"><span class="text-text/50 text-xs">${t('TTS Model', 'TTS Model')}</span><span class="font-mono text-[11px] text-text">${ttsModel}</span></div>`;
+    }
     html += `<div class="flex justify-between items-center py-2"><span class="text-text/50 text-xs">${t('Temperature', 'Temperature')}</span><span class="text-text">${temp || '0.2'}</span></div>`;
     summary.innerHTML = html || `<p class="text-text/60">${t('Fill in the previous steps to see a summary here.', 'Fill in the previous steps to see a summary here.')}</p>`;
   };
@@ -131,7 +139,7 @@ function initSetupVerifyStep(): void {
   });
 
   document
-    .querySelectorAll<HTMLElement>('#setupProvider, #setupBaseUrl, #setupApiKey, #setupCompletionsModel, #setupModerationModel, #setupTemperature')
+    .querySelectorAll<HTMLElement>('#setupProvider, #setupBaseUrl, #setupApiKey, #setupCompletionsModel, #setupModerationModel, #setupSttModel, #setupTtsModel, #setupTemperature')
     .forEach((el) => {
       el.addEventListener('input', updateSummary);
       el.addEventListener('change', updateSummary);
@@ -157,6 +165,8 @@ function initSetupVerifyStep(): void {
       ApiKey: getVal('setupApiKey'),
       CompletionsModel: getVal('setupCompletionsModel'),
       ModerationModel: getVal('setupModerationModel'),
+      SttModel: getVal('setupSttModel'),
+      TtsModel: getVal('setupTtsModel'),
       Temperature: getVal('setupTemperature') || '0.2',
       IsEnabled: 'true'
     };
