@@ -52,6 +52,33 @@ export function createBubbleList(): BubbleListController {
 
     const normalize = (s: string): string => s.trim().toLowerCase();
 
+    function scatterPosition(index: number): { left: string; top: string } {
+        const slots = [
+            { l: 15, t: 60 }, { l: 62, t: 50 },
+            { l: 8,  t: 170 }, { l: 55, t: 155 },
+            { l: 22, t: 280 }, { l: 68, t: 265 },
+            { l: 12, t: 390 }, { l: 58, t: 375 },
+            { l: 26, t: 500 }, { l: 72, t: 485 },
+        ];
+        const cycle = Math.floor(index / slots.length);
+        const slot = slots[index % slots.length];
+        const jitterX = (Math.random() - 0.5) * 6;
+        const jitterY = (Math.random() - 0.5) * 5;
+        const left = Math.max(4, Math.min(66, slot.l + jitterX));
+        const top = slot.t + cycle * 580 + jitterY;
+        return { left: `${left}%`, top: `${top}px` };
+    }
+
+    function updateContainerHeight(): void {
+        let maxTop = 0;
+        activeBubbles.forEach(b => {
+            const t = parseFloat(b.element.style.top);
+            if (!isNaN(t) && t > maxTop) maxTop = t;
+        });
+        const needed = Math.max(420, maxTop + 280);
+        container.style.minHeight = `${needed}px`;
+    }
+
     /**
      * Creates a bubble DOM element with text and close button.
      * Applies randomized phase for staggered animation and sets up event handlers.
@@ -62,13 +89,13 @@ export function createBubbleList(): BubbleListController {
      */
     function createBubbleElement(text: string, index: number): HTMLElement {
         const bubbleEl = document.createElement('div');
-        bubbleEl.className = 'brainstorm-bubble brainstorm-badge-enter';
+        const floatClasses = ['brainstorm-float-1', 'brainstorm-float-2', 'brainstorm-float-3'];
+        bubbleEl.className = `brainstorm-bubble ${floatClasses[index % 3]}`;
         bubbleEl.setAttribute('role', 'listitem');
-        
-        // Random phase (0-100%) for natural staggered animation start
-        const randomPhase = Math.random();
-        bubbleEl.style.setProperty('--bubble-phase', (randomPhase * 100).toString());
-        
+
+        const pos = scatterPosition(index);
+        bubbleEl.style.left = pos.left;
+        bubbleEl.style.top = pos.top;
         bubbleEl.style.setProperty('--bubble-index', index.toString());
 
         // Text element
@@ -155,14 +182,27 @@ export function createBubbleList(): BubbleListController {
     function addBubbles(phrases: string[]): void {
         let needsPlaceholderUpdate = false;
         
+        // Deduplicate input phrases first
+        const seen = new Set<string>();
+        const uniquePhrases: string[] = [];
         for (const p of phrases) {
             const trimmed = p.trim();
             if (!trimmed) continue;
             const key = normalize(trimmed);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            uniquePhrases.push(trimmed);
+        }
+        
+        for (const trimmed of uniquePhrases) {
+            const key = normalize(trimmed);
             if (rejectedPhrases.has(key)) continue;
             if (activeBubbles.some(b => normalize(b.text) === key)) continue;
             // Also check removingBubbles to prevent re-adding during removal animation
-            if (Array.from(removingBubbles).some(el => el.textContent.trim().toLowerCase() === key)) continue;
+            if (Array.from(removingBubbles).some(el => {
+                const labelEl = el.querySelector('.brainstorm-bubble-text');
+                return labelEl && normalize(labelEl.textContent) === key;
+            })) continue;
             
             const bubbleEl = createBubbleElement(trimmed, activeBubbles.length);
             activeBubbles.push({ text: trimmed, element: bubbleEl });
@@ -175,6 +215,7 @@ export function createBubbleList(): BubbleListController {
             const placeholder = container.querySelector('.brainstorm-placeholder');
             if (placeholder) placeholder.remove();
         }
+        updateContainerHeight();
     }
 
     /**
@@ -206,6 +247,9 @@ export function createBubbleList(): BubbleListController {
                 placeholder.className = 'text-base-content/50 text-sm brainstorm-placeholder';
                 placeholder.textContent = t.brainstormModeEmptyState;
                 container.appendChild(placeholder);
+                container.style.minHeight = '';
+            } else {
+                updateContainerHeight();
             }
             
             // Trigger removal animation
@@ -250,6 +294,7 @@ export function createBubbleList(): BubbleListController {
         
         activeBubbles.length = 0;
         rejectedPhrases.clear();
+        container.style.minHeight = '';
         render();
     }
 
