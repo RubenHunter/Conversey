@@ -1,0 +1,60 @@
+@model Conversey.UI_MVC.Models.Admin.DashboardViewModel
+@using Conversey.UI_MVC.Models
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-7xl mx-auto">
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text tracking-tight">@Model.PageTitle</h1>
+            <p class="mt-2 text-sm text-text/60">@Model.PageDescription</p>
+        </div>
+
+        <!-- Navigation Cards Row (role-dependent) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            @foreach (var navCard in Model.NavCards)
+            {
+                @await Html.PartialAsync("_NavCard", navCard)
+            }
+        </div>
+
+        <!-- Main Widget Row: Comparison | QuickLinks | Engagement -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            @if (Model.ComparisonWidget != null)
+            {
+                @await Html.PartialAsync("_ComparisonWidget", Model.ComparisonWidget)
+            }
+            @if (Model.QuickLinksWidget != null)
+            {
+                @await Html.PartialAsync("_QuickLinksWidget", Model.QuickLinksWidget)
+            }
+            @if (Model.EngagementWidget != null)
+            {
+                @await Html.PartialAsync("_EngagementWidget", Model.EngagementWidget)
+            }
+        </div>
+
+        <!-- Full-Width Usage Trend Chart -->
+        @if (Model.UsageTrendChart != null)
+        {
+            @await Html.PartialAsync("_ChartWidget", Model.UsageTrendChart)
+        }
+    </main>
+</div>
+
+<!-- Initialize JavaScript components -->
+@section Scripts {
+    <script>
+        // Initialize modals
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard initialized');
+        });
+    </script>
+}

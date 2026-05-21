@@ -1,0 +1,49 @@
+@model Conversey.UI_MVC.Models.Admin.EngagementWidgetViewModel
+@{
+    double radius = 40;
+    double cx = 50; double cy = 50;
+    double circumference = Math.PI * radius;
+    double strokeOffset = circumference * (1 - Model.GaugePercentage / 100.0);
+}
+
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-5">
+    <h3 class="font-semibold text-text mb-4">@Model.Title</h3>
+    
+    <!-- Circular Gauge -->
+    <div class="flex flex-col items-center mb-6">
+        <div class="relative w-28 h-16">
+            <svg viewBox="0 0 100 60" class="w-full h-full" aria-hidden="true">
+                <!-- Track arc -->
+                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor"
+                      class="text-secondary/15" stroke-width="10" stroke-linecap="round"/>
+                <!-- Filled arc -->
+                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor"
+                      class="@Model.GaugeColor" stroke-width="10" stroke-linecap="round"
+                      stroke-dasharray="@circumference" stroke-dashoffset="@strokeOffset"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-end pb-1">
+                <span class="text-xl font-bold text-text leading-none">@Model.GaugePercentage%</span>
+            </div>
+        </div>
+        <span class="text-xs text-text/50 mt-1">@Model.GaugeLabel</span>
+    </div>
+    
+    <!-- Progress Bars -->
+    <div class="space-y-4">
+        @foreach (var bar in Model.Bars)
+        {
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="font-semibold text-text/70">@bar.Label</span>
+                    <span class="text-text/40">@bar.SubLabel</span>
+                </div>
+                <div class="relative w-full h-5 bg-secondary/10 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full @bar.Color transition-all duration-500" style="width: @bar.Percentage%"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white mix-blend-difference">
+                        @bar.DisplayValue
+                    </span>
+                </div>
+            </div>
+        }
+    </div>
+</div>

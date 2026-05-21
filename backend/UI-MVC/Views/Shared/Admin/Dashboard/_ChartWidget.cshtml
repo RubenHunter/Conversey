@@ -1,0 +1,32 @@
+@model Conversey.UI_MVC.Models.Admin.ChartWidgetViewModel
+
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="font-semibold text-text">@Model.Title</h2>
+        @if (Model.Periods.Any())
+        {
+            <div class="flex gap-2">
+                @foreach (var period in Model.Periods)
+                {
+                    <button class="px-3 py-1 text-xs rounded-full border border-secondary/20 hover:bg-secondary/5 transition-colors @(period.IsActive ? "bg-primary/10 border-primary/30" : "")"
+                            data-period="@period.Id">
+                        @period.Label
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    <div class="flex-1 min-h-0">
+        <canvas id="@Model.CanvasId" class="w-full h-full"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('@Model.CanvasId');
+        if (ctx) {
+            window.__ChartData = window.__ChartData || {};
+            window.__ChartData['@Model.CanvasId'] = @Html.Raw(Json.Serialize(Model.Data));
+        }
+    });
+</script>

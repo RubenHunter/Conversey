@@ -1,0 +1,52 @@
+@model Conversey.UI_MVC.Models.Admin.ComparisonWidgetViewModel
+
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-4">
+    <div class="flex flex-col md:flex-row gap-6 h-full">
+        <!-- Left Panel: Titles + Legend -->
+        <div class="flex flex-col justify-between min-w-[180px]">
+            <a href="@Model.TitleUrl" class="font-semibold text-text hover:text-primary transition-colors">
+                @Model.Title
+            </a>
+            <a href="@Model.SubTitleUrl" class="font-semibold text-text/50 hover:text-text/80 transition-colors mt-1">
+                @Model.SubTitle
+            </a>
+            <div class="mt-8 space-y-3 legend-container" data-comparison-widget="@Model.Id">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="flex items-center gap-2 legend-item group cursor-pointer" data-item-id="@item.Label">
+                        <div class="w-3 h-3 rounded-full bg-[@item.Color] group-hover:opacity-100 transition-opacity opacity-35"></div>
+                        <span class="text-sm text-text/70 group-hover:text-text transition-colors">@item.Label</span>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Right Panel: Radial Circles -->
+        <div class="flex-1 flex items-center justify-center relative circle-container">
+            @{
+                int count = Model.Items.Count;
+                double angleStep = 360.0 / count;
+                double radius = 100;
+            }
+            
+            @foreach (var item in Model.Items)
+            {
+                int index = Model.Items.IndexOf(item);
+                double angle = angleStep * index;
+                double rad = angle * Math.PI / 180.0;
+                double x = Math.Cos(rad) * radius;
+                double y = Math.Sin(rad) * radius;
+                
+                double maxValue = Model.Items.Max(i => i.Value);
+                double circleRadius = 20 + (60 * Math.Sqrt(item.Value) / Math.Sqrt(maxValue));
+                
+                <div class="absolute circle-item" style="left: 50%; top: 50%; transform: translate(-50%, -50%) translate(@(x)px, @(y)px)" data-item-id="@item.Label">
+                    <div class="rounded-full bg-[@item.Color]/20 border-2 border-[@item.Color] flex items-center justify-center shadow-md transition-all hover:shadow-lg hover:scale-105"
+                         style="width: @(circleRadius*2)px; height: @(circleRadius*2)px">
+                        <span class="font-semibold text-text">@item.Value</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
