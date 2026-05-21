@@ -310,11 +310,11 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="modal-body idea-nudge-body">
                 <p id="idea-nudge-context" class="idea-nudge-context"></p>
-                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeStatus}</p>
+                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeThinking}</p>
                 <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
                 <label class="idea-nudge-input-wrap" for="idea-nudge-input">
                     <span class="idea-nudge-input-label">${t.yourAnswer}</span>
-                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder="${t.answerContinue}..."></textarea>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder=""></textarea>
                 </label>
             </div>
             <div class="idea-nudge-actions-wrap">

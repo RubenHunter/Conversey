@@ -157,7 +157,7 @@ public class WorkspaceAiController : Controller
         var prompts = await _aiAdminManager.GetAllPromptsAsync();
         var workspacePrompts = prompts
             .Where(p => !p.Name.EndsWith("System", StringComparison.OrdinalIgnoreCase)
-                        && !p.Name.Equals("ModerationPrompt", StringComparison.OrdinalIgnoreCase))
+                        && !p.Name.StartsWith("Moderation", StringComparison.OrdinalIgnoreCase))
             .ToList();
         var projects = workspace.Projects?.ToList() ?? new List<BL.Domain.Administration.Project>();
 

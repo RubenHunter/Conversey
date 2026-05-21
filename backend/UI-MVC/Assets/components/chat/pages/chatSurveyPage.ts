@@ -743,6 +743,7 @@ export async function renderChatSurveyPage(
     // ===== Reveal question =====
     async function revealQuestion(index: number): Promise<void> {
         const q = questions[index]
+        if (!q) return
 
         await appendAiBubble(q.text, {
             bubbleClass: 'chat-bubble--question-title',

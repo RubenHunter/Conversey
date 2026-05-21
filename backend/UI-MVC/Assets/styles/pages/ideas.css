@@ -228,6 +228,24 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.idea-nudge-context-project {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.idea-nudge-context-topic {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.idea-nudge-context-desc {
+  display: none;
 }
 
 .idea-nudge-status {
@@ -250,6 +268,8 @@
 
 .idea-nudge-thread-row {
   display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-xs);
 }
 
 .idea-nudge-thread-row--assistant {
@@ -260,9 +280,23 @@
   justify-content: flex-end;
 }
 
+.idea-nudge-avatar {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  margin-bottom: 1px;
+}
+
 .idea-nudge-thread-bubble {
   max-width: min(92%, 62ch);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: calc(var(--spacing-sm) * 0.9) var(--spacing-sm);
   font-size: var(--font-size-sm);
   line-height: 1.45;
@@ -274,12 +308,36 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
+  border-bottom-left-radius: var(--radius-sm);
 }
 
 .idea-nudge-thread-bubble--user {
   border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
   background: color-mix(in srgb, var(--color-primary) 12%, white);
   color: var(--color-text);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.idea-nudge-thread-row--status {
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  color: var(--color-text-muted);
+  padding: var(--spacing-xs) 0;
+}
+
+.idea-nudge-thread-row--thinking {
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.idea-nudge-thread-row--approved {
+  justify-content: center;
+  color: var(--color-success, #16a34a);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
 }
 
 .idea-nudge-input-wrap {

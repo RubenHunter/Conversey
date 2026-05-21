@@ -434,7 +434,7 @@
     max-width: calc(var(--spacing-xl) * 40);
     width: calc(100% - var(--spacing-2xl) * 2);
     padding: var(--spacing-xl) var(--spacing-2xl);
-    background: color-mix(in srgb, var(--color-surface) 47%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 58%, transparent);
     border-radius: var(--radius-xl);
     text-align: center;
     backdrop-filter: blur(5px);
@@ -451,7 +451,9 @@
 .survey-hero-description {
     font-size: clamp(var(--font-size-base), 2vw, var(--font-size-lg));
     line-height: 1.6;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
+    font-weight: 500;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .survey-shell.survey-hero-collapsed .survey-hero-image {
