@@ -16,5 +16,8 @@
 
 <div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
-    @await Html.PartialAsync("_WorkspaceAdminForm", Model)
+    
+    <main class="p-8 w-full max-w-4xl mx-auto">
+        @await Html.PartialAsync("_WorkspaceAdminForm", Model)
+    </main>
 </div>
