@@ -8,9 +8,14 @@ export * from './chartWidget';
 export * from './comparisonWidget';
 export * from './quickLinksWidget';
 
-import { initAllCharts, isChartLoaded } from './chartWidget';
+import { initAllCharts, isChartLoaded, updateChartData } from './chartWidget';
 import { initAllComparisonWidgets } from './comparisonWidget';
-import { initAllQuickLinksWidgets } from './quickLinksWidget';
+import { initAllQuickLinksWidgets, registerModal, openModal, closeModal } from './quickLinksWidget';
+import { adminDashboardService } from '../../../services/adminDashboardService';
+
+// Re-export service for convenience
+export { adminDashboardService } from '../../../services/adminDashboardService';
+export type { DashboardState } from '../../../services/adminDashboardService';
 
 /**
  * Initialize all dashboard components on the page.
@@ -193,3 +198,25 @@ export class DashboardApiClient {
  * Global dashboard API client instance
  */
 export const dashboardApi = new DashboardApiClient();
+
+/**
+ * Initialize dashboard with real data from API
+ * This is an alternative to the server-rendered approach
+ */
+export async function initDashboardWithData(): Promise<void> {
+    console.log('Loading dashboard data from API...');
+    
+    // Initialize widgets first
+    initAllComparisonWidgets();
+    initAllQuickLinksWidgets();
+    
+    // Fetch data from API
+    const data = await adminDashboardService.fetchDashboardData();
+    
+    if (data && data.usageTrendChart) {
+        // Initialize charts with data from API
+        initAllCharts();
+    }
+    
+    console.log('Dashboard loaded with API data');
+}
