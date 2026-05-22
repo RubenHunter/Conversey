@@ -8,14 +8,6 @@
     <title>@ViewData["Title"]</title>
     <link rel="icon" type="image/x-icon" href="/Assets/Conversey_logo.png" />
 
-    @{
-        var path = Context.Request.Path;
-        if (path.StartsWithSegments("/admin"))
-        {
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        }
-    }
-
     <script type="module" vite-src="~/main.ts"></script>
     @await RenderSectionAsync("Scripts", required: false)
     
@@ -49,6 +41,11 @@
     <div id="app" class="min-h-screen flex flex-col">
         @RenderBody()
     </div>
+
+    @if (path.StartsWithSegments("/admin"))
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    }
 
 </body>
 </html>

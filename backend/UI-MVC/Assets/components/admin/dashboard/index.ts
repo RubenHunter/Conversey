@@ -25,21 +25,21 @@ export function initDashboard(): void {
     // Initialize quick links widgets (no dependencies)
     initAllQuickLinksWidgets();
     
-    // Initialize chart widgets - may need to wait for Chart.js
-    // Try immediately, and if Chart.js isn't loaded, wait for it
-    const chartInitInterval = setInterval(() => {
-        if (isChartLoaded()) {
-            clearInterval(chartInitInterval);
-            initAllCharts();
-            console.log('Admin dashboard initialized successfully');
-        }
-    }, 100);
+    // Initialize chart widgets
+    if (isChartLoaded()) {
+        initAllCharts();
+    } else {
+        // Chart.js not loaded yet, try again after a brief delay
+        setTimeout(() => {
+            if (isChartLoaded()) {
+                initAllCharts();
+            } else {
+                console.warn('Chart.js not loaded. Chart widgets will not work.');
+            }
+        }, 500);
+    }
     
-    // Fallback: stop checking after 5 seconds
-    setTimeout(() => {
-        clearInterval(chartInitInterval);
-        console.warn('Chart.js did not load within 5 seconds. Chart widgets may not work.');
-    }, 5000);
+    console.log('Admin dashboard initialized');
 }
 
 /**
