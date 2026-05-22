@@ -1,6 +1,6 @@
 @model Conversey.UI_MVC.Models.Admin.ChartWidgetViewModel
 
-<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 chart-widget" data-chart-widget="@Model.CanvasId">
     <div class="flex justify-between items-center mb-4">
         <h2 class="font-semibold text-text">@Model.Title</h2>
         @if (Model.Periods.Any())
@@ -22,11 +22,7 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const ctx = document.getElementById('@Model.CanvasId');
-        if (ctx) {
-            window.__ChartData = window.__ChartData || {};
-            window.__ChartData['@Model.CanvasId'] = @Html.Raw(Json.Serialize(Model.Data));
-        }
-    });
+    // Store chart data globally for TypeScript module access
+    window.__ChartData = window.__ChartData || {};
+    window.__ChartData['@Model.CanvasId'] = @Html.Raw(Json.Serialize(Model.Data));
 </script>

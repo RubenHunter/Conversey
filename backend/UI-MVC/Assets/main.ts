@@ -4,6 +4,28 @@ let app: HTMLDivElement | null = null;
 
 function init(): void {
 	app = document.querySelector<HTMLDivElement>('#app')!
+	
+	// Initialize admin dashboard on admin pages
+	if (isAdminPage()) {
+		initAdminDashboard();
+	}
+}
+
+/**
+ * Initialize admin dashboard components
+ */
+function initAdminDashboard(): void {
+	// Dynamically import dashboard module
+	import('./components/admin/dashboard/index.js').then(({ initDashboard }) => {
+		// Run dashboard initialization when DOM is ready
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initDashboard);
+		} else {
+			initDashboard();
+		}
+	}).catch(err => {
+		console.error('Failed to load admin dashboard module:', err);
+	});
 }
 
 export interface ProjectContext {
