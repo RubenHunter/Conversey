@@ -192,23 +192,4 @@ public class DashboardController : Controller
         return viewModel;
     }
 
-    /// <summary>
-    /// Legacy redirect for existing links.
-    /// </summary>
-    [HttpGet("/admin/conversey")]
-    [Authorize(Policy = ConverseyAdminPolicy.Name)]
-    public IActionResult ConverseyRedirect()
-    {
-        return RedirectToAction(nameof(ConverseyDashboard));
-    }
-
-    /// <summary>
-    /// Legacy redirect for existing links.
-    /// </summary>
-    [HttpGet("/admin/workspace")]
-    [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-    public IActionResult WorkspaceRedirect()
-    {
-        return RedirectToAction(nameof(WorkspaceDashboard));
-    }
 }
