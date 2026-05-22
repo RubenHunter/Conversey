@@ -49,21 +49,21 @@
                 </div>
             }
 
-            <!-- QuickLinks: 3 individual Small = 1 column each -->
+            <!-- QuickLinks: 3 individual Small widgets stacked in one column -->
             @if (Model.QuickLinksWidget != null && Model.QuickLinksWidget.Items.Any())
             {
-                @foreach (var quickLink in Model.QuickLinksWidget.Items)
-                {
-                    <div class="col-span-1">
+                <div class="col-span-1 flex flex-col gap-4">
+                    @foreach (var quickLink in Model.QuickLinksWidget.Items)
+                    {
                         @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinkCard.cshtml", quickLink)
-                    </div>
-                }
+                    }
+                </div>
             }
 
-            <!-- Engagement: Large = 2 columns, centered -->
+            <!-- Engagement: Medium = 1 column -->
             @if (Model.EngagementWidget != null)
             {
-                <div class="md:col-start-2 md:col-span-2">
+                <div class="col-span-1">
                     @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
                 </div>
             }
