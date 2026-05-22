@@ -2,14 +2,15 @@
 
 <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 chart-widget" data-chart-widget="@Model.CanvasId">
     <div class="flex justify-between items-center mb-4">
-        <h2 class="font-semibold text-text">@Model.Title</h2>
+        <h2 class="font-semibold text-text" data-i18n="@Model.Title">@Model.Title</h2>
         @if (Model.Periods.Any())
         {
             <div class="flex gap-2">
                 @foreach (var period in Model.Periods)
                 {
                     <button class="px-3 py-1 text-xs rounded-full border border-secondary/20 hover:bg-secondary/5 transition-colors @(period.IsActive ? "bg-primary/10 border-primary/30" : "")"
-                            data-period="@period.Id">
+                            data-period="@period.Id"
+                            data-i18n="@period.Label">
                         @period.Label
                     </button>
                 }
