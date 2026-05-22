@@ -9,7 +9,7 @@
    data-description="@Model.Description"
    data-navigate-url="@Model.NavigateUrl"
    @(Model.IsModal ? "data-modal-target=" + Model.ModalTarget : "")>
-    <div class="w-12 h-12 rounded-xl @(Model.IconBackground) flex items-center justify-center flex-shrink-0">
+    <div class="w-12 h-12 rounded-xl @(Model.IconBackground) @(Model.IconColor) flex items-center justify-center flex-shrink-0">
         @Html.Raw(Model.Icon)
     </div>
     <div>

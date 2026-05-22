@@ -189,6 +189,11 @@ public class NavCardViewModel
     /// The background color class for the icon container (e.g., "bg-primary/10").
     /// </summary>
     public string IconBackground { get; set; } = "bg-primary/10";
+
+    /// <summary>
+    /// The text/color class for the icon (e.g., "text-primary").
+    /// </summary>
+    public string IconColor { get; set; } = "text-primary";
 }
 
 /// <summary>
