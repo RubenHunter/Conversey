@@ -4,19 +4,23 @@
     <div class="flex flex-col md:flex-row gap-6 h-full">
         <!-- Left Panel: Titles + Legend -->
         <div class="flex flex-col justify-between min-w-[180px]">
-            <button type="button" 
-                    class="font-semibold text-text hover:text-primary transition-colors text-left"
-                    data-navigation-url="@Model.TitleUrl"
-                    data-i18n="@Model.Title">
-                @Model.Title
-            </button>
-            <button type="button" 
-                    class="font-semibold text-text/50 hover:text-text/80 transition-colors mt-1 text-left"
-                    data-navigation-url="@Model.SubTitleUrl"
-                    data-i18n="@Model.SubTitle">
-                @Model.SubTitle
-            </button>
-            <div class="mt-8 space-y-3 legend-container">
+            <!-- Buttons stacked at top-left -->
+            <div class="flex flex-col gap-1">
+                <button type="button" 
+                        class="font-semibold text-text hover:text-primary transition-colors text-left"
+                        data-navigation-url="@Model.TitleUrl"
+                        data-i18n="@Model.Title">
+                    @Model.Title
+                </button>
+                <button type="button" 
+                        class="font-semibold text-text/50 hover:text-text/80 transition-colors text-left"
+                        data-navigation-url="@Model.SubTitleUrl"
+                        data-i18n="@Model.SubTitle">
+                    @Model.SubTitle
+                </button>
+            </div>
+            <!-- Legend at bottom -->
+            <div class="mt-4 space-y-3 legend-container">
                 @foreach (var item in Model.Items)
                 {
                     <div class="flex items-center gap-2 legend-item group cursor-pointer" data-item-id="@item.Label">
