@@ -1,6 +1,6 @@
 @model Conversey.UI_MVC.Models.Admin.QuickLinksWidgetViewModel
 
-<div class="bg-white rounded-xl border border-secondary/10 shadow-sm overflow-hidden">
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm overflow-hidden quick-links-widget" data-quick-links-widget="@Model.Title">
     @if (!string.IsNullOrEmpty(Model.Title))
     {
         <div class="px-5 pt-4 pb-2">
@@ -15,7 +15,13 @@
         
         if (item.IsModal)
         {
-            <button data-modal-open="@item.ModalTarget"
+            <button data-quick-link="true"
+                    data-modal-target="@item.ModalTarget"
+                    data-title="@item.Title"
+                    data-description="@item.Description"
+                    data-icon="@item.Icon"
+                    data-navigate-url="@item.NavigateUrl"
+                    data-modal-open="@item.ModalTarget"
                     class="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group @borderClass">
                 <div class="w-11 h-11 rounded-xl @item.IconBackground flex items-center justify-center flex-shrink-0">
                     <span class="@item.IconColor text-lg">@item.Icon</span>
@@ -29,6 +35,11 @@
         else
         {
             <a href="@item.NavigateUrl"
+               data-quick-link="true"
+               data-navigate-url="@item.NavigateUrl"
+               data-title="@item.Title"
+               data-description="@item.Description"
+               data-icon="@item.Icon"
                class="flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group @borderClass">
                 <div class="w-11 h-11 rounded-xl @item.IconBackground flex items-center justify-center flex-shrink-0">
                     <span class="@item.IconColor text-lg">@item.Icon</span>

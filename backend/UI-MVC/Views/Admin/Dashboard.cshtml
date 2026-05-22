@@ -17,6 +17,17 @@
             <p class="mt-2 text-sm text-text/60">@Model.PageDescription</p>
         </div>
 
+        <!-- Stat Widgets Row -->
+        @if (Model.StatWidgets != null && Model.StatWidgets.Any())
+        {
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                @foreach (var statWidget in Model.StatWidgets)
+                {
+                    @await Html.PartialAsync("_StatWidget", statWidget)
+                }
+            </div>
+        }
+
         <!-- Navigation Cards Row (role-dependent) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             @foreach (var navCard in Model.NavCards)
