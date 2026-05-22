@@ -14,18 +14,16 @@ function init(): void {
 /**
  * Initialize admin dashboard components
  */
-function initAdminDashboard(): void {
+async function initAdminDashboard(): Promise<void> {
 	// Dynamically import dashboard module
-	import('./components/admin/dashboard/index.js').then(({ initDashboard }) => {
-		// Run dashboard initialization when DOM is ready
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', initDashboard);
-		} else {
-			initDashboard();
-		}
-	}).catch(err => {
-		console.error('Failed to load admin dashboard module:', err);
-	});
+	const { initDashboard } = await import('./components/admin/dashboard/index.js');
+	
+	// Run dashboard initialization when DOM is ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', () => initDashboard());
+	} else {
+		await initDashboard();
+	}
 }
 
 export interface ProjectContext {

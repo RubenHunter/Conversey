@@ -16,7 +16,7 @@ import { initAllQuickLinksWidgets } from './quickLinksWidget';
  * Initialize all dashboard components on the page.
  * Call this once when the dashboard page loads.
  */
-export function initDashboard(): void {
+export async function initDashboard(): Promise<void> {
     console.log('Initializing admin dashboard components...');
     
     // Initialize comparison widgets (no dependencies)
@@ -25,18 +25,23 @@ export function initDashboard(): void {
     // Initialize quick links widgets (no dependencies)
     initAllQuickLinksWidgets();
     
-    // Initialize chart widgets
+    // Initialize chart widgets - wait for Chart.js if needed
     if (isChartLoaded()) {
         initAllCharts();
-    } else {
-        // Chart.js not loaded yet, try again after a brief delay
-        setTimeout(() => {
+    } else if (window.__ChartJsPromise) {
+        // Wait for Chart.js to load
+        try {
+            await window.__ChartJsPromise;
             if (isChartLoaded()) {
                 initAllCharts();
             } else {
-                console.warn('Chart.js not loaded. Chart widgets will not work.');
+                console.warn('Chart.js failed to load. Chart widgets will not work.');
             }
-        }, 500);
+        } catch (error) {
+            console.warn('Error loading Chart.js:', error);
+        }
+    } else {
+        console.warn('Chart.js promise not found. Chart widgets will not work.');
     }
     
     console.log('Admin dashboard initialized');

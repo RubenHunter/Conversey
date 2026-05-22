@@ -44,7 +44,20 @@
 
     @if (path.StartsWithSegments("/admin"))
     {
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Store Chart.js loading promise for TypeScript modules
+            window.__ChartJsPromise = new Promise((resolve) => {
+                if (window.Chart) {
+                    resolve(window.Chart);
+                } else {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                    script.onload = () => resolve(window.Chart);
+                    script.onerror = () => resolve(null);
+                    document.head.appendChild(script);
+                }
+            });
+        </script>
     }
 
 </body>
