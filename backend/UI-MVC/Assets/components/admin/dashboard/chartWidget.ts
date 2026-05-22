@@ -1,12 +1,13 @@
 /**
  * Chart Widget Module
  * Handles Chart.js initialization and period tab switching for dashboard charts.
+ * 
+ * NOTE: Chart.js must be loaded via CDN before this module is used.
+ * Add this to your layout: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  */
 
-import { Chart, ChartConfiguration, registerables } from 'chart.js';
-
-// Register all Chart.js components
-Chart.register(...registerables);
+// Declare global Chart from CDN
+declare const Chart: typeof import('chart.js');
 
 /**
  * Chart data stored globally for access across modules
@@ -43,9 +44,21 @@ export interface ChartWidgetConfig {
 const chartInstances: Map<string, Chart> = new Map();
 
 /**
+ * Check if Chart.js is loaded
+ */
+export function isChartLoaded(): boolean {
+    return typeof Chart !== 'undefined';
+}
+
+/**
  * Initialize a chart widget
  */
 export function initChartWidget(config: ChartWidgetConfig): Chart | null {
+    if (!isChartLoaded()) {
+        console.warn('Chart.js is not loaded. Please include: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>');
+        return null;
+    }
+
     const canvas = document.getElementById(config.canvasId) as HTMLCanvasElement;
     if (!canvas) {
         console.warn(`Chart canvas not found: ${config.canvasId}`);
@@ -59,7 +72,7 @@ export function initChartWidget(config: ChartWidgetConfig): Chart | null {
     }
 
     // Default options for dashboard charts
-    const defaultOptions: ChartConfiguration['options'] = {
+    const defaultOptions: any = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -87,8 +100,8 @@ export function initChartWidget(config: ChartWidgetConfig): Chart | null {
         ...config.options
     };
 
-    const chartConfig: ChartConfiguration = {
-        type: config.type as any,
+    const chartConfig: any = {
+        type: config.type,
         data: config.data,
         options: mergedOptions
     };
@@ -114,8 +127,7 @@ export function initChartWidget(config: ChartWidgetConfig): Chart | null {
  * Setup period tab click handlers
  */
 function setupPeriodTabs(config: ChartWidgetConfig): void {
-    const widget = document.querySelector(`[data-chart-id="${config.canvasId}"]`) ?? 
-                  document.querySelector(`canvas[id="${config.canvasId}"]`).closest('.chart-widget');
+    const widget = document.querySelector(`[data-chart-widget="${config.canvasId}"]`);
     
     if (!widget) return;
 
@@ -181,21 +193,29 @@ export function getChart(canvasId: string): Chart | undefined {
  * Auto-discovers canvas elements with chart data
  */
 export function initAllCharts(): Chart[] {
+    if (!isChartLoaded()) {
+        console.warn('Chart.js not loaded. Skipping chart initialization.');
+        return [];
+    }
+    
     const charts: Chart[] = [];
     
-    // Find all canvas elements that are part of chart widgets
-    const canvasElements = document.querySelectorAll<HTMLCanvasElement>('canvas[id]');
+    // Find all chart widgets
+    const chartWidgets = document.querySelectorAll('[data-chart-widget]');
     
-    canvasElements.forEach(canvas => {
-        const canvasId = canvas.id;
+    chartWidgets.forEach(widget => {
+        const canvasId = widget.getAttribute('data-chart-widget');
         if (canvasId && window.__ChartData?.[canvasId]) {
-            const chart = initChartWidget({
-                canvasId,
-                type: 'line', // default, will be overridden by data
-                data: window.__ChartData[canvasId]
-            });
-            if (chart) {
-                charts.push(chart);
+            const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+            if (canvas) {
+                const chart = initChartWidget({
+                    canvasId,
+                    type: 'line', // default, will be overridden by data
+                    data: window.__ChartData[canvasId]
+                });
+                if (chart) {
+                    charts.push(chart);
+                }
             }
         }
     });

@@ -34,6 +34,8 @@
             var json = JsonSerializer.Serialize(new { lang = lang, strings = map });
             <text>
                 <script>window.__AdminI18n = @Html.Raw(json);</script>
+                <!-- Load Chart.js for admin dashboard -->
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             </text>
         }
     }
