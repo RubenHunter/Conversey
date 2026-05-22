@@ -33,8 +33,8 @@
         {
             <div>
                 <div class="flex justify-between text-xs mb-1">
-                    <span class="font-semibold text-text/70">@bar.Label</span>
-                    <span class="text-text/40">@bar.SubLabel</span>
+                    <span class="font-semibold text-text/70 whitespace-nowrap overflow-hidden text-ellipsis max-w-[70%]">@bar.Label</span>
+                    <span class="text-text/40 flex-shrink-0">@bar.SubLabel</span>
                 </div>
                 <div class="relative w-full h-5 bg-secondary/10 rounded-full overflow-hidden">
                     <div class="h-full rounded-full @bar.Color transition-all duration-500" style="width: @bar.Percentage%"></div>
