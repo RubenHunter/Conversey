@@ -70,7 +70,7 @@ public class DashboardController : Controller
             new() { Title = "AI Configuration", Description = "Configure AI providers and settings", Icon = "🤖", NavigateUrl = "/admin/ai", IconBackground = "bg-blue-100" }
         };
 
-        return View(viewModel);
+        return View("~/Views/Admin/Dashboard.cshtml", viewModel);
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public class DashboardController : Controller
             new() { Title = "AI Settings", Description = "Configure AI for this workspace", Icon = "🤖", NavigateUrl = $"/admin/{workspaceId}/ai", IconBackground = "bg-green-100" }
         };
 
-        return View(viewModel);
+        return View("~/Views/Admin/Dashboard.cshtml", viewModel);
     }
 
     private static DashboardViewModel MapToViewModel(DashboardStatsDto dto) =>
