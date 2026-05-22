@@ -1,10 +1,18 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
 @model IEnumerable<Conversey.BL.Domain.Administration.Workspace>
+@inject AdminContext AdminContext
 @Html.AntiForgeryToken()
 
 @{
     ViewData["Title"] = "Workspaces";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("Workspaces", null, true)
+    };
     var workspaces = Model ?? [];
 
     var tableModel = new AdminTableViewModel<Workspace>
@@ -96,17 +104,12 @@
     };
 }
 
-<div class="min-h-screen bg-gray-50 px-4 py-10">
-    <div class="mx-auto max-w-5xl">
-        <div class="mb-6">
-            <a
-                href="@Url.Action("Index", "ConverseyAdmin")"
-                class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                ← Back to admin panel
-            </a>
-        </div>
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-5xl mx-auto">
         @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
-    </div>
+    </main>
 </div>
 
 @await Html.PartialAsync("_DeleteModal")
