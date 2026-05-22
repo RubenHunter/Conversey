@@ -7,7 +7,7 @@
     ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", "/admin/conversey", false),
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("AI Settings", null, true)
     };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");

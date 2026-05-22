@@ -8,7 +8,7 @@
     ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", "/admin/conversey", false),
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("Workspaces", "/admin/workspaces", false),
         ("Edit Workspace Admin", null, true)
     };

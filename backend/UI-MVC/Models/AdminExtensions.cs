@@ -122,4 +122,33 @@ public static class AdminExtensions
     {
         return user is WorkspaceAdminUser;
     }
+
+    /// <summary>
+    /// Gets the dashboard URL for the current admin.
+    /// Returns the appropriate dashboard path based on admin role.
+    /// </summary>
+    /// <param name="adminContext">The AdminContext containing the current admin.</param>
+    /// <returns>The URL to the admin's dashboard.</returns>
+    public static string GetDashboardUrl(this AdminContext adminContext)
+    {
+        if (adminContext.CurrentAdmin is ConverseyAdmin)
+            return "/admin/dashboard/conversey";
+        if (adminContext.CurrentAdmin is WorkspaceAdmin)
+            return "/admin/dashboard/workspace";
+        return "/admin";
+    }
+
+    /// <summary>
+    /// Gets the dashboard URL for the given admin.
+    /// </summary>
+    /// <param name="admin">The Admin domain object.</param>
+    /// <returns>The URL to the admin's dashboard.</returns>
+    public static string GetDashboardUrl(this BL.Domain.Administration.Admin admin)
+    {
+        if (admin is ConverseyAdmin)
+            return "/admin/dashboard/conversey";
+        if (admin is WorkspaceAdmin)
+            return "/admin/dashboard/workspace";
+        return "/admin";
+    }
 }
