@@ -20,26 +20,10 @@ public class ConverseyAdminController(
     IAdminStatsService adminStatsService) : Controller
 {
     [HttpGet("/admin/conversey")]
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
-        var dto = await adminStatsService.GetPlatformDashboardAsync();
-        var viewModel = DashboardViewModelExtensions.FromDto(dto);
-        viewModel.AdminType = "conversey";
-        viewModel.PageTitle = "Dashboard";
-        viewModel.PageDescription = "Look at statistics, expand/manage our community.";
-        viewModel.NavCards = new List<NavCardViewModel>
-        {
-            new() { Title = "AI Settings", Description = "Configure providers, models, prompts, and monitor costs", Icon = "🤖", NavigateUrl = "/admin/ai", IconBackground = "bg-primary/10" },
-            new() { Title = "Workspaces", Description = "Manage all workspaces and their settings", Icon = "🏢", NavigateUrl = Url.Action("Workspaces", "ConverseyAdmin")!, IconBackground = "bg-secondary/10" }
-        };
-
-        ViewData["WorkspaceName"] = "Conversey Platform";
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
-        {
-            ("Dashboard", null, true)
-        };
-
-        return View("~/Views/Admin/Dashboard.cshtml", viewModel);
+        // Redirect to the unified dashboard route
+        return Redirect("/admin/dashboard/conversey");
     }
 
     [HttpGet("admin/workspaces")]
