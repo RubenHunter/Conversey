@@ -22,11 +22,15 @@
         </div>
         
         <!-- Right Panel: Radial Circles -->
-        <div class="flex-1 flex items-center justify-center relative circle-container">
+        <div class="flex-1 flex items-center justify-center relative circle-container min-h-[200px] md:min-h-[250px]">
             @{
                 int count = Model.Items.Count;
                 double angleStep = 360.0 / count;
-                double radius = 100;
+                // Use relative positioning based on container size
+                // Container will be at least 200px (mobile) to 250px+ (desktop)
+                // Position circles at ~40% of container size from center
+                double containerSizeBase = 200.0; // base container size for calculation
+                double positioningRadius = containerSizeBase * 0.35; // 35% of container size
             }
             
             @foreach (var item in Model.Items)
@@ -34,16 +38,23 @@
                 int index = Model.Items.IndexOf(item);
                 double angle = angleStep * index;
                 double rad = angle * Math.PI / 180.0;
-                double x = Math.Cos(rad) * radius;
-                double y = Math.Sin(rad) * radius;
+                double x = Math.Cos(rad) * positioningRadius;
+                double y = Math.Sin(rad) * positioningRadius;
                 
                 double maxValue = Model.Items.Max(i => i.Value);
-                double circleRadius = 20 + (60 * Math.Sqrt(item.Value) / Math.Sqrt(maxValue));
+                // Calculate circle size proportionally to value, scaled to fit container
+                // Use square root for visual proportionality (area scales with value)
+                // Max circle diameter = ~40% of container, min = ~15% of container
+                double maxCircleDiameter = containerSizeBase * 0.40;
+                double minCircleDiameter = containerSizeBase * 0.15;
+                double valueRatio = maxValue > 0 ? (double)item.Value / maxValue : 0;
+                double circleDiameter = minCircleDiameter + (maxCircleDiameter - minCircleDiameter) * Math.Sqrt(valueRatio);
+                double circleRadiusPx = circleDiameter / 2;
                 
                 <div class="absolute circle-item" style="left: 50%; top: 50%; transform: translate(-50%, -50%) translate(@(x)px, @(y)px)" data-item-id="@item.Label">
                     <div class="rounded-full bg-[@item.Color]/20 border-2 border-[@item.Color] flex items-center justify-center shadow-md transition-all hover:shadow-lg hover:scale-105"
-                         style="width: @(circleRadius*2)px; height: @(circleRadius*2)px">
-                        <span class="font-semibold text-text">@item.Value</span>
+                         style="width: @(circleDiameter)px; height: @(circleDiameter)px; min-width: @(minCircleDiameter)px; min-height: @(minCircleDiameter)px">
+                        <span class="font-semibold text-text text-sm">@item.Value</span>
                     </div>
                 </div>
             }
