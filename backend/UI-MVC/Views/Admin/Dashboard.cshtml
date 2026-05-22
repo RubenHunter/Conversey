@@ -41,10 +41,10 @@
                 }
             }
 
-            <!-- Comparison: Medium = 1 column -->
+            <!-- Comparison: Large = 2 columns -->
             @if (Model.ComparisonWidget != null)
             {
-                <div class="col-span-1">
+                <div class="md:col-span-2 h-full">
                     @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
                 </div>
             }
@@ -68,7 +68,7 @@
             <!-- Engagement: Medium = 1 column -->
             @if (Model.EngagementWidget != null)
             {
-                <div class="col-span-1">
+                <div class="col-span-1 h-full">
                     @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
                 </div>
             }
