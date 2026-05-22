@@ -17,14 +17,15 @@
     <div class="overflow-hidden rounded-md border border-gray-200">
         <div class="flex items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
             <div>
-                <h2 class="text-xl font-semibold text-gray-900">@Model.SectionTitle</h2>
-                <p class="mt-1 text-sm text-gray-600">@Model.TableDescription</p>
+                <h2 class="text-xl font-semibold text-gray-900" data-i18n="@Model.SectionTitle">@Model.SectionTitle</h2>
+                <p class="mt-1 text-sm text-gray-600" data-i18n="@Model.TableDescription">@Model.TableDescription</p>
             </div>
             <a
                 href="@Model.CreateUrl"
                 class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 aria-label="@Model.CreateButtonLabel"
-                title="@Model.CreateButtonLabel">
+                title="@Model.CreateButtonLabel"
+                data-i18n-title="@Model.CreateButtonLabel">
                 <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z"/>
                 </svg>
@@ -36,7 +37,7 @@
                 <tr>
                     @foreach (var col in objects)
                     {
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-700" data-i18n="@col.Header">
                             @col.Header
                         </th>
                     }
@@ -47,7 +48,7 @@
             @if (!hasItems)
             {
                 <tr>
-                    <td colspan="@columnCount" class="px-4 py-10 text-center text-sm text-gray-500">
+                    <td colspan="@columnCount" class="px-4 py-10 text-center text-sm text-gray-500" data-i18n="@Model.EmptyState">
                         @Model.EmptyState
                     </td>
                 </tr>
