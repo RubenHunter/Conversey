@@ -23,7 +23,7 @@ public class ConverseyAdminController(
     public IActionResult Index()
     {
         // Redirect to the unified dashboard route
-        return Redirect("/admin/dashboard/conversey");
+        return Redirect("/admin");
     }
 
     [HttpGet("admin/workspaces")]

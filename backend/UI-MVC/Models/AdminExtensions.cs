@@ -125,30 +125,23 @@ public static class AdminExtensions
 
     /// <summary>
     /// Gets the dashboard URL for the current admin.
-    /// Returns the appropriate dashboard path based on admin role.
+    /// Returns /admin for all admin types - the dashboard adapts based on role.
     /// </summary>
     /// <param name="adminContext">The AdminContext containing the current admin.</param>
     /// <returns>The URL to the admin's dashboard.</returns>
     public static string GetDashboardUrl(this AdminContext adminContext)
     {
-        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.ConverseyAdmin)
-            return "/admin/dashboard/conversey";
-        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.WorkspaceAdmin)
-            return "/admin/dashboard/workspace";
         return "/admin";
     }
 
     /// <summary>
     /// Gets the dashboard URL for the given admin.
+    /// Returns /admin for all admin types - the dashboard adapts based on role.
     /// </summary>
     /// <param name="admin">The Admin domain object.</param>
     /// <returns>The URL to the admin's dashboard.</returns>
     public static string GetDashboardUrl(this Conversey.BL.Domain.Administration.Admin admin)
     {
-        if (admin is Conversey.BL.Domain.Administration.ConverseyAdmin)
-            return "/admin/dashboard/conversey";
-        if (admin is Conversey.BL.Domain.Administration.WorkspaceAdmin)
-            return "/admin/dashboard/workspace";
         return "/admin";
     }
 }
