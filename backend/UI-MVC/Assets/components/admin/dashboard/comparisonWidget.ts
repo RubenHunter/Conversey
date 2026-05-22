@@ -22,6 +22,17 @@ export interface ComparisonWidgetConfig {
 }
 
 /**
+ * Navigate to a URL (utility function for button navigation)
+ */
+function navigateTo(url: string): void {
+    if (url && url.startsWith('http')) {
+        window.open(url, '_blank');
+    } else if (url) {
+        window.location.href = url;
+    }
+}
+
+/**
  * Initialize comparison widget interactivity
  */
 export function initComparisonWidget(config: ComparisonWidgetConfig): void {
@@ -33,6 +44,18 @@ export function initComparisonWidget(config: ComparisonWidgetConfig): void {
 
     const parent = widget.closest('.comparison-widget');
     if (!parent) return;
+
+    // Handle navigation button clicks
+    const navButtons = parent.querySelectorAll('button[data-navigation-url]');
+    navButtons.forEach(button => {
+        const url = button.dataset.navigationUrl;
+        if (url) {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateTo(url);
+            });
+        }
+    });
 
     // Get all circle items and legend items
     const circleItems = parent.querySelectorAll('.circle-item');
