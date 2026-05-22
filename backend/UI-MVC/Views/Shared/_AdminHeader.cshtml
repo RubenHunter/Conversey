@@ -13,7 +13,7 @@
         <div class="h-6 w-px bg-secondary/20"></div>
 
         <div class="flex flex-col">
-            <span class="text-[10px] uppercase tracking-widest font-bold text-secondary" data-i18n="@(ViewData["WorkspaceName"] ?? "Workspace")">
+            <span class="text-[10px] uppercase tracking-widest font-bold text-secondary">
                 @(ViewData["WorkspaceName"] ?? "Workspace")
             </span>
             <nav class="flex items-center space-x-2 text-sm">
@@ -27,13 +27,13 @@
                         var crumb = breadcrumbList[i];
                         if (!string.IsNullOrWhiteSpace(crumb.Url) && !crumb.IsCurrent)
                         {
-                            <a href="@crumb.Url" class="font-semibold text-text hover:text-primary transition-colors" data-i18n="@crumb.Label">
+                            <a href="@crumb.Url" class="font-semibold text-text hover:text-primary transition-colors">
                                 @crumb.Label
                             </a>
                         }
                         else
                         {
-                            <span class="font-semibold text-text/70" data-i18n="@crumb.Label">@crumb.Label</span>
+                            <span class="font-semibold text-text/70">@crumb.Label</span>
                         }
 
                         if (i < breadcrumbList.Length - 1)
