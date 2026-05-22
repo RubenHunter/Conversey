@@ -7,11 +7,10 @@
    data-quick-link="true"
    data-title="@Model.Title"
    data-description="@Model.Description"
-   data-icon="@Model.Icon"
    data-navigate-url="@Model.NavigateUrl"
    @(Model.IsModal ? "data-modal-target=" + Model.ModalTarget : "")>
     <div class="w-12 h-12 rounded-xl @(Model.IconBackground) flex items-center justify-center flex-shrink-0">
-        <span class="@Model.IconColor text-xl">@Model.Icon</span>
+        @Html.Raw(Model.Icon)
     </div>
     <div>
         <span class="font-semibold text-text group-hover:text-primary transition-colors block" data-i18n="@Model.Title">
