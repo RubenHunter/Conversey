@@ -8,7 +8,7 @@ export * from './chartWidget';
 export * from './comparisonWidget';
 export * from './quickLinksWidget';
 
-import { initAllCharts } from './chartWidget';
+import { initAllCharts, isChartLoaded } from './chartWidget';
 import { initAllComparisonWidgets } from './comparisonWidget';
 import { initAllQuickLinksWidgets } from './quickLinksWidget';
 
@@ -19,16 +19,27 @@ import { initAllQuickLinksWidgets } from './quickLinksWidget';
 export function initDashboard(): void {
     console.log('Initializing admin dashboard components...');
     
-    // Initialize all chart widgets
-    initAllCharts();
-    
-    // Initialize all comparison widgets
+    // Initialize comparison widgets (no dependencies)
     initAllComparisonWidgets();
     
-    // Initialize all quick links widgets
+    // Initialize quick links widgets (no dependencies)
     initAllQuickLinksWidgets();
     
-    console.log('Admin dashboard initialized successfully');
+    // Initialize chart widgets - may need to wait for Chart.js
+    // Try immediately, and if Chart.js isn't loaded, wait for it
+    const chartInitInterval = setInterval(() => {
+        if (isChartLoaded()) {
+            clearInterval(chartInitInterval);
+            initAllCharts();
+            console.log('Admin dashboard initialized successfully');
+        }
+    }, 100);
+    
+    // Fallback: stop checking after 5 seconds
+    setTimeout(() => {
+        clearInterval(chartInitInterval);
+        console.warn('Chart.js did not load within 5 seconds. Chart widgets may not work.');
+    }, 5000);
 }
 
 /**
