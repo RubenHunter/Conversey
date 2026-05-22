@@ -1,0 +1,22 @@
+@model Conversey.UI_MVC.Models.Admin.QuickLinkItemViewModel
+
+<a href="@Model.NavigateUrl"
+   class="flex-1 w-full bg-white rounded-xl border border-secondary/10 shadow-sm p-5
+          flex items-center gap-4 hover:shadow-md hover:border-primary/20
+          transition-all group quick-link-card"
+   data-quick-link="true"
+   data-title="@Model.Title"
+   data-description="@Model.Description"
+   data-icon="@Model.Icon"
+   data-navigate-url="@Model.NavigateUrl"
+   @(Model.IsModal ? "data-modal-target=" + Model.ModalTarget : "")>
+    <div class="w-12 h-12 rounded-xl @(Model.IconBackground) flex items-center justify-center flex-shrink-0">
+        <span class="@Model.IconColor text-xl">@Model.Icon</span>
+    </div>
+    <div>
+        <span class="font-semibold text-text group-hover:text-primary transition-colors block">
+            @Model.Title
+        </span>
+        <span class="text-xs text-text/50 mt-0.5 block">@Model.Description</span>
+    </div>
+</a>

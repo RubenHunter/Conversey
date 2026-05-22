@@ -230,27 +230,30 @@ export function isModalOpen(modalId: string): boolean {
 }
 
 /**
- * Initialize all quick links widgets on the page
+ * Initialize all quick links on the page (individual link cards)
+ * Now finds all [data-quick-link] elements directly instead of looking for widget containers.
  */
 export function initAllQuickLinksWidgets(): void {
-    const widgets = document.querySelectorAll('[data-quick-links-widget]');
-    widgets.forEach(widget => {
-        const widgetId = widget.dataset.quickLinksWidget;
-        const items: QuickLinkItem[] = [];
+    const links = document.querySelectorAll<HTMLElement>('[data-quick-link]');
+    
+    links.forEach(link => {
+        const modalTarget = link.dataset.modalTarget;
+        const navigateUrl = link.dataset.navigateUrl;
         
-        const links = widget.querySelectorAll<HTMLElement>('[data-quick-link]');
-        links.forEach(link => {
-            items.push({
-                title: link.dataset.title || '',
-                description: link.dataset.description || '',
-                icon: link.dataset.icon || '',
-                navigateUrl: link.dataset.navigateUrl || '',
-                modalTarget: link.dataset.modalTarget,
-                isModal: !!link.dataset.modalTarget
+        if (modalTarget) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetModal = document.getElementById(modalTarget);
+                if (targetModal) {
+                    openModal(modalTarget);
+                } else if (navigateUrl) {
+                    window.location.href = navigateUrl;
+                }
             });
-        });
-        
-        initQuickLinksWidget({ widgetId, items });
+            link.style.cursor = 'pointer';
+        } else if (navigateUrl) {
+            // Navigation link - default anchor behavior handles it
+        }
     });
 }
 

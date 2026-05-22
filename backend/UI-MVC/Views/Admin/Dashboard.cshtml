@@ -17,10 +17,10 @@
             <p class="mt-2 text-sm text-text/60">@Model.PageDescription</p>
         </div>
 
-        <!-- Stat Widgets Row -->
+        <!-- Row 1: 4 Small widgets in 4-column grid -->
         @if (Model.StatWidgets != null && Model.StatWidgets.Any())
         {
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 @foreach (var statWidget in Model.StatWidgets)
                 {
                     @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_StatWidget.cshtml", statWidget)
@@ -28,34 +28,60 @@
             </div>
         }
 
-        <!-- Navigation Cards Row (role-dependent) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            @foreach (var navCard in Model.NavCards)
-            {
-                @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
-            }
-        </div>
+        <!-- Row 2: 2 Large NavCards in 4-column grid (2 cols each) -->
+        @if (Model.NavCards != null && Model.NavCards.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                @foreach (var navCard in Model.NavCards)
+                {
+                    <div class="md:col-span-2">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
+                    </div>
+                }
+            </div>
+        }
 
-        <!-- Main Widget Row: Comparison | QuickLinks | Engagement -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            @if (Model.ComparisonWidget != null)
-            {
-                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
-            }
-            @if (Model.QuickLinksWidget != null)
-            {
-                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinksWidget.cshtml", Model.QuickLinksWidget)
-            }
-            @if (Model.EngagementWidget != null)
-            {
-                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
-            }
-        </div>
+        <!-- Row 3: Comparison (1) + QuickLinks (3 individual) + Engagement (1) -->
+        @if (Model.ComparisonWidget != null || Model.EngagementWidget != null || (Model.QuickLinksWidget != null && Model.QuickLinksWidget.Items.Any()))
+        {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <!-- Comparison: Medium = 1 column -->
+                @if (Model.ComparisonWidget != null)
+                {
+                    <div class="col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
+                    </div>
+                }
+                
+                <!-- QuickLinks: 3 individual Small widgets in middle column -->
+                @if (Model.QuickLinksWidget != null && Model.QuickLinksWidget.Items.Any())
+                {
+                    <div class="col-span-1 flex flex-col gap-4">
+                        @foreach (var quickLink in Model.QuickLinksWidget.Items)
+                        {
+                            @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinkCard.cshtml", quickLink)
+                        }
+                    </div>
+                }
+                
+                <!-- Engagement: Medium = 1 column -->
+                @if (Model.EngagementWidget != null)
+                {
+                    <div class="col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
+                    </div>
+                }
+            </div>
+        }
 
-        <!-- Full-Width Usage Trend Chart -->
+        <!-- Row 4: Chart (ExtraLarge = 4 columns) -->
         @if (Model.UsageTrendChart != null)
         {
-            @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ChartWidget.cshtml", Model.UsageTrendChart)
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="md:col-span-4">
+                    @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ChartWidget.cshtml", Model.UsageTrendChart)
+                </div>
+            </div>
         }
     </main>
 </div>
