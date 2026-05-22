@@ -14,7 +14,7 @@ public static class AdminExtensions
     /// <returns>True if the admin is a ConverseyAdmin; otherwise, false.</returns>
     public static bool IsConverseyAdmin(this AdminContext adminContext)
     {
-        return adminContext.CurrentAdmin is BL.Domain.Administration.ConverseyAdmin;
+        return adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.ConverseyAdmin;
     }
 
     /// <summary>
@@ -22,9 +22,9 @@ public static class AdminExtensions
     /// </summary>
     /// <param name="admin">The Admin domain object to check.</param>
     /// <returns>True if the admin is a ConverseyAdmin; otherwise, false.</returns>
-    public static bool IsConverseyAdmin(this BL.Domain.Administration.Admin admin)
+    public static bool IsConverseyAdmin(this Conversey.BL.Domain.Administration.Admin admin)
     {
-        return admin is BL.Domain.Administration.ConverseyAdmin;
+        return admin is Conversey.BL.Domain.Administration.ConverseyAdmin;
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class AdminExtensions
     /// <returns>True if the admin is a WorkspaceAdmin; otherwise, false.</returns>
     public static bool IsWorkspaceAdmin(this AdminContext adminContext)
     {
-        return adminContext.CurrentAdmin is BL.Domain.Administration.WorkspaceAdmin;
+        return adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.WorkspaceAdmin;
     }
 
     /// <summary>
@@ -42,9 +42,9 @@ public static class AdminExtensions
     /// </summary>
     /// <param name="admin">The Admin domain object to check.</param>
     /// <returns>True if the admin is a WorkspaceAdmin; otherwise, false.</returns>
-    public static bool IsWorkspaceAdmin(this BL.Domain.Administration.Admin admin)
+    public static bool IsWorkspaceAdmin(this Conversey.BL.Domain.Administration.Admin admin)
     {
-        return admin is BL.Domain.Administration.WorkspaceAdmin;
+        return admin is Conversey.BL.Domain.Administration.WorkspaceAdmin;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public static class AdminExtensions
     /// <returns>The Workspace ID if the admin is a WorkspaceAdmin; otherwise, null.</returns>
     public static Slug? GetWorkspaceId(this AdminContext adminContext)
     {
-        if (adminContext.CurrentAdmin is BL.Domain.Administration.WorkspaceAdmin workspaceAdmin)
+        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.WorkspaceAdmin workspaceAdmin)
         {
             return workspaceAdmin.Workspace?.Id;
         }
@@ -68,7 +68,7 @@ public static class AdminExtensions
     /// <returns>The Workspace if the admin is a WorkspaceAdmin; otherwise, null.</returns>
     public static Workspace? GetWorkspace(this AdminContext adminContext)
     {
-        if (adminContext.CurrentAdmin is BL.Domain.Administration.WorkspaceAdmin workspaceAdmin)
+        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.WorkspaceAdmin workspaceAdmin)
         {
             return workspaceAdmin.Workspace;
         }
@@ -131,9 +131,9 @@ public static class AdminExtensions
     /// <returns>The URL to the admin's dashboard.</returns>
     public static string GetDashboardUrl(this AdminContext adminContext)
     {
-        if (adminContext.CurrentAdmin is ConverseyAdmin)
+        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.ConverseyAdmin)
             return "/admin/dashboard/conversey";
-        if (adminContext.CurrentAdmin is WorkspaceAdmin)
+        if (adminContext.CurrentAdmin is Conversey.BL.Domain.Administration.WorkspaceAdmin)
             return "/admin/dashboard/workspace";
         return "/admin";
     }
@@ -143,11 +143,11 @@ public static class AdminExtensions
     /// </summary>
     /// <param name="admin">The Admin domain object.</param>
     /// <returns>The URL to the admin's dashboard.</returns>
-    public static string GetDashboardUrl(this BL.Domain.Administration.Admin admin)
+    public static string GetDashboardUrl(this Conversey.BL.Domain.Administration.Admin admin)
     {
-        if (admin is ConverseyAdmin)
+        if (admin is Conversey.BL.Domain.Administration.ConverseyAdmin)
             return "/admin/dashboard/conversey";
-        if (admin is WorkspaceAdmin)
+        if (admin is Conversey.BL.Domain.Administration.WorkspaceAdmin)
             return "/admin/dashboard/workspace";
         return "/admin";
     }
