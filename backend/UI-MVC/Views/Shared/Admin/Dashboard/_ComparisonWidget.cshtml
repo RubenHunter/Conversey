@@ -1,6 +1,6 @@
 @model Conversey.UI_MVC.Models.Admin.ComparisonWidgetViewModel
 
-<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-4">
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-4 comparison-widget" data-comparison-widget="@Model.Id">
     <div class="flex flex-col md:flex-row gap-6 h-full">
         <!-- Left Panel: Titles + Legend -->
         <div class="flex flex-col justify-between min-w-[180px]">
@@ -10,7 +10,7 @@
             <a href="@Model.SubTitleUrl" class="font-semibold text-text/50 hover:text-text/80 transition-colors mt-1">
                 @Model.SubTitle
             </a>
-            <div class="mt-8 space-y-3 legend-container" data-comparison-widget="@Model.Id">
+            <div class="mt-8 space-y-3 legend-container">
                 @foreach (var item in Model.Items)
                 {
                     <div class="flex items-center gap-2 legend-item group cursor-pointer" data-item-id="@item.Label">

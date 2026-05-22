@@ -22,7 +22,6 @@
 </div>
 
 <script>
-    // Store chart data globally for TypeScript module access
     window.__ChartData = window.__ChartData || {};
-    window.__ChartData['@Model.CanvasId'] = @Html.Raw(Json.Serialize(Model.Data));
+    window.__ChartData['@Model.CanvasId'] = { type: '@Model.Type', data: @Html.Raw(Json.Serialize(Model.Data)) };
 </script>

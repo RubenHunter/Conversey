@@ -14,12 +14,32 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.UI_MVC.Controllers.Admin;
 
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
-public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdminManager adminManager) : Controller
+public class ConverseyAdminController(
+    IWorkspaceManager workspaceManager,
+    IAdminManager adminManager,
+    IAdminStatsService adminStatsService) : Controller
 {
     [HttpGet("/admin/conversey")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        return View();
+        var dto = await adminStatsService.GetPlatformDashboardAsync();
+        var viewModel = DashboardViewModelExtensions.FromDto(dto);
+        viewModel.AdminType = "conversey";
+        viewModel.PageTitle = "Dashboard";
+        viewModel.PageDescription = "Look at statistics, expand/manage our community.";
+        viewModel.NavCards = new List<NavCardViewModel>
+        {
+            new() { Title = "AI Settings", Description = "Configure providers, models, prompts, and monitor costs", Icon = "🤖", NavigateUrl = "/admin/ai", IconBackground = "bg-primary/10" },
+            new() { Title = "Workspaces", Description = "Manage all workspaces and their settings", Icon = "🏢", NavigateUrl = Url.Action("Workspaces", "ConverseyAdmin")!, IconBackground = "bg-secondary/10" }
+        };
+
+        ViewData["WorkspaceName"] = "Conversey Platform";
+        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        {
+            ("Dashboard", null, true)
+        };
+
+        return View("~/Views/Admin/Dashboard.cshtml", viewModel);
     }
 
     [HttpGet("admin/workspaces")]

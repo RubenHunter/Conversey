@@ -23,7 +23,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 @foreach (var statWidget in Model.StatWidgets)
                 {
-                    @await Html.PartialAsync("_StatWidget", statWidget)
+                    @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_StatWidget.cshtml", statWidget)
                 }
             </div>
         }
@@ -32,7 +32,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             @foreach (var navCard in Model.NavCards)
             {
-                @await Html.PartialAsync("_NavCard", navCard)
+                @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
             }
         </div>
 
@@ -40,30 +40,26 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             @if (Model.ComparisonWidget != null)
             {
-                @await Html.PartialAsync("_ComparisonWidget", Model.ComparisonWidget)
+                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
             }
             @if (Model.QuickLinksWidget != null)
             {
-                @await Html.PartialAsync("_QuickLinksWidget", Model.QuickLinksWidget)
+                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinksWidget.cshtml", Model.QuickLinksWidget)
             }
             @if (Model.EngagementWidget != null)
             {
-                @await Html.PartialAsync("_EngagementWidget", Model.EngagementWidget)
+                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
             }
         </div>
 
         <!-- Full-Width Usage Trend Chart -->
         @if (Model.UsageTrendChart != null)
         {
-            @await Html.PartialAsync("_ChartWidget", Model.UsageTrendChart)
+            @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ChartWidget.cshtml", Model.UsageTrendChart)
         }
     </main>
 </div>
 
-<!-- Initialize JavaScript components -->
 @section Scripts {
-    <script>
-        // Dashboard TypeScript module is loaded via main.ts
-        // This script tag can be removed once TypeScript is fully integrated
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 }

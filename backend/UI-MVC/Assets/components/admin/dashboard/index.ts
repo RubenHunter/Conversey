@@ -8,48 +8,24 @@ export * from './chartWidget';
 export * from './comparisonWidget';
 export * from './quickLinksWidget';
 
-import { initAllCharts, isChartLoaded, updateChartData } from './chartWidget';
+import { initAllCharts, isChartLoaded } from './chartWidget';
 import { initAllComparisonWidgets } from './comparisonWidget';
-import { initAllQuickLinksWidgets, registerModal, openModal, closeModal } from './quickLinksWidget';
-import { adminDashboardService } from '../../../services/adminDashboardService';
+import { initAllQuickLinksWidgets } from './quickLinksWidget';
 
-// Re-export service for convenience
-export { adminDashboardService } from '../../../services/adminDashboardService';
-export type { DashboardState } from '../../../services/adminDashboardService';
 
 /**
  * Initialize all dashboard components on the page.
- * Call this once when the dashboard page loads.
+ * Chart.js must be loaded as a blocking CDN script before this runs.
  */
-export async function initDashboard(): Promise<void> {
-    console.log('Initializing admin dashboard components...');
-    
-    // Initialize comparison widgets (no dependencies)
+export function initDashboard(): void {
     initAllComparisonWidgets();
-    
-    // Initialize quick links widgets (no dependencies)
     initAllQuickLinksWidgets();
-    
-    // Initialize chart widgets - wait for Chart.js if needed
+
     if (isChartLoaded()) {
         initAllCharts();
-    } else if (window.__ChartJsPromise) {
-        // Wait for Chart.js to load
-        try {
-            await window.__ChartJsPromise;
-            if (isChartLoaded()) {
-                initAllCharts();
-            } else {
-                console.warn('Chart.js failed to load. Chart widgets will not work.');
-            }
-        } catch (error) {
-            console.warn('Error loading Chart.js:', error);
-        }
     } else {
-        console.warn('Chart.js promise not found. Chart widgets will not work.');
+        console.warn('Chart.js not found. Add the CDN script to the page before module scripts.');
     }
-    
-    console.log('Admin dashboard initialized');
 }
 
 /**
@@ -199,24 +175,3 @@ export class DashboardApiClient {
  */
 export const dashboardApi = new DashboardApiClient();
 
-/**
- * Initialize dashboard with real data from API
- * This is an alternative to the server-rendered approach
- */
-export async function initDashboardWithData(): Promise<void> {
-    console.log('Loading dashboard data from API...');
-    
-    // Initialize widgets first
-    initAllComparisonWidgets();
-    initAllQuickLinksWidgets();
-    
-    // Fetch data from API
-    const data = await adminDashboardService.fetchDashboardData();
-    
-    if (data && data.usageTrendChart) {
-        // Initialize charts with data from API
-        initAllCharts();
-    }
-    
-    console.log('Dashboard loaded with API data');
-}

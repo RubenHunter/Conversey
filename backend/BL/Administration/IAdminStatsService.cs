@@ -1,5 +1,3 @@
-#nullable enable
-
 using Conversey.BL.Domain.Administration;
 
 namespace Conversey.BL.Administration;

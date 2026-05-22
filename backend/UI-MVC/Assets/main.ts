@@ -11,18 +11,13 @@ function init(): void {
 	}
 }
 
-/**
- * Initialize admin dashboard components
- */
 async function initAdminDashboard(): Promise<void> {
-	// Dynamically import dashboard module
 	const { initDashboard } = await import('./components/admin/dashboard/index.js');
-	
-	// Run dashboard initialization when DOM is ready
+
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', () => initDashboard());
 	} else {
-		await initDashboard();
+		initDashboard();
 	}
 }
 

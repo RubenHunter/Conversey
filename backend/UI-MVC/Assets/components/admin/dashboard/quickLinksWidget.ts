@@ -60,10 +60,13 @@ export function initQuickLinksWidget(config: QuickLinksWidgetConfig): void {
         const navigateUrl = link.dataset.navigateUrl;
         
         if (modalTarget) {
-            // Modal link
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                openModal(modalTarget);
+                if (document.getElementById(modalTarget)) {
+                    openModal(modalTarget);
+                } else if (navigateUrl) {
+                    window.location.href = navigateUrl;
+                }
             });
             link.style.cursor = 'pointer';
         } else if (navigateUrl) {

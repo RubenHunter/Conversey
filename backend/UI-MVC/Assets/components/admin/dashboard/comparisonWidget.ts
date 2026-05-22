@@ -189,12 +189,11 @@ export function initAllComparisonWidgets(): void {
             
             legendItems.forEach(legend => {
                 const label = legend.dataset.itemId;
-                const color = legend.querySelector('.bg-\[@item.Color\]')?.classList.toString() || 'primary';
                 const valueEl = widget.querySelector(`.circle-item[data-item-id="${label}"] .font-semibold`);
                 const value = parseInt(valueEl?.textContent || '0');
-                
+
                 if (label) {
-                    items.push({ label, value, color });
+                    items.push({ label, value, color: 'primary' });
                 }
             });
             

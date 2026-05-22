@@ -1,3 +1,4 @@
+using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 
@@ -65,25 +66,96 @@ public class DashboardViewModel
     public List<StatWidgetViewModel> StatWidgets { get; set; } = new();
 }
 
-/// <summary>
-/// Extension methods for DashboardViewModel.
-/// </summary>
 public static class DashboardViewModelExtensions
 {
-    /// <summary>
-    /// Checks if this is a Conversey Admin dashboard.
-    /// </summary>
-    public static bool IsConverseyDashboard(this DashboardViewModel model)
-    {
-        return model.AdminType == "conversey";
-    }
+    public static bool IsConverseyDashboard(this DashboardViewModel model) =>
+        model.AdminType == "conversey";
 
-    /// <summary>
-    /// Checks if this is a Workspace Admin dashboard.
-    /// </summary>
-    public static bool IsWorkspaceDashboard(this DashboardViewModel model)
+    public static bool IsWorkspaceDashboard(this DashboardViewModel model) =>
+        model.AdminType == "workspace";
+
+    public static DashboardViewModel FromDto(DashboardStatsDto dto)
     {
-        return model.AdminType == "workspace";
+        return new DashboardViewModel
+        {
+            StatWidgets = dto.StatWidgets.Select(s => new StatWidgetViewModel
+            {
+                Label = s.Label,
+                Value = s.Value,
+                SubLabel = s.SubLabel,
+                Icon = s.Icon,
+                Color = s.Color,
+                Size = WidgetSize.Small
+            }).ToList(),
+
+            ComparisonWidget = dto.ComparisonWidget != null ? new ComparisonWidgetViewModel
+            {
+                Id = Guid.NewGuid().ToString(),
+                Title = dto.ComparisonWidget.Title,
+                SubTitle = dto.ComparisonWidget.SubTitle,
+                TitleUrl = dto.ComparisonWidget.TitleUrl,
+                SubTitleUrl = dto.ComparisonWidget.SubTitleUrl,
+                Items = dto.ComparisonWidget.Items.Select(i => new ComparisonItemViewModel
+                {
+                    Label = i.Label,
+                    Value = i.Value,
+                    Color = i.Color,
+                    LegendIcon = i.LegendIcon
+                }).ToList(),
+                Size = WidgetSize.Medium
+            } : null,
+
+            QuickLinksWidget = dto.QuickLinksWidget != null ? new QuickLinksWidgetViewModel
+            {
+                Title = dto.QuickLinksWidget.Title,
+                Items = dto.QuickLinksWidget.Items.Select(i => new QuickLinkItemViewModel
+                {
+                    Title = i.Title,
+                    Description = i.Description,
+                    Icon = i.Icon,
+                    IconBackground = i.IconBackground,
+                    IconColor = i.IconColor,
+                    ModalTarget = i.ModalTarget,
+                    NavigateUrl = i.NavigateUrl
+                }).ToList(),
+                Size = WidgetSize.Medium
+            } : null,
+
+            EngagementWidget = dto.EngagementWidget != null ? new EngagementWidgetViewModel
+            {
+                Title = dto.EngagementWidget.Title,
+                GaugePercentage = dto.EngagementWidget.GaugePercentage,
+                GaugeLabel = dto.EngagementWidget.GaugeLabel,
+                GaugeColor = dto.EngagementWidget.GaugeColor,
+                Bars = dto.EngagementWidget.Bars.Select(b => new EngagementBarViewModel
+                {
+                    Label = b.Label,
+                    SubLabel = b.SubLabel,
+                    Current = b.Current,
+                    Max = b.Max,
+                    DisplayValue = b.DisplayValue,
+                    Color = b.Color
+                }).ToList(),
+                Size = WidgetSize.Medium
+            } : null,
+
+            UsageTrendChart = dto.UsageTrendChart != null ? new ChartWidgetViewModel
+            {
+                Title = dto.UsageTrendChart.Title,
+                CanvasId = dto.UsageTrendChart.CanvasId,
+                Type = dto.UsageTrendChart.Type,
+                Data = dto.UsageTrendChart.Data,
+                Options = dto.UsageTrendChart.Options,
+                Periods = dto.UsageTrendChart.Periods.Select(p => new PeriodViewModel
+                {
+                    Id = p.Id,
+                    Label = p.Label,
+                    IsActive = p.IsActive
+                }).ToList(),
+                ActivePeriod = dto.UsageTrendChart.ActivePeriod,
+                Size = WidgetSize.ExtraLarge
+            } : null
+        };
     }
 }
 

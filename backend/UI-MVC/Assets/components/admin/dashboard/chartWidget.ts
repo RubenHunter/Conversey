@@ -6,8 +6,8 @@
  * Add this to your layout: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  */
 
-// Declare global Chart from CDN
-declare const Chart: typeof import('chart.js');
+// Chart.js is loaded as a blocking CDN script in Dashboard.cshtml before module scripts run
+declare var Chart: any;
 
 /**
  * Chart data stored globally for access across modules
@@ -208,10 +208,11 @@ export function initAllCharts(): Chart[] {
         if (canvasId && window.__ChartData?.[canvasId]) {
             const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
             if (canvas) {
+                const chartData = window.__ChartData[canvasId];
                 const chart = initChartWidget({
                     canvasId,
-                    type: 'line', // default, will be overridden by data
-                    data: window.__ChartData[canvasId]
+                    type: (chartData.type as string) || 'line',
+                    data: chartData.data
                 });
                 if (chart) {
                     charts.push(chart);
