@@ -1,19 +1,25 @@
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
 @inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
     ViewData["Title"] = I18n["Create Project"];
+    ViewData["WorkspaceName"] = AdminContext.GetWorkspace()?.Name ?? "Workspace";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
         (I18n["Projects"], "/admin/projects", false),
         (I18n["Create"], null, true)
     };
 }
 
-<div class="min-h-screen bg-background">
+<div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
     
-    @await Html.PartialAsync("_Stepper", Model)
+    <main class="p-8 w-full max-w-4xl mx-auto">
+        @await Html.PartialAsync("_Stepper", Model)
+    </main>
 </div>
     
