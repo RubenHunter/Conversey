@@ -94,7 +94,7 @@ public class ProjectManager: IProjectManager
     }
 
     public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string? slug)
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string slug)
     {
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
 
@@ -181,6 +181,21 @@ public class ProjectManager: IProjectManager
     {
         return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
+
+    public void AddTopic(Slug projectId, Slug workspaceId , string name, string context)
+    {
+        var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
+        if (workspace == null)
+            throw new WorkspaceNotFoundException(workspaceId);
+        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, workspaceId);
+        if (project == null)
+            throw new ProjectNotFoundException(projectId);
+        
+        
+        
+
+    }
+    
 
     private static bool ShouldReplaceEmail(string currentEmail, string newEmail)
     {

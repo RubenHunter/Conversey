@@ -92,6 +92,12 @@ public class ProjectRepository : IProjectRepository
         _dbContext.Projects.RemoveRange(projects);
     }
 
+    public void CreateTopic(Topic topic)
+    {
+        _dbContext.Topics.Add(topic);
+        _dbContext.SaveChanges();
+    }
+
 }
 
 #region ProjectConfig
