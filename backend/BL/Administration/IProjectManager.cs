@@ -24,4 +24,6 @@ public interface IProjectManager
     void RemoveProject(Slug projectId, Slug workspaceId);
     
     Task<string> UploadProjectImage(Stream stream, string fileName, string contentType);
+
+    void AddTopic(Slug projectId, Slug workspaceId, string name, string context);
 }
