@@ -159,18 +159,3 @@
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
 }
-
-/* Responsive: hide title text when narrow to prevent overlap with lang selector */
-@media (max-width: 440px) {
-  .survey-topbar-logo-title {
-    display: none;
-  }
-}
-
-/* Very narrow: hide workspace name too, keep only logos + lang */
-@media (max-width: 340px) {
-  .survey-topbar-name {
-    display: none;
-  }
-}
-

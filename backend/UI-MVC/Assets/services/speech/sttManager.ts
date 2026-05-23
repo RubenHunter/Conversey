@@ -378,9 +378,10 @@ export class STTManager {
 
   private notifyText(text: string, isFinal: boolean = false): void {
     if (this.textareaRef) {
-      this.textareaRef.value = isFinal && this.hadExistingText
-          ? this.originalText + ' ' + text
-          : text;
+      const displayText = isFinal
+          ? (this.hadExistingText ? this.originalText + ' ' + text : text)
+          : '\u2026' + text + '\u2026';
+      this.textareaRef.value = displayText;
       this.textareaRef.dispatchEvent(new Event('change', { bubbles: true }));
       this.textareaRef.dispatchEvent(new Event('input', { bubbles: true }));
       this.callbacks.onText?.(this.textareaRef.value);
@@ -429,7 +430,7 @@ export class STTManager {
           this.contextBias
       );
       if (finalText?.trim()) {
-        this.notifyText(finalText, this.hadExistingText);
+        this.notifyText(finalText, true);
       }
     }
   }

@@ -403,6 +403,14 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         try {
             await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')
+
+            // Save answers snapshot so chat mode can rebuild history from it
+            const snapshot: Record<number, QuestionAnswer> = {}
+            for (let i = 0; i < questions.length; i++) {
+                snapshot[questions[i].id] = components[i].getAnswer()
+            }
+            localStorage.setItem(`survey-answers-snapshot-${params.projectSlug}`, JSON.stringify(snapshot))
+
             clearSurveyProgress(params.projectSlug)
             cleanupSurveyPage()
             navigate("completed");

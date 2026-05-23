@@ -25,10 +25,12 @@ export interface SurveyStrings {
     voiceInput: string
     brainstormModeActivated: string
     brainstormModeAriaLabel: string
+    saveAndExit: string
     micStartRecording: string
     micStopRecording: string
     micClickToSpeak: string
     micClickToStop: string
+    brainstormInstruction: string
     brainstormModeEmptyState: string
     remove: string
     rejectedFeedbackPrefix: string
@@ -124,6 +126,10 @@ export interface SurveyStrings {
     // Nudge dialog
     nudgeTitle: string
     nudgeStatus: string
+    nudgeDraftLabel: string
+    nudgeThinking: string
+    nudgeApproved: string
+    nudgeQuestionStatus: string
     yourAnswer: string
     answerContinue: string
     // First idea contact
@@ -199,10 +205,12 @@ const nl: SurveyStrings = {
     voiceInput: 'Spraakinput',
     brainstormModeActivated: '<b>Brainstorm mode</b> geactiveerd',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Opslaan en sluiten',
     micStartRecording: 'Start opname',
     micStopRecording: 'Stop opname',
     micClickToSpeak: 'Klik om te spreken',
     micClickToStop: 'Klik om te stoppen',
+    brainstormInstruction: 'Spreek je gedachten uit en de AI haalt er de belangrijkste kernwoorden uit. Klik daarna op de microfoon om te beginnen.',
     brainstormModeEmptyState: 'Spreek om sleutelwoorden te genereren...',
     remove: 'Verwijder',
     rejectedFeedbackPrefix: '❌ ',
@@ -290,6 +298,10 @@ const nl: SurveyStrings = {
     // Nudge dialog
     nudgeTitle: 'Laat je idee groeien',
     nudgeStatus: 'De AI stelt één vraag tegelijk. Sluit de dialoog om de huidige versie in te dienen als "wachtend op review".',
+    nudgeDraftLabel: 'Jouw idee',
+    nudgeThinking: 'Even denken...',
+    nudgeApproved: 'Je idee ziet er goed uit!',
+    nudgeQuestionStatus: 'Beantwoord de vraag:',
     yourAnswer: 'Je antwoord',
     answerContinue: 'Antwoord & ga door',
     // First idea contact
@@ -374,10 +386,12 @@ const en: SurveyStrings = {
     voiceInput: 'Voice input',
     brainstormModeActivated: '<b>Brainstorm mode</b> activated',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Save and exit',
     micStartRecording: 'Start recording',
     micStopRecording: 'Stop recording',
     micClickToSpeak: 'Click to speak',
     micClickToStop: 'Click to stop',
+    brainstormInstruction: 'Speak your thoughts freely and the AI will extract the most important keywords. Press the microphone button to begin.',
     brainstormModeEmptyState: 'Speak to generate keywords...',
     remove: 'Remove',
     rejectedFeedbackPrefix: '❌ ',
@@ -465,6 +479,10 @@ const en: SurveyStrings = {
     // Nudge dialog
     nudgeTitle: 'Let\'s deepen your idea',
     nudgeStatus: 'The AI will ask one question at a time. Close the dialog to post the current version as pending review.',
+    nudgeDraftLabel: 'Your idea',
+    nudgeThinking: 'Thinking...',
+    nudgeApproved: 'Your idea looks great!',
+    nudgeQuestionStatus: 'Answer the question:',
     yourAnswer: 'Your answer',
     answerContinue: 'Answer & continue',
     // First idea contact
@@ -548,10 +566,12 @@ const fr: SurveyStrings = {
     voiceInput: 'Saisie vocale',
     brainstormModeActivated: '<b>Brainstorm mode</b> activé',
     brainstormModeAriaLabel: 'Brainstorm Mode',
+    saveAndExit: 'Enregistrer et quitter',
     micStartRecording: 'Démarrer l\'enregistrement',
     micStopRecording: 'Arrêter l\'enregistrement',
     micClickToSpeak: 'Cliquez pour parler',
     micClickToStop: 'Cliquez pour arrêter',
+    brainstormInstruction: 'Exprimez vos idées librement et l\'IA en extraira les mots-clés les plus importants. Appuyez sur le micro pour commencer.',
     brainstormModeEmptyState: 'Parlez pour générer des mots-clés...',
     remove: 'Supprimer',
     rejectedFeedbackPrefix: '❌ ',
@@ -671,6 +691,10 @@ const fr: SurveyStrings = {
     editAiSuggestion: 'Modifier la suggestion IA',
     nudgeTitle: 'Approfondissons votre idée',
     nudgeStatus: 'L\'IA posera une question à la fois. Fermez la boîte de dialogue pour soumettre la version actuelle en attente de révision.',
+    nudgeDraftLabel: 'Votre idée',
+    nudgeThinking: 'Je réfléchis...',
+    nudgeApproved: 'Votre idée est super !',
+    nudgeQuestionStatus: 'Répondez à la question :',
     answerContinue: 'Répondre et continuer',
     wantStayInTouch: 'Voulez-vous rester en contact ?',
     leaveEmailCopy: 'Vous pouvez laisser votre e-mail si vous souhaitez que nous vous contactons à propos de vos idées.',

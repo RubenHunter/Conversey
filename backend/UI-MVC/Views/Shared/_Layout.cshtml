@@ -30,6 +30,7 @@
 <body>
     @{
         var path = Context.Request.Path;
+        var isAdminPath = path.StartsWithSegments("/admin");
         if (path.StartsWithSegments("/admin"))
         {
             var map = AdminI18n.CurrentLanguageMap;
@@ -41,7 +42,7 @@
         }
     }
 
-    <div id="app" class="min-h-screen flex flex-col">
+    <div id="app" class="min-h-screen flex flex-col @(isAdminPath ? "lg:pl-[17rem]" : "")">
         @RenderBody()
     </div>
 

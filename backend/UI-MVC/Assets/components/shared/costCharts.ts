@@ -9,12 +9,14 @@ interface ChartInstance {
 interface TimelineItem {
 	date: string;
 	cost: number;
+	tokens: number;
 }
 
 interface AuditItem {
 	date: string;
 	model: string;
 	cost: number;
+	tokens: number;
 }
 
 const colors = ['#6c5ce7', '#e17055', '#00b894', '#0984e3', '#fdcb6e', '#e84393',
@@ -46,13 +48,26 @@ function init(): void {
 	const chartCtx: CanvasRenderingContext2D = ctx;
 
 	let currentType = 'line';
+	let currentUnit = 'eur';
 	let chart: ChartInstance | null = null;
+
+	function getValue(item: { cost: number; tokens: number }): number {
+		return currentUnit === 'tokens' ? (item.tokens || 0) : item.cost;
+	}
+
+	function formatValue(v: number): string {
+		return currentUnit === 'tokens' ? v.toLocaleString() : '\u20AC' + v.toFixed(2);
+	}
+
+	function getLabel(): string {
+		return currentUnit === 'tokens' ? 'Tokens' : 'Cost (EUR)';
+	}
 
 	function buildBarData() {
 		const modelDates: Record<string, number> = {};
 		audit.forEach(row => {
 			const key = row.model + '|' + row.date;
-			modelDates[key] = (modelDates[key] || 0) + row.cost;
+			modelDates[key] = (modelDates[key] || 0) + getValue(row);
 		});
 		const models: string[] = [];
 		const datesSet = new Set<string>();
@@ -74,7 +89,7 @@ function init(): void {
 	function buildPieData() {
 		const modelCosts: Record<string, number> = {};
 		audit.forEach(row => {
-			modelCosts[row.model] = (modelCosts[row.model] || 0) + row.cost;
+			modelCosts[row.model] = (modelCosts[row.model] || 0) + getValue(row);
 		});
 		const entries = Object.entries(modelCosts).sort((a, b) => b[1] - a[1]);
 		return {
@@ -102,8 +117,8 @@ function init(): void {
 				data: {
 					labels: timeline.map(d => d.date),
 					datasets: [{
-						label: 'Cost (EUR)',
-						data: timeline.map(d => d.cost),
+						label: getLabel(),
+						data: timeline.map(d => getValue(d)),
 						borderColor: '#6c5ce7',
 						backgroundColor: 'rgba(108,92,231,0.1)',
 						fill: true, tension: 0.3,
@@ -115,7 +130,7 @@ function init(): void {
 					plugins: { legend: { display: false } },
 					scales: {
 						x: { ticks: { maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } },
-						y: { ticks: { font: { size: 10 }, callback: (v: number) => '€' + v.toFixed(2) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+						y: { ticks: { font: { size: 10 }, callback: (v: number) => formatValue(v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
 					}
 				}
 			};
@@ -129,7 +144,7 @@ function init(): void {
 					plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
 					scales: {
 						x: { stacked: true, ticks: { maxTicksLimit: 12, font: { size: 10 } }, grid: { display: false } },
-						y: { stacked: true, ticks: { font: { size: 10 }, callback: (v: number) => '€' + v.toFixed(2) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+						y: { stacked: true, ticks: { font: { size: 10 }, callback: (v: number) => formatValue(v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
 					}
 				}
 			};
@@ -142,7 +157,7 @@ function init(): void {
 					responsive: true, maintainAspectRatio: false,
 					plugins: {
 						legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 }, padding: 12 } },
-						tooltip: { callbacks: { label: (ctx: { label: string; raw: number }) => ctx.label + ': €' + ctx.raw.toFixed(4) } }
+						tooltip: { callbacks: { label: (ctx: { label: string; raw: number }) => ctx.label + ': ' + formatValue(ctx.raw) } }
 					}
 				}
 			};
@@ -160,6 +175,17 @@ function init(): void {
 			});
 			this.className = 'chart-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm';
 			currentType = this.getAttribute('data-type') || 'line';
+			renderChart(currentType);
+		});
+	});
+
+	document.querySelectorAll('.chart-unit-toggle').forEach(btn => {
+		btn.addEventListener('click', function(this: HTMLElement) {
+			document.querySelectorAll('.chart-unit-toggle').forEach(b => {
+				b.className = 'chart-unit-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text';
+			});
+			this.className = 'chart-unit-toggle px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm';
+			currentUnit = this.getAttribute('data-unit') || 'eur';
 			renderChart(currentType);
 		});
 	});

@@ -56,6 +56,7 @@ export function createBrainstormModal(): BrainstormModalController {
     
     // Track full transcript for final text generation
     let fullTranscript = '';
+    let removeDialogModeListener: (() => void) | null = null;
 
     // Sync UI state with STT state changes
     function handleSTTStateChange(state: string): void {
@@ -74,12 +75,13 @@ export function createBrainstormModal(): BrainstormModalController {
             // Reset volume and recording classes
             if (micContainer) {
                 micContainer.style.setProperty('--mic-volume', '0');
-                micContainer.classList.remove('recording');
+                micContainer.classList.remove('recording', 'speaking');
             }
             if (micBtn) {
                 micBtn.classList.remove('recording');
                 micBtn.setAttribute('aria-pressed', 'false');
                 micBtn.setAttribute('aria-label', t.micStartRecording);
+                micBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
             }
             if (micHint) {
                 micHint.classList.remove('hidden');
@@ -88,6 +90,9 @@ export function createBrainstormModal(): BrainstormModalController {
     }
 
     function buildDOM(): { backdrop: HTMLElement; dialog: HTMLElement } {
+        removeDialogModeListener?.();
+        removeDialogModeListener = null;
+
         const backdrop = document.createElement('div');
         backdrop.className = 'brainstorm-backdrop';
 
@@ -96,6 +101,13 @@ export function createBrainstormModal(): BrainstormModalController {
         dialog.setAttribute('role', 'dialog');
         dialog.setAttribute('aria-modal', 'true');
         dialog.setAttribute('aria-label', t.brainstormModeAriaLabel);
+
+        const syncDialogMode = (): void => {
+            dialog.classList.toggle('brainstorm-dialog--desktop', window.innerWidth >= 640);
+        };
+        syncDialogMode();
+        window.addEventListener('resize', syncDialogMode);
+        removeDialogModeListener = () => window.removeEventListener('resize', syncDialogMode);
 
         // Header
         const header = document.createElement('div');
@@ -115,9 +127,8 @@ export function createBrainstormModal(): BrainstormModalController {
         title.appendChild(UpperBrainstormModeText);
 
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn btn-ghost btn-sm btn-circle';
-        closeBtn.setAttribute('aria-label', t.close);
-        closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
+        closeBtn.className = 'brainstorm-save-btn';
+        closeBtn.textContent = t.saveAndExit;
         closeBtn.addEventListener('click', async () => {
             await closeModal();
         });
@@ -132,8 +143,13 @@ export function createBrainstormModal(): BrainstormModalController {
         const questionEl = document.createElement('h4');
         questionEl.className = 'brainstorm-question text-base font-medium text-base-content';
 
+        const instructionEl = document.createElement('p');
+        instructionEl.className = 'brainstorm-instruction text-sm text-base-content/60 text-center mt-2';
+        instructionEl.textContent = t.brainstormInstruction;
+
         body.appendChild(questionEl);
         body.appendChild(bubbleList.element);
+        body.appendChild(instructionEl);
 
         // Ring container - use RingController for status ring animations
         body.appendChild(ringController.element);
@@ -146,6 +162,14 @@ export function createBrainstormModal(): BrainstormModalController {
         const micContainerEl = document.createElement('div');
         micContainerEl.className = 'brainstorm-mic-container';
 
+        // Ripple rings for instant recording feedback
+        const ripple1 = document.createElement('div');
+        ripple1.className = 'brainstorm-mic-ripple';
+        const ripple2 = document.createElement('div');
+        ripple2.className = 'brainstorm-mic-ripple';
+        const ripple3 = document.createElement('div');
+        ripple3.className = 'brainstorm-mic-ripple';
+
         // Filled circle that expands with volume
         const micFill = document.createElement('div');
         micFill.className = 'brainstorm-mic-fill';
@@ -156,12 +180,18 @@ export function createBrainstormModal(): BrainstormModalController {
         micBtnEl.setAttribute('aria-pressed', 'false');
         micBtnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
 
+        micContainerEl.appendChild(ripple1);
+        micContainerEl.appendChild(ripple2);
+        micContainerEl.appendChild(ripple3);
         micContainerEl.appendChild(micFill);
         micContainerEl.appendChild(micBtnEl);
 
         const micHintEl = document.createElement('p');
         micHintEl.className = 'text-xs text-base-content/50 brainstorm-mic-hint';
         micHintEl.textContent = t.micClickToSpeak;
+
+        const micIconIdle = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" /></svg>';
+        const micIconRecording = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-6 h-6"><circle cx="12" cy="12" r="6" /></svg>';
 
         micBtnEl.addEventListener('click', () => {
             isRecording = !isRecording;
@@ -172,6 +202,7 @@ export function createBrainstormModal(): BrainstormModalController {
                 unsubscribeVolume = stt.onVolume((volume: number) => {
                     if (micContainerEl) {
                         micContainerEl.style.setProperty('--mic-volume', String(volume));
+                        micContainerEl.classList.toggle('speaking', volume > 0.005);
                     }
                 });
             } else {
@@ -182,9 +213,10 @@ export function createBrainstormModal(): BrainstormModalController {
                     unsubscribeVolume();
                     unsubscribeVolume = null;
                 }
-                // Reset volume to 0 when stopping
+                // Reset volume and speaking state when stopping
                 if (micContainerEl) {
                     micContainerEl.style.setProperty('--mic-volume', '0');
+                    micContainerEl.classList.remove('speaking');
                 }
             }
             // Toggle recording classes
@@ -194,6 +226,7 @@ export function createBrainstormModal(): BrainstormModalController {
             micHintEl.classList.toggle('hidden', isRecording);
             micBtnEl.setAttribute('aria-pressed', String(isRecording));
             micBtnEl.setAttribute('aria-label', isRecording ? t.micStopRecording : t.micStartRecording);
+            micBtnEl.innerHTML = isRecording ? micIconRecording : micIconIdle;
         });
 
         micContainerEl.appendChild(micHintEl);
@@ -320,6 +353,8 @@ export function createBrainstormModal(): BrainstormModalController {
             stt.stop();
             isRecording = false;
         }
+        removeDialogModeListener?.();
+        removeDialogModeListener = null;
         // Clean up volume callback
         if (unsubscribeVolume) {
             unsubscribeVolume();
@@ -378,6 +413,8 @@ export function createBrainstormModal(): BrainstormModalController {
         },
         destroy(): void {
             if (isRecording) stt.stop();
+            removeDialogModeListener?.();
+            removeDialogModeListener = null;
             // Clean up volume callback
             if (unsubscribeVolume) {
                 unsubscribeVolume();
@@ -385,6 +422,7 @@ export function createBrainstormModal(): BrainstormModalController {
             }
             if (micContainer) {
                 micContainer.style.setProperty('--mic-volume', '0');
+                micContainer.classList.remove('speaking');
             }
             micContainer = null;
             micBtn = null;
