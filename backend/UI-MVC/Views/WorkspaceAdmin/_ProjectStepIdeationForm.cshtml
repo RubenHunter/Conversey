@@ -1,0 +1,56 @@
+@using Microsoft.AspNetCore.Html
+@using Conversey.UI_MVC.Models.Admin
+@using Conversey.UI_MVC.Models.WorkspaceAdmin
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+@{
+    var topicsTableModel = new AdminTableViewModel<TopicRowViewModel>
+    {
+        SectionTitle = "Topics",
+        TableDescription = "Define topics for the ideation phase.",
+        CreateUrl = "#",
+        CreateButtonLabel = "Add Topic",
+        CreateButtonModalKey = "add-topic",
+        TableBodyId = "topicsTableBody",
+        EmptyState = "No topics defined yet.",
+        Items = [],
+        Columns =
+        [
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Topic Name",
+                Template = t => new HtmlString(Html.Encode(t.TopicName)),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Context",
+                Template = t => new HtmlString(Html.Encode(t.TopicContext)),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Max Loads",
+                Template = t => new HtmlString(t.MaxBroadSelectionLoads.ToString()),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Actions",
+                Template = _ => HtmlString.Empty,
+            },
+        ],
+    };
+}
+
+<form id="create-project-step3-form" class="space-y-6">
+    <div>
+        <h2 class="text-2xl font-bold text-text">Step 3: Ideation</h2>
+        <p class="mt-1 text-sm text-text/60">Define topics for the ideation phase.</p>
+    </div>
+
+    @await Html.PartialAsync("_AdminTableWithCreate", topicsTableModel)
+
+    <input type="hidden" name="CreateStep3ViewModel.TopicsJson" value="[]" />
+</form>
+
+@await Html.PartialAsync("_TopicCreateModal")
+
+<script type="module" vite-src="~/components/shared/topicManager.ts"></script>

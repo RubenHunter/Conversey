@@ -8,4 +8,5 @@ public class ProjectViewModel
     public AdminFormViewModel<Project> AdminFormViewModel { get; set; } = null!;
     public StepperViewModel StepperViewModel { get; set; } = null!;
     public CreateProjectIntroAndPresentationViewModel CreateStep1ViewModel { get; set; } = new();
+    public CreateStep3IdeationViewModel CreateStep3ViewModel { get; set; } = new();
 }

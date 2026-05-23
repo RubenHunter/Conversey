@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
@@ -94,7 +95,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
-            projectManager.SaveProject(
+            var project = projectManager.SaveProject(
                 workspaceContext.CurrentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
@@ -106,6 +107,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 Status.Active,
                 projectStep1.Slug
             );
+
+            var step3 = projectViewModel.CreateStep3ViewModel;
+            SaveTopicsFromStep3(step3, project.Id);
 
             return RedirectToAction("Projects");
         }
@@ -258,6 +262,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.Slug
             );
 
+            var step3 = projectViewModel.CreateStep3ViewModel;
+            SaveTopicsFromStep3(step3, project.Id);
+
             return Json(new { slug = project.Id.ToString() });
         }
         catch (ValidationException ex)
@@ -298,6 +305,38 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 
+
+    private void SaveTopicsFromStep3(CreateStep3IdeationViewModel? step3, Slug projectId)
+    {
+        if (step3 == null || string.IsNullOrWhiteSpace(step3.TopicsJson))
+            return;
+
+        List<TopicRowViewModel>? topics;
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            topics = JsonSerializer.Deserialize<List<TopicRowViewModel>>(step3.TopicsJson, options);
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
+        if (topics == null) return;
+
+        foreach (var topic in topics)
+        {
+            if (!string.IsNullOrWhiteSpace(topic.TopicName))
+            {
+                projectManager.AddTopic(
+                    projectId,
+                    workspaceContext.CurrentWorkspace.Id,
+                    topic.TopicName,
+                    topic.TopicContext
+                );
+            }
+        }
+    }
 
     private ProjectViewModel CreateFormVm(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
     {
@@ -348,7 +387,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     new StepItem
                     {
                         Label = "Ideation",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_ProjectStepIdeationForm"
                     },
                     new StepItem
                     {

@@ -1,5 +1,7 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
+@inject WorkspaceContext WorkspaceContext
 @inject IAdminI18nService I18n
 @model Conversey.BL.Domain.Administration.Project
 @Html.AntiForgeryToken()
@@ -117,7 +119,7 @@
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
 
                 <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"
-                   class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                   class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
                     @I18n["Edit"]
                 </a>
 
@@ -125,7 +127,7 @@
                         data-delete-id="@Model.Id.Text"
                         data-delete-name="@Model.Name"
                         data-delete-endpoint="/admin/project/delete/@Model.Id.Text"
-                        class="inline-flex items-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                        class="inline-flex items-center justify-center rounded-xl border border-accent/30 px-5 py-2.5 text-sm font-bold text-accent hover:bg-accent/5 transition-all">
                     @I18n["Delete"]
                 </button>
             </div>

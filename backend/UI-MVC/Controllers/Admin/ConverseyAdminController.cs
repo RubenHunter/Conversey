@@ -63,7 +63,7 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     public IActionResult CreateWorkspace(AdminFormViewModel<Workspace> workspaceFormViewModel)
     {
         var imageUrl = workspaceFormViewModel.FormItem?.ImageUrl ?? string.Empty;
-        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem.Name, imageUrl);
+        var workspace = workspaceManager.AddWorkspace(workspaceFormViewModel.FormItem?.Name, imageUrl);
         return RedirectToAction("WorkspaceDetails", new { id = workspace.Id.Text, openAdminModal = true });
     }
 

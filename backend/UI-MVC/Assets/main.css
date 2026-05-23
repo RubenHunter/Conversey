@@ -13,6 +13,7 @@
 @import "./styles/pages/ideas.css";
 @import "./icons.css";
 @import "./styles/pages/admin-management.css";
+@import "./styles/shared/range-slider.css";
 
 /** {*/
 /*	margin: 0;*/

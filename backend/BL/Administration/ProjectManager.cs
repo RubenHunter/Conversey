@@ -195,10 +195,16 @@ public class ProjectManager: IProjectManager
         var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, workspaceId);
         if (project == null)
             throw new ProjectNotFoundException(projectId);
-        
-        
-        
 
+        var topic = new Topic
+        {
+            Name = name,
+            Context = context,
+            Project = project
+        };
+        
+        Validate(project);
+        _projectRepository.CreateTopic(topic);
     }
     
 

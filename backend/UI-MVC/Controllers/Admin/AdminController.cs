@@ -184,7 +184,7 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
         if (IsAjaxRequest())
@@ -233,7 +233,7 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         }
         catch (ValidationException ex)
         {
-            ApplyValidationExceptionToModelState(ex);
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
         }
 
         if (IsAjaxRequest())

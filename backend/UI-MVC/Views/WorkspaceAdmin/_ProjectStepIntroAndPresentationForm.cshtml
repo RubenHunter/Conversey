@@ -36,7 +36,7 @@
         <input asp-for="CreateStep1ViewModel.ImageFile" id="step1ImageFile" type="file" accept="image/*"
                class="mt-1 block w-full rounded-md border border-text/20 bg-background px-3 py-2 text-sm" />
         <input asp-for="CreateStep1ViewModel.ImageUrl" id="step1ImageUrl" type="hidden" />
-        <input id="step1ImageUploadSignature" type="hidden" />
+        <input id="step1ImageUploadSignature" name="step1ImageUploadSignature" type="hidden" />
         <p id="step1ImageUploadStatus" class="mt-1 text-xs text-text/60"></p>
         <p id="step1ImageUploadError" class="mt-1 text-xs text-red-600"></p>
         <span asp-validation-for="CreateStep1ViewModel.ImageFile" class="text-sm text-red-600"></span>

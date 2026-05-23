@@ -40,6 +40,12 @@ public class Project
     public IEnumerable<Youth> Youth { get; set; }
 
     public IEnumerable<Idea> ProjectIdeas { get; set; }
+    
+    [Range(0, 150)]
+    public int? MinAge { get; set; }
+
+    [Range(0, 150)]
+    public int? MaxAge { get; set; }
 }
 
 public enum Status
