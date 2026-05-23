@@ -1,5 +1,5 @@
 export type {Question, FixedQuestion, RangeQuestion, OpenQuestion};
-export {createOpenQuestion, QuestionType, createFixedQuestion, createRangeQuestion}
+export {QuestionType}
 
 
 enum QuestionType {
@@ -10,43 +10,23 @@ enum QuestionType {
 }
 
 type Question = {
+    type: QuestionType;
     text: string;
     startDrag?: () => void;
     endDrag?: () => void;
 };
 
 type FixedQuestion = Question & {
-    single: boolean;
+    type: QuestionType.MultipleChoice | QuestionType.SingleChoice;
     possibleAnswers: readonly string[];
 };
 
 type RangeQuestion = Question & {
+    type: QuestionType.Range;
     min: number;
     max: number;
 };
 
-type OpenQuestion = Question;
-
-function createQuestion(text: string): Question {
-    return {
-        text: text,
-    }
-}
-
-function createOpenQuestion(text: string): OpenQuestion {
-    return createQuestion(text) as OpenQuestion;
-}
-
-function createFixedQuestion(text: string, single: boolean, answers: string[]): FixedQuestion {
-    const question = createQuestion(text) as FixedQuestion;
-    question.single = single;
-    question.possibleAnswers = answers;
-    return question;
-}
-
-function createRangeQuestion(text: string, min: number, max: number): RangeQuestion {
-    const question = createQuestion(text) as RangeQuestion;
-    question.min = min;
-    question.max = max;
-    return question;
-}
+type OpenQuestion = Question & {
+    type: QuestionType.Open;
+};

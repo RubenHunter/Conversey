@@ -2,15 +2,15 @@ import {PagedModalComponent} from "../../../PagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
 import {createDragAndDropListComponent} from "../../../DragAndDropList.ts";
 import {AnswerComponent, createAnswerComponent} from "./AnswerComponent.ts";
-import {createFixedQuestion, Question} from "../../../../models/Question.ts";
 import {createQuestionComponent} from "../Question.ts";
 import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
+import {FixedQuestion} from "../../../../models/Question.ts";
 
 type AddAnswersComponent = HTMLFormElement;
 
 export {createAddAnswersComponent};
 
-function createAddAnswersComponent(dialog: PagedModalComponent, text: string, single: boolean): AddAnswersComponent {
+function createAddAnswersComponent(dialog: PagedModalComponent, question: FixedQuestion): AddAnswersComponent {
     const component = htmlToElement<AddAnswersComponent>(`
     <form method="dialog" class="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
     
@@ -59,7 +59,7 @@ function createAddAnswersComponent(dialog: PagedModalComponent, text: string, si
             const answer = child as AnswerComponent;
             answers.push(answer.text);
         }
-        const question: Question = createFixedQuestion(text, single, answers);
+        question.possibleAnswers = answers;
         rootQuestionList.addElement(createQuestionComponent(question))
     }
 
