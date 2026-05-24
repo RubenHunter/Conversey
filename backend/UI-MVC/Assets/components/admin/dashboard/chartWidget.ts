@@ -247,6 +247,7 @@ export function initAllCharts(): any[] {
             canvasId,
             type: (stored.type as string) || 'line',
             data: stored.data,
+            options: stored.options,
             periods: (stored.periods as PeriodConfig[]) || [],
             onPeriodChange: stored.periodData
                 ? async (periodId: string) => (stored.periodData as Record<string, unknown>)[periodId] ?? null

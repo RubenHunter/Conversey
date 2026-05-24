@@ -1,12 +1,15 @@
 @using System.Text.Json
 @using Conversey.UI_MVC.Resources
+@using Conversey.UI_MVC.Models
 @model Conversey.UI_MVC.Models.Analytics.ConverseyAnalyticsViewModel
 @inject IAdminI18nService I18n
+@inject AdminContext AdminContext
 
 @{
     ViewData["Title"] = I18n["Platform Analytics"];
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
         (I18n["Platform Analytics"], null, true)
     };
 }

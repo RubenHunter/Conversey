@@ -1,4 +1,6 @@
-using Conversey.BL.Administration;
+using Conversey.BL.Ai;
+using Conversey.BL.Analytics;
+using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;
@@ -7,185 +9,57 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
-/// <summary>
-/// API controller for admin statistics and dashboard data.
-/// Returns role-filtered data based on the current admin's permissions.
-/// </summary>
 [Authorize]
 [Route("api/admin")]
 public class AdminStatsController : ControllerBase
 {
-    private readonly IAdminStatsService _adminStatsService;
+    private readonly IAnalyticsManager _analyticsManager;
+    private readonly IAiAdminManager _aiAdminManager;
     private readonly AdminContext _adminContext;
 
-    public AdminStatsController(IAdminStatsService adminStatsService, AdminContext adminContext)
+    public AdminStatsController(IAnalyticsManager analyticsManager, IAiAdminManager aiAdminManager, AdminContext adminContext)
     {
-        _adminStatsService = adminStatsService;
+        _analyticsManager = analyticsManager;
+        _aiAdminManager = aiAdminManager;
         _adminContext = adminContext;
     }
 
-    /// <summary>
-    /// Gets dashboard data for the current admin.
-    /// Returns platform-wide data for Conversey Admins, workspace-specific data for Workspace Admins.
-    /// </summary>
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboardData([FromQuery] string? period = null)
-    {
-        var currentAdmin = _adminContext.CurrentAdmin;
-        
-        if (currentAdmin == null)
-        {
-            return Unauthorized();
-        }
-
-        if (currentAdmin is ConverseyAdmin)
-        {
-            var dashboardData = await _adminStatsService.GetPlatformDashboardAsync();
-            return Ok(new
-            {
-                type = "platform",
-                data = dashboardData
-            });
-        }
-        else if (currentAdmin is WorkspaceAdmin workspaceAdmin)
-        {
-            var dashboardData = await _adminStatsService.GetWorkspaceDashboardAsync(workspaceAdmin.Workspace.Id);
-            return Ok(new
-            {
-                type = "workspace",
-                data = dashboardData,
-                workspaceName = workspaceAdmin.Workspace.Name,
-                workspaceId = workspaceAdmin.Workspace.Id.ToString()
-            });
-        }
-
-        return Forbid();
-    }
-
-    /// <summary>
-    /// Gets platform-wide statistics (Conversey Admin only).
-    /// </summary>
-    [HttpGet("stats/platform")]
-    [Authorize(Policy = ConverseyAdminPolicy.Name)]
-    public async Task<IActionResult> GetPlatformStats()
-    {
-        var stats = await _adminStatsService.GetPlatformStatsAsync();
-        return Ok(stats);
-    }
-
-    /// <summary>
-    /// Gets workspace-specific statistics.
-    /// Workspace Admins can only access their own workspace.
-    /// Conversey Admins can access any workspace.
-    /// </summary>
-    [HttpGet("stats/workspace/{workspaceId}")]
-    public async Task<IActionResult> GetWorkspaceStats(string workspaceId)
-    {
-        var currentAdmin = _adminContext.CurrentAdmin;
-        
-        if (currentAdmin == null)
-        {
-            return Unauthorized();
-        }
-
-        // Workspace Admins can only access their own workspace
-        if (currentAdmin is WorkspaceAdmin workspaceAdmin)
-        {
-            if (workspaceAdmin.Workspace.Id.ToString() != workspaceId)
-            {
-                return Forbid();
-            }
-        }
-        // Conversey Admins can access any workspace
-        else if (currentAdmin is not ConverseyAdmin)
-        {
-            return Forbid();
-        }
-
-        var stats = await _adminStatsService.GetWorkspaceStatsAsync(Conversey.BL.Domain.Common.Slug.FromName(workspaceId));
-        return Ok(stats);
-    }
-
-    /// <summary>
-    /// Gets usage trend data for the current admin.
-    /// </summary>
     [HttpGet("stats/usage-trend")]
-    public async Task<IActionResult> GetUsageTrend([FromQuery] string period = "7d")
+    public IActionResult GetUsageTrend([FromQuery] string period = "1m")
     {
-        var currentAdmin = _adminContext.CurrentAdmin;
-        
-        if (currentAdmin == null)
+        var admin = _adminContext.CurrentAdmin;
+
+        if (admin is WorkspaceAdmin workspaceAdmin)
         {
-            return Unauthorized();
+            var trend = _analyticsManager.GetUsageTrend(workspaceAdmin.Workspace.Id, null);
+            return Ok(new { labels = trend.Select(t => t.Date), values = trend.Select(t => t.IdeaCount) });
         }
 
-        var trend = await _adminStatsService.GetUsageTrendAsync(currentAdmin, period);
-        return Ok(trend);
+        var platformTrend = _analyticsManager.GetUsageTrend(null, null);
+        return Ok(new { labels = platformTrend.Select(t => t.Date), values = platformTrend.Select(t => t.IdeaCount) });
     }
 
-    /// <summary>
-    /// Gets comparison widget data for the current admin.
-    /// </summary>
-    [HttpGet("stats/comparison")]
-    public async Task<IActionResult> GetComparisonData()
-    {
-        var currentAdmin = _adminContext.CurrentAdmin;
-        
-        if (currentAdmin == null)
-        {
-            return Unauthorized();
-        }
-
-        var comparison = await _adminStatsService.GetComparisonDataAsync(currentAdmin);
-        return Ok(comparison);
-    }
-
-    /// <summary>
-    /// Gets quick links widget data for the current admin.
-    /// </summary>
-    [HttpGet("stats/quick-links")]
-    public async Task<IActionResult> GetQuickLinksData()
-    {
-        var currentAdmin = _adminContext.CurrentAdmin;
-        
-        if (currentAdmin == null)
-        {
-            return Unauthorized();
-        }
-
-        var quickLinks = await _adminStatsService.GetQuickLinksDataAsync(currentAdmin);
-        return Ok(quickLinks);
-    }
-
-    /// <summary>
-    /// Gets engagement widget data for the current admin.
-    /// </summary>
-    [HttpGet("stats/engagement")]
-    public async Task<IActionResult> GetEngagementData()
-    {
-        var currentAdmin = _adminContext.CurrentAdmin;
-
-        if (currentAdmin == null)
-        {
-            return Unauthorized();
-        }
-
-        var engagement = await _adminStatsService.GetEngagementDataAsync(currentAdmin);
-        return Ok(engagement);
-    }
-
-    /// <summary>
-    /// Performs a health check on AI providers and database connectivity.
-    /// Returns results for each provider sequentially animated on the client.
-    /// </summary>
     [HttpGet("ai/health")]
-    public IActionResult GetAiHealth()
+    public async Task<IActionResult> GetAiHealth()
     {
-        return Ok(new[]
+        try
         {
-            new { provider = "OpenAI",     status = "ok",    latencyMs = 142 },
-            new { provider = "Anthropic",  status = "ok",    latencyMs = 89  },
-            new { provider = "Database",   status = "ok",    latencyMs = 12  }
-        });
+            var health = await _aiAdminManager.GetHealthAsync();
+            return Ok(new[]
+            {
+                new { provider = "System", status = health.Status == "ok" ? "ok" : "error", latencyMs = 0 },
+                new { provider = "Moderation", status = health.Moderation?.Ok == true ? "ok" : "error", latencyMs = health.Moderation?.DurationMs ?? 0 },
+                new { provider = "Completions", status = health.Completions?.Ok == true ? "ok" : "error", latencyMs = health.Completions?.DurationMs ?? 0 }
+            });
+        }
+        catch (Exception)
+        {
+            return Ok(new[]
+            {
+                new { provider = "System", status = "error", latencyMs = 0 },
+                new { provider = "Moderation", status = "error", latencyMs = 0 },
+                new { provider = "Completions", status = "error", latencyMs = 0 }
+            });
+        }
     }
 }

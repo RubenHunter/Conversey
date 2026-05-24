@@ -3,10 +3,12 @@
 @model Conversey.UI_MVC.Models.Analytics.ModerationViewModel
 @inject IAdminI18nService I18n
 @inject WorkspaceContext WorkspaceContext
+@inject AdminContext AdminContext
 
 @{
     ViewData["Title"] = "Moderation";
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[] {
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[] {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
         (I18n["Analytics"], "/admin/workspace/analytics", false),
         ("Moderation", null, true)
     };

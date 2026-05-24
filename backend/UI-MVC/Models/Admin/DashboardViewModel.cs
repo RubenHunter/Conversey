@@ -1,4 +1,3 @@
-using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 
@@ -61,6 +60,11 @@ public class DashboardViewModel
     public ChartWidgetViewModel? UsageTrendChart { get; set; }
 
     /// <summary>
+    /// Pre-serialized JSON for the usage trend chart (reused by TypeScript).
+    /// </summary>
+    public string UsageTrendJson { get; set; } = "[]";
+
+    /// <summary>
     /// Additional stat widgets for future expansion.
     /// </summary>
     public List<StatWidgetViewModel> StatWidgets { get; set; } = new();
@@ -73,99 +77,6 @@ public static class DashboardViewModelExtensions
 
     public static bool IsWorkspaceDashboard(this DashboardViewModel model) =>
         model.AdminType == "workspace";
-
-    public static DashboardViewModel FromDto(DashboardStatsDto dto)
-    {
-        return new DashboardViewModel
-        {
-            StatWidgets = dto.StatWidgets.Select(s => new StatWidgetViewModel
-            {
-                Label = s.Label,
-                Value = s.Value,
-                SubLabel = s.SubLabel,
-                Icon = s.Icon,
-                Color = s.Color,
-                Size = WidgetSize.Small
-            }).ToList(),
-
-            ComparisonWidget = dto.ComparisonWidget != null ? new ComparisonWidgetViewModel
-            {
-                Id = Guid.NewGuid().ToString(),
-                Title = dto.ComparisonWidget.Title,
-                SubTitle = dto.ComparisonWidget.SubTitle,
-                TitleUrl = dto.ComparisonWidget.TitleUrl,
-                SubTitleUrl = dto.ComparisonWidget.SubTitleUrl,
-                Items = dto.ComparisonWidget.Items.Select(i => new ComparisonItemViewModel
-                {
-                    Label = i.Label,
-                    Value = i.Value,
-                    Color = i.Color,
-                    LegendIcon = i.LegendIcon
-                }).ToList(),
-                AllItems = dto.ComparisonWidget.AllItems.Select(i => new ComparisonItemViewModel
-                {
-                    Label = i.Label,
-                    Value = i.Value,
-                    Color = i.Color,
-                    LegendIcon = i.LegendIcon
-                }).ToList(),
-                Size = WidgetSize.Medium
-            } : null,
-
-            QuickLinksWidget = dto.QuickLinksWidget != null ? new QuickLinksWidgetViewModel
-            {
-                Title = dto.QuickLinksWidget.Title,
-                Items = dto.QuickLinksWidget.Items.Select(i => new QuickLinkItemViewModel
-                {
-                    Title = i.Title,
-                    Description = i.Description,
-                    Icon = i.Icon,
-                    IconBgHex = i.IconBgHex,
-                    IconFgHex = i.IconFgHex,
-                    ModalTarget = i.ModalTarget,
-                    NavigateUrl = i.NavigateUrl,
-                    IsHealthCheck = i.IsHealthCheck
-                }).ToList(),
-                Size = WidgetSize.Medium
-            } : null,
-
-            EngagementWidget = dto.EngagementWidget != null ? new EngagementWidgetViewModel
-            {
-                Title = dto.EngagementWidget.Title,
-                GaugePercentage = dto.EngagementWidget.GaugePercentage,
-                GaugeLabel = dto.EngagementWidget.GaugeLabel,
-                GaugeColor = dto.EngagementWidget.GaugeColor,
-                Bars = dto.EngagementWidget.Bars.Select(b => new EngagementBarViewModel
-                {
-                    Label = b.Label,
-                    SubLabel = b.SubLabel,
-                    Current = b.Current,
-                    Max = b.Max,
-                    DisplayValue = b.DisplayValue,
-                    Color = b.Color
-                }).ToList(),
-                Size = WidgetSize.Medium
-            } : null,
-
-            UsageTrendChart = dto.UsageTrendChart != null ? new ChartWidgetViewModel
-            {
-                Title = dto.UsageTrendChart.Title,
-                CanvasId = dto.UsageTrendChart.CanvasId,
-                Type = dto.UsageTrendChart.Type,
-                Data = dto.UsageTrendChart.Data,
-                Options = dto.UsageTrendChart.Options,
-                Periods = dto.UsageTrendChart.Periods.Select(p => new PeriodViewModel
-                {
-                    Id = p.Id,
-                    Label = p.Label,
-                    IsActive = p.IsActive
-                }).ToList(),
-                ActivePeriod = dto.UsageTrendChart.ActivePeriod,
-                PeriodDatasets = dto.UsageTrendChart.PeriodDatasets,
-                Size = WidgetSize.ExtraLarge
-            } : null
-        };
-    }
 }
 
 /// <summary>
@@ -236,6 +147,16 @@ public class ComparisonWidgetViewModel
     public string SubTitleUrl { get; set; } = "/admin/projects?filter=all";
 
     /// <summary>
+    /// Label for the primary toggle button (e.g. "All" or "Projects").
+    /// </summary>
+    public string ToggleLabel { get; set; } = "All";
+
+    /// <summary>
+    /// Label for the secondary toggle button (e.g. "Active" or "Youths").
+    /// </summary>
+    public string ToggleSecondaryLabel { get; set; } = "Active";
+
+    /// <summary>
     /// Items for the primary/active mode (e.g., active projects).
     /// </summary>
     public List<ComparisonItemViewModel> Items { get; set; } = new();
@@ -271,6 +192,11 @@ public class ComparisonItemViewModel
     /// The color theme for this item (e.g., "primary", "secondary", "accent").
     /// </summary>
     public string Color { get; set; } = "primary";
+
+    /// <summary>
+    /// The URL to navigate to when clicking this item's circle.
+    /// </summary>
+    public string? NavigateUrl { get; set; }
 
     /// <summary>
     /// Optional icon for the legend.

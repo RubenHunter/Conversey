@@ -3,10 +3,12 @@
 @model Conversey.UI_MVC.Models.Analytics.IdeasListViewModel
 @inject IAdminI18nService I18n
 @inject WorkspaceContext WorkspaceContext
+@inject AdminContext AdminContext
 
 @{
     ViewData["Title"] = "Ideas List";
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[] {
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[] {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
         (I18n["Analytics"], "/admin/workspace/analytics", false),
         ("Ideas", null, true)
     };

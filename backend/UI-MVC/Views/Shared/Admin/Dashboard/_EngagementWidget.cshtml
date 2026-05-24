@@ -1,8 +1,9 @@
 @model Conversey.UI_MVC.Models.Admin.EngagementWidgetViewModel
 @{
     double radius = 40;
-    double circumference = (270.0 / 360.0) * 2 * Math.PI * radius; // ≈ 188.5
-    double strokeOffset = circumference * (1 - Model.GaugePercentage / 100.0);
+    double circumference = (270.0 / 360.0) * 2 * Math.PI * radius;
+    double gaugePct = Math.Min(Model.GaugePercentage, 100);
+    double strokeOffset = circumference * (1 - gaugePct / 100.0);
 }
 
 <div class="bg-white rounded-xl border border-secondary/10 shadow-sm h-full p-5">

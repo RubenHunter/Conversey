@@ -16,8 +16,7 @@ namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
 public class ConverseyAdminController(
     IWorkspaceManager workspaceManager,
-    IAdminManager adminManager,
-    IAdminStatsService adminStatsService) : Controller
+    IAdminManager adminManager) : Controller
 {
     [HttpGet("/admin/conversey")]
     public IActionResult Index()

@@ -1,12 +1,13 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
 @inject WorkspaceContext WorkspaceContext
+@inject AdminContext AdminContext
 @inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
     ViewData["Title"] = I18n["Edit Project"];
-    ViewData["WorkspaceName"] = AdminContext.GetWorkspace()?.Name ?? "Workspace";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
         (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),

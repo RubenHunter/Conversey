@@ -28,6 +28,7 @@
         var entry = {
             type: '@Model.Type',
             data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Data)),
+            options: @Html.Raw(Model.Options != null ? System.Text.Json.JsonSerializer.Serialize(Model.Options) : "null"),
             periods: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Periods.Select(p => new { id = p.Id, label = p.Label, isActive = p.IsActive })))
         };
         @if (Model.PeriodDatasets.Any())

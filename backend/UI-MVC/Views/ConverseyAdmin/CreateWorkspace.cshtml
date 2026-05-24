@@ -14,6 +14,11 @@
         ("Workspaces", "/admin/workspaces", false),
         ("Create Workspace", null, true)
     };
+    var formViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Create workspace",
+        ["SubmitLabel"] = "Create workspace"
+    };
 }
 
 <div class="min-h-screen bg-background font-sans text-text">

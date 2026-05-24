@@ -169,7 +169,7 @@
                             ["data-workspace-admin-id"] = u.Id.ToString(),
                             ["data-workspace-admin-email"] = u.Email ?? string.Empty,
                             ["data-workspace-admin-username"] = u.Username ?? string.Empty,
-                            ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty
+                            ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty,
                             ["href"] = Url.Action("EditWorkspaceAdmin", "Admin", new { id = u.Id })!,
                             ["data-i18n"] = "Edit"
                         }

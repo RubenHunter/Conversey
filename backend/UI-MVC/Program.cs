@@ -79,7 +79,6 @@ builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 builder.Services.AddScoped<IAiPricingService, AiPricingService>();
 builder.Services.AddScoped<IAnalyticsManager, AnalyticsManager>();
-//merge conflict builder.Services.AddScoped<IAdminStatsService, AdminStatsService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -245,7 +244,8 @@ builder.Services.AddScoped<ISpeechManager>(provider =>
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
-builder.Services.AddSingleton<AdminContext>();
+builder.Services.AddScoped<AdminContext>();
+builder.Services.AddScoped<AdminContextMiddleware>();
 builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
@@ -322,6 +322,7 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AdminContextMiddleware>();
 
 app.MapRazorPages();
 

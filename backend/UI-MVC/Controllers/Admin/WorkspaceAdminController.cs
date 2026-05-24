@@ -16,7 +16,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
     {
-        return View();
+        return Redirect("/admin");
     }
 
     [HttpGet("/admin/projects")]

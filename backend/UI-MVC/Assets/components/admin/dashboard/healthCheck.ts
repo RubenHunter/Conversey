@@ -81,9 +81,10 @@ export function initHealthCheck(): void {
         }
 
         const allOk = results.every(r => r.status === 'ok');
+        const failed = results.filter(r => r.status !== 'ok').map(r => r.provider);
         statusEl.textContent = allOk
             ? 'All systems operational'
-            : `${results.filter(r => r.status !== 'ok').length} issue(s) detected`;
+            : `${failed.join(', ')} failed`;
         statusEl.className = `health-status text-sm text-center font-semibold ${allOk ? 'text-green-600' : 'text-red-500'}`;
 
         closeBtn?.classList.remove('hidden');
