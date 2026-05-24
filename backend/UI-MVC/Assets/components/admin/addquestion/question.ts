@@ -11,7 +11,6 @@ export type {QuestionComponent, QuestionPlaceholderComponent};
 type QuestionComponent = Draggable;
 
 function createQuestionComponent(question: Question): QuestionComponent {
-    
     const deleteButton = htmlToElement<HTMLButtonElement>(
         `<button class="icon-btn">
                 <img src="/Assets/trash.svg" alt="trash-icon" class="icon"/>
