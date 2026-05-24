@@ -1,4 +1,4 @@
-export type {Question, FixedQuestion, RangeQuestion, OpenQuestion};
+export type {AddQuestion, FixedQuestion, RangeQuestion, OpenQuestion};
 export {createOpenQuestion, QuestionType, createFixedQuestion, createRangeQuestion}
 
 
@@ -9,25 +9,25 @@ enum QuestionType {
     Range = 'range',
 }
 
-type Question = {
+type AddQuestion = {
     text: string;
     startDrag?: () => void;
     endDrag?: () => void;
 };
 
-type FixedQuestion = Question & {
+type FixedQuestion = AddQuestion & {
     single: boolean;
     possibleAnswers: readonly string[];
 };
 
-type RangeQuestion = Question & {
+type RangeQuestion = AddQuestion & {
     min: number;
     max: number;
 };
 
-type OpenQuestion = Question;
+type OpenQuestion = AddQuestion;
 
-function createQuestion(text: string): Question {
+function createQuestion(text: string): AddQuestion {
     return {
         text: text,
     }

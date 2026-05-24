@@ -1,5 +1,5 @@
 import {createDraggableComponent, Draggable} from "../../DragAndDropList.ts";
-import {Question} from "../../../models/Question.ts";
+import {AddQuestion} from "../../../models/AddQuestion.ts";
 import {htmlToElement} from "../../../utils/dom.ts";
 
 export {createQuestionComponent, createQuestionPlaceholderComponent};
@@ -7,7 +7,7 @@ export type {QuestionComponent, QuestionPlaceholderComponent};
 
 type QuestionComponent = Draggable;
 
-function createQuestionComponent(question: Question): QuestionComponent {
+function createQuestionComponent(question: AddQuestion): QuestionComponent {
 
     const component: QuestionComponent = createDraggableComponent(htmlToElement<QuestionComponent>(`
 <article class="question flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm hover:bg-zinc-50">

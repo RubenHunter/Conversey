@@ -1,7 +1,7 @@
 import {createQuestionComponent} from "../Question.ts";
 import {PagedModalComponent} from "../../../PagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
-import {createRangeQuestion} from "../../../../models/Question.ts";
+import {createRangeQuestion} from "../../../../models/AddQuestion.ts";
 import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
 
 

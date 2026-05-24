@@ -5,7 +5,7 @@ import {createPagedModalComponent} from "../components/PagedModal.ts";
 import {createSetQuestionTypeComponent} from "../components/admin/addquestion/createquestion/SetQuestionType.ts";
 import {createModalComponent} from "../components/Modal.ts";
 import {createAddSectionComponent} from "../components/admin/addquestion/AddSectionComponent.ts";
-import {createOpenQuestion} from "../models/Question.ts";
+import {createOpenQuestion} from "../models/AddQuestion.ts";
 
 const rootQuestionElement: HTMLOListElement = document.getElementById('question-root') as HTMLOListElement;
 const createQuestionButton: HTMLButtonElement = document.getElementById('create-question-button') as HTMLButtonElement;

@@ -1,7 +1,7 @@
 import {createAddAnswersComponent} from "./AddAnswers.ts";
 import {createSetRangeAnswerComponent} from "./SetRangeAnswer.ts";
 import {PagedModalComponent} from "../../../PagedModal.ts";
-import {QuestionType} from "../../../../models/Question.ts";
+import {QuestionType} from "../../../../models/AddQuestion.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
 
 export {createSetQuestionTypeComponent};
