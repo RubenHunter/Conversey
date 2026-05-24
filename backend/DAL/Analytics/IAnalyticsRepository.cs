@@ -148,7 +148,6 @@ public class ModerationQueueItem
     public string? ParentIdeaContent { get; set; }
     public Guid? YouthId { get; set; }
     public string? YouthEmail { get; set; }
-    public byte ModerationFlags { get; set; }
     public bool FlagSexual { get; set; }
     public bool FlagHate { get; set; }
     public bool FlagViolence { get; set; }

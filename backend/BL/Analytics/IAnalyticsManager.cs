@@ -28,4 +28,7 @@ public interface IAnalyticsManager
     string ExportAnswersOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? questionType = null);
     string ExportIdeasOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null);
     string ExportCombinedCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null, string? questionType = null);
+    List<ModerationQueueItemDto> GetModerationQueue(Slug workspaceId, Slug? projectId, int? topicId, int? ideaId);
+    Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null);
+    Task<bool> ToggleMarkedForReviewAsync(string type, int id);
 }

@@ -43,10 +43,9 @@ public class WorkspaceAnalyticsController : Controller
         [FromQuery] string? status = null)
     {
         var workspace = _workspaceContext.CurrentWorkspace;
-
+        ViewData["WorkspaceName"] = workspace.Name;
         DateTime? parsedDateFrom = ParseDate(Request.Query["dateFrom"]);
         DateTime? parsedDateTo = ParseDate(Request.Query["dateTo"]);
-
         var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspace.Id);
         Project? selectedProject = null;
 
@@ -371,6 +370,7 @@ public class WorkspaceAnalyticsController : Controller
         [FromQuery] string? ideaId = null)
     {
         var workspace = _workspaceContext.CurrentWorkspace;
+        ViewData["WorkspaceName"] = workspace.Name;
         var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspace.Id);
 
         Slug? projectSlug = null;
@@ -385,7 +385,7 @@ public class WorkspaceAnalyticsController : Controller
         if (!string.IsNullOrWhiteSpace(ideaId) && int.TryParse(ideaId, out var iid))
             parsedIdeaId = iid;
 
-        var queue = _analyticsRepo.GetModerationQueue(workspace.Id, projectSlug, parsedTopicId, parsedIdeaId);
+        var queue = _analyticsManager.GetModerationQueue(workspace.Id, projectSlug, parsedTopicId, parsedIdeaId);
 
         var topics = _analyticsRepo.GetTopicsForWorkspace(workspace.Id);
         if (projectSlug.HasValue)

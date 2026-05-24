@@ -167,3 +167,26 @@ public class UsageTrendPointDto
     public int IdeaCount { get; set; }
     public int UniqueYouth { get; set; }
 }
+
+public class ModerationQueueItemDto
+{
+    public string Type { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public DateTime SubmissionDate { get; set; }
+    public string? TopicName { get; set; }
+    public string? ProjectName { get; set; }
+    public string? ProjectSlug { get; set; }
+    public int? TopicId { get; set; }
+    public int? ParentIdeaId { get; set; }
+    public string? ParentIdeaContent { get; set; }
+    public Guid? YouthId { get; set; }
+    public string? YouthEmail { get; set; }
+    public bool FlagSexual { get; set; }
+    public bool FlagHate { get; set; }
+    public bool FlagViolence { get; set; }
+    public bool FlagDangerous { get; set; }
+    public bool FlagSelfHarm { get; set; }
+    public bool FlagPii { get; set; }
+    public string? RejectionReason { get; set; }
+}

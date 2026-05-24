@@ -262,7 +262,7 @@ public class AnalyticsApiController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Type) || (request.Type != "idea" && request.Type != "response"))
             return BadRequest(new { error = "Type must be 'idea' or 'response'." });
 
-        var result = await _analyticsRepo.ToggleMarkedForReviewAsync(request.Type, request.Id);
+        var result = await _analyticsManager.ToggleMarkedForReviewAsync(request.Type, request.Id);
         if (!result)
             return NotFound(new { error = $"{request.Type} with id {request.Id} not found." });
 
@@ -280,7 +280,7 @@ public class AnalyticsApiController : ControllerBase
             return BadRequest(new { error = "Action must be 'accept' or 'deny'." });
 
         var status = request.Action == "accept" ? "Approved" : "Rejected";
-        var result = await _analyticsRepo.SetModerationStatusAsync(request.Type, request.Id, status, request.Reason);
+        var result = await _analyticsManager.SetModerationStatusAsync(request.Type, request.Id, status, request.Reason);
         if (!result)
             return NotFound(new { error = $"{request.Type} with id {request.Id} not found or invalid status." });
 

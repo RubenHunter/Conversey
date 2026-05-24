@@ -486,4 +486,41 @@ public class AnalyticsManager : IAnalyticsManager
             UniqueYouth = p.UniqueYouth
         }).ToList();
     }
+
+    public List<ModerationQueueItemDto> GetModerationQueue(Slug workspaceId, Slug? projectId, int? topicId, int? ideaId)
+    {
+        var items = _repo.GetModerationQueue(workspaceId, projectId, topicId, ideaId);
+        return items.Select(q => new ModerationQueueItemDto
+        {
+            Type = q.Type,
+            Id = q.Id,
+            Content = q.Content,
+            SubmissionDate = q.SubmissionDate,
+            TopicName = q.TopicName,
+            ProjectName = q.ProjectName,
+            ProjectSlug = q.ProjectSlug,
+            TopicId = q.TopicId,
+            ParentIdeaId = q.ParentIdeaId,
+            ParentIdeaContent = q.ParentIdeaContent,
+            YouthId = q.YouthId,
+            YouthEmail = q.YouthEmail,
+            FlagSexual = q.FlagSexual,
+            FlagHate = q.FlagHate,
+            FlagViolence = q.FlagViolence,
+            FlagDangerous = q.FlagDangerous,
+            FlagSelfHarm = q.FlagSelfHarm,
+            FlagPii = q.FlagPii,
+            RejectionReason = q.RejectionReason
+        }).ToList();
+    }
+
+    public async Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null)
+    {
+        return await _repo.SetModerationStatusAsync(type, id, status, reason);
+    }
+
+    public async Task<bool> ToggleMarkedForReviewAsync(string type, int id)
+    {
+        return await _repo.ToggleMarkedForReviewAsync(type, id);
+    }
 }
