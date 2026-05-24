@@ -12,8 +12,8 @@
 
 <div class="bg-white rounded-xl border border-secondary/10 shadow-sm h-full p-5 comparison-widget"
      data-comparison-widget="@Model.Id"
-     data-items="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))"
-     data-all-items="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllItems.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))">
+     data-items='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))'
+     data-all-items='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllItems.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))'>
 
     <div class="flex flex-col h-full gap-3">
 
