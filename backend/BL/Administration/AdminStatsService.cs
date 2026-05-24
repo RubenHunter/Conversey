@@ -195,7 +195,7 @@ public class AdminStatsService : IAdminStatsService
     {
         return new List<ActionWidgetDto>
         {
-            new() { Title = "Create New", Description = "Add a new workspace to your platform", Icon = "<svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 4.5v15m7.5-7.5h-15'/></svg>", ActionText = "New Workspace", ActionUrl = "/admin/workspaces/create", IsModal = false }
+            new() { Title = "Create New", Description = "Add a new workspace to your platform", Icon = "<svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 4.5v15m7.5-7.5h-15'/></svg>", ActionText = "New Workspace", ActionUrl = "/admin/workspaces/new", IsModal = false }
         };
     }
 
@@ -235,7 +235,7 @@ public class AdminStatsService : IAdminStatsService
             Title = "Links",
             Items = new List<QuickLinkItemDto>
             {
-                new() { Title = "New workspace", Description = "Create a new workspace", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 4.5v15m7.5-7.5h-15'/></svg>", IconBgHex = "#FEF9C3", IconFgHex = "#CA8A04", ModalTarget = "modal-new-workspace", NavigateUrl = "/admin/workspaces/create" },
+                new() { Title = "New workspace", Description = "Create a new workspace", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M12 4.5v15m7.5-7.5h-15'/></svg>", IconBgHex = "#FEF9C3", IconFgHex = "#CA8A04", ModalTarget = "modal-new-workspace", NavigateUrl = "/admin/workspaces/new" },
                 new() { Title = "Check health", Description = "Check AI provider", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'/></svg>", IconBgHex = "#FFE4EC", IconFgHex = "#FF2F6A", IsHealthCheck = true, NavigateUrl = "" },
                 new() { Title = "Rate Limits", Description = "Limits for AI endpoints", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75'/></svg>", IconBgHex = "#ECFCE7", IconFgHex = "#6DE92A", NavigateUrl = "/admin/ai/rate-limits" }
             }
