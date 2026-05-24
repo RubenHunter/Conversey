@@ -7,10 +7,12 @@
 export * from './chartWidget';
 export * from './comparisonWidget';
 export * from './quickLinksWidget';
+export * from './healthCheck';
 
 import { initAllCharts, isChartLoaded } from './chartWidget';
 import { initAllComparisonWidgets } from './comparisonWidget';
 import { initAllQuickLinksWidgets } from './quickLinksWidget';
+import { initHealthCheck } from './healthCheck';
 
 
 /**
@@ -20,6 +22,7 @@ import { initAllQuickLinksWidgets } from './quickLinksWidget';
 export function initDashboard(): void {
     initAllComparisonWidgets();
     initAllQuickLinksWidgets();
+    initHealthCheck();
 
     if (isChartLoaded()) {
         initAllCharts();

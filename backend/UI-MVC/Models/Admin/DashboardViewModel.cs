@@ -123,7 +123,8 @@ public static class DashboardViewModelExtensions
                     IconBgHex = i.IconBgHex,
                     IconFgHex = i.IconFgHex,
                     ModalTarget = i.ModalTarget,
-                    NavigateUrl = i.NavigateUrl
+                    NavigateUrl = i.NavigateUrl,
+                    IsHealthCheck = i.IsHealthCheck
                 }).ToList(),
                 Size = WidgetSize.Medium
             } : null,
@@ -342,6 +343,11 @@ public class QuickLinkItemViewModel
     /// Whether this link opens a modal.
     /// </summary>
     public bool IsModal => !string.IsNullOrEmpty(ModalTarget);
+
+    /// <summary>
+    /// Whether clicking triggers the inline health check panel instead of navigating.
+    /// </summary>
+    public bool IsHealthCheck { get; set; }
 }
 
 /// <summary>
@@ -412,6 +418,7 @@ public class EngagementBarViewModel
 
     /// <summary>
     /// The Tailwind color class for the progress bar fill.
+    /// Prefer ColorClass (computed from Percentage) over this field.
     /// </summary>
     public string Color { get; set; } = "bg-green-500";
 
@@ -419,6 +426,21 @@ public class EngagementBarViewModel
     /// Computed percentage for the progress bar width.
     /// </summary>
     public int Percentage => Max > 0 ? (int)Math.Round((double)Current / Max * 100) : 0;
+
+    /// <summary>
+    /// Computed Tailwind color class based on Percentage using the 6-band scale.
+    /// </summary>
+    public string ColorClass => GetBarColor(Percentage);
+
+    public static string GetBarColor(int percentage) => percentage switch
+    {
+        < 17 => "bg-red-500",
+        < 34 => "bg-red-400",
+        < 50 => "bg-orange-500",
+        < 67 => "bg-orange-400",
+        < 84 => "bg-green-500",
+        _    => "bg-green-600"
+    };
 }
 
 /// <summary>

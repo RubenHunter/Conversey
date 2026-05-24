@@ -123,7 +123,8 @@ public class ChartWidgetDto
     public object? Data { get; set; }
     public object? Options { get; set; }
     public List<PeriodDto> Periods { get; set; } = new();
-    public string ActivePeriod { get; set; } = "7d";
+    public string ActivePeriod { get; set; } = "1m";
+    public Dictionary<string, object> PeriodDatasets { get; set; } = new();
 }
 
 /// <summary>
@@ -170,6 +171,7 @@ public class ComparisonWidgetDto
     public string TitleUrl { get; set; } = "/admin/projects";
     public string SubTitleUrl { get; set; } = "/admin/projects?filter=all";
     public List<ComparisonItemDto> Items { get; set; } = new();
+    public List<ComparisonItemDto> AllItems { get; set; } = new();
 }
 
 /// <summary>
@@ -200,10 +202,11 @@ public class QuickLinkItemDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Icon { get; set; } = string.Empty;
-    public string IconBackground { get; set; } = "bg-primary/10";
-    public string IconColor { get; set; } = "text-primary";
+    public string IconBgHex { get; set; } = string.Empty;
+    public string IconFgHex { get; set; } = string.Empty;
     public string? ModalTarget { get; set; }
     public string NavigateUrl { get; set; } = string.Empty;
+    public bool IsHealthCheck { get; set; }
     public bool IsModal => !string.IsNullOrEmpty(ModalTarget);
 }
 

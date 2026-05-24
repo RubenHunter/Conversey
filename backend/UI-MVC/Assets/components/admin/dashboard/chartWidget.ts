@@ -141,7 +141,7 @@ function setupPeriodTabs(config: ChartWidgetConfig): void {
             periodButtons.forEach(b => b.classList.remove('active'));
             button.classList.add('active');
 
-            // Call period change handler if provided
+            // Use pre-rendered data if available, otherwise fetch from API
             if (config.onPeriodChange) {
                 try {
                     const newData = await config.onPeriodChange(periodId);
@@ -149,7 +149,30 @@ function setupPeriodTabs(config: ChartWidgetConfig): void {
                         updateChartData(config.canvasId, newData);
                     }
                 } catch (error) {
-                    console.error('Error fetching period data:', error);
+                    console.error('Error switching period:', error);
+                }
+            } else {
+                // API fallback for period switching
+                try {
+                    const res  = await fetch(`/api/admin/stats/usage-trend?period=${periodId}`, { credentials: 'include' });
+                    const trend = await res.json();
+                    const c = '#6366F1';
+                    updateChartData(config.canvasId, {
+                        labels: trend.labels,
+                        datasets: [{
+                            label: trend.title || 'Visits',
+                            data: trend.values,
+                            borderColor: c,
+                            backgroundColor: c + '18',
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: c,
+                            pointBorderColor: '#fff',
+                            pointRadius: 3
+                        }]
+                    });
+                } catch (error) {
+                    console.error('Error fetching usage trend:', error);
                 }
             }
         });

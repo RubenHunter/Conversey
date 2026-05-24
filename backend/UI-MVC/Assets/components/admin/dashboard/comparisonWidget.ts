@@ -1,5 +1,6 @@
 /**
- * Comparison Widget — radial circle comparison with toggle switch and hover synchronisation.
+ * Comparison Widget — radial bubble comparison with toggle and hover sync.
+ * Circles use solid brand fills sized proportionally to sqrt(value).
  */
 
 interface ComparisonItem {
@@ -8,15 +9,12 @@ interface ComparisonItem {
     color: string;
 }
 
-function colorClass(color: string, type: 'dot' | 'circle'): string {
-    if (type === 'dot') {
-        return color === 'secondary' ? 'bg-secondary' : color === 'accent' ? 'bg-accent' : 'bg-primary';
+function colorHex(color: string): string {
+    switch (color) {
+        case 'secondary': return '#db99c8';
+        case 'accent':    return '#cd6f88';
+        default:          return '#6c5ce7';
     }
-    return color === 'secondary'
-        ? 'bg-secondary/20 border-secondary'
-        : color === 'accent'
-            ? 'bg-accent/20 border-accent'
-            : 'bg-primary/20 border-primary';
 }
 
 function layoutCircles(container: HTMLElement, items: ComparisonItem[]): void {
@@ -31,22 +29,14 @@ function layoutCircles(container: HTMLElement, items: ComparisonItem[]): void {
     const count = items.length;
     const angleStep = 360 / count;
 
-    // Orbit radius: % of half-container size, adjusted for number of items
     const orbitRadius = containerSize * (count === 1 ? 0 : 0.28);
+    const maxDiameter = containerSize * 0.42;
+    const minDiameter = containerSize * 0.18;
 
-    // Max circle diameter fits inside the remaining space
-    const maxDiameter = containerSize * 0.38;
-    const minDiameter = containerSize * 0.14;
-
-    const circleEls = container.querySelectorAll<HTMLElement>('.circle-item');
-
-    circleEls.forEach(el => {
+    container.querySelectorAll<HTMLElement>('.circle-item').forEach(el => {
         const label = el.dataset.itemId!;
         const item = items.find(i => i.label === label);
-        if (!item) {
-            el.style.display = 'none';
-            return;
-        }
+        if (!item) { el.style.display = 'none'; return; }
 
         el.style.display = '';
         const idx = items.indexOf(item);
@@ -54,8 +44,8 @@ function layoutCircles(container: HTMLElement, items: ComparisonItem[]): void {
         const x = Math.cos(angle) * orbitRadius;
         const y = Math.sin(angle) * orbitRadius;
 
-        const valueRatio = item.value / maxValue;
-        const diameter = minDiameter + (maxDiameter - minDiameter) * Math.sqrt(valueRatio);
+        // sqrt scaling for perceptually fair area comparison
+        const diameter = minDiameter + (maxDiameter - minDiameter) * Math.sqrt(item.value / maxValue);
 
         el.style.left = '50%';
         el.style.top = '50%';
@@ -63,45 +53,52 @@ function layoutCircles(container: HTMLElement, items: ComparisonItem[]): void {
 
         const inner = el.querySelector<HTMLElement>('div');
         if (inner) {
-            inner.style.width = `${diameter}px`;
+            inner.style.width  = `${diameter}px`;
             inner.style.height = `${diameter}px`;
-            // Remove old color classes, apply new ones
-            inner.className = `rounded-full flex items-center justify-center shadow-sm border-2 transition-all duration-300 ${colorClass(item.color, 'circle')}`;
+            inner.style.backgroundColor = colorHex(item.color);
+            inner.style.color = '#fff';
+            inner.className = 'rounded-full flex items-center justify-center shadow-md transition-all duration-300';
         }
 
         const span = el.querySelector<HTMLElement>('.circle-value');
         if (span) {
             span.textContent = String(item.value);
-            span.style.fontSize = `${Math.max(10, diameter * 0.28)}px`;
+            span.style.fontSize = `${Math.max(10, diameter * 0.3)}px`;
+            span.style.fontWeight = '600';
         }
-
-        el.dataset.value = String(item.value);
-        el.dataset.color = item.color;
     });
 }
 
-function updateLegend(container: HTMLElement, items: ComparisonItem[]): void {
-    const legend = container.closest('.comparison-widget')?.querySelector('.legend-container');
+function updateLegend(widget: HTMLElement, items: ComparisonItem[]): void {
+    const legend = widget.querySelector<HTMLElement>('.legend-container');
     if (!legend) return;
 
-    const existing = legend.querySelectorAll<HTMLElement>('.legend-item');
-    existing.forEach(el => {
-        const label = el.dataset.itemId!;
-        const item = items.find(i => i.label === label);
-        if (item) {
-            const dot = el.querySelector<HTMLElement>('.legend-dot');
-            if (dot) dot.className = `w-2.5 h-2.5 rounded-full shrink-0 legend-dot ${colorClass(item.color, 'dot')}`;
-        }
+    // Rebuild legend items to reflect new dataset
+    legend.innerHTML = items.map(item => `
+        <div class="flex items-center gap-2 legend-item cursor-pointer" data-item-id="${item.label}">
+            <div class="w-3.5 h-2 rounded shrink-0 legend-dot" style="background-color: ${colorHex(item.color)}"></div>
+            <span class="text-xs text-text/70 truncate">${item.label}</span>
+        </div>
+    `).join('');
+
+    // Re-attach hover handlers to new legend items
+    const circleItems = widget.querySelectorAll<HTMLElement>('.circle-item');
+    legend.querySelectorAll<HTMLElement>('.legend-item').forEach(el => {
+        el.addEventListener('mouseenter', () => applyHover(widget, el.dataset.itemId!));
+        el.addEventListener('mouseleave', () => applyHover(widget, null));
+    });
+    circleItems.forEach(el => {
+        el.addEventListener('mouseenter', () => applyHover(widget, el.dataset.itemId!));
+        el.addEventListener('mouseleave', () => applyHover(widget, null));
     });
 }
 
 function applyHover(widget: HTMLElement, activeLabel: string | null): void {
-    const opacity = activeLabel ? '0.25' : '';
     widget.querySelectorAll<HTMLElement>('.circle-item').forEach(el => {
-        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? opacity : '';
+        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? '0.25' : '';
     });
     widget.querySelectorAll<HTMLElement>('.legend-item').forEach(el => {
-        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? opacity : '';
+        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? '0.25' : '';
     });
 }
 
@@ -113,19 +110,16 @@ export function initComparisonWidget(widgetId: string): void {
     if (!container) return;
 
     const primaryItems: ComparisonItem[] = JSON.parse(widget.dataset.items || '[]');
-    const allItems: ComparisonItem[] = JSON.parse(widget.dataset.allItems || '[]');
+    const allItems: ComparisonItem[]     = JSON.parse(widget.dataset.allItems || '[]');
     const hasToggle = allItems.length > 0;
 
     let activeItems = primaryItems;
 
-    // Initial layout
     layoutCircles(container, activeItems);
 
-    // Resize observer keeps circles correctly sized
     const ro = new ResizeObserver(() => layoutCircles(container, activeItems));
     ro.observe(container);
 
-    // Toggle switch — primary / all
     if (hasToggle) {
         const toggleBtns = widget.querySelectorAll<HTMLElement>('.comparison-toggle');
         toggleBtns.forEach(btn => {
@@ -136,14 +130,14 @@ export function initComparisonWidget(widgetId: string): void {
                 toggleBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 
                 layoutCircles(container, activeItems);
-                updateLegend(container, activeItems);
+                updateLegend(widget, activeItems);
             });
         });
     }
 
-    // Hover synchronisation — legend ↔ circles
-    const legendItems = widget.querySelectorAll<HTMLElement>('.legend-item');
-    const circleItems = widget.querySelectorAll<HTMLElement>('.circle-item');
+    // Hover sync — legend ↔ circles
+    const legendItems  = widget.querySelectorAll<HTMLElement>('.legend-item');
+    const circleItems  = widget.querySelectorAll<HTMLElement>('.circle-item');
 
     legendItems.forEach(el => {
         el.addEventListener('mouseenter', () => applyHover(widget, el.dataset.itemId!));

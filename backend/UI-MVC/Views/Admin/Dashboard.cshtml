@@ -18,23 +18,10 @@
             <p class="mt-2 text-sm text-text/60" data-i18n="dashboard.description">@Model.PageDescription</p>
         </div>
 
-        <!-- Row 1: Stat Widgets -->
-        @if (Model.StatWidgets.Any())
-        {
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
-                @foreach (var stat in Model.StatWidgets)
-                {
-                    <div class="col-span-1">
-                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_StatWidget.cshtml", stat)
-                    </div>
-                }
-            </div>
-        }
-
-        <!-- Row 2: Navigation Cards -->
+        <!-- Row 1: Navigation Cards -->
         @if (Model.NavCards.Any())
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 animate-enter" style="animation-delay:80ms">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
                 @foreach (var navCard in Model.NavCards)
                 {
                     @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
@@ -51,7 +38,7 @@
         }
         @if (widgetCols > 0)
         {
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-stretch animate-enter" style="animation-delay:160ms">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-stretch animate-enter" style="animation-delay:80ms">
                 @if (hasComparison)
                 {
                     <div class="lg:col-span-2">
@@ -76,7 +63,7 @@
         <!-- Row 4: Full-Width Chart -->
         @if (Model.UsageTrendChart != null)
         {
-            <div class="animate-enter" style="animation-delay:240ms">
+            <div class="animate-enter" style="animation-delay:160ms">
                 @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ChartWidget.cshtml", Model.UsageTrendChart)
             </div>
         }
