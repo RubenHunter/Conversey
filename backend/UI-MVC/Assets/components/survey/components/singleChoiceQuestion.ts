@@ -1,6 +1,6 @@
-import type { Question } from '../../../models/question'
 import { generateQuestionHeader } from '../utils/surveyUtils'
 import {initQuestionSpeakerForWrapper} from '../utils/surveyUtils'
+import {FixedQuestion} from "../../../models/Question.ts";
 
 export type QuestionAnswer = number | string | number[] | null
 
@@ -15,7 +15,7 @@ export interface QuestionComponent {
     destroy?(): void
 }
 
-export function renderSingleChoiceQuestion(question: Question, index: number): QuestionComponent {
+export function renderSingleChoiceQuestion(question: FixedQuestion, index: number): QuestionComponent {
     let selectedOptionId: number | null = null
     let answerCallback: (() => void) | null = null
     let isLocked = false
@@ -30,7 +30,7 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
         ${generateQuestionHeader(question, questionNumber)}
 
         <div class="survey-options" id="options-${question.id}">
-            ${(question.options ?? [])
+            ${(question.possibleAnswers ?? [])
                 .map(
                     (option) => `
                 <label class="survey-option-label" data-option-id="${option.id}">
@@ -89,7 +89,7 @@ export function renderSingleChoiceQuestion(question: Question, index: number): Q
     return {
         getAnswer: () => selectedOptionId,
         validate: () => {
-            if (question.isRequired && selectedOptionId === null) {
+            if (question.required && selectedOptionId === null) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false

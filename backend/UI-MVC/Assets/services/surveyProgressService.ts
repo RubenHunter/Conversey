@@ -1,4 +1,4 @@
-import type { Question } from '../models/question'
+import type { Question } from '../models/Question'
 import type { QuestionAnswer } from '../components/survey/components/singleChoiceQuestion'
 
 const SURVEY_PROGRESS_KEY_PREFIX = 'conversey-survey-progress'

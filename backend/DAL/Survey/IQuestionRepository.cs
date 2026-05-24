@@ -8,7 +8,6 @@ public interface IQuestionRepository
 {
     Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug projectSlug);
 
-    Question ReadQuestionById(int questionId);
     Question ReadQuestionByIdWithProject(int questionId);
 
     IReadOnlyCollection<Question> ReadAllQuestions();
@@ -25,6 +24,5 @@ public interface IQuestionRepository
     Youth ReadYouthByTokenWithProject(Guid youthToken);
     Youth CreateYouth(Guid youthToken, Slug projectSlug);
 
-    SingleChoice ReadSingleChoiceByIdForQuestion(int questionId, int optionId);
-    MultipleChoice ReadMultipleChoiceByIdForQuestion(int questionId, int optionId);
+    Choice ReadChoiceByIdForQuestion(int questionId, int choiceId);
 }

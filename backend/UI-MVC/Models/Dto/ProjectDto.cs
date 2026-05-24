@@ -69,67 +69,55 @@ public class ProjectTopicDto
 public class QuestionDto
 {
     public int Id { get; set; }
-    public Slug ProjectId { get; set; }
     public string Text { get; set; }
-    public bool IsRequired { get; set; }
+    public bool Required { get; set; }
     public string Type { get; set; }
-    public IEnumerable<AnswerOptionDto> Options { get; set; } = Array.Empty<AnswerOptionDto>();
+    public int LowerBound { get; set; }
+    public int UpperBound { get; set; }
+    public IEnumerable<ChoiceDto> PossibleAnswers { get; set; }
 
-    public static QuestionDto From(Question question, Slug projectId, IReadOnlyCollection<AnswerOptionDto> options = null)
+    public static QuestionDto From(Question question) 
     {
-        static IReadOnlyCollection<AnswerOptionDto> MapSingleChoiceOptions(ChoiceQuestion<SingleChoice> q)
-        {
-            return (q.PossibleChoices ?? Array.Empty<SingleChoice>())
-                .Select(choice => new AnswerOptionDto
-                {
-                    Id = choice.Id,
-                    QuestionId = q.Id,
-                    Text = choice.Text
-                })
-                .ToList()
-                .AsReadOnly();
-        }
-
-        static IReadOnlyCollection<AnswerOptionDto> MapMultipleChoiceOptions(ChoiceQuestion<MultipleChoice> q)
-        {
-            return (q.PossibleChoices ?? Array.Empty<MultipleChoice>())
-                .Select(choice => new AnswerOptionDto
-                {
-                    Id = choice.Id,
-                    QuestionId = q.Id,
-                    Text = choice.Text
-                })
-                .ToList()
-                .AsReadOnly();
-        }
-
-        return new QuestionDto
+        var dto = new QuestionDto
         {
             Id = question.Id,
-            ProjectId = projectId,
             Text = question.Text,
-            IsRequired = question.Required,
+            Required = question.Required,
             Type = question switch
             {
-                ChoiceQuestion<SingleChoice> => "SingleChoice",
-                ChoiceQuestion<MultipleChoice> => "MultipleChoice",
+                SingleChoiceQuestion => "SingleChoice",
+                MultipleChoiceQuestion => "MultipleChoice",
                 ScaleQuestion => "Scale",
-                OpenQuestion => "OpenText",
-                _ => "Choice"
-            },
-            Options = options ?? question switch
-            {
-                ChoiceQuestion<SingleChoice> singleChoiceQuestion => MapSingleChoiceOptions(singleChoiceQuestion),
-                ChoiceQuestion<MultipleChoice> multipleChoiceQuestion => MapMultipleChoiceOptions(multipleChoiceQuestion),
-                _ => Array.Empty<AnswerOptionDto>()
+                OpenQuestion => "Open",
+                _ => throw new ArgumentException($"Unexpected question type: {question.GetType()}")
             }
         };
+
+        switch (question)
+        {
+            case SingleChoiceQuestion choiceQuestion:
+                dto.PossibleAnswers = choiceQuestion.PossibleChoices.Select(ChoiceDto.From);
+                break;
+            case ScaleQuestion scaleQuestion:
+                dto.LowerBound = scaleQuestion.LowerBound;
+                dto.UpperBound = scaleQuestion.UpperBound;
+                break;
+        }
+        return dto;
     }
 }
 
-public class AnswerOptionDto
+public class ChoiceDto
 {
     public int Id { get; set; }
-    public int QuestionId { get; set; }
     public string Text { get; set; }
+
+    public static ChoiceDto From(Choice choice)
+    {
+        return new ChoiceDto
+        {
+            Id = choice.Id,
+            Text = choice.Text
+        };
+    }
 }

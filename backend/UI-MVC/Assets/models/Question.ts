@@ -1,28 +1,29 @@
-export type {Question, FixedQuestion, RangeQuestion, OpenQuestion};
+export type {Question, FixedQuestion, RangeQuestion, OpenQuestion, Answer};
 export {QuestionType}
 
 
 enum QuestionType {
-    Open = 'open',
-    MultipleChoice = 'multiple choice',
-    SingleChoice = 'single choice',
-    Range = 'range',
+    Open = 'Open',
+    MultipleChoice = 'MultipleChoice',
+    SingleChoice = 'SingleChoice',
+    scale = 'Scale',
 }
 
 type Question = {
+    id?: number;
     type: QuestionType;
     text: string;
-    startDrag?: () => void;
-    endDrag?: () => void;
+    required: boolean;
+    hint?: string;
 };
 
 type FixedQuestion = Question & {
     type: QuestionType.MultipleChoice | QuestionType.SingleChoice;
-    possibleAnswers: readonly string[];
+    possibleAnswers: readonly Answer[];
 };
 
 type RangeQuestion = Question & {
-    type: QuestionType.Range;
+    type: QuestionType.scale;
     min: number;
     max: number;
 };
@@ -30,3 +31,8 @@ type RangeQuestion = Question & {
 type OpenQuestion = Question & {
     type: QuestionType.Open;
 };
+
+type Answer = {
+    id?: number;
+    text: string;
+}

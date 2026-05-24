@@ -28,13 +28,13 @@ createSectionButton.addEventListener('click', clickCreateSection);
 deleteButton.addEventListener('click', clickDeleteButton);
 
 const section = createSectionComponent('Bussen');
-section.questions.addElement(createQuestionComponent({type: QuestionType.Open, text: "Wat vind je van het aantal bushaltes?"}));
+section.questions.addElement(createQuestionComponent({type: QuestionType.Open, text: "Wat vind je van het aantal bushaltes?", required: true}));
 rootQuestionList.addElement(section);
 
 function clickCreateQuestion() {
     console.log('click')
     const modal = createPagedModalComponent();
-    modal.setPage(createSetQuestionTypeComponent(modal, {type: QuestionType.Open, text: ""}));
+    modal.setPage(createSetQuestionTypeComponent(modal, {type: QuestionType.Open, text: "", required: true}));
     modal.show();
 }
 
