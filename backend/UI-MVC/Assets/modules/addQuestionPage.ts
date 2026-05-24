@@ -9,9 +9,9 @@ import {createPagedModalComponent} from "../components/pagedModal.ts";
 import {createSetQuestionTypeComponent} from "../components/admin/addquestion/createquestion/setQuestionType.ts";
 import {createModalComponent} from "../components/modal.ts";
 import {createAddSectionComponent} from "../components/admin/addquestion/addSectionComponent.ts";
-import {QuestionType} from "../models/question.ts";
+import {Question, QuestionType} from "../models/question.ts";
 
-export {select, deselect, rootQuestionList};
+export {select, deselect, rootQuestionList, getListQuestions};
 
 const rootQuestionElement: HTMLOListElement = document.getElementById('question-root') as HTMLOListElement;
 const createQuestionButton: HTMLButtonElement = document.getElementById('create-question-button') as HTMLButtonElement;
@@ -32,7 +32,6 @@ section.questions.addElement(createQuestionComponent({type: QuestionType.Open, t
 rootQuestionList.addElement(section);
 
 function clickCreateQuestion() {
-    console.log('click')
     const modal = createPagedModalComponent();
     modal.setPage(createSetQuestionTypeComponent(modal, {type: QuestionType.Open, text: "", required: true}));
     modal.show();
@@ -62,6 +61,21 @@ function clickCreateSection() {
         })
     );
     modal.show();
+}
+
+function getListQuestions(list: DragAndDropListComponent): Question[] {
+    const questions: Question[] = [];
+    for (const child of list.children) {
+        const component: HTMLElement = child.firstElementChild! as HTMLElement;
+        if (component instanceof HTMLDetailsElement) {
+            const section: SectionComponent = component as SectionComponent;
+            questions.push(...getListQuestions(section.questions));
+        } else {
+            const question: QuestionComponent = component as QuestionComponent;
+            questions.push(question.question);
+        }
+    }
+    return questions;
 }
 
 function clickDeleteButton() {

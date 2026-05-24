@@ -8,7 +8,9 @@ import {createSetQuestionTypeComponent} from "./createquestion/setQuestionType.t
 export {createQuestionComponent, createQuestionPlaceholderComponent};
 export type {QuestionComponent, QuestionPlaceholderComponent};
 
-type QuestionComponent = Draggable;
+type QuestionComponent = Draggable & {
+    question: Question;
+};
 
 function createQuestionComponent(question: Question): QuestionComponent {
     const deleteButton = htmlToElement<HTMLButtonElement>(
@@ -54,6 +56,8 @@ function createQuestionComponent(question: Question): QuestionComponent {
     <menu class="flex gap-1">
     </menu>
 </article>`)) as QuestionComponent;
+    
+    component.question = question;
 
     editButton.addEventListener('click', edit);
     
