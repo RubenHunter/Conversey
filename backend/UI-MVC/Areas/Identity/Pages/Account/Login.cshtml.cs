@@ -137,7 +137,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                             await _signInManager.SignInAsync(user, Input.RememberMe);
                             _logger.LogInformation("ConverseyAdmin logged in.");
                             _adminContext.CurrentAdmin = AdminContext.ToDomain(converseyAdmin);
-                            return LocalRedirect(Url.Content("~/admin/conversey"));
+                            return LocalRedirect(Url.Content("~/admin"));
                         }
                     }
                     else

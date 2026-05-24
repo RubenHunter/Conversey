@@ -7,8 +7,19 @@
 @Html.AntiForgeryToken()
 @inject IAdminI18nService I18n
 
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
+@inject IAdminI18nService AdminI18n
 @{
     ViewData["Title"] = "Workspace Details";
+    ViewData["WorkspaceName"] = Model.Workspace?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("Workspaces", "/admin/workspaces", false),
+        ("Workspace Details", null, true)
+    };
     ViewData["WorkspaceName"] = "Conversey";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
@@ -159,6 +170,8 @@
                             ["data-workspace-admin-email"] = u.Email ?? string.Empty,
                             ["data-workspace-admin-username"] = u.Username ?? string.Empty,
                             ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty
+                            ["href"] = Url.Action("EditWorkspaceAdmin", "Admin", new { id = u.Id })!,
+                            ["data-i18n"] = "Edit"
                         }
                     };
                     edit.AddCssClass("font-semibold text-primary transition hover:text-primary/80");
@@ -174,7 +187,8 @@
                             ["type"] = "button",
                             ["data-delete-id"] = u.Id.ToString(),
                             ["data-delete-name"] = u.Email ?? "-",
-                            ["data-delete-endpoint"] = $"/admin/workspace-user/delete/{u.Id}"
+                            ["data-delete-endpoint"] = $"/admin/workspace-user/delete/{u.Id}",
+                            ["data-i18n"] = "Delete"
                         }
                     };
 

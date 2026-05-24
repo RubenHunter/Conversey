@@ -14,12 +14,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace Conversey.UI_MVC.Controllers.Admin;
 
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
-public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdminManager adminManager) : Controller
+public class ConverseyAdminController(
+    IWorkspaceManager workspaceManager,
+    IAdminManager adminManager,
+    IAdminStatsService adminStatsService) : Controller
 {
     [HttpGet("/admin/conversey")]
     public IActionResult Index()
     {
-        return View();
+        // Redirect to the unified dashboard route
+        return Redirect("/admin");
     }
 
     [HttpGet("admin/workspaces")]

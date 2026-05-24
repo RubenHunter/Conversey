@@ -1,0 +1,78 @@
+@model Conversey.UI_MVC.Models.Admin.DashboardViewModel
+@using Conversey.UI_MVC.Models
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<div class="min-h-screen bg-background font-sans text-text admin-dashboard">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-7xl mx-auto">
+
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="dashboard.title">@Model.PageTitle</h1>
+            <p class="mt-2 text-sm text-text/60" data-i18n="dashboard.description">@Model.PageDescription</p>
+        </div>
+
+        <!-- Row 1: Navigation Cards -->
+        @if (Model.NavCards.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
+                @foreach (var navCard in Model.NavCards)
+                {
+                    @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
+                }
+            </div>
+        }
+
+        <!-- Row 3: Widget Row — Comparison (2 cols) | QuickLinks (1 col) | Engagement (1 col) -->
+        @{
+            bool hasComparison = Model.ComparisonWidget != null;
+            bool hasQuickLinks = Model.QuickLinksWidget != null && Model.QuickLinksWidget.Items.Any();
+            bool hasEngagement = Model.EngagementWidget != null;
+            int widgetCols = (hasComparison ? 2 : 0) + (hasQuickLinks ? 1 : 0) + (hasEngagement ? 1 : 0);
+        }
+        @if (widgetCols > 0)
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-stretch animate-enter" style="animation-delay:80ms">
+                @if (hasComparison)
+                {
+                    <div class="lg:col-span-2">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
+                    </div>
+                }
+                @if (hasQuickLinks)
+                {
+                    <div class="lg:col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinksWidget.cshtml", Model.QuickLinksWidget)
+                    </div>
+                }
+                @if (hasEngagement)
+                {
+                    <div class="lg:col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Row 4: Full-Width Chart -->
+        @if (Model.UsageTrendChart != null)
+        {
+            <div class="animate-enter" style="animation-delay:160ms">
+                @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ChartWidget.cshtml", Model.UsageTrendChart)
+            </div>
+        }
+
+    </main>
+</div>
+
+@section Scripts {
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+}

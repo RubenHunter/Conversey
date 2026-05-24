@@ -79,6 +79,7 @@ builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 builder.Services.AddScoped<IAiPricingService, AiPricingService>();
 builder.Services.AddScoped<IAnalyticsManager, AnalyticsManager>();
+//merge conflict builder.Services.AddScoped<IAdminStatsService, AdminStatsService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(

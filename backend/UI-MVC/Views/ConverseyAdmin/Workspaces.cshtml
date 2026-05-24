@@ -1,15 +1,18 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
 @using Conversey.UI_MVC.Resources
 @model IEnumerable<Conversey.BL.Domain.Administration.Workspace>
+@inject AdminContext AdminContext
 @Html.AntiForgeryToken()
 @inject IAdminI18nService I18n
 
 @{
     ViewData["Title"] = "Workspaces";
-    ViewData["WorkspaceName"] = "Conversey";
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("Workspaces", null, true)
     };
     var workspaces = Model ?? [];
@@ -47,6 +50,80 @@
         ["SubmitLabel"] = "Save changes"
     };
 }
+        SectionTitle = "All Workspaces",
+        TableDescription = "Manage all workspaces for Conversey",
+        CreateUrl = Url.Action("CreateWorkspace", "ConverseyAdmin"),
+        CreateButtonLabel = "Create new Workspace",
+        EmptyState = "Workspaces will show up here once they are created.",
+        RowId = w => w.Id.Text,
+
+        Items = workspaces.ToList(),
+
+        Columns =
+        [
+            new()
+            {
+                Header = "ID",
+                Template = w =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(w.Id.Text);
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Name",
+                Template = w =>
+                {
+                    var link = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = w.Id.Text })!
+                        }
+                    };
+                    link.AddCssClass("text-indigo-600 hover:underline");
+                    link.InnerHtml.Append(w.Name ?? "-");
+                    return link;
+                }
+            },
+
+            new()
+            {
+                Header = "Actions",
+                Template = w =>
+                {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
+                    // EDIT BUTTON
+                    var edit = new TagBuilder("a")
+                    {
+                        Attributes =
+                        {
+                            ["href"] = Url.Action("EditWorkspace", "ConverseyAdmin", new { id = w.Id.Text })!,
+                            ["data-i18n"] = "Edit"
+                        }
+                    };
+                    edit.AddCssClass("text-blue-600 hover:underline");
+                    edit.InnerHtml.Append("Edit");
+
+                    var divider = new TagBuilder("p");
+                    divider.InnerHtml.Append("|");
+
+                    // DELETE BUTTON
+                    var delete = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-delete-id"] = w.Id.Text,
+                            ["data-delete-name"] = w.Name ?? "-",
+                            ["data-delete-endpoint"] = $"/admin/workspace/delete/{w.Id.Text}",
+                            ["data-i18n"] = "Delete"
+                        }
+                    };
 
 <div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
@@ -161,6 +238,12 @@
     <div class="w-full max-w-lg">
         @await Html.PartialAsync("_WorkspaceForm", editWorkspaceForm, editWorkspaceViewData)
     </div>
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-5xl mx-auto">
+        @await Html.PartialAsync("_AdminTableWithCreate", tableModel)
+    </main>
 </div>
 
 @await Html.PartialAsync("_DeleteModal")

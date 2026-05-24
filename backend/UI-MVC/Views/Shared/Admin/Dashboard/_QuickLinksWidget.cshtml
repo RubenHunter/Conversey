@@ -1,0 +1,88 @@
+@model Conversey.UI_MVC.Models.Admin.QuickLinksWidgetViewModel
+
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm overflow-hidden h-full flex flex-col quick-links-widget">
+    @if (!string.IsNullOrEmpty(Model.Title))
+    {
+        <div class="px-5 pt-4 pb-2 border-b border-secondary/10 shrink-0">
+            <h3 class="text-xs font-semibold text-text/40 uppercase tracking-wider" data-i18n="@Model.Title">@Model.Title</h3>
+        </div>
+    }
+
+    <div class="flex flex-col divide-y divide-secondary/10 flex-1 quick-links-list">
+        @foreach (var item in Model.Items)
+        {
+            string iconStyle = !string.IsNullOrEmpty(item.IconBgHex) && !string.IsNullOrEmpty(item.IconFgHex)
+                ? $"background-color:{item.IconBgHex}; color:{item.IconFgHex}"
+                : string.Empty;
+
+            if (item.IsHealthCheck)
+            {
+                <button type="button"
+                        class="flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group text-left flex-1 quick-link-card"
+                        data-health-check="true">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="@iconStyle">
+                        @Html.Raw(item.Icon)
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
+                        <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
+                    </div>
+                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            }
+            else if (item.IsModal)
+            {
+                <button type="button"
+                        data-modal-open="@item.ModalTarget"
+                        class="flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group text-left flex-1 quick-link-card"
+                        data-quick-link="true"
+                        data-navigate-url="@item.NavigateUrl"
+                        data-modal-target="@item.ModalTarget">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="@iconStyle">
+                        @Html.Raw(item.Icon)
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
+                        <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
+                    </div>
+                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            }
+            else
+            {
+                <a href="@item.NavigateUrl"
+                   class="flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group flex-1 quick-link-card"
+                   data-quick-link="true"
+                   data-navigate-url="@item.NavigateUrl">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="@iconStyle">
+                        @Html.Raw(item.Icon)
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
+                        <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
+                    </div>
+                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            }
+        }
+    </div>
+
+    @* Health check expansion panel — shown/hidden by TypeScript *@
+    <div class="health-check-panel hidden border-t border-secondary/10 px-5 py-6 shrink-0">
+        <div class="flex gap-3 justify-center mb-4">
+            <span class="health-dot w-3 h-3 rounded-full bg-secondary/20 transition-colors duration-300" data-dot="0"></span>
+            <span class="health-dot w-3 h-3 rounded-full bg-secondary/20 transition-colors duration-300" data-dot="1"></span>
+            <span class="health-dot w-3 h-3 rounded-full bg-secondary/20 transition-colors duration-300" data-dot="2"></span>
+        </div>
+        <p class="health-status text-sm text-text/50 text-center"></p>
+        <button type="button" class="health-close hidden mt-3 text-xs text-text/40 hover:text-text/70 transition-colors w-full text-center">
+            Close
+        </button>
+    </div>
+</div>
