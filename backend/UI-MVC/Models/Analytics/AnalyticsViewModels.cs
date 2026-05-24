@@ -135,4 +135,53 @@ public class CommentItemViewModel
     public string? YouthEmail { get; set; }
     public bool IsAuthor { get; set; }
     public bool MarkedForReview { get; set; }
+    public string? RejectionReason { get; set; }
+}
+
+public class ModerationViewModel
+{
+    public List<ModerationItemViewModel> Items { get; set; } = new();
+    public List<Project> AvailableProjects { get; set; } = new();
+    public List<TopicOption> AvailableTopics { get; set; } = new();
+    public string? SelectedProjectId { get; set; }
+    public string? TopicId { get; set; }
+    public string? IdeaId { get; set; }
+    public int TotalCount { get; set; }
+}
+
+public class ModerationItemViewModel
+{
+    public string Type { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public DateTime SubmissionDate { get; set; }
+    public string? TopicName { get; set; }
+    public string? ProjectName { get; set; }
+    public string? ProjectSlug { get; set; }
+    public int? TopicId { get; set; }
+    public int? ParentIdeaId { get; set; }
+    public string? ParentIdeaContent { get; set; }
+    public Guid? YouthId { get; set; }
+    public string? YouthEmail { get; set; }
+    public string? RejectionReason { get; set; }
+    public bool FlagSexual { get; set; }
+    public bool FlagHate { get; set; }
+    public bool FlagViolence { get; set; }
+    public bool FlagDangerous { get; set; }
+    public bool FlagSelfHarm { get; set; }
+    public bool FlagPii { get; set; }
+    public List<string> FlagLabels
+    {
+        get
+        {
+            var labels = new List<string>();
+            if (FlagSexual) labels.Add("Sexual Content");
+            if (FlagHate) labels.Add("Hate & Discrimination");
+            if (FlagViolence) labels.Add("Violence & Threats");
+            if (FlagDangerous) labels.Add("Dangerous / Criminal");
+            if (FlagSelfHarm) labels.Add("Self Harm");
+            if (FlagPii) labels.Add("PII");
+            return labels;
+        }
+    }
 }

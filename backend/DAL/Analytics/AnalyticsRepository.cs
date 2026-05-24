@@ -216,7 +216,8 @@ public class AnalyticsRepository : IAnalyticsRepository
                 SemanticCategories = i.SemanticCategories ?? Array.Empty<string>(),
                 YouthId = i.Youth.Id,
                 YouthEmail = i.Youth.Email,
-                MarkedForReview = i.MarkedForReview
+                MarkedForReview = i.MarkedForReview,
+                RejectionReason = i.RejectionReason
             })
             .ToList()
             .AsReadOnly();
@@ -735,6 +736,133 @@ public class AnalyticsRepository : IAnalyticsRepository
 
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null)
+    {
+        if (!Enum.TryParse<ModerationStatus>(status, true, out var newStatus))
+            return false;
+
+        if (newStatus == ModerationStatus.Pending)
+            return false;
+
+        if (type == "idea")
+        {
+            var idea = await _db.Ideas.FirstOrDefaultAsync(i => i.Id == id);
+            if (idea == null) return false;
+            idea.Status = newStatus;
+            if (newStatus == ModerationStatus.Rejected)
+                idea.RejectionReason = reason;
+        }
+        else if (type == "response")
+        {
+            var response = await _db.Responses.FirstOrDefaultAsync(r => r.Id == id);
+            if (response == null) return false;
+            response.Status = newStatus;
+            if (newStatus == ModerationStatus.Rejected)
+                response.RejectionReason = reason;
+        }
+        else
+        {
+            return false;
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public IReadOnlyCollection<ModerationQueueItem> GetModerationQueue(Slug workspaceId, Slug? projectId, int? topicId, int? ideaId)
+    {
+        var projectIds = GetProjectIds(workspaceId, projectId);
+        if (projectIds.Count == 0) return Array.Empty<ModerationQueueItem>();
+
+        var result = new List<ModerationQueueItem>();
+
+        var ideaQuery = _db.Ideas
+            .Include(i => i.Topic)
+            .Include(i => i.Project)
+            .Include(i => i.Youth)
+            .Where(i => projectIds.Contains(i.Project.Id))
+            .Where(i => i.Status == ModerationStatus.Pending)
+            .AsQueryable();
+
+        if (topicId.HasValue)
+            ideaQuery = ideaQuery.Where(i => i.Topic.Id == topicId.Value);
+
+        if (ideaId.HasValue)
+            ideaQuery = ideaQuery.Where(i => i.Id == ideaId.Value);
+
+        var pendingIdeas = ideaQuery.OrderByDescending(i => i.SubmissionDate).ToList();
+
+        foreach (var idea in pendingIdeas)
+        {
+            result.Add(new ModerationQueueItem
+            {
+                Type = "idea",
+                Id = idea.Id,
+                Content = idea.Content,
+                SubmissionDate = idea.SubmissionDate,
+                TopicName = idea.Topic?.Name,
+                ProjectName = idea.Project?.Name,
+                ProjectSlug = idea.Project?.Id.ToString(),
+                TopicId = idea.Topic?.Id,
+                YouthId = idea.Youth?.Id,
+                YouthEmail = idea.Youth?.Email,
+                ModerationFlags = ModerationInfoSerializer.Serialize(idea.ModerationInfo),
+                FlagSexual = idea.ModerationInfo.Sexual,
+                FlagHate = idea.ModerationInfo.HateAndDiscrimination,
+                FlagViolence = idea.ModerationInfo.ViolenceAndThreats,
+                FlagDangerous = idea.ModerationInfo.DangerousAndCriminalContent,
+                FlagSelfHarm = idea.ModerationInfo.SelfHarm,
+                FlagPii = idea.ModerationInfo.Pii,
+                RejectionReason = idea.RejectionReason
+            });
+        }
+
+        var pendingResponsesQuery = _db.Responses
+            .Include(r => r.Idea).ThenInclude(i => i.Topic)
+            .Include(r => r.Idea).ThenInclude(i => i.Project)
+            .Include(r => r.Youth)
+            .Where(r => r.Idea != null && projectIds.Contains(r.Idea.Project.Id))
+            .Where(r => r.Status == ModerationStatus.Pending)
+            .AsQueryable();
+
+        if (topicId.HasValue)
+            pendingResponsesQuery = pendingResponsesQuery.Where(r => r.Idea!.Topic.Id == topicId.Value);
+
+        if (ideaId.HasValue)
+            pendingResponsesQuery = pendingResponsesQuery.Where(r => r.Idea!.Id == ideaId.Value);
+
+        var pendingResponses = pendingResponsesQuery.OrderByDescending(r => r.CreatedAt).ToList();
+
+        foreach (var response in pendingResponses)
+        {
+            result.Add(new ModerationQueueItem
+            {
+                Type = "response",
+                Id = response.Id,
+                Content = response.Text,
+                SubmissionDate = response.CreatedAt,
+                TopicName = response.Idea?.Topic?.Name,
+                ProjectName = response.Idea?.Project?.Name,
+                ProjectSlug = response.Idea?.Project?.Id.ToString(),
+                TopicId = response.Idea?.Topic?.Id,
+                ParentIdeaId = response.Idea?.Id,
+                ParentIdeaContent = response.Idea?.Content,
+                YouthId = response.Youth?.Id,
+                YouthEmail = response.Youth?.Email,
+                ModerationFlags = ModerationInfoSerializer.Serialize(response.ModerationInfo),
+                FlagSexual = response.ModerationInfo.Sexual,
+                FlagHate = response.ModerationInfo.HateAndDiscrimination,
+                FlagViolence = response.ModerationInfo.ViolenceAndThreats,
+                FlagDangerous = response.ModerationInfo.DangerousAndCriminalContent,
+                FlagSelfHarm = response.ModerationInfo.SelfHarm,
+                FlagPii = response.ModerationInfo.Pii,
+                RejectionReason = response.RejectionReason
+            });
+        }
+
+        return result.AsReadOnly();
     }
 
     public async Task<SavedAiSummary?> GetSavedSummaryAsync(Slug workspaceId, Slug? projectId)

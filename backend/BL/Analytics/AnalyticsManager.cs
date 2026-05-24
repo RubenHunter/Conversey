@@ -141,7 +141,8 @@ public class AnalyticsManager : IAnalyticsManager
             SemanticCategories = i.SemanticCategories,
             YouthId = i.YouthId,
             YouthEmail = i.YouthEmail,
-            MarkedForReview = i.MarkedForReview
+            MarkedForReview = i.MarkedForReview,
+            RejectionReason = i.RejectionReason
         }).ToList();
     }
 

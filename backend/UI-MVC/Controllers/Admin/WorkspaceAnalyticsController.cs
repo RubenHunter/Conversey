@@ -275,7 +275,8 @@ public class WorkspaceAnalyticsController : Controller
                     YouthId = r.Youth.Id,
                     YouthEmail = r.Youth.Email,
                     IsAuthor = idea.YouthId.HasValue && r.Youth.Id == idea.YouthId.Value,
-                    MarkedForReview = r.MarkedForReview
+                    MarkedForReview = r.MarkedForReview,
+                    RejectionReason = r.RejectionReason
                 })
                 .ToList();
             comments[idea.Id] = ideaComments;
@@ -361,6 +362,68 @@ public class WorkspaceAnalyticsController : Controller
         };
 
         return View("~/Views/WorkspaceAdmin/Analytics/AnswersList.cshtml", vm);
+    }
+
+    [HttpGet("/admin/workspace/moderation")]
+    public IActionResult Moderation(
+        [FromQuery] string? projectId = null,
+        [FromQuery] string? topicId = null,
+        [FromQuery] string? ideaId = null)
+    {
+        var workspace = _workspaceContext.CurrentWorkspace;
+        var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspace.Id);
+
+        Slug? projectSlug = null;
+        if (!string.IsNullOrWhiteSpace(projectId))
+            projectSlug = new Slug { Text = projectId };
+
+        int? parsedTopicId = null;
+        if (!string.IsNullOrWhiteSpace(topicId) && int.TryParse(topicId, out var tid))
+            parsedTopicId = tid;
+
+        int? parsedIdeaId = null;
+        if (!string.IsNullOrWhiteSpace(ideaId) && int.TryParse(ideaId, out var iid))
+            parsedIdeaId = iid;
+
+        var queue = _analyticsRepo.GetModerationQueue(workspace.Id, projectSlug, parsedTopicId, parsedIdeaId);
+
+        var topics = _analyticsRepo.GetTopicsForWorkspace(workspace.Id);
+        if (projectSlug.HasValue)
+            topics = topics.Where(t => t.Project.Id == projectSlug.Value).ToList();
+
+        var vm = new ModerationViewModel
+        {
+            Items = queue.Select(q => new ModerationItemViewModel
+            {
+                Type = q.Type,
+                Id = q.Id,
+                Content = q.Content,
+                SubmissionDate = q.SubmissionDate,
+                TopicName = q.TopicName,
+                ProjectName = q.ProjectName,
+                ProjectSlug = q.ProjectSlug,
+                TopicId = q.TopicId,
+                ParentIdeaId = q.ParentIdeaId,
+                ParentIdeaContent = q.ParentIdeaContent,
+                YouthId = q.YouthId,
+                YouthEmail = q.YouthEmail,
+                FlagSexual = q.FlagSexual,
+                FlagHate = q.FlagHate,
+                FlagViolence = q.FlagViolence,
+                FlagDangerous = q.FlagDangerous,
+                FlagSelfHarm = q.FlagSelfHarm,
+                FlagPii = q.FlagPii,
+                RejectionReason = q.RejectionReason
+            }).ToList(),
+            AvailableProjects = projects.ToList(),
+            AvailableTopics = topics.Select(t => new TopicOption { Id = t.Id, Name = t.Name }).DistinctBy(x => x.Id).ToList(),
+            SelectedProjectId = projectId,
+            TopicId = topicId,
+            IdeaId = ideaId,
+            TotalCount = queue.Count
+        };
+
+        return View("~/Views/WorkspaceAdmin/Analytics/Moderation.cshtml", vm);
     }
 
     private static DateTime? ParseDate(string? value)

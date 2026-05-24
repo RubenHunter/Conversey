@@ -67,6 +67,7 @@ public class IdeaStatDto
     public Guid? YouthId { get; set; }
     public string? YouthEmail { get; set; }
     public bool MarkedForReview { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class IdeaCountDto
@@ -117,6 +118,14 @@ public class MarkForReviewRequest
 {
     public string Type { get; set; } = string.Empty;
     public int Id { get; set; }
+}
+
+public class ModerateRequest
+{
+    public string Type { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string? Reason { get; set; }
 }
 
 public class AnalyticsDashboardDto

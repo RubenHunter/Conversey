@@ -56,6 +56,7 @@ public class IdeaStatItem
     public Guid? YouthId { get; set; }
     public string? YouthEmail { get; set; }
     public bool MarkedForReview { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class IdeaCountByTopic
@@ -127,8 +128,34 @@ public interface IAnalyticsRepository
     IReadOnlyCollection<IdeaResponse> GetResponsesForIdeas(HashSet<int> ideaIds);
     HashSet<int> GetIdeaIdsCommentedByYouth(Guid youthId, HashSet<Slug> projectIds);
     Task<bool> ToggleMarkedForReviewAsync(string type, int id);
+    Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null);
+    IReadOnlyCollection<ModerationQueueItem> GetModerationQueue(Slug workspaceId, Slug? projectId, int? topicId, int? ideaId);
     Task<SavedAiSummary?> GetSavedSummaryAsync(Slug workspaceId, Slug? projectId);
     Task SaveSummaryAsync(SavedAiSummary summary);
+}
+
+public class ModerationQueueItem
+{
+    public string Type { get; set; } = string.Empty;
+    public int Id { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public DateTime SubmissionDate { get; set; }
+    public string? TopicName { get; set; }
+    public string? ProjectName { get; set; }
+    public string? ProjectSlug { get; set; }
+    public int? TopicId { get; set; }
+    public int? ParentIdeaId { get; set; }
+    public string? ParentIdeaContent { get; set; }
+    public Guid? YouthId { get; set; }
+    public string? YouthEmail { get; set; }
+    public byte ModerationFlags { get; set; }
+    public bool FlagSexual { get; set; }
+    public bool FlagHate { get; set; }
+    public bool FlagViolence { get; set; }
+    public bool FlagDangerous { get; set; }
+    public bool FlagSelfHarm { get; set; }
+    public bool FlagPii { get; set; }
+    public string? RejectionReason { get; set; }
 }
 
 public class ToxicityCount

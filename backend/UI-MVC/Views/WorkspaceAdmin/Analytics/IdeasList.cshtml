@@ -172,6 +172,13 @@
                                             <span class="text-[10px] text-secondary">#@idea.Id &mdash; @idea.TopicName &mdash; @idea.Status</span>
                                         </div>
                                         <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">@idea.Content</p>
+                                        @if (idea.Status == "Rejected" && !string.IsNullOrWhiteSpace(idea.RejectionReason))
+                                        {
+                                            <div class="mt-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                                                <span class="text-[10px] font-semibold text-red-600 uppercase block mb-1">Rejection reason</span>
+                                                <p class="text-xs text-red-700 leading-relaxed">@idea.RejectionReason</p>
+                                            </div>
+                                        }
                                         @if (!string.IsNullOrWhiteSpace(idea.Summary))
                                         {
                                             <div class="mt-3 pt-3 border-t border-secondary/10">
@@ -208,6 +215,13 @@
                                                                 </div>
                                                             </div>
                                                             <p class="text-xs leading-relaxed">@comment.Text</p>
+                                                            @if (comment.Status == "Rejected" && !string.IsNullOrWhiteSpace(comment.RejectionReason))
+                                                            {
+                                                                <div class="mt-2 pt-2 border-t border-red-100">
+                                                                    <span class="text-[10px] font-semibold text-red-500 uppercase">Rejection reason</span>
+                                                                    <p class="text-[10px] text-red-600 leading-relaxed mt-0.5">@comment.RejectionReason</p>
+                                                                </div>
+                                                            }
                                                         </div>
                                                     }
                                                 </div>

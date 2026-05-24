@@ -269,6 +269,24 @@ public class AnalyticsApiController : ControllerBase
         return Ok(new { success = true });
     }
 
+    [HttpPost("moderate")]
+    [Authorize(Policy = WorkspaceAdminPolicy.Name)]
+    public async Task<IActionResult> Moderate([FromBody] ModerateRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Type) || (request.Type != "idea" && request.Type != "response"))
+            return BadRequest(new { error = "Type must be 'idea' or 'response'." });
+
+        if (string.IsNullOrWhiteSpace(request.Action) || (request.Action != "accept" && request.Action != "deny"))
+            return BadRequest(new { error = "Action must be 'accept' or 'deny'." });
+
+        var status = request.Action == "accept" ? "Approved" : "Rejected";
+        var result = await _analyticsRepo.SetModerationStatusAsync(request.Type, request.Id, status, request.Reason);
+        if (!result)
+            return NotFound(new { error = $"{request.Type} with id {request.Id} not found or invalid status." });
+
+        return Ok(new { success = true, status });
+    }
+
     [HttpGet("export")]
     public async Task<IActionResult> ExportCsv(
         [FromQuery] string workspaceId,

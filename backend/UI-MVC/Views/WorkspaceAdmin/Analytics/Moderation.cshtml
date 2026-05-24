@@ -1,0 +1,413 @@
+@using Conversey.UI_MVC.Resources
+@using Conversey.UI_MVC.Models
+@model Conversey.UI_MVC.Models.Analytics.ModerationViewModel
+@inject IAdminI18nService I18n
+@inject WorkspaceContext WorkspaceContext
+
+@{
+    ViewData["Title"] = "Moderation";
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[] {
+        (I18n["Analytics"], "/admin/workspace/analytics", false),
+        ("Moderation", null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text" data-workspace-slug="@WorkspaceContext.CurrentWorkspace.Id.Text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Moderation</h1>
+                <p class="text-secondary text-sm mt-1">@Model.TotalCount item@(Model.TotalCount != 1 ? "s" : "") pending review</p>
+            </div>
+            <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline">&larr; Back to Analytics</a>
+        </div>
+
+        <form method="get" class="mb-6" id="moderation-filter-form">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-card rounded-xl border border-secondary/10">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1">Project</label>
+                    <select name="projectId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" onchange="this.form.submit()">
+                        <option value="">All Projects</option>
+                        @foreach (var p in Model.AvailableProjects)
+                        {
+                            <option value="@p.Id.Text" selected="@(Model.SelectedProjectId == p.Id.Text)">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1">Topic</label>
+                    <select name="topicId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background">
+                        <option value="">All Topics</option>
+                        @foreach (var t in Model.AvailableTopics)
+                        {
+                            <option value="@t.Id" selected="@(Model.TopicId == t.Id.ToString())">@t.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1">Idea ID</label>
+                    <input type="number" name="ideaId" value="@Model.IdeaId" placeholder="Filter by idea ID" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" min="1"/>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">Apply</button>
+                    <a href="/admin/workspace/moderation" class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors">Clear</a>
+                </div>
+            </div>
+        </form>
+
+        @if (!Model.Items.Any())
+        {
+            <div class="bg-card rounded-xl border border-secondary/10 p-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/5 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-text mb-1">All clear</h3>
+                <p class="text-sm text-secondary">
+                    @if (Model.SelectedProjectId != null || Model.TopicId != null || Model.IdeaId != null)
+                    {
+                        <span>No pending items match the current filters. Try adjusting or clearing your filters.</span>
+                    }
+                    else
+                    {
+                        <span>No ideas or comments are currently pending review. Flagged content awaiting moderation will appear here.</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="bg-card rounded-xl border border-secondary/10 overflow-hidden moderation-card"
+                         data-type="@item.Type" data-id="@item.Id"
+                         data-flag-sexual="@item.FlagSexual.ToString().ToLowerInvariant()"
+                         data-flag-hate="@item.FlagHate.ToString().ToLowerInvariant()"
+                         data-flag-violence="@item.FlagViolence.ToString().ToLowerInvariant()"
+                         data-flag-dangerous="@item.FlagDangerous.ToString().ToLowerInvariant()"
+                         data-flag-selfharm="@item.FlagSelfHarm.ToString().ToLowerInvariant()"
+                         data-flag-pii="@item.FlagPii.ToString().ToLowerInvariant()"
+                         data-rejection-reason="@item.RejectionReason">
+                        <div class="p-5">
+                            <div class="flex items-start justify-between gap-4 mb-3">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold @(item.Type == "idea" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent")">
+                                        @(item.Type == "idea" ? "Idea" : "Comment")
+                                    </span>
+                                    @if (item.FlagLabels.Count > 0)
+                                    {
+                                        foreach (var flag in item.FlagLabels)
+                                        {
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-600 border border-red-100">@flag</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-50 text-yellow-600 border border-yellow-100">Manually flagged</span>
+                                    }
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="text-[10px] text-secondary block">#@item.Id</span>
+                                    <span class="text-[10px] text-secondary/50">@item.SubmissionDate.ToString("yyyy-MM-dd HH:mm")</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">@item.Content</p>
+                            </div>
+
+                            @if (item.Type == "response" && !string.IsNullOrWhiteSpace(item.ParentIdeaContent))
+                            {
+                                <div class="mb-3 p-3 rounded-lg bg-background border border-secondary/10">
+                                    <span class="text-[10px] font-semibold text-secondary uppercase block mb-1">In response to idea #@item.ParentIdeaId</span>
+                                    <p class="text-xs text-secondary leading-relaxed">@(item.ParentIdeaContent.Length > 200 ? item.ParentIdeaContent[..200] + "..." : item.ParentIdeaContent)</p>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(item.RejectionReason))
+                            {
+                                <div class="mb-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                                    <span class="text-[10px] font-semibold text-red-600 uppercase block mb-1">Previously rejected &mdash; reason</span>
+                                    <p class="text-xs text-red-700 leading-relaxed">@item.RejectionReason</p>
+                                </div>
+                            }
+
+                            <div class="flex items-center gap-2 text-[10px] text-secondary/50 mb-4">
+                                <span>@item.ProjectName</span>
+                                @if (!string.IsNullOrWhiteSpace(item.TopicName))
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.TopicName</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.YouthEmail))
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.YouthEmail</span>
+                                }
+                                else if (item.YouthId.HasValue)
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.YouthId.Value.ToString()[..8]</span>
+                                }
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <button type="button"
+                                        class="moderate-btn-accept rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                                        data-type="@item.Type" data-id="@item.Id">
+                                    <span>Accept</span>
+                                </button>
+                                <button type="button"
+                                        class="moderate-btn-deny rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                        data-type="@item.Type" data-id="@item.Id">
+                                    <span>Deny</span>
+                                </button>
+                                <span class="moderation-result text-sm font-semibold hidden ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>
+
+<div id="deny-reason-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+        <h3 class="text-lg font-bold text-text mb-1">Rejection reason</h3>
+        <p class="text-sm text-secondary mb-2" id="deny-modal-item-label"></p>
+
+        <div class="mb-4">
+            <span class="text-xs font-semibold text-secondary uppercase">Moderation flags</span>
+            <p class="text-[10px] text-secondary/50 mb-2">Select the categories that apply to this content.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="sexual" />
+                    <span class="text-sm font-medium">Sexual Content</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="hate" />
+                    <span class="text-sm font-medium">Hate & Discrimination</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="violence" />
+                    <span class="text-sm font-medium">Violence & Threats</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="dangerous" />
+                    <span class="text-sm font-medium">Dangerous / Criminal</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="selfharm" />
+                    <span class="text-sm font-medium">Self Harm</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="pii" />
+                    <span class="text-sm font-medium">PII (Personal Info)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="deny-free-text" class="block text-xs font-semibold text-secondary uppercase mb-1">Additional notes</label>
+            <textarea id="deny-free-text" rows="3" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background resize-none" placeholder="Optional: add more context about this rejection..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" id="deny-modal-cancel"
+                    class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors">
+                Cancel
+            </button>
+            <button type="button" id="deny-modal-confirm"
+                    class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors">
+                Confirm Deny
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var denyModal = document.getElementById('deny-reason-modal');
+    var denyItemLabel = document.getElementById('deny-modal-item-label');
+    var denyFreeText = document.getElementById('deny-free-text');
+    var denyFlagCheckboxes = document.querySelectorAll('.deny-flag-checkbox');
+    var pendingDenyType = null;
+    var pendingDenyId = null;
+    var pendingDenyCard = null;
+
+    function collectReason() {
+        var parts = [];
+        denyFlagCheckboxes.forEach(function(cb) {
+            if (cb.checked) parts.push(cb.dataset.flag);
+        });
+        var freeText = denyFreeText.value.trim();
+        if (parts.length > 0) {
+            parts = parts.map(function(p) {
+                return p === 'sexual' ? 'Sexual Content'
+                    : p === 'hate' ? 'Hate & Discrimination'
+                    : p === 'violence' ? 'Violence & Threats'
+                    : p === 'dangerous' ? 'Dangerous / Criminal'
+                    : p === 'selfharm' ? 'Self Harm'
+                    : 'PII';
+            });
+        }
+        if (freeText) parts.push(freeText);
+        return parts.length > 0 ? parts.join('; ') : null;
+    }
+
+    function collapseCard(card, action) {
+        var resultEl = card.querySelector('.moderation-result');
+        resultEl.textContent = action === 'accept' ? 'Approved' : 'Rejected';
+        resultEl.classList.remove('hidden');
+        resultEl.className = 'moderation-result text-sm font-semibold ml-2 ' + (action === 'accept' ? 'text-green-600' : 'text-red-600');
+
+        card.style.opacity = '0.5';
+        card.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() {
+            card.style.maxHeight = card.offsetHeight + 'px';
+            card.style.overflow = 'hidden';
+            card.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+            requestAnimationFrame(function() {
+                card.style.maxHeight = '0';
+                card.style.opacity = '0';
+                card.style.margin = '0';
+                card.style.padding = '0';
+            });
+            setTimeout(function() {
+                card.remove();
+                var remaining = document.querySelectorAll('.moderation-card').length;
+                var countEl = document.querySelector('main p.text-secondary');
+                if (countEl) {
+                    countEl.textContent = remaining + ' item' + (remaining !== 1 ? 's' : '') + ' pending review';
+                }
+                if (remaining === 0) {
+                    var main = document.querySelector('main');
+                    var emptyHtml = '<div class="bg-card rounded-xl border border-secondary/10 p-12 text-center">' +
+                        '<div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/5 flex items-center justify-center">' +
+                        '<svg class="w-8 h-8 text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
+                        '</div>' +
+                        '<h3 class="text-lg font-semibold text-text mb-1">All clear</h3>' +
+                        '<p class="text-sm text-secondary">No ideas or comments are currently pending review.</p>' +
+                        '</div>';
+                    var spaceDiv = main.querySelector('.space-y-4');
+                    if (spaceDiv) spaceDiv.outerHTML = emptyHtml;
+                }
+            }, 350);
+        }, 400);
+    }
+
+    function executeModeration(type, id, action, reason) {
+        fetch('/api/admin/analytics/moderate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: type, id: id, action: action, reason: reason })
+        }).then(function(resp) {
+            if (resp.ok) {
+                collapseCard(pendingDenyCard, action);
+            } else {
+                var resultEl = pendingDenyCard.querySelector('.moderation-result');
+                resultEl.textContent = 'Error';
+                resultEl.classList.remove('hidden');
+                resultEl.className = 'moderation-result text-sm font-semibold ml-2 text-red-600';
+                var allBtns = pendingDenyCard.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+                allBtns.forEach(function(b) { b.disabled = false; });
+            }
+        }).catch(function() {
+            var resultEl = pendingDenyCard.querySelector('.moderation-result');
+            resultEl.textContent = 'Network error';
+            resultEl.classList.remove('hidden');
+            resultEl.className = 'moderation-result text-sm font-semibold ml-2 text-red-600';
+            var allBtns = pendingDenyCard.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+            allBtns.forEach(function(b) { b.disabled = false; });
+        });
+    }
+
+    function resetDenyModal() {
+        denyFlagCheckboxes.forEach(function(cb) { cb.checked = false; });
+        denyFreeText.value = '';
+    }
+
+    function openDenyModal(card) {
+        resetDenyModal();
+        var preSelectFlags = [];
+        if (card.dataset.flagSexual === 'true') preSelectFlags.push('sexual');
+        if (card.dataset.flagHate === 'true') preSelectFlags.push('hate');
+        if (card.dataset.flagViolence === 'true') preSelectFlags.push('violence');
+        if (card.dataset.flagDangerous === 'true') preSelectFlags.push('dangerous');
+        if (card.dataset.flagSelfharm === 'true') preSelectFlags.push('selfharm');
+        if (card.dataset.flagPii === 'true') preSelectFlags.push('pii');
+
+        if (preSelectFlags.length > 0) {
+            denyFlagCheckboxes.forEach(function(cb) {
+                if (preSelectFlags.indexOf(cb.dataset.flag) !== -1) cb.checked = true;
+            });
+        }
+
+        var prevReason = card.dataset.rejectionReason;
+        if (prevReason && prevReason !== '') {
+            denyFreeText.value = prevReason;
+        }
+
+        var typeLabel = (card.dataset.type === 'idea' ? 'Idea' : 'Comment') + ' #' + card.dataset.id;
+        denyItemLabel.textContent = typeLabel;
+        pendingDenyType = card.dataset.type;
+        pendingDenyId = parseInt(card.dataset.id);
+        pendingDenyCard = card;
+        denyModal.classList.remove('hidden');
+        denyModal.classList.add('flex');
+    }
+
+    function closeDenyModal() {
+        denyModal.classList.add('hidden');
+        denyModal.classList.remove('flex');
+    }
+
+    document.getElementById('deny-modal-cancel').addEventListener('click', function() {
+        closeDenyModal();
+        var allBtns = pendingDenyCard.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+        allBtns.forEach(function(b) { b.disabled = false; });
+    });
+
+    denyModal.addEventListener('click', function(e) {
+        if (e.target === denyModal) {
+            closeDenyModal();
+            var allBtns = pendingDenyCard.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+            allBtns.forEach(function(b) { b.disabled = false; });
+        }
+    });
+
+    document.getElementById('deny-modal-confirm').addEventListener('click', function() {
+        var reason = collectReason();
+        closeDenyModal();
+        executeModeration(pendingDenyType, pendingDenyId, 'deny', reason);
+    });
+
+    document.querySelectorAll('.moderate-btn-accept').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var type = btn.getAttribute('data-type');
+            var id = parseInt(btn.getAttribute('data-id'));
+            var card = btn.closest('.moderation-card');
+            var allBtns = card.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+
+            if (!confirm('Approve this ' + type + ' and make it visible to all users?')) return;
+
+            allBtns.forEach(function(b) { b.disabled = true; });
+            pendingDenyCard = card;
+
+            executeModeration(type, id, 'accept', null);
+        });
+    });
+
+    document.querySelectorAll('.moderate-btn-deny').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var card = btn.closest('.moderation-card');
+            var allBtns = card.querySelectorAll('button.moderate-btn-accept, button.moderate-btn-deny');
+            allBtns.forEach(function(b) { b.disabled = true; });
+            openDenyModal(card);
+        });
+    });
+})();
+</script>
