@@ -29,7 +29,7 @@ function createDraggableComponent(element: HTMLElement): Draggable {
 }
 
 function createDragAndDropListComponent(dragPlaceholder: HTMLElement): DragAndDropListComponent {
-    const component = htmlToElement<DragAndDropListComponent>(`<ol class="space-y-2 px-4 pb-4"></ol>`);
+    const component = htmlToElement<DragAndDropListComponent>(`<ol class="space-y-2 pb-4"></ol>`);
 
     component.addEventListener('dragover', (drag: DragEvent) => {
         if (drag.dataTransfer!.types.includes(DATA_TAG)) {
