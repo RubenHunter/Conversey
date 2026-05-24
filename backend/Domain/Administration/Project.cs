@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Drawing;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
@@ -29,9 +27,9 @@ public class Project
     public int NudgingStrength { get; set; } = 3;
     
     public IEnumerable<Topic> Topic { get; set; }
-    [NotMapped]
-    public ProjectStyle Style { get; set; }
-    
+
+    public ProjectTheme Theme { get; set; }
+
     public IEnumerable<Question> Questions { get; set; }
 
     [Required]
@@ -53,12 +51,6 @@ public enum Status
     Draft,
     Active,
     Archived
-}
-
-public struct ProjectStyle
-{
-    public Color[] Theme { get; set; }
-    // To-Do public Font Font { get; set; }
 }
 
 public enum InteractionType

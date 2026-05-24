@@ -20,8 +20,18 @@ const STEP1_FIELD_MAP: Record<string, string> = {
     endDate: 'CreateStep1ViewModel.EndDate',
     imageUrl: 'CreateStep1ViewModel.ImageUrl',
     imageUploadSignature: 'step1ImageUploadSignature',
-    nudgingStrength: 'CreateStep1ViewModel.NudgingStrength',
     status: 'CreateStep1ViewModel.Status',
+    themePrimary: 'CreateStep1ViewModel.ThemePrimary',
+    themeSecondary: 'CreateStep1ViewModel.ThemeSecondary',
+    themeAccent: 'CreateStep1ViewModel.ThemeAccent',
+    themePreset: 'CreateStep1ViewModel.ThemePreset',
+    themeFont: 'CreateStep1ViewModel.ThemeFont',
+    minAge: 'CreateStep1ViewModel.MinAge',
+    maxAge: 'CreateStep1ViewModel.MaxAge',
+};
+
+const STEP4_FIELD_MAP: Record<string, string> = {
+    nudgingStrength: 'CreateStep1ViewModel.NudgingStrength',
 };
 
 class ProjectDraftManager {
@@ -44,6 +54,19 @@ class ProjectDraftManager {
     private readonly step1NameWarning: HTMLElement | null;
     private readonly saveDraftBtn: HTMLButtonElement | null;
 
+    private readonly step1ThemePrimary: HTMLInputElement | null;
+    private readonly step1ThemeSecondary: HTMLInputElement | null;
+    private readonly step1ThemeAccent: HTMLInputElement | null;
+    private readonly step1ThemePreset: HTMLInputElement | null;
+    private readonly step1ThemeFont: HTMLInputElement | null;
+    private readonly step1MinAge: HTMLInputElement | null;
+    private readonly step1MaxAge: HTMLInputElement | null;
+    private readonly step1MinAgeDisplay: HTMLElement | null;
+    private readonly step1MaxAgeDisplay: HTMLElement | null;
+
+    private readonly step4NudgingStrength: HTMLInputElement | null;
+    private readonly step4NudgingDisplay: HTMLElement | null;
+
     private currentStep = 1;
     private saveDraftFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -65,6 +88,19 @@ class ProjectDraftManager {
         this.step1NameWarning = container.querySelector('#step1NameWarning');
         this.saveDraftBtn = container.querySelector('#saveDraftBtn');
 
+        this.step1ThemePrimary = container.querySelector('#step1ThemePrimary');
+        this.step1ThemeSecondary = container.querySelector('#step1ThemeSecondary');
+        this.step1ThemeAccent = container.querySelector('#step1ThemeAccent');
+        this.step1ThemePreset = container.querySelector('#step1ThemePreset');
+        this.step1ThemeFont = container.querySelector('#step1ThemeFont');
+        this.step1MinAge = container.querySelector('#step1MinAge');
+        this.step1MaxAge = container.querySelector('#step1MaxAge');
+        this.step1MinAgeDisplay = container.querySelector('#step1MinAgeDisplay');
+        this.step1MaxAgeDisplay = container.querySelector('#step1MaxAgeDisplay');
+
+        this.step4NudgingStrength = container.querySelector('#step4NudgingStrength');
+        this.step4NudgingDisplay = container.querySelector('#step4NudgingDisplay');
+
         this.discoverForms(container);
         this.migrateOldDraft();
         this.bindFormListeners();
@@ -74,6 +110,11 @@ class ProjectDraftManager {
         this.seedCopyDraft();
         this.hydrateActiveStep();
         this.bindExitDraftModal();
+        this.bindStep1ImageDropzone(container);
+        this.bindStep1ThemePicker(container);
+        this.bindStep1FontPicker(container);
+        this.bindStep1AgeSliders();
+        this.bindStep4NudgingSlider();
     }
 
     getStepperHooks(): StepperHooks {
@@ -88,6 +129,8 @@ class ProjectDraftManager {
             onStepEnter: (step: number) => {
                 this.currentStep = step;
                 this.stepManagers.get(step)?.hydrate();
+                if (step === 1) this.refreshStep1UI();
+                if (step === 4) this.refreshStep4UI();
                 this.saveMeta();
             },
         };
@@ -124,6 +167,7 @@ class ProjectDraftManager {
 
     private bindSaveDraftButton(): void {
         this.saveDraftBtn?.addEventListener('click', async () => {
+            await this.ensureStep1ImageUploaded();
             this.persistCurrentStep();
             await this.saveDraftToServer();
         });
@@ -157,8 +201,27 @@ class ProjectDraftManager {
         const imageOk = await this.ensureStep1ImageUploaded();
         if (!imageOk) return;
 
+        this.injectStepFieldsIntoForm(4, step1Manager.form);
+
         this.clearAllLocalDrafts();
         step1Manager.form.requestSubmit();
+    }
+
+    private injectStepFieldsIntoForm(stepNum: number, targetForm: HTMLFormElement): void {
+        const manager = this.stepManagers.get(stepNum);
+        if (!manager) return;
+        manager.persist();
+        const fields = manager.getFieldMap();
+        for (const [name, value] of Object.entries(fields)) {
+            let input = targetForm.querySelector<HTMLInputElement>(`input[name="${name}"]`);
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                targetForm.appendChild(input);
+            }
+            input.value = value;
+        }
     }
 
     private persistCurrentStep(): void {
@@ -172,6 +235,7 @@ class ProjectDraftManager {
 
         this.currentStep = meta.currentStep;
         this.stepManagers.get(meta.currentStep)?.hydrate();
+        if (meta.currentStep === 1) this.refreshStep1UI();
     }
 
     private async ensureStep1ImageUploaded(): Promise<boolean> {
@@ -396,8 +460,24 @@ class ProjectDraftManager {
                     fields[formName] = String(value);
                 }
             }
-
             localStorage.setItem(step1Manager.storageKey, JSON.stringify({ fields, draftSynced: false }));
+
+            const step4Manager = this.stepManagers.get(4);
+            if (step4Manager) {
+                const step4Fields: Record<string, string> = {};
+                for (const [snapshotKey, formName] of Object.entries(STEP4_FIELD_MAP)) {
+                    const value = parsed[snapshotKey];
+                    if (typeof value === 'string') {
+                        step4Fields[formName] = value;
+                    } else if (value !== undefined && value !== null) {
+                        step4Fields[formName] = String(value);
+                    }
+                }
+                if (Object.keys(step4Fields).length > 0) {
+                    localStorage.setItem(step4Manager.storageKey, JSON.stringify({ fields: step4Fields, draftSynced: false }));
+                }
+            }
+
             this.saveMeta({ currentStep: 1, slug: '' });
 
             if (this.step1Slug) this.step1Slug.value = '';
@@ -536,6 +616,268 @@ class ProjectDraftManager {
 
     private setNameWarning(message: string): void {
         if (this.step1NameWarning) this.step1NameWarning.textContent = message;
+    }
+
+    // ── Step 1: image dropzone ──────────────────────────────────────────────
+
+    private bindStep1ImageDropzone(container: HTMLElement): void {
+        const dropzone = container.querySelector<HTMLElement>('#step1ImageDropzone');
+        const uploadBtn = container.querySelector<HTMLButtonElement>('#step1ImageUploadBtn');
+        const preview = container.querySelector<HTMLImageElement>('#step1ImagePreview');
+        const placeholder = container.querySelector<HTMLElement>('#step1ImagePlaceholder');
+
+        const showPreview = (src: string) => {
+            if (!preview || !placeholder) return;
+            preview.src = src;
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+        };
+
+        dropzone?.addEventListener('click', () => this.step1ImageFile?.click());
+        uploadBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.step1ImageFile?.click();
+        });
+
+        this.step1ImageFile?.addEventListener('change', () => {
+            const file = this.step1ImageFile?.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target?.result;
+                if (typeof result === 'string') showPreview(result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        const existingUrl = this.step1ImageUrl?.value.trim();
+        if (existingUrl) showPreview(existingUrl);
+    }
+
+    // ── Step 1: theme picker ────────────────────────────────────────────────
+
+    private bindStep1ThemePicker(container: HTMLElement): void {
+        const modal = container.querySelector<HTMLElement>('#step1ThemePickerModal');
+        const pickerPrimary = container.querySelector<HTMLInputElement>('#step1PickerPrimary');
+        const pickerPrimaryHex = container.querySelector<HTMLInputElement>('#step1PickerPrimaryHex');
+        const pickerSecondary = container.querySelector<HTMLInputElement>('#step1PickerSecondary');
+        const pickerSecondaryHex = container.querySelector<HTMLInputElement>('#step1PickerSecondaryHex');
+        const pickerAccent = container.querySelector<HTMLInputElement>('#step1PickerAccent');
+        const pickerAccentHex = container.querySelector<HTMLInputElement>('#step1PickerAccentHex');
+        const applyBtn = container.querySelector<HTMLButtonElement>('#step1PickerApply');
+        const cancelBtn = container.querySelector<HTMLButtonElement>('#step1PickerCancel');
+
+        const syncColorHex = (color: HTMLInputElement, hex: HTMLInputElement) => {
+            color.addEventListener('input', () => { hex.value = color.value; });
+            hex.addEventListener('input', () => {
+                const v = hex.value.trim();
+                if (/^#[0-9a-f]{6}$/i.test(v)) color.value = v;
+            });
+        };
+        if (pickerPrimary && pickerPrimaryHex) syncColorHex(pickerPrimary, pickerPrimaryHex);
+        if (pickerSecondary && pickerSecondaryHex) syncColorHex(pickerSecondary, pickerSecondaryHex);
+        if (pickerAccent && pickerAccentHex) syncColorHex(pickerAccent, pickerAccentHex);
+
+        const openPicker = (primary: string, secondary: string, accent: string) => {
+            if (pickerPrimary) { pickerPrimary.value = primary; }
+            if (pickerPrimaryHex) { pickerPrimaryHex.value = primary; }
+            if (pickerSecondary) { pickerSecondary.value = secondary; }
+            if (pickerSecondaryHex) { pickerSecondaryHex.value = secondary; }
+            if (pickerAccent) { pickerAccent.value = accent; }
+            if (pickerAccentHex) { pickerAccentHex.value = accent; }
+            modal?.classList.remove('hidden');
+            modal?.classList.add('flex');
+        };
+
+        const closePicker = () => {
+            modal?.classList.add('hidden');
+            modal?.classList.remove('flex');
+        };
+
+        container.querySelectorAll<HTMLElement>('.theme-row').forEach((row) => {
+            row.addEventListener('click', (e) => {
+                if ((e.target as HTMLElement).closest('.theme-row-plus')) {
+                    e.stopPropagation();
+                    openPicker(
+                        row.dataset.primary ?? '#6c5ce7',
+                        row.dataset.secondary ?? '#db99c8',
+                        row.dataset.accent ?? '#cd6f88',
+                    );
+                    return;
+                }
+                this.applyThemePreset(
+                    row.dataset.preset ?? 'default',
+                    row.dataset.primary ?? '#6c5ce7',
+                    row.dataset.secondary ?? '#db99c8',
+                    row.dataset.accent ?? '#cd6f88',
+                    container,
+                );
+            });
+        });
+
+        container.querySelector<HTMLButtonElement>('#step1CreateThemeBtn')?.addEventListener('click', () => {
+            openPicker('#6c5ce7', '#db99c8', '#cd6f88');
+        });
+
+        applyBtn?.addEventListener('click', () => {
+            const primary = pickerPrimary?.value ?? '#6c5ce7';
+            const secondary = pickerSecondary?.value ?? '#db99c8';
+            const accent = pickerAccent?.value ?? '#cd6f88';
+
+            const customRow = container.querySelector<HTMLElement>('#step1CustomThemeRow');
+            if (customRow) {
+                customRow.dataset.primary = primary;
+                customRow.dataset.secondary = secondary;
+                customRow.dataset.accent = accent;
+                const dots = customRow.querySelectorAll<HTMLElement>('.theme-dot');
+                [primary, secondary, accent].forEach((c, i) => {
+                    if (dots[i]) dots[i].style.background = c;
+                });
+                customRow.classList.remove('hidden');
+            }
+
+            this.applyThemePreset('custom', primary, secondary, accent, container);
+            closePicker();
+        });
+
+        cancelBtn?.addEventListener('click', closePicker);
+        modal?.addEventListener('click', (e) => { if (e.target === modal) closePicker(); });
+    }
+
+    private applyThemePreset(preset: string, primary: string, secondary: string, accent: string, container: HTMLElement): void {
+        if (this.step1ThemePrimary) this.step1ThemePrimary.value = primary;
+        if (this.step1ThemeSecondary) this.step1ThemeSecondary.value = secondary;
+        if (this.step1ThemeAccent) this.step1ThemeAccent.value = accent;
+        if (this.step1ThemePreset) this.step1ThemePreset.value = preset;
+
+        // Trigger change so StepDraftManager persists the new values
+        this.step1ThemePreset?.dispatchEvent(new Event('change', { bubbles: true }));
+
+        container.querySelectorAll<HTMLElement>('.theme-row').forEach((row) => {
+            const selected = row.dataset.preset === preset;
+            row.classList.toggle('bg-text/5', selected);
+            row.classList.toggle('ring-1', selected);
+            row.classList.toggle('ring-inset', selected);
+            row.classList.toggle('ring-text/20', selected);
+        });
+    }
+
+    // ── Step 4: nudging slider ──────────────────────────────────────────────
+
+    private bindStep4NudgingSlider(): void {
+        this.step4NudgingStrength?.addEventListener('input', () => {
+            if (this.step4NudgingDisplay && this.step4NudgingStrength) {
+                this.step4NudgingDisplay.textContent = this.step4NudgingStrength.value;
+            }
+        });
+    }
+
+    private refreshStep4UI(): void {
+        if (this.step4NudgingStrength && this.step4NudgingDisplay) {
+            this.step4NudgingDisplay.textContent = this.step4NudgingStrength.value;
+        }
+    }
+
+    // ── Step 1: age sliders ─────────────────────────────────────────────────
+
+    private bindStep1AgeSliders(): void {
+        const update = (input: HTMLInputElement | null, display: HTMLElement | null) => {
+            if (input && display) display.textContent = input.value;
+        };
+
+        this.step1MinAge?.addEventListener('input', () => {
+            update(this.step1MinAge, this.step1MinAgeDisplay);
+            if (this.step1MaxAge && this.step1MinAge &&
+                parseInt(this.step1MinAge.value) > parseInt(this.step1MaxAge.value)) {
+                this.step1MaxAge.value = this.step1MinAge.value;
+                update(this.step1MaxAge, this.step1MaxAgeDisplay);
+            }
+        });
+
+        this.step1MaxAge?.addEventListener('input', () => {
+            update(this.step1MaxAge, this.step1MaxAgeDisplay);
+            if (this.step1MinAge && this.step1MaxAge &&
+                parseInt(this.step1MaxAge.value) < parseInt(this.step1MinAge.value)) {
+                this.step1MinAge.value = this.step1MaxAge.value;
+                update(this.step1MinAge, this.step1MinAgeDisplay);
+            }
+        });
+    }
+
+    // ── Step 1: refresh UI after hydration ──────────────────────────────────
+
+    private refreshStep1UI(): void {
+        if (this.step1MinAge && this.step1MinAgeDisplay) {
+            this.step1MinAgeDisplay.textContent = this.step1MinAge.value;
+        }
+        if (this.step1MaxAge && this.step1MaxAgeDisplay) {
+            this.step1MaxAgeDisplay.textContent = this.step1MaxAge.value;
+        }
+
+        const container = document.getElementById('dynamic-stepper');
+        if (!container || !this.step1ThemePreset) return;
+
+        const preset = this.step1ThemePreset.value || 'default';
+
+        if (preset === 'custom') {
+            const customRow = container.querySelector<HTMLElement>('#step1CustomThemeRow');
+            if (customRow) {
+                const p = this.step1ThemePrimary?.value ?? '#6c5ce7';
+                const s = this.step1ThemeSecondary?.value ?? '#db99c8';
+                const a = this.step1ThemeAccent?.value ?? '#cd6f88';
+                customRow.dataset.primary = p;
+                customRow.dataset.secondary = s;
+                customRow.dataset.accent = a;
+                const dots = customRow.querySelectorAll<HTMLElement>('.theme-dot');
+                [p, s, a].forEach((c, i) => { if (dots[i]) dots[i].style.background = c; });
+                customRow.classList.remove('hidden');
+            }
+        }
+
+        container.querySelectorAll<HTMLElement>('.theme-row').forEach((row) => {
+            const selected = row.dataset.preset === preset;
+            row.classList.toggle('bg-text/5', selected);
+            row.classList.toggle('ring-1', selected);
+            row.classList.toggle('ring-inset', selected);
+            row.classList.toggle('ring-text/20', selected);
+        });
+
+        const existingUrl = this.step1ImageUrl?.value.trim();
+        if (existingUrl) {
+            const preview = container.querySelector<HTMLImageElement>('#step1ImagePreview');
+            const placeholder = container.querySelector<HTMLElement>('#step1ImagePlaceholder');
+            if (preview && placeholder) {
+                preview.src = existingUrl;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+        }
+
+        const savedFont = this.step1ThemeFont?.value ?? '';
+        container.querySelectorAll<HTMLElement>('.font-option').forEach((btn) => {
+            const selected = btn.dataset.font === savedFont;
+            btn.classList.toggle('bg-text/5', selected);
+            btn.classList.toggle('border-text/35', selected);
+        });
+    }
+
+    // ── Step 1: font picker ─────────────────────────────────────────────────
+
+    private bindStep1FontPicker(container: HTMLElement): void {
+        container.querySelectorAll<HTMLButtonElement>('.font-option').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const font = btn.dataset.font ?? '';
+                if (this.step1ThemeFont) {
+                    this.step1ThemeFont.value = font;
+                    this.step1ThemeFont.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                container.querySelectorAll<HTMLElement>('.font-option').forEach((b) => {
+                    const selected = b === btn;
+                    b.classList.toggle('bg-text/5', selected);
+                    b.classList.toggle('border-text/35', selected);
+                });
+            });
+        });
     }
 }
 

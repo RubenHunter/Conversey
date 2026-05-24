@@ -20,4 +20,7 @@ public interface IProjectRepository
     void DeleteAllProjectsFromWorkspaceId(Slug workspaceId);
 
     void CreateTopic(Topic topic);
+
+    void CreateTheme(ProjectTheme theme);
+    void UpdateTheme(ProjectTheme theme);
 }

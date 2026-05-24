@@ -1,6 +1,7 @@
 import '../../../styles/pages/ideas.css'
 //import type { RouteParams } from '../../utils/router'
 import { getProject } from '../../../services/projectService'
+import { applyTheme } from '../../../utils/theme'
 import {
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
@@ -63,6 +64,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const t = getSurveyStrings()
     let discoveryRequestToken = 0
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
 

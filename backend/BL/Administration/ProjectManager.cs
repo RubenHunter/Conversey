@@ -94,8 +94,10 @@ public class ProjectManager: IProjectManager
     }
 
     public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string slug)
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string slug,
+        ProjectTheme theme = null)
     {
+        var resolvedTheme = theme ?? ProjectTheme.Default;
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
 
         if (string.IsNullOrWhiteSpace(name))
@@ -134,6 +136,17 @@ public class ProjectManager: IProjectManager
 
             Validate(project);
             _projectRepository.CreateProject(project);
+
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = project.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+
             return project;
         }
 
@@ -149,6 +162,29 @@ public class ProjectManager: IProjectManager
 
         Validate(existing);
         _projectRepository.UpdateProject(existing);
+
+        if (existing.Theme == null)
+        {
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = existing.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+        }
+        else
+        {
+            existing.Theme.Primary = resolvedTheme.Primary;
+            existing.Theme.Secondary = resolvedTheme.Secondary;
+            existing.Theme.Accent = resolvedTheme.Accent;
+            existing.Theme.Preset = resolvedTheme.Preset;
+            existing.Theme.Font = resolvedTheme.Font;
+            _projectRepository.UpdateTheme(existing.Theme);
+        }
+
         return existing;
     }
 

@@ -55,7 +55,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 EndDate = sourceProject.EndDate.Date,
                 NudgingStrength = sourceProject.NudgingStrength,
                 Status = Status.Draft,
-                Slug = string.Empty
+                Slug = string.Empty,
+                ThemePrimary = (sourceProject.Theme ?? ProjectTheme.Default).Primary,
+                ThemeSecondary = (sourceProject.Theme ?? ProjectTheme.Default).Secondary,
+                ThemeAccent = (sourceProject.Theme ?? ProjectTheme.Default).Accent,
+                ThemePreset = (sourceProject.Theme ?? ProjectTheme.Default).Preset,
+                ThemeFont = (sourceProject.Theme ?? ProjectTheme.Default).Font
             };
 
             return View(CreateFormVm(projectStep1Copy, null, true));
@@ -105,7 +110,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 imageUrl,
                 projectStep1.NudgingStrength,
                 Status.Active,
-                projectStep1.Slug
+                projectStep1.Slug,
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
 
             var step3 = projectViewModel.CreateStep3ViewModel;
@@ -179,7 +185,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 EndDate = project.EndDate.Date,
                 NudgingStrength = project.NudgingStrength,
                 Slug = project.Id.ToString(),
-                Status = project.Status
+                Status = project.Status,
+                ThemePrimary = (project.Theme ?? ProjectTheme.Default).Primary,
+                ThemeSecondary = (project.Theme ?? ProjectTheme.Default).Secondary,
+                ThemeAccent = (project.Theme ?? ProjectTheme.Default).Accent,
+                ThemePreset = (project.Theme ?? ProjectTheme.Default).Preset,
+                ThemeFont = (project.Theme ?? ProjectTheme.Default).Font
             }, project));
         }
         catch (NotFoundException e)
@@ -213,7 +224,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 imageUrl,
                 projectStep1.NudgingStrength,
                 projectStep1.Status,
-                id.ToString()
+                id.ToString(),
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
 
             return RedirectToAction("Projects");
@@ -259,7 +271,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 imageUrl,
                 projectStep1.NudgingStrength,
                 Status.Draft,
-                projectStep1.Slug
+                projectStep1.Slug,
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
 
             var step3 = projectViewModel.CreateStep3ViewModel;
@@ -392,7 +405,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     new StepItem
                     {
                         Label = "AI Configuration",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_ProjectStepAiConfigForm"
                     },
                     new StepItem
                     {

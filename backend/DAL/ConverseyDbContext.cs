@@ -19,6 +19,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
     public DbSet<WorkspaceAdminUser> WorkspaceAdmins { get; set; }
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectTheme> ProjectThemes { get; set; }
     public DbSet<Topic> Topics { get; set; }
     public DbSet<Youth> Youths { get; set; }
     public DbSet<Idea> Ideas { get; set; }
@@ -46,6 +47,8 @@ public class ConverseyDbContext : IdentityDbContext
         modelBuilder.ApplyConfiguration(new WorkspaceConfig());
 
         modelBuilder.ApplyConfiguration(new ProjectConfig());
+
+        modelBuilder.ApplyConfiguration(new ProjectThemeConfig());
 
         modelBuilder.ApplyConfiguration(new TopicConfig());
 

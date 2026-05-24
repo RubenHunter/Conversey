@@ -19,6 +19,7 @@ public class ProjectDto
     public int NudgingStrength { get; set; }
     public ProjectTopicDto Topic { get; set; }
     public IEnumerable<ProjectTopicDto> Topics { get; set; } = Array.Empty<ProjectTopicDto>();
+    public ProjectThemeDto Theme { get; set; }
 
     public static ProjectDto From(Project project)
     {
@@ -42,7 +43,30 @@ public class ProjectDto
             InteractionForm = project.InteractionForm.ToString(),
             NudgingStrength = project.NudgingStrength,
             Topic = firstTopic is null ? null : ProjectTopicDto.From(firstTopic),
-            Topics = topics
+            Topics = topics,
+            Theme = ProjectThemeDto.From(project.Theme)
+        };
+    }
+}
+
+public class ProjectThemeDto
+{
+    public string Primary { get; set; }
+    public string Secondary { get; set; }
+    public string Accent { get; set; }
+    public string Preset { get; set; }
+    public string Font { get; set; }
+
+    public static ProjectThemeDto From(ProjectTheme theme)
+    {
+        var t = theme ?? ProjectTheme.Default;
+        return new ProjectThemeDto
+        {
+            Primary = t.Primary,
+            Secondary = t.Secondary,
+            Accent = t.Accent,
+            Preset = t.Preset,
+            Font = t.Font
         };
     }
 }

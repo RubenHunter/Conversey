@@ -1,4 +1,5 @@
 import {getProject} from '../../../services/projectService'
+import {applyTheme} from '../../../utils/theme'
 import {getQuestions, submitAnswers} from '../../../services/surveyService'
 import {QuestionType} from '../../../models/question'
 import type {ResponseAnswer} from '../../../models/response'
@@ -22,6 +23,7 @@ const sessionLayoutCache = new Map<string, typeof InteractionType.Chat | typeof 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
 
@@ -424,6 +426,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
 render(async (container, params) => {
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
 
     if (project.interactionType === InteractionType.Chat) {
         const { renderChatSurveyPage } = await import("../../chat/pages/chatSurveyPage")
