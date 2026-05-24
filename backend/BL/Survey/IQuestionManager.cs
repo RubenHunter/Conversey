@@ -12,7 +12,6 @@ public interface IQuestionManager
         Guid youthId,
         IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers);
 
-    Question GetQuestionById(int questionId);
     IEnumerable<Question> GetAllQuestions();
 
     Question AddQuestion(Question question);

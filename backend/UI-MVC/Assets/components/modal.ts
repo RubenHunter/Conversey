@@ -30,6 +30,6 @@ function createModalComponent(element?: HTMLElement): ModalComponent {
 
     function destroy() {
         component.close();
-        document.body.removeChild(component);
+        component.remove();
     }
 }

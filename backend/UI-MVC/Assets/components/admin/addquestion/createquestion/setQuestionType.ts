@@ -1,14 +1,16 @@
-import {createAddAnswersComponent} from "./AddAnswers.ts";
-import {createSetRangeAnswerComponent} from "./SetRangeAnswer.ts";
-import {PagedModalComponent} from "../../../PagedModal.ts";
-import {QuestionType} from "../../../../models/AddQuestion.ts";
+import {createAddAnswersComponent} from "./addAnswers.ts";
+import {createSetRangeAnswerComponent} from "./setRangeAnswer.ts";
+import {PagedModalComponent} from "../../../pagedModal.ts";
+import {FixedQuestion, Question, QuestionType, RangeQuestion} from "../../../../models/question.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
+import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
+import {createQuestionComponent} from "../question.ts";
 
 export {createSetQuestionTypeComponent};
 
 type SetQuestionTypeComponent = HTMLFormElement;
 
-function createSetQuestionTypeComponent(modal: PagedModalComponent): SetQuestionTypeComponent {
+function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Question): SetQuestionTypeComponent {
 
     const options:string = Object.values(QuestionType)
         .map(t => `<option value="${t}">${t}</option>`)
@@ -51,12 +53,14 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent): SetQuestion
     const cancelButton = component.elements.namedItem('cancel')! as HTMLSelectElement;
     const selectElement = component.elements.namedItem('question-type')! as HTMLSelectElement;
     const questionInput = component.elements.namedItem('question-text')! as HTMLInputElement;
-    selectElement.addEventListener('change', updateSubmitButton);
+    
+    selectElement.value = question.type;
+    questionInput.value = question.text;
+    
+    selectElement.addEventListener('change', setType);
     cancelButton.addEventListener('cancel', cancel);
-
     component.addEventListener('submit', submit);
 
-    let lastType: QuestionType;
     updateSubmitButton();
 
 
@@ -65,36 +69,39 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent): SetQuestion
     function submit(submit: SubmitEvent) {
         submit.preventDefault();
 
-        const typeValue = selectElement.value as QuestionType;
-        const question = questionInput.value;
-
-        let single = true;
-        switch (typeValue) {
+        question.text = questionInput.value;
+        switch (question.type) {
             case QuestionType.MultipleChoice:
-                single = false;
             case QuestionType.SingleChoice:
-                modal.setPage(createAddAnswersComponent(modal, question, single))
+                modal.setPage(createAddAnswersComponent(modal, question as FixedQuestion))
                 break;
             case QuestionType.Open:
-                console.log('submit');
+                rootQuestionList.addElement(createQuestionComponent(question));
+                modal.destroy();
                 break;
-            case QuestionType.Range:
-                modal.setPage(createSetRangeAnswerComponent(modal, question))
+            case QuestionType.scale:
+                modal.setPage(createSetRangeAnswerComponent(modal, question as RangeQuestion))
                 break;
         }
+    }
+    
+    function setType() {
+        question.type = selectElement.value as QuestionType;
     }
 
     function updateSubmitButton() {
-        const newType = selectElement.value as QuestionType;
-        if (lastType == QuestionType.Open && newType != QuestionType.Open) {
-            submitButton.innerHTML = 'Next';
-        } else if (lastType != QuestionType.Open && newType == QuestionType.Open) {
-            submitButton.innerHTML = 'Create';
+        let text: string;
+        switch (question.type) {
+            case QuestionType.Open:
+                text = 'Create';
+                break;
+            default:
+                text = 'Next';
         }
-        lastType = newType;
+        submitButton.innerHTML = text;
     }
 
     function cancel() {
-        modal.close();
+        modal.destroy();
     }
 }

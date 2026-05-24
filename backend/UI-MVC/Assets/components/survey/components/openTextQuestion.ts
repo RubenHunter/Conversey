@@ -1,11 +1,11 @@
-import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
 import { bindMicButton, getSpeechLanguage } from '../../../services/speechService'
 import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import { getSurveyStrings } from '../../../i18n/survey'
+import {OpenQuestion} from "../../../models/question.ts";
 
-export function renderOpenTextQuestion(question: Question, index: number): QuestionComponent {
+export function renderOpenTextQuestion(question: OpenQuestion, index: number): QuestionComponent {
     const t = getSurveyStrings()
     let textValue = ''
     let answerCallback: (() => void) | null = null
@@ -130,7 +130,7 @@ export function renderOpenTextQuestion(question: Question, index: number): Quest
             return normalized.length > 0 ? normalized : null
         },
         validate: () => {
-            if (question.isRequired && textValue.trim().length === 0) {
+            if (question.required && textValue.trim().length === 0) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false

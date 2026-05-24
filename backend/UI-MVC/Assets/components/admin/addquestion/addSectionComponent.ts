@@ -1,6 +1,6 @@
-import {createSectionComponent} from "./Section.ts";
+import {createSectionComponent} from "./section.ts";
 import {htmlToElement} from "../../../utils/dom.ts";
-import {rootQuestionList} from "../../../modules/AddQuestionPage.ts";
+import {rootQuestionList} from "../../../modules/addQuestionPage.ts";
 
 export {createAddSectionComponent}
 export type {AddSectionComponent}

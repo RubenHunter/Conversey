@@ -1,8 +1,8 @@
-import {createQuestionComponent} from "../Question.ts";
-import {PagedModalComponent} from "../../../PagedModal.ts";
+import {createQuestionComponent} from "../question.ts";
+import {PagedModalComponent} from "../../../pagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
-import {createRangeQuestion} from "../../../../models/AddQuestion.ts";
-import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
+import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
+import {RangeQuestion} from "../../../../models/question.ts";
 
 
 export type {SetRangeAnswerComponent};
@@ -10,7 +10,7 @@ export {createSetRangeAnswerComponent};
 
 type SetRangeAnswerComponent = HTMLFormElement;
 
-function createSetRangeAnswerComponent(modal: PagedModalComponent, text: string): SetRangeAnswerComponent {
+function createSetRangeAnswerComponent(modal: PagedModalComponent, question: RangeQuestion): SetRangeAnswerComponent {
     const component = htmlToElement<SetRangeAnswerComponent>(`
     <form method="dialog" class="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
     
@@ -54,7 +54,9 @@ function createSetRangeAnswerComponent(modal: PagedModalComponent, text: string)
         submit.preventDefault();
         const min: number = parseInt(minInput.value);
         const max: number = parseInt(maxInput.value);
-        rootQuestionList.addElement(createQuestionComponent(createRangeQuestion(text, min, max)));
+        question.min = min;
+        question.max = max;
+        rootQuestionList.addElement(createQuestionComponent(question));
         modal.destroy();
     }
 

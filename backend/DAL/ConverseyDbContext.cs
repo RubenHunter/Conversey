@@ -60,13 +60,10 @@ public class ConverseyDbContext : IdentityDbContext
         modelBuilder.ApplyConfiguration(new ScaleQuestionConfig());
         modelBuilder.ApplyConfiguration(new SingleChoiceQuestionConfig());
         modelBuilder.ApplyConfiguration(new MultipleChoiceQuestionConfig());
-        modelBuilder.ApplyConfiguration(new SingleChoiceConfig());
-        modelBuilder.ApplyConfiguration(new MultipleChoiceConfig());
+        modelBuilder.ApplyConfiguration(new ChoiceConfig());
         modelBuilder.ApplyConfiguration(new AnswerStringConfig());
         modelBuilder.ApplyConfiguration(new AnswerIntConfig());
-        modelBuilder.ApplyConfiguration(new AnswerSingleChoiceConfig());
-        modelBuilder.ApplyConfiguration(new AnswerMultipleChoiceConfig());
-
+        modelBuilder.ApplyConfiguration(new AnswerChoiceConfig());
 
         // Idea
 

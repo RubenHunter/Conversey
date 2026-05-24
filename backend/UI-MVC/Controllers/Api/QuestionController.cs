@@ -24,7 +24,7 @@ public class QuestionController : ControllerBase
         try
         {
             var dtos = _questionManager.GetQuestions(workspaceId, projectId)
-                .Select(question => QuestionDto.From(question, projectId))
+                .Select(question => QuestionDto.From(question))
                 .ToList()
                 .AsReadOnly();
 

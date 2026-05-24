@@ -1,14 +1,14 @@
-import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
+import {RangeQuestion} from "../../../models/question.ts";
 
-export function renderScaleQuestion(question: Question, index: number): QuestionComponent {
+export function renderScaleQuestion(question: RangeQuestion, index: number): QuestionComponent {
     let scaleValue: number | null = null
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
-    const lower: number = question.lowerBound ?? 1
-    const upper: number = question.upperBound ?? 10
+    const lower: number = question.min ?? 1
+    const upper: number = question.max ?? 10
     const totalSteps = upper - lower + 1
 
     const wrapper = document.createElement('div')
@@ -253,7 +253,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
     return {
         getAnswer: () => scaleValue,
         validate: () => {
-            if (question.isRequired && scaleValue === null) {
+            if (question.required && scaleValue === null) {
                 wrapper.querySelector(`#error-${question.id}`)?.classList.add('show')
                 return false
             }

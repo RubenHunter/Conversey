@@ -91,14 +91,13 @@ public static class DataSeeder
 
         context.Youths.AddRange(students);
 
-        var mentaalSupportQuestion = new ChoiceQuestion<SingleChoice>
+        var mentaalSupportQuestion = new SingleChoiceQuestion
         {
             Text = "Hoe beoordeel je de toegankelijkheid van mentale ondersteuning op de campus?",
             Required = true,
             Project = mentaalWelzijnActieplan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var mentaalSupportChoices = new List<SingleChoice>
+        var mentaalSupportChoices = new List<Choice>
         {
             new() { Text = "Helemaal onvoldoende", Question = mentaalSupportQuestion },
             new() { Text = "Eerder onvoldoende", Question = mentaalSupportQuestion },
@@ -117,14 +116,13 @@ public static class DataSeeder
             Project = mentaalWelzijnActieplan
         };
 
-        var mentaalFlexQuestion = new ChoiceQuestion<SingleChoice>
+        var mentaalFlexQuestion = new SingleChoiceQuestion
         {
             Text = "Zou je gebruik maken van flexibele inhaalmomenten bij overbelasting?",
             Required = true,
             Project = mentaalWelzijnActieplan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var mentaalFlexChoices = new List<SingleChoice>
+        var mentaalFlexChoices = new List<Choice>
         {
             new() { Text = "Ja, zeker", Question = mentaalFlexQuestion },
             new() { Text = "Misschien, afhankelijk van het vak", Question = mentaalFlexQuestion },
@@ -142,27 +140,25 @@ public static class DataSeeder
         var mentaalQuestions = new List<Question>
         {
             mentaalSupportQuestion,
-            mentaalStressScaleQuestion,
             mentaalFlexQuestion,
-            mentaalOpenQuestion
         };
         context.Questions.AddRange(mentaalQuestions);
 
         var mentaalAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[0], Value = mentaalSupportChoices[2] },
+            new Answer<Choice> { Question = mentaalSupportQuestion, Youth = students[0], Value = mentaalSupportChoices[2] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[0], Value = 7 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[0], Value = mentaalFlexChoices[0] },
+            new Answer<Choice> { Question = mentaalFlexQuestion, Youth = students[0], Value = mentaalFlexChoices[0] },
             new Answer<string> { Question = mentaalOpenQuestion, Youth = students[0], Value = "Een wekelijkse deadlinevrije avond per opleiding zou direct stress verlagen." },
 
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[3], Value = mentaalSupportChoices[1] },
+            new Answer<Choice> { Question = mentaalSupportQuestion, Youth = students[3], Value = mentaalSupportChoices[1] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[3], Value = 8 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[3], Value = mentaalFlexChoices[1] },
+            new Answer<Choice> { Question = mentaalFlexQuestion, Youth = students[3], Value = mentaalFlexChoices[1] },
             new Answer<string> { Question = mentaalOpenQuestion, Youth = students[3], Value = "Maak begeleiding zichtbaarder in één centrale welzijnspagina." },
 
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[6], Value = mentaalSupportChoices[3] },
+            new Answer<Choice> { Question = mentaalSupportQuestion, Youth = students[6], Value = mentaalSupportChoices[3] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[6], Value = 6 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[6], Value = mentaalFlexChoices[0] },
+            new Answer<Choice> { Question = mentaalFlexQuestion, Youth = students[6], Value = mentaalFlexChoices[0] },
             new Answer<string> { Question = mentaalOpenQuestion, Youth = students[6], Value = "Bied meer stille ruimtes met korte ontspanningsoefeningen in piekweken." }
         };
         context.Answers.AddRange(mentaalAnswers);
@@ -593,14 +589,13 @@ public static class DataSeeder
 
         context.Youths.AddRange(cityYouths);
 
-        var cityGreenPriorityQuestion = new ChoiceQuestion<SingleChoice>
+        var cityGreenPriorityQuestion = new SingleChoiceQuestion
         {
             Text = "Welke prioriteit moet de stad eerst aanpakken?",
             Required = true,
             Project = vergroeningEnRecreatiePlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var cityGreenPriorityChoices = new List<SingleChoice>
+        var cityGreenPriorityChoices = new List<Choice>
         {
             new() { Text = "Meer bomen en schaduw", Question = cityGreenPriorityQuestion },
             new() { Text = "Veiligere fiets- en wandelroutes", Question = cityGreenPriorityQuestion },
@@ -618,14 +613,13 @@ public static class DataSeeder
             Project = vergroeningEnRecreatiePlan
         };
 
-        var cityParticipationQuestion = new ChoiceQuestion<SingleChoice>
+        var cityParticipationQuestion = new SingleChoiceQuestion
         {
             Text = "Op welke manier wil je het liefst betrokken worden bij stadsbeleid?",
             Required = true,
             Project = vergroeningEnRecreatiePlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var cityParticipationChoices = new List<SingleChoice>
+        var cityParticipationChoices = new List<Choice>
         {
             new() { Text = "Online bevragingen", Question = cityParticipationQuestion },
             new() { Text = "Kwartaalpanel met stadsbestuur", Question = cityParticipationQuestion },
@@ -644,27 +638,25 @@ public static class DataSeeder
         var cityQuestions = new List<Question>
         {
             cityGreenPriorityQuestion,
-            cityLeefbaarheidScaleQuestion,
             cityParticipationQuestion,
-            cityOpenQuestion
         };
         context.Questions.AddRange(cityQuestions);
 
         var citySurveyAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[0], Value = cityGreenPriorityChoices[0] },
+            new Answer<Choice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[0], Value = cityGreenPriorityChoices[0] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[0], Value = 5 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[0], Value = cityParticipationChoices[1] },
+            new Answer<Choice> { Question = cityParticipationQuestion, Youth = cityYouths[0], Value = cityParticipationChoices[1] },
             new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[0], Value = "Het Stationsplein: daar is te weinig schaduw en bijna geen groene zitruimte." },
 
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[3], Value = cityGreenPriorityChoices[1] },
+            new Answer<Choice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[3], Value = cityGreenPriorityChoices[1] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[3], Value = 6 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[3], Value = cityParticipationChoices[2] },
+            new Answer<Choice> { Question = cityParticipationQuestion, Youth = cityYouths[3], Value = cityParticipationChoices[2] },
             new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[3], Value = "Rond de campusroute: vooral voor veiligere, groene fietsverbindingen." },
 
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[6], Value = cityGreenPriorityChoices[2] },
+            new Answer<Choice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[6], Value = cityGreenPriorityChoices[2] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[6], Value = 4 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
+            new Answer<Choice> { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
             new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[6], Value = "Een braakliggend terrein in Noordwijk, als tijdelijke pop-up groene ontmoetingsplek." }
         };
         context.Answers.AddRange(citySurveyAnswers);
@@ -941,14 +933,13 @@ public static class DataSeeder
 
         context.Youths.AddRange(collegeStudents);
 
-        var collegeSupportQuestion = new ChoiceQuestion<SingleChoice>
+        var collegeSupportQuestion = new SingleChoiceQuestion
         {
             Text = "How do you rate the accessibility of mental support on campus?",
             Required = true,
             Project = mentalWellbeingActionPlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var collegeSupportChoices = new List<SingleChoice>
+        var collegeSupportChoices = new List<Choice>
         {
             new() { Text = "Completely insufficient", Question = collegeSupportQuestion },
             new() { Text = "Rather insufficient", Question = collegeSupportQuestion },
@@ -967,14 +958,13 @@ public static class DataSeeder
             Project = mentalWellbeingActionPlan
         };
 
-        var collegeFlexQuestion = new ChoiceQuestion<SingleChoice>
+        var collegeFlexQuestion = new SingleChoiceQuestion
         {
             Text = "Would you use flexible catch-up moments when overloaded?",
             Required = true,
             Project = mentalWellbeingActionPlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var collegeFlexChoices = new List<SingleChoice>
+        var collegeFlexChoices = new List<Choice>
         {
             new() { Text = "Yes, definitely", Question = collegeFlexQuestion },
             new() { Text = "Maybe, depending on the subject", Question = collegeFlexQuestion },
@@ -1000,19 +990,19 @@ public static class DataSeeder
 
         var collegeAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[0], Value = collegeSupportChoices[2] },
+            new Answer<Choice> { Question = collegeSupportQuestion, Youth = collegeStudents[0], Value = collegeSupportChoices[2] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[0], Value = 7 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[0], Value = collegeFlexChoices[0] },
+            new Answer<Choice> { Question = collegeFlexQuestion, Youth = collegeStudents[0], Value = collegeFlexChoices[0] },
             new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[0], Value = "A weekly deadline-free evening per program would immediately reduce stress." },
 
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[3], Value = collegeSupportChoices[1] },
+            new Answer<Choice> { Question = collegeSupportQuestion, Youth = collegeStudents[3], Value = collegeSupportChoices[1] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[3], Value = 8 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[3], Value = collegeFlexChoices[1] },
+            new Answer<Choice> { Question = collegeFlexQuestion, Youth = collegeStudents[3], Value = collegeFlexChoices[1] },
             new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[3], Value = "Make guidance more visible on one central well-being page." },
 
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[6], Value = collegeSupportChoices[3] },
+            new Answer<Choice> { Question = collegeSupportQuestion, Youth = collegeStudents[6], Value = collegeSupportChoices[3] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[6], Value = 6 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[6], Value = collegeFlexChoices[0] },
+            new Answer<Choice> { Question = collegeFlexQuestion, Youth = collegeStudents[6], Value = collegeFlexChoices[0] },
             new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[6], Value = "Offer more quiet spaces with short relaxation exercises during peak weeks." }
         };
         context.Answers.AddRange(collegeAnswers);

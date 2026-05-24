@@ -1,32 +1,17 @@
-export type ApiQuestionTypeDto = string | number
+export type {ChoiceDto, QuestionDto};
 
-export interface ApiAnswerOptionDto {
-    id?: number
-    Id?: number
-    questionId?: number
-    QuestionId?: number
-    text?: string
-    Text?: string
+interface ChoiceDto {
+    id: number
+    text: string
 }
 
-export interface ApiQuestionDto {
-    id?: number
-    Id?: number
-    projectId?: number
-    ProjectId?: number
-    projectSlug?: string
-    ProjectSlug?: string
-    text?: string
-    Text?: string
-    order?: number
-    Order?: number
-    isRequired?: boolean
-    IsRequired?: boolean
-    type?: ApiQuestionTypeDto
-    Type?: ApiQuestionTypeDto
-    questionType?: ApiQuestionTypeDto
-    QuestionType?: ApiQuestionTypeDto
-    options?: ApiAnswerOptionDto[]
-    Options?: ApiAnswerOptionDto[]
+interface QuestionDto {
+    id: number
+    text: string
+    required: boolean
+    type: string
+    possibleAnswers?: ChoiceDto[],
+    lowerBound?: number,
+    upperBound?: number,
 }
 

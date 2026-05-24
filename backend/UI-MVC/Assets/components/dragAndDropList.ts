@@ -7,6 +7,7 @@ let draggingElement: Draggable | undefined;
 
 type DragAndDropListComponent = HTMLOListElement & {
     addElement(element: Draggable): void;
+    removeElement(element: Draggable): void;
 };
 
 type Draggable = HTMLElement;
@@ -58,6 +59,7 @@ function createDragAndDropListComponent(dragPlaceholder: HTMLElement): DragAndDr
     });
 
     component.addElement = addElement;
+    component.removeElement = removeElement;
 
     return component;
 
@@ -72,6 +74,10 @@ function createDragAndDropListComponent(dragPlaceholder: HTMLElement): DragAndDr
         } else {
             component.appendChild(listElement);
         }
+    }
+
+    function removeElement(element: Draggable) {
+        element.parentElement!.remove();
     }
 
     function movePlaceholder(event: DragEvent) {

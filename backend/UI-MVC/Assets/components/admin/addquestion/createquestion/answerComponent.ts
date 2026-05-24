@@ -1,4 +1,4 @@
-import {createDraggableComponent, Draggable} from "../../../DragAndDropList.ts";
+import {createDraggableComponent, Draggable} from "../../../dragAndDropList.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
 
 export {createAnswerComponent};

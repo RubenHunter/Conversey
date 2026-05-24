@@ -23,12 +23,6 @@ public class QuestionRepository : IQuestionRepository
             .SingleOrDefault(project => project.Id == projectSlug);
     }
 
-    public Question ReadQuestionById(int questionId)
-    {
-        return _dbContext.Questions
-            .SingleOrDefault(q => q.Id == questionId);
-    }
-
     public Question ReadQuestionByIdWithProject(int questionId)
     {
         return _dbContext.Questions
@@ -53,7 +47,7 @@ public class QuestionRepository : IQuestionRepository
         }
 
         var choiceQuestionIds = questions
-            .Where(question => question is ChoiceQuestion<SingleChoice> || question is ChoiceQuestion<MultipleChoice>)
+            .Where(question => question is ChoiceQuestion)
             .Select(question => question.Id)
             .ToHashSet();
 
@@ -62,7 +56,7 @@ public class QuestionRepository : IQuestionRepository
             return questions.AsReadOnly();
         }
 
-        var singleChoices = _dbContext.Set<SingleChoice>()
+        var choices = _dbContext.Set<Choice>()
             .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
             .Select(choice => new
             {
@@ -73,35 +67,26 @@ public class QuestionRepository : IQuestionRepository
             .GroupBy(entry => entry.QuestionId)
             .ToDictionary(
                 group => group.Key,
-                group => (IList<SingleChoice>)group.Select(entry => entry.Choice).ToList());
-
-        var multipleChoices = _dbContext.Set<MultipleChoice>()
-            .Where(choice => choiceQuestionIds.Contains(choice.Question.Id))
-            .Select(choice => new
-            {
-                QuestionId = choice.Question.Id,
-                Choice = choice
-            })
-            .ToList()
-            .GroupBy(entry => entry.QuestionId)
-            .ToDictionary(
-                group => group.Key,
-                group => (IList<MultipleChoice>)group.Select(entry => entry.Choice).ToList());
+                group => (IList<Choice>)group.Select(entry => entry.Choice).ToList());
 
         foreach (var question in questions)
         {
-            if (question is ChoiceQuestion<SingleChoice> singleChoiceQuestion)
+            switch (question)
             {
-                singleChoiceQuestion.PossibleChoices = singleChoices.TryGetValue(question.Id, out var values)
-                    ? values
-                    : new List<SingleChoice>();
-            }
-
-            if (question is ChoiceQuestion<MultipleChoice> multipleChoiceQuestion)
-            {
-                multipleChoiceQuestion.PossibleChoices = multipleChoices.TryGetValue(question.Id, out var values)
-                    ? values
-                    : new List<MultipleChoice>();
+                case SingleChoiceQuestion singleChoiceQuestion:
+                {
+                    singleChoiceQuestion.PossibleChoices = choices.TryGetValue(question.Id, out var values)
+                        ? values
+                        : new List<Choice>();
+                    break;
+                }
+                case MultipleChoiceQuestion multipleChoiceQuestion:
+                {
+                    multipleChoiceQuestion.PossibleChoices = choices.TryGetValue(question.Id, out var values)
+                        ? values
+                        : new List<Choice>();
+                    break;
+                }
             }
         }
 
@@ -170,19 +155,11 @@ public class QuestionRepository : IQuestionRepository
             .Single(createdYouth => createdYouth.Id == youthToken);
     }
 
-    public SingleChoice ReadSingleChoiceByIdForQuestion(int questionId, int optionId)
+    public Choice ReadChoiceByIdForQuestion(int questionId, int choiceId)
     {
-        return _dbContext.Set<SingleChoice>()
+        return _dbContext.Set<Choice>()
             .SingleOrDefault(choice =>
-                choice.Id == optionId &&
-                choice.Question.Id == questionId);
-    }
-
-    public MultipleChoice ReadMultipleChoiceByIdForQuestion(int questionId, int optionId)
-    {
-        return _dbContext.Set<MultipleChoice>()
-            .SingleOrDefault(choice =>
-                choice.Id == optionId &&
+                choice.Id == choiceId &&
                 choice.Question.Id == questionId);
     }
 }
@@ -208,7 +185,7 @@ public class OpenQuestionConfig : IEntityTypeConfiguration<OpenQuestion>
     {
         #region Relations
 
-        builder.HasMany(q => q.AnswerSubmissions)
+        builder.HasMany(q => q.AnsweredAnswers)
             .WithOne(a => a.Question as OpenQuestion)
             .IsRequired();
 
@@ -234,7 +211,7 @@ public class ScaleQuestionConfig : IEntityTypeConfiguration<ScaleQuestion>
         #region Relations
 
         // ScaleQuestion has Answer<int> submissions
-        builder.HasMany(q => q.AnswerSubmissions)
+        builder.HasMany(q => q.AnsweredAnswers)
             .WithOne(a => a.Question as ScaleQuestion)
             .IsRequired();
 
@@ -242,60 +219,50 @@ public class ScaleQuestionConfig : IEntityTypeConfiguration<ScaleQuestion>
     }
 }
 
-// Base configuration for ChoiceQuestion
-public abstract class ChoiceQuestionConfig<TChoice, TQuestion> : IEntityTypeConfiguration<TQuestion>
-    where TChoice : Choice<TChoice>
-    where TQuestion : ChoiceQuestion<TChoice>
+// Concrete configurations for each choice question type
+public class SingleChoiceQuestionConfig : IEntityTypeConfiguration<SingleChoiceQuestion>
 {
-    public virtual void Configure(EntityTypeBuilder<TQuestion> builder)
+    public virtual void Configure(EntityTypeBuilder<SingleChoiceQuestion> builder)
     {
         #region Relations
 
-        // ChoiceQuestion -> Choices
-        builder.HasMany(q => q.PossibleChoices)
-            .WithOne(c => c.Question as TQuestion)
-            .IsRequired();
-
-        // ChoiceQuestion -> Answer<TChoice> submissions
-        builder.HasMany(q => q.AnswerSubmissions)
-            .WithOne(a => a.Question as TQuestion)
+        // SingleChoiceQuestion -> Answer<TChoice> submissions
+        builder.HasMany(q => q.AnsweredAnswers)
+            .WithOne(a => a.Question as SingleChoiceQuestion)
             .IsRequired();
 
         #endregion
     }
 }
 
-// Concrete configurations for each choice question type
-public class SingleChoiceQuestionConfig : ChoiceQuestionConfig<SingleChoice, ChoiceQuestion<SingleChoice>>
+public class MultipleChoiceQuestionConfig : IEntityTypeConfiguration<MultipleChoiceQuestion>
 {
-}
-
-public class MultipleChoiceQuestionConfig : ChoiceQuestionConfig<MultipleChoice, ChoiceQuestion<MultipleChoice>>
-{
-}
-
-// Choice configurations
-public class SingleChoiceConfig : IEntityTypeConfiguration<SingleChoice>
-{
-    public void Configure(EntityTypeBuilder<SingleChoice> builder)
+    public virtual void Configure(EntityTypeBuilder<MultipleChoiceQuestion> builder)
     {
-        //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
-        builder.HasKey(c => c.Id);
-        builder.Property(c => c.Text)
-            .HasMaxLength(250)
+        #region Relations
+
+        // MultipleChoiceQuestion -> Answer<TChoice> submissions
+        builder.HasMany(q => q.AnsweredAnswers)
+            .WithOne(a => a.Question as MultipleChoiceQuestion)
             .IsRequired();
+
+        #endregion
     }
 }
 
-public class MultipleChoiceConfig : IEntityTypeConfiguration<MultipleChoice>
+// Choice configurations
+public class ChoiceConfig : IEntityTypeConfiguration<Choice>
 {
-    public void Configure(EntityTypeBuilder<MultipleChoice> builder)
+    public void Configure(EntityTypeBuilder<Choice> builder)
     {
         //builder.HasKey(c => new { c.Question.Id, c.Text }); // Composite key
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Text)
             .HasMaxLength(250)
             .IsRequired();
+
+        builder.HasOne(c => c.Question)
+            .WithMany(cq => cq.PossibleChoices);
     }
 }
 
@@ -318,22 +285,11 @@ public class AnswerIntConfig : IEntityTypeConfiguration<Answer<int>>
     }
 }
 
-public class AnswerSingleChoiceConfig : IEntityTypeConfiguration<Answer<SingleChoice>>
+public class AnswerChoiceConfig : IEntityTypeConfiguration<Answer<Choice>>
 {
-    public void Configure(EntityTypeBuilder<Answer<SingleChoice>> builder)
+    public void Configure(EntityTypeBuilder<Answer<Choice>> builder)
     {
-        // Answer<SingleChoice> -> SingleChoice reference
-        builder.HasOne(a => a.Value)
-            .WithMany()
-            .IsRequired();
-    }
-}
-
-public class AnswerMultipleChoiceConfig : IEntityTypeConfiguration<Answer<MultipleChoice>>
-{
-    public void Configure(EntityTypeBuilder<Answer<MultipleChoice>> builder)
-    {
-        // Answer<MultipleChoice> -> MultipleChoice reference
+        // Answer<Choice> -> Choice reference
         builder.HasOne(a => a.Value)
             .WithMany()
             .IsRequired();

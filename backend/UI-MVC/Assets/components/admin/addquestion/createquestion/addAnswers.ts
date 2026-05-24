@@ -1,16 +1,16 @@
-import {PagedModalComponent} from "../../../PagedModal.ts";
+import {PagedModalComponent} from "../../../pagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
-import {createDragAndDropListComponent} from "../../../DragAndDropList.ts";
-import {AnswerComponent, createAnswerComponent} from "./AnswerComponent.ts";
-import {createFixedQuestion, AddQuestion} from "../../../../models/AddQuestion.ts";
-import {createQuestionComponent} from "../Question.ts";
-import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
+import {createDragAndDropListComponent} from "../../../dragAndDropList.ts";
+import {AnswerComponent, createAnswerComponent} from "./answerComponent.ts";
+import {createQuestionComponent} from "../question.ts";
+import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
+import {FixedQuestion} from "../../../../models/question.ts";
 
 type AddAnswersComponent = HTMLFormElement;
 
 export {createAddAnswersComponent};
 
-function createAddAnswersComponent(dialog: PagedModalComponent, text: string, single: boolean): AddAnswersComponent {
+function createAddAnswersComponent(dialog: PagedModalComponent, question: FixedQuestion): AddAnswersComponent {
     const component = htmlToElement<AddAnswersComponent>(`
     <form method="dialog" class="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
     
@@ -59,7 +59,7 @@ function createAddAnswersComponent(dialog: PagedModalComponent, text: string, si
             const answer = child as AnswerComponent;
             answers.push(answer.text);
         }
-        const question: AddQuestion = createFixedQuestion(text, single, answers);
+        question.possibleAnswers = answers;
         rootQuestionList.addElement(createQuestionComponent(question))
     }
 

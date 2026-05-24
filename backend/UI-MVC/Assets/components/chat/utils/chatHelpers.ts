@@ -1,5 +1,5 @@
-import { QuestionType } from '../../../models/question'
-import type { Question } from '../../../models/question'
+import { QuestionType } from '../../../models/question.ts'
+import type { Question } from '../../../models/question.ts'
 import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { esc } from '../../survey/utils/surveyUtils'
