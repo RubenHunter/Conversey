@@ -43,6 +43,7 @@ class TopicManager {
         this.bindModal();
         this.bindSaveButton();
         this.bindStepEnter();
+        this.hydrateFromForm();
     }
 
     private bindRangeSlider(): void {

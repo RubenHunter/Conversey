@@ -3,6 +3,8 @@ using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Survey;
+using Conversey.BL.Survey;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
@@ -12,7 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager) : Controller
+public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
@@ -113,6 +115,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.Slug,
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
+
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, project.Id);
 
             var step3 = projectViewModel.CreateStep3ViewModel;
             SaveTopicsFromStep3(step3, project.Id);
@@ -228,6 +233,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
 
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, id);
+
             return RedirectToAction("Projects");
         }
         catch (NotFoundException notFoundException)
@@ -275,6 +283,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
 
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, project.Id);
+
             var step3 = projectViewModel.CreateStep3ViewModel;
             SaveTopicsFromStep3(step3, project.Id);
 
@@ -319,6 +330,107 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
+    private void SaveQuestionsFromStep2(CreateStep2SurveyViewModel? step2, Slug projectId)
+    {
+        if (step2 == null || string.IsNullOrWhiteSpace(step2.QuestionsJson) || step2.QuestionsJson == "[]")
+            return;
+
+        List<QuestionDraftDto>? dtos;
+        try
+        {
+            dtos = JsonSerializer.Deserialize<List<QuestionDraftDto>>(step2.QuestionsJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException) { return; }
+
+        if (dtos == null || dtos.Count == 0) return;
+
+        questionManager.RemoveQuestionsForProject(workspaceContext.CurrentWorkspace.Id, projectId);
+
+        var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, projectId);
+
+        foreach (var dto in dtos)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Text)) continue;
+
+            Question question = dto.Type switch
+            {
+                "Scale" => new ScaleQuestion
+                {
+                    Text = dto.Text,
+                    Required = dto.Required,
+                    Project = project,
+                    LowerBound = dto.Min ?? 1,
+                    UpperBound = dto.Max ?? 5,
+                },
+                "MultipleChoice" => BuildChoiceQuestion<MultipleChoiceQuestion>(dto, project),
+                "SingleChoice" => BuildChoiceQuestion<SingleChoiceQuestion>(dto, project),
+                _ => new OpenQuestion { Text = dto.Text, Required = dto.Required, Project = project },
+            };
+
+            questionManager.AddQuestion(question);
+        }
+    }
+
+    private static TQ BuildChoiceQuestion<TQ>(QuestionDraftDto dto, Project project)
+        where TQ : ChoiceQuestion, new()
+    {
+        var q = new TQ { Text = dto.Text, Required = dto.Required, Project = project };
+        q.PossibleChoices = dto.PossibleAnswers?
+            .Where(a => !string.IsNullOrWhiteSpace(a.Text))
+            .Select(a => new Choice { Text = a.Text, Question = q })
+            .ToList() ?? new List<Choice>();
+        return q;
+    }
+
+    private string SerializeQuestionsToJson(IEnumerable<Question> questions)
+    {
+        var dtos = questions.Select<Question, object?>(q => q switch
+        {
+            SingleChoiceQuestion scq => new
+            {
+                type = "SingleChoice",
+                text = scq.Text,
+                required = scq.Required,
+                possibleAnswers = scq.PossibleChoices?.Select(c => new { text = c.Text }).ToList() ?? new(),
+            },
+            MultipleChoiceQuestion mcq => new
+            {
+                type = "MultipleChoice",
+                text = mcq.Text,
+                required = mcq.Required,
+                possibleAnswers = mcq.PossibleChoices?.Select(c => new { text = c.Text }).ToList() ?? new(),
+            },
+            ScaleQuestion sq => new
+            {
+                type = "Scale",
+                text = sq.Text,
+                required = sq.Required,
+                min = sq.LowerBound,
+                max = sq.UpperBound,
+            },
+            OpenQuestion oq => new
+            {
+                type = "Open",
+                text = oq.Text,
+                required = oq.Required,
+            },
+            _ => null,
+        }).Where(d => d != null).ToList();
+
+        return JsonSerializer.Serialize(dtos);
+    }
+
+    private record QuestionDraftDto(
+        string Type,
+        string Text,
+        bool Required,
+        List<AnswerDraftDto>? PossibleAnswers,
+        int? Min,
+        int? Max);
+
+    private record AnswerDraftDto(string Text);
+
     private void SaveTopicsFromStep3(CreateStep3IdeationViewModel? step3, Slug projectId)
     {
         if (step3 == null || string.IsNullOrWhiteSpace(step3.TopicsJson))
@@ -354,6 +466,27 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     private ProjectViewModel CreateFormVm(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
     {
         var isCreatePage = project == null;
+
+        var step2 = new CreateStep2SurveyViewModel();
+        if (project != null)
+        {
+            var existingQuestions = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, project.Id);
+            if (existingQuestions.Any())
+                step2.QuestionsJson = SerializeQuestionsToJson(existingQuestions);
+        }
+
+        var step3 = new CreateStep3IdeationViewModel();
+        if (project?.Topic != null && project.Topic.Any())
+        {
+            var topicRows = project.Topic.Select(t => new TopicRowViewModel
+            {
+                TopicName = t.Name,
+                TopicContext = t.Context ?? string.Empty,
+                MaxBroadSelectionLoads = t.MaxBroadSelectionLoads,
+            }).ToList();
+            step3.TopicsJson = JsonSerializer.Serialize(topicRows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+
         return new ProjectViewModel
         {
             AdminFormViewModel = new AdminFormViewModel<Project>
@@ -373,6 +506,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 SubmitLabel = project == null ? "Create Project" : "Update Project",
             },
             CreateStep1ViewModel = projectStep1,
+            CreateStep2ViewModel = step2,
+            CreateStep3ViewModel = step3,
             StepperViewModel = new StepperViewModel
             {
                 Title = project == null ? "Creating a Project" : "Editing a Project",

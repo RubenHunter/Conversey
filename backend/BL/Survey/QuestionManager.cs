@@ -93,6 +93,12 @@ public class QuestionManager: IQuestionManager
         return question;
     }
 
+    public void RemoveQuestionsForProject(Slug workspaceId, Slug projectId)
+    {
+        _ = _projectManager.GetProjectById(workspaceId, projectId);
+        _questionRepository.DeleteAllQuestionsForProject(projectId);
+    }
+
     public Answer GetAnswerById(int answerId)
     {
         return _questionRepository.ReadAnswerById(answerId) ?? throw new AnswerNotFoundException(answerId.ToString());

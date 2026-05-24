@@ -14,6 +14,7 @@ public interface IQuestionRepository
     IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithChoices(Slug projectSlug);
 
     void CreateQuestion(Question question);
+    void DeleteAllQuestionsForProject(Slug projectId);
 
     Answer ReadAnswerById(int answerId);
 

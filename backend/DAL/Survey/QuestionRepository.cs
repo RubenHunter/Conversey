@@ -99,6 +99,15 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.SaveChanges();
     }
 
+    public void DeleteAllQuestionsForProject(Slug projectId)
+    {
+        var questions = _dbContext.Questions
+            .Where(q => q.Project.Id == projectId)
+            .ToList();
+        _dbContext.Questions.RemoveRange(questions);
+        _dbContext.SaveChanges();
+    }
+
     public Answer ReadAnswerById(int answerId)
     {
         return _dbContext.Answers

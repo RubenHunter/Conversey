@@ -1,6 +1,5 @@
 import {createDragAndDropListComponent, DragAndDropListComponent} from "../components/dragAndDropList.ts";
 import {
-    createQuestionComponent,
     createQuestionPlaceholderComponent,
     QuestionComponent
 } from "../components/admin/addquestion/question.ts";
@@ -26,10 +25,6 @@ const selected: (QuestionComponent | SectionComponent)[] = [];
 createQuestionButton.addEventListener('click', clickCreateQuestion);
 createSectionButton.addEventListener('click', clickCreateSection);
 deleteButton.addEventListener('click', clickDeleteButton);
-
-const section = createSectionComponent('Bussen');
-section.questions.addElement(createQuestionComponent({type: QuestionType.Open, text: "Wat vind je van het aantal bushaltes?", required: true}));
-rootQuestionList.addElement(section);
 
 function clickCreateQuestion() {
     const modal = createPagedModalComponent();

@@ -48,7 +48,7 @@
 
     @await Html.PartialAsync("_AdminTableWithCreate", topicsTableModel)
 
-    <input type="hidden" name="CreateStep3ViewModel.TopicsJson" value="[]" />
+    <input type="hidden" asp-for="CreateStep3ViewModel.TopicsJson" />
 </form>
 
 @await Html.PartialAsync("_TopicCreateModal")

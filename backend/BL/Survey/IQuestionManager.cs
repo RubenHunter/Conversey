@@ -15,6 +15,7 @@ public interface IQuestionManager
     IEnumerable<Question> GetAllQuestions();
 
     Question AddQuestion(Question question);
+    void RemoveQuestionsForProject(Slug workspaceId, Slug projectId);
 
     Answer GetAnswerById(int answerId);
 

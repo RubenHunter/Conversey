@@ -196,6 +196,9 @@ class ProjectDraftManager {
         const step1Manager = this.stepManagers.get(1);
         if (!step1Manager) return;
 
+        step1Manager.hydrate();
+        this.refreshStep1UI();
+
         if (!step1Manager.validate()) return;
 
         const imageOk = await this.ensureStep1ImageUploaded();
@@ -325,6 +328,7 @@ class ProjectDraftManager {
             .querySelector<HTMLInputElement>('input[name="__RequestVerificationToken"]')?.value;
         if (!antiForgeryToken) return;
 
+        step1Manager.hydrate();
         if (!step1Manager.form.reportValidity()) return;
 
         this.setSaveDraftFeedback('Saving...', false);
