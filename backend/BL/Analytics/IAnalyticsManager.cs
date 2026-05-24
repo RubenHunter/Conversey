@@ -1,0 +1,28 @@
+using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Domain.Common;
+using Conversey.DAL.Analytics;
+
+namespace Conversey.BL.Analytics;
+
+public interface IAnalyticsManager
+{
+    Task<AnalyticsDashboardDto> GetDashboardAsync(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<ChoiceQuestionStatDto> GetChoiceQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<ScaleQuestionStatDto> GetScaleQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<OpenAnswerDto> GetOpenAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<AnswerListItemDto> GetAllAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<IdeaStatDto> GetIdeaStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<IdeaCountDto> GetIdeasByTopic(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<IdeaCountDto> GetIdeasByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    List<IdeaCountDto> GetIdeasByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    List<PlatformWorkspaceStatDto> GetPlatformStats();
+    Task<AiSummaryResponseDto> GenerateIdeaSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AnalyticsFilterRequest? filters);
+    Task<AiSummaryResponseDto?> GetCachedSummaryAsync(Slug workspaceId, Slug? projectId);
+    Task SaveSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AiSummaryResponseDto response);
+    string ExportQuantitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
+    string ExportQualitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null, string? questionType = null);
+    string ExportAnswersOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? questionType = null);
+    string ExportIdeasOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null);
+    string ExportCombinedCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null, string? questionType = null);
+}

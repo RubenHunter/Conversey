@@ -16,6 +16,7 @@ public class IdeaResponse
     public ModerationStatus Status { get; set; }
     
     public ModerationInfo ModerationInfo { get; set; }
+    public bool MarkedForReview { get; set; }
     
     [Required]
     public Idea Idea { get; set; }

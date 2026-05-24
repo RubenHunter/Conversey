@@ -128,6 +128,14 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .Property(p => p.NudgingStrength)
             .HasDefaultValue(3);
 
+        builder
+            .Property(p => p.MinAge)
+            .IsRequired(false);
+
+        builder
+            .Property(p => p.MaxAge)
+            .IsRequired(false);
+
         #endregion
 
 

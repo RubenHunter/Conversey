@@ -34,6 +34,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<ModerationKeyword>  ModerationKeywords { get; set; }
     public DbSet<AiCostLimit> AiCostLimits { get; set; }
     public DbSet<AiModelPricing> AiModelPricings { get; set; }
+    public DbSet<SavedAiSummary> SavedAiSummaries { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
@@ -111,6 +112,20 @@ public class ConverseyDbContext : IdentityDbContext
             .HasForeignKey(c => c.ProjectId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<SavedAiSummary>()
+            .HasOne(s => s.Workspace)
+            .WithMany()
+            .HasForeignKey(s => s.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<SavedAiSummary>()
+            .HasOne(s => s.Project)
+            .WithMany()
+            .HasForeignKey(s => s.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+
+        
         
    
 
