@@ -1,226 +1,163 @@
 /**
- * Comparison Widget Module
- * Handles interactivity for the radial circle comparison widget.
- * Provides hover effects and legend interactions.
+ * Comparison Widget — radial circle comparison with toggle switch and hover synchronisation.
  */
 
-/**
- * Configuration for comparison widget items
- */
-export interface ComparisonItem {
+interface ComparisonItem {
     label: string;
     value: number;
     color: string;
 }
 
-/**
- * Configuration for the comparison widget
- */
-export interface ComparisonWidgetConfig {
-    widgetId: string;
-    items: ComparisonItem[];
+function colorClass(color: string, type: 'dot' | 'circle'): string {
+    if (type === 'dot') {
+        return color === 'secondary' ? 'bg-secondary' : color === 'accent' ? 'bg-accent' : 'bg-primary';
+    }
+    return color === 'secondary'
+        ? 'bg-secondary/20 border-secondary'
+        : color === 'accent'
+            ? 'bg-accent/20 border-accent'
+            : 'bg-primary/20 border-primary';
 }
 
-/**
- * Navigate to a URL (utility function for button navigation)
- */
-function navigateTo(url: string): void {
-    if (url && url.startsWith('http')) {
-        window.open(url, '_blank');
-    } else if (url) {
-        window.location.href = url;
-    }
+function layoutCircles(container: HTMLElement, items: ComparisonItem[]): void {
+    if (!items.length) return;
+
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (w === 0 || h === 0) return;
+
+    const containerSize = Math.min(w, h);
+    const maxValue = Math.max(...items.map(i => i.value), 1);
+    const count = items.length;
+    const angleStep = 360 / count;
+
+    // Orbit radius: % of half-container size, adjusted for number of items
+    const orbitRadius = containerSize * (count === 1 ? 0 : 0.28);
+
+    // Max circle diameter fits inside the remaining space
+    const maxDiameter = containerSize * 0.38;
+    const minDiameter = containerSize * 0.14;
+
+    const circleEls = container.querySelectorAll<HTMLElement>('.circle-item');
+
+    circleEls.forEach(el => {
+        const label = el.dataset.itemId!;
+        const item = items.find(i => i.label === label);
+        if (!item) {
+            el.style.display = 'none';
+            return;
+        }
+
+        el.style.display = '';
+        const idx = items.indexOf(item);
+        const angle = (angleStep * idx - 90) * (Math.PI / 180);
+        const x = Math.cos(angle) * orbitRadius;
+        const y = Math.sin(angle) * orbitRadius;
+
+        const valueRatio = item.value / maxValue;
+        const diameter = minDiameter + (maxDiameter - minDiameter) * Math.sqrt(valueRatio);
+
+        el.style.left = '50%';
+        el.style.top = '50%';
+        el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+
+        const inner = el.querySelector<HTMLElement>('div');
+        if (inner) {
+            inner.style.width = `${diameter}px`;
+            inner.style.height = `${diameter}px`;
+            // Remove old color classes, apply new ones
+            inner.className = `rounded-full flex items-center justify-center shadow-sm border-2 transition-all duration-300 ${colorClass(item.color, 'circle')}`;
+        }
+
+        const span = el.querySelector<HTMLElement>('.circle-value');
+        if (span) {
+            span.textContent = String(item.value);
+            span.style.fontSize = `${Math.max(10, diameter * 0.28)}px`;
+        }
+
+        el.dataset.value = String(item.value);
+        el.dataset.color = item.color;
+    });
 }
 
-/**
- * Initialize comparison widget interactivity
- */
-export function initComparisonWidget(config: ComparisonWidgetConfig): void {
-    const widget = document.querySelector(`[data-comparison-widget="${config.widgetId}"]`);
-    if (!widget) {
-        console.warn(`Comparison widget not found: ${config.widgetId}`);
-        return;
-    }
+function updateLegend(container: HTMLElement, items: ComparisonItem[]): void {
+    const legend = container.closest('.comparison-widget')?.querySelector('.legend-container');
+    if (!legend) return;
 
-    const parent = widget.closest('.comparison-widget');
-    if (!parent) return;
+    const existing = legend.querySelectorAll<HTMLElement>('.legend-item');
+    existing.forEach(el => {
+        const label = el.dataset.itemId!;
+        const item = items.find(i => i.label === label);
+        if (item) {
+            const dot = el.querySelector<HTMLElement>('.legend-dot');
+            if (dot) dot.className = `w-2.5 h-2.5 rounded-full shrink-0 legend-dot ${colorClass(item.color, 'dot')}`;
+        }
+    });
+}
 
-    // Handle navigation button clicks
-    const navButtons = parent.querySelectorAll('button[data-navigation-url]');
-    navButtons.forEach(button => {
-        const url = button.dataset.navigationUrl;
-        if (url) {
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                navigateTo(url);
+function applyHover(widget: HTMLElement, activeLabel: string | null): void {
+    const opacity = activeLabel ? '0.25' : '';
+    widget.querySelectorAll<HTMLElement>('.circle-item').forEach(el => {
+        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? opacity : '';
+    });
+    widget.querySelectorAll<HTMLElement>('.legend-item').forEach(el => {
+        el.style.opacity = activeLabel && el.dataset.itemId !== activeLabel ? opacity : '';
+    });
+}
+
+export function initComparisonWidget(widgetId: string): void {
+    const widget = document.querySelector<HTMLElement>(`[data-comparison-widget="${widgetId}"]`);
+    if (!widget) return;
+
+    const container = widget.querySelector<HTMLElement>('.circle-container');
+    if (!container) return;
+
+    const primaryItems: ComparisonItem[] = JSON.parse(widget.dataset.items || '[]');
+    const allItems: ComparisonItem[] = JSON.parse(widget.dataset.allItems || '[]');
+    const hasToggle = allItems.length > 0;
+
+    let activeItems = primaryItems;
+
+    // Initial layout
+    layoutCircles(container, activeItems);
+
+    // Resize observer keeps circles correctly sized
+    const ro = new ResizeObserver(() => layoutCircles(container, activeItems));
+    ro.observe(container);
+
+    // Toggle switch — primary / all
+    if (hasToggle) {
+        const toggleBtns = widget.querySelectorAll<HTMLElement>('.comparison-toggle');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                activeItems = mode === 'all' ? allItems : primaryItems;
+
+                toggleBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+
+                layoutCircles(container, activeItems);
+                updateLegend(container, activeItems);
             });
-        }
+        });
+    }
+
+    // Hover synchronisation — legend ↔ circles
+    const legendItems = widget.querySelectorAll<HTMLElement>('.legend-item');
+    const circleItems = widget.querySelectorAll<HTMLElement>('.circle-item');
+
+    legendItems.forEach(el => {
+        el.addEventListener('mouseenter', () => applyHover(widget, el.dataset.itemId!));
+        el.addEventListener('mouseleave', () => applyHover(widget, null));
     });
-
-    // Get all circle items and legend items
-    const circleItems = parent.querySelectorAll('.circle-item');
-    const legendItems = parent.querySelectorAll('.legend-item');
-
-    // Create a map of label to item for easy lookup
-    const itemMap: Map<string, { circle: Element; legend: Element }> = new Map();
-    
-    legendItems.forEach(legend => {
-        const label = legend.dataset.itemId;
-        const circle = parent.querySelector(`.circle-item[data-item-id="${label}"]`);
-        if (label && circle) {
-            itemMap.set(label, { circle, legend });
-        }
-    });
-
-    // Add hover effects to legend items
-    legendItems.forEach(legend => {
-        const label = legend.dataset.itemId;
-        if (!label) return;
-
-        legend.addEventListener('mouseenter', () => {
-            const item = itemMap.get(label);
-            if (item) {
-                // Highlight legend
-                legend.querySelector('.w-3')?.classList.remove('opacity-35');
-                legend.querySelector('.w-3')?.classList.add('opacity-100');
-                legend.querySelector('span')?.classList.remove('text-text/70');
-                legend.querySelector('span')?.classList.add('text-text');
-                
-                // Scale up circle
-                const circleDiv = item.circle.querySelector('div');
-                if (circleDiv) {
-                    circleDiv.classList.add('scale-105');
-                }
-            }
-        });
-
-        legend.addEventListener('mouseleave', () => {
-            const item = itemMap.get(label);
-            if (item) {
-                // Restore legend
-                legend.querySelector('.w-3')?.classList.add('opacity-35');
-                legend.querySelector('.w-3')?.classList.remove('opacity-100');
-                legend.querySelector('span')?.classList.add('text-text/70');
-                legend.querySelector('span')?.classList.remove('text-text');
-                
-                // Restore circle
-                const circleDiv = item.circle.querySelector('div');
-                if (circleDiv) {
-                    circleDiv.classList.remove('scale-105');
-                }
-            }
-        });
-
-        // Add click to filter (optional - could highlight only selected items)
-        legend.addEventListener('click', () => {
-            // Toggle visibility of the item
-            const item = itemMap.get(label);
-            if (item) {
-                const circleDiv = item.circle.querySelector('div');
-                if (circleDiv) {
-                    const isHidden = circleDiv.classList.contains('opacity-0');
-                    if (isHidden) {
-                        circleDiv.classList.remove('opacity-0');
-                        legend.classList.remove('opacity-30');
-                    } else {
-                        circleDiv.classList.add('opacity-0');
-                        legend.classList.add('opacity-30');
-                    }
-                }
-            }
-        });
-    });
-
-    // Add hover effects to circle items
-    circleItems.forEach(circle => {
-        const label = circle.dataset.itemId;
-        if (!label) return;
-
-        circle.addEventListener('mouseenter', () => {
-            const item = itemMap.get(label);
-            if (item) {
-                // Highlight legend
-                const legend = item.legend;
-                legend.querySelector('.w-3')?.classList.remove('opacity-35');
-                legend.querySelector('.w-3')?.classList.add('opacity-100');
-                legend.querySelector('span')?.classList.remove('text-text/70');
-                legend.querySelector('span')?.classList.add('text-text');
-                
-                // Scale up circle
-                const circleDiv = circle.querySelector('div');
-                if (circleDiv) {
-                    circleDiv.classList.add('scale-105');
-                }
-            }
-        });
-
-        circle.addEventListener('mouseleave', () => {
-            const item = itemMap.get(label);
-            if (item) {
-                // Restore legend
-                const legend = item.legend;
-                legend.querySelector('.w-3')?.classList.add('opacity-35');
-                legend.querySelector('.w-3')?.classList.remove('opacity-100');
-                legend.querySelector('span')?.classList.add('text-text/70');
-                legend.querySelector('span')?.classList.remove('text-text');
-                
-                // Restore circle
-                const circleDiv = circle.querySelector('div');
-                if (circleDiv) {
-                    circleDiv.classList.remove('scale-105');
-                }
-            }
-        });
-
-        circle.addEventListener('click', () => {
-            // Toggle visibility
-            const circleDiv = circle.querySelector('div');
-            if (circleDiv) {
-                const isHidden = circleDiv.classList.contains('opacity-0');
-                if (isHidden) {
-                    circleDiv.classList.remove('opacity-0');
-                } else {
-                    circleDiv.classList.add('opacity-0');
-                }
-            }
-            
-            const item = itemMap.get(label);
-            if (item) {
-                const legend = item.legend;
-                const isHidden = circle.querySelector('div')?.classList.contains('opacity-0');
-                if (isHidden) {
-                    legend.classList.add('opacity-30');
-                } else {
-                    legend.classList.remove('opacity-30');
-                }
-            }
-        });
+    circleItems.forEach(el => {
+        el.addEventListener('mouseenter', () => applyHover(widget, el.dataset.itemId!));
+        el.addEventListener('mouseleave', () => applyHover(widget, null));
     });
 }
 
-/**
- * Initialize all comparison widgets on the page
- */
 export function initAllComparisonWidgets(): void {
-    const widgets = document.querySelectorAll('[data-comparison-widget]');
-    widgets.forEach(widget => {
-        const widgetId = widget.dataset.comparisonWidget;
-        if (widgetId) {
-            // Extract items from the legend
-            const legendItems = widget.querySelectorAll('.legend-item');
-            const items: ComparisonItem[] = [];
-            
-            legendItems.forEach(legend => {
-                const label = legend.dataset.itemId;
-                const valueEl = widget.querySelector(`.circle-item[data-item-id="${label}"] .font-semibold`);
-                const value = parseInt(valueEl?.textContent || '0');
-
-                if (label) {
-                    items.push({ label, value, color: 'primary' });
-                }
-            });
-            
-            initComparisonWidget({ widgetId, items });
-        }
+    document.querySelectorAll<HTMLElement>('[data-comparison-widget]').forEach(widget => {
+        const id = widget.dataset.comparisonWidget;
+        if (id) initComparisonWidget(id);
     });
 }

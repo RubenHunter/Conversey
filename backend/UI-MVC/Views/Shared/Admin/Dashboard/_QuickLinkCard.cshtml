@@ -1,4 +1,9 @@
 @model Conversey.UI_MVC.Models.Admin.QuickLinkItemViewModel
+@{
+    string iconStyle = !string.IsNullOrEmpty(Model.IconBgHex) && !string.IsNullOrEmpty(Model.IconFgHex)
+        ? $"background-color:{Model.IconBgHex}; color:{Model.IconFgHex}"
+        : string.Empty;
+}
 
 <a href="@Model.NavigateUrl"
    class="w-full bg-white rounded-xl border border-secondary/10 shadow-sm p-5
@@ -8,8 +13,8 @@
    data-title="@Model.Title"
    data-description="@Model.Description"
    data-navigate-url="@Model.NavigateUrl"
-   @(Model.IsModal ? "data-modal-target=" + Model.ModalTarget : "")>
-    <div class="w-12 h-12 rounded-xl @(Model.IconBackground) @(Model.IconColor) flex items-center justify-center flex-shrink-0">
+   @(Model.IsModal ? $"data-modal-target=\"{Model.ModalTarget}\"" : "")>
+    <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="@iconStyle">
         @Html.Raw(Model.Icon)
     </div>
     <div>

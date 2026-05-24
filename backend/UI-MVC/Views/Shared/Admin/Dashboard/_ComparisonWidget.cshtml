@@ -1,70 +1,67 @@
 @model Conversey.UI_MVC.Models.Admin.ComparisonWidgetViewModel
+@{
+    bool hasToggle = Model.AllItems.Any();
+    string DotClass(string c) => c switch { "secondary" => "bg-secondary", "accent" => "bg-accent", _ => "bg-primary" };
+    string CircleClass(string c) => c switch { "secondary" => "bg-secondary/20 border-secondary", "accent" => "bg-accent/20 border-accent", _ => "bg-primary/20 border-primary" };
+}
 
-<div class="bg-white rounded-xl border border-secondary/10 shadow-sm h-full p-5 comparison-widget" data-comparison-widget="@Model.Id">
-    <div class="flex flex-col md:flex-row gap-6 h-full">
-        <!-- Left Panel: Titles + Legend -->
-        <div class="flex flex-col justify-between min-w-[180px]">
-            <!-- Buttons stacked at top-left -->
-            <div class="flex flex-col gap-1">
-                <button type="button" 
-                        class="font-semibold text-text hover:text-primary transition-colors text-left"
-                        data-navigation-url="@Model.TitleUrl"
-                        data-i18n="@Model.Title">
-                    @Model.Title
-                </button>
-                <button type="button" 
-                        class="font-semibold text-text/50 hover:text-text/80 transition-colors text-left"
-                        data-navigation-url="@Model.SubTitleUrl"
-                        data-i18n="@Model.SubTitle">
-                    @Model.SubTitle
-                </button>
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm h-full p-5 comparison-widget"
+     data-comparison-widget="@Model.Id"
+     data-items="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))"
+     data-all-items="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AllItems.Select(i => new { label = i.Label, value = i.Value, color = i.Color })))">
+    <div class="flex h-full gap-4">
+        <!-- Left: titles + legend -->
+        <div class="flex flex-col justify-between min-w-[130px] shrink-0">
+            <div>
+                @if (hasToggle)
+                {
+                    <div class="comparison-toggle-group mb-1" role="group">
+                        <button type="button" class="comparison-toggle active" data-mode="primary">@Model.Title</button>
+                        <button type="button" class="comparison-toggle" data-mode="all">@Model.SubTitle</button>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <span class="font-semibold text-sm text-text block">@Model.Title</span>
+                        <span class="text-xs text-text/40 block mt-0.5">@Model.SubTitle</span>
+                    </div>
+                }
             </div>
-            <!-- Legend at bottom -->
-            <div class="mt-4 space-y-3 legend-container">
+
+            <div class="space-y-2 legend-container">
                 @foreach (var item in Model.Items)
                 {
-                    <div class="flex items-center gap-2 legend-item group cursor-pointer" data-item-id="@item.Label">
-                        <div class="w-3 h-3 rounded-full bg-[@item.Color] group-hover:opacity-100 transition-opacity opacity-35"></div>
-                        <span class="text-sm text-text/70 group-hover:text-text transition-colors" data-i18n="@item.Label">@item.Label</span>
+                    <div class="flex items-center gap-2 legend-item cursor-pointer" data-item-id="@item.Label">
+                        <div class="w-2.5 h-2.5 rounded-full shrink-0 @DotClass(item.Color) legend-dot"></div>
+                        <span class="text-xs text-text/70 truncate">@item.Label</span>
                     </div>
                 }
             </div>
         </div>
-        
-        <!-- Right Panel: Radial Circles -->
-        <div class="flex-1 flex items-center justify-center relative circle-container min-h-[200px] md:min-h-[250px]">
+
+        <!-- Right: radial circles (sized and positioned by TS) -->
+        <div class="flex-1 relative circle-container overflow-hidden" id="circles-@Model.Id">
             @{
+                double maxValue = Model.Items.Any() ? Model.Items.Max(i => (double)i.Value) : 1;
+                if (maxValue == 0) maxValue = 1;
                 int count = Model.Items.Count;
-                double angleStep = 360.0 / count;
-                // Use relative positioning based on container size
-                // Container will be at least 200px (mobile) to 250px+ (desktop)
-                // Position circles at ~40% of container size from center
-                double containerSizeBase = 200.0; // base container size for calculation
-                double positioningRadius = containerSizeBase * 0.35; // 35% of container size
+                double angleStep = count > 0 ? 360.0 / count : 0;
             }
-            
             @foreach (var item in Model.Items)
             {
                 int index = Model.Items.IndexOf(item);
-                double angle = angleStep * index;
-                double rad = angle * Math.PI / 180.0;
-                double x = Math.Cos(rad) * positioningRadius;
-                double y = Math.Sin(rad) * positioningRadius;
-                
-                double maxValue = Model.Items.Max(i => i.Value);
-                // Calculate circle size proportionally to value, scaled to fit container
-                // Use square root for visual proportionality (area scales with value)
-                // Max circle diameter = ~40% of container, min = ~15% of container
-                double maxCircleDiameter = containerSizeBase * 0.40;
-                double minCircleDiameter = containerSizeBase * 0.15;
-                double valueRatio = maxValue > 0 ? (double)item.Value / maxValue : 0;
-                double circleDiameter = minCircleDiameter + (maxCircleDiameter - minCircleDiameter) * Math.Sqrt(valueRatio);
-                double circleRadiusPx = circleDiameter / 2;
-                
-                <div class="absolute circle-item" style="left: 50%; top: 50%; transform: translate(-50%, -50%) translate(@(x)px, @(y)px)" data-item-id="@item.Label">
-                    <div class="rounded-full bg-[@item.Color]/20 border-2 border-[@item.Color] flex items-center justify-center shadow-md transition-all hover:shadow-lg hover:scale-105"
-                         style="width: @(circleDiameter)px; height: @(circleDiameter)px; min-width: @(minCircleDiameter)px; min-height: @(minCircleDiameter)px">
-                        <span class="font-semibold text-text text-sm">@item.Value</span>
+                double angle = angleStep * index - 90;
+                double valueRatio = item.Value / maxValue;
+
+                <div class="absolute circle-item"
+                     data-item-id="@item.Label"
+                     data-angle="@angle.ToString("F1")"
+                     data-value="@item.Value"
+                     data-value-ratio="@valueRatio.ToString("F4")"
+                     data-color="@item.Color">
+                    <div class="rounded-full flex items-center justify-center shadow-sm border-2 transition-all duration-300 @CircleClass(item.Color)">
+                        <span class="font-semibold text-text text-xs circle-value">@item.Value</span>
                     </div>
                 </div>
             }

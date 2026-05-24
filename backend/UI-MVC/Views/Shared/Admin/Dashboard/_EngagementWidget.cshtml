@@ -17,8 +17,9 @@
                       class="text-secondary/15" stroke-width="10" stroke-linecap="round"/>
                 <!-- Filled arc -->
                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="currentColor"
-                      class="@Model.GaugeColor" stroke-width="10" stroke-linecap="round"
-                      stroke-dasharray="@circumference" stroke-dashoffset="@strokeOffset"/>
+                      class="@Model.GaugeColor gauge-arc-fill" stroke-width="10" stroke-linecap="round"
+                      stroke-dasharray="@circumference" stroke-dashoffset="@strokeOffset"
+                      style="--gauge-circumference:@circumference.ToString("F1");--gauge-offset:@strokeOffset.ToString("F1")"/>
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-end pb-1">
                 <span class="text-xl font-bold text-text leading-none">@Model.GaugePercentage%</span>
@@ -29,6 +30,7 @@
     
     <!-- Progress Bars -->
     <div class="space-y-4">
+        @{ int barIndex = 0; }
         @foreach (var bar in Model.Bars)
         {
             <div>
@@ -37,12 +39,14 @@
                     <span class="text-text/40 flex-shrink-0" data-i18n="@bar.SubLabel">@bar.SubLabel</span>
                 </div>
                 <div class="relative w-full h-5 bg-secondary/10 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full @bar.Color transition-all duration-500" style="width: @bar.Percentage%"></div>
+                    <div class="h-full rounded-full @bar.Color engagement-bar"
+                         style="width: @bar.Percentage%; --bar-delay: @((0.5 + barIndex * 0.1).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))s"></div>
                     <span class="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-white mix-blend-difference">
                         @bar.DisplayValue
                     </span>
                 </div>
             </div>
+            barIndex++;
         }
     </div>
 </div>

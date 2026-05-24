@@ -41,7 +41,7 @@ export interface ChartWidgetConfig {
 /**
  * Cache for chart instances
  */
-const chartInstances: Map<string, Chart> = new Map();
+const chartInstances: Map<string, any> = new Map();
 
 /**
  * Check if Chart.js is loaded
@@ -53,7 +53,7 @@ export function isChartLoaded(): boolean {
 /**
  * Initialize a chart widget
  */
-export function initChartWidget(config: ChartWidgetConfig): Chart | null {
+export function initChartWidget(config: ChartWidgetConfig): any | null {
     if (!isChartLoaded()) {
         console.warn('Chart.js is not loaded. Please include: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>');
         return null;
@@ -88,7 +88,7 @@ export function initChartWidget(config: ChartWidgetConfig): Chart | null {
             },
             y: {
                 grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
+                    color: 'rgba(108, 92, 231, 0.06)'
                 }
             }
         }
@@ -138,12 +138,8 @@ function setupPeriodTabs(config: ChartWidgetConfig): void {
             if (!periodId) return;
 
             // Update active state
-            periodButtons.forEach(b => {
-                b.classList.remove('bg-primary/10', 'border-primary/30');
-                b.classList.add('hover:bg-secondary/5');
-            });
-            button.classList.add('bg-primary/10', 'border-primary/30');
-            button.classList.remove('hover:bg-secondary/5');
+            periodButtons.forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
 
             // Call period change handler if provided
             if (config.onPeriodChange) {
@@ -184,42 +180,58 @@ export function destroyChart(canvasId: string): void {
 /**
  * Get chart instance by canvas ID
  */
-export function getChart(canvasId: string): Chart | undefined {
+export function getChart(canvasId: string): any | undefined {
     return chartInstances.get(canvasId);
 }
 
 /**
- * Initialize all chart widgets on the page
- * Auto-discovers canvas elements with chart data
+ * Initialize all chart widgets on the page.
+ * Wires period-tab switching from pre-rendered period datasets when available.
  */
-export function initAllCharts(): Chart[] {
+export function initAllCharts(): any[] {
     if (!isChartLoaded()) {
         console.warn('Chart.js not loaded. Skipping chart initialization.');
         return [];
     }
-    
-    const charts: Chart[] = [];
-    
-    // Find all chart widgets
+
+    const charts: any[] = [];
     const chartWidgets = document.querySelectorAll('[data-chart-widget]');
-    
+
     chartWidgets.forEach(widget => {
         const canvasId = widget.getAttribute('data-chart-widget');
-        if (canvasId && window.__ChartData?.[canvasId]) {
-            const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-            if (canvas) {
-                const chartData = window.__ChartData[canvasId];
-                const chart = initChartWidget({
-                    canvasId,
-                    type: (chartData.type as string) || 'line',
-                    data: chartData.data
-                });
-                if (chart) {
-                    charts.push(chart);
-                }
-            }
+        if (!canvasId || !window.__ChartData?.[canvasId]) return;
+
+        const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        if (!canvas) return;
+
+        const stored = window.__ChartData[canvasId];
+
+        // Patch datasets with brand colors if not already set
+        const brandColors = ['#6c5ce7', '#db99c8', '#cd6f88'];
+        if (stored.data && (stored.data as any).datasets) {
+            (stored.data as any).datasets.forEach((ds: any, i: number) => {
+                const c = brandColors[i % brandColors.length];
+                if (!ds.borderColor) ds.borderColor = c;
+                if (!ds.backgroundColor) ds.backgroundColor = c + '18';
+                if (!ds.pointBackgroundColor) ds.pointBackgroundColor = c;
+                if (!ds.pointBorderColor) ds.pointBorderColor = '#fff';
+                if (!ds.tension) ds.tension = 0.4;
+                if (ds.fill === undefined) ds.fill = true;
+            });
         }
+
+        const chart = initChartWidget({
+            canvasId,
+            type: (stored.type as string) || 'line',
+            data: stored.data,
+            periods: (stored.periods as PeriodConfig[]) || [],
+            onPeriodChange: stored.periodData
+                ? async (periodId: string) => (stored.periodData as Record<string, unknown>)[periodId] ?? null
+                : undefined
+        });
+
+        if (chart) charts.push(chart);
     });
-    
+
     return charts;
 }

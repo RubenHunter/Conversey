@@ -102,6 +102,13 @@ public static class DashboardViewModelExtensions
                     Color = i.Color,
                     LegendIcon = i.LegendIcon
                 }).ToList(),
+                AllItems = dto.ComparisonWidget.AllItems.Select(i => new ComparisonItemViewModel
+                {
+                    Label = i.Label,
+                    Value = i.Value,
+                    Color = i.Color,
+                    LegendIcon = i.LegendIcon
+                }).ToList(),
                 Size = WidgetSize.Medium
             } : null,
 
@@ -113,8 +120,8 @@ public static class DashboardViewModelExtensions
                     Title = i.Title,
                     Description = i.Description,
                     Icon = i.Icon,
-                    IconBackground = i.IconBackground,
-                    IconColor = i.IconColor,
+                    IconBgHex = i.IconBgHex,
+                    IconFgHex = i.IconFgHex,
                     ModalTarget = i.ModalTarget,
                     NavigateUrl = i.NavigateUrl
                 }).ToList(),
@@ -153,6 +160,7 @@ public static class DashboardViewModelExtensions
                     IsActive = p.IsActive
                 }).ToList(),
                 ActivePeriod = dto.UsageTrendChart.ActivePeriod,
+                PeriodDatasets = dto.UsageTrendChart.PeriodDatasets,
                 Size = WidgetSize.ExtraLarge
             } : null
         };
@@ -227,9 +235,15 @@ public class ComparisonWidgetViewModel
     public string SubTitleUrl { get; set; } = "/admin/projects?filter=all";
 
     /// <summary>
-    /// The items to compare (displayed as radial circles).
+    /// Items for the primary/active mode (e.g., active projects).
     /// </summary>
     public List<ComparisonItemViewModel> Items { get; set; } = new();
+
+    /// <summary>
+    /// Items for the secondary/all mode (e.g., all projects). When non-empty,
+    /// the Title/SubTitle buttons act as a toggle switch between the two datasets.
+    /// </summary>
+    public List<ComparisonItemViewModel> AllItems { get; set; } = new();
 
     /// <summary>
     /// Widget size for layout purposes.
@@ -305,14 +319,14 @@ public class QuickLinkItemViewModel
     public string Icon { get; set; } = string.Empty;
 
     /// <summary>
-    /// The background color class for the icon (e.g., "bg-yellow-100").
+    /// Hex color for icon background, e.g. "#FEF9C3". Used as inline CSS.
     /// </summary>
-    public string IconBackground { get; set; } = "bg-primary/10";
+    public string IconBgHex { get; set; } = string.Empty;
 
     /// <summary>
-    /// The text color class for the icon (e.g., "text-yellow-500").
+    /// Hex color for icon foreground, e.g. "#CA8A04". Used as inline CSS.
     /// </summary>
-    public string IconColor { get; set; } = "text-primary";
+    public string IconFgHex { get; set; } = string.Empty;
 
     /// <summary>
     /// The ID of the modal to open (if this opens a modal).
@@ -446,6 +460,11 @@ public class ChartWidgetViewModel
     /// Currently active period.
     /// </summary>
     public string ActivePeriod { get; set; } = "7d";
+
+    /// <summary>
+    /// Pre-rendered datasets keyed by period id for client-side tab switching.
+    /// </summary>
+    public Dictionary<string, object> PeriodDatasets { get; set; } = new();
 
     /// <summary>
     /// Widget size for layout purposes.

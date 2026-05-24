@@ -1,16 +1,19 @@
 @model Conversey.UI_MVC.Models.Admin.NavCardViewModel
 
 <a href="@Model.NavigateUrl"
-   class="bg-white rounded-xl border border-secondary/10 shadow-sm p-5
-          flex items-center gap-4 hover:shadow-md hover:border-primary/20
-          transition-all group">
+   class="bg-white rounded-xl border border-secondary/10 p-5
+          flex items-center gap-4 hover:border-primary/20
+          transition-all group overflow-hidden">
     <div class="w-12 h-12 rounded-xl @(Model.IconBackground) @(Model.IconColor) flex items-center justify-center flex-shrink-0">
         @Html.Raw(Model.Icon)
     </div>
-    <div>
+    <div class="flex-1 min-w-0">
         <span class="font-semibold text-text group-hover:text-primary transition-colors block" data-i18n="@Model.Title">
             @Model.Title
         </span>
         <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@Model.Description">@Model.Description</span>
     </div>
+    <svg class="quick-link-arrow w-4 h-4 text-primary/50 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+    </svg>
 </a>

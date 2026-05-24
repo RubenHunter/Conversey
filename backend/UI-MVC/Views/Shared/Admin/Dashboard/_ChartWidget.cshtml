@@ -1,14 +1,14 @@
 @model Conversey.UI_MVC.Models.Admin.ChartWidgetViewModel
 
-<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 chart-widget" data-chart-widget="@Model.CanvasId">
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-5 chart-widget" data-chart-widget="@Model.CanvasId">
     <div class="flex justify-between items-center mb-4">
         <h2 class="font-semibold text-text" data-i18n="@Model.Title">@Model.Title</h2>
         @if (Model.Periods.Any())
         {
-            <div class="flex gap-2">
+            <div class="chart-period-group">
                 @foreach (var period in Model.Periods)
                 {
-                    <button class="px-3 py-1 text-xs rounded-full border border-secondary/20 hover:bg-secondary/5 transition-colors @(period.IsActive ? "bg-primary/10 border-primary/30" : "")"
+                    <button class="chart-period-btn @(period.IsActive ? "active" : "")"
                             data-period="@period.Id"
                             data-i18n="@period.Label">
                         @period.Label
@@ -17,12 +17,23 @@
             </div>
         }
     </div>
-    <div class="flex-1 min-h-0">
-        <canvas id="@Model.CanvasId" class="w-full h-full"></canvas>
+    <div class="min-h-[220px] relative">
+        <canvas id="@Model.CanvasId" class="w-full h-full absolute inset-0"></canvas>
     </div>
 </div>
 
 <script>
-    window.__ChartData = window.__ChartData || {};
-    window.__ChartData['@Model.CanvasId'] = { type: '@Model.Type', data: @Html.Raw(Json.Serialize(Model.Data)) };
+    (function() {
+        window.__ChartData = window.__ChartData || {};
+        var entry = {
+            type: '@Model.Type',
+            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Data)),
+            periods: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Periods.Select(p => new { id = p.Id, label = p.Label, isActive = p.IsActive })))
+        };
+        @if (Model.PeriodDatasets.Any())
+        {
+            @:entry.periodData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PeriodDatasets));
+        }
+        window.__ChartData['@Model.CanvasId'] = entry;
+    })();
 </script>
