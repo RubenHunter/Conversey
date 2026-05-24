@@ -108,7 +108,10 @@ public interface IAnalyticsRepository
     IReadOnlyCollection<IdeaCountByStatus> GetIdeaCountByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters);
     IReadOnlyCollection<IdeaCountByCategory> GetIdeaCountByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters);
     ParticipationStats GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
-    IReadOnlyCollection<PlatformWorkspaceStat> GetPlatformStats();
+    IReadOnlyCollection<PlatformWorkspaceStat> GetPlatformStats(Slug? workspaceId = null);
+    PlatformModerationStats GetPlatformModerationStats(Slug? workspaceId = null);
+    PlatformUserStats GetPlatformUserStats(Slug? workspaceId = null);
+    IReadOnlyCollection<UsageTrendPoint> GetUsageTrend(Slug? workspaceId = null, Slug? projectId = null, DateTime? from = null, DateTime? to = null);
     IReadOnlyCollection<string> GetIdeaContentsForSummary(Slug workspaceId, Slug? projectId, int maxIdeas, AnalyticsFilterParams? filters);
     IReadOnlyCollection<Topic> GetTopicsForWorkspace(Slug workspaceId);
     IReadOnlyList<ToxicityCount> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
@@ -143,4 +146,32 @@ public class AnswerListItem
     public Guid? YouthId { get; set; }
     public string? YouthEmail { get; set; }
     public string ProjectName { get; set; } = string.Empty;
+}
+
+public class PlatformModerationStats
+{
+    public int TotalFlaggedIdeas { get; set; }
+    public int TotalFlaggedComments { get; set; }
+    public int TotalIdeas { get; set; }
+    public int TotalComments { get; set; }
+    public List<ToxicityCount> IdeaFlags { get; set; } = new();
+    public List<ToxicityCount> CommentFlags { get; set; } = new();
+}
+
+public class PlatformUserStats
+{
+    public int TotalYouth { get; set; }
+    public int YouthWithIdeas { get; set; }
+    public int YouthWithAnswers { get; set; }
+    public int YouthWithBoth { get; set; }
+    public double AvgAnswersPerYouth { get; set; }
+    public double AvgIdeasPerYouth { get; set; }
+    public double ConversionRate { get; set; }
+}
+
+public class UsageTrendPoint
+{
+    public DateTime Date { get; set; }
+    public int IdeaCount { get; set; }
+    public int UniqueYouth { get; set; }
 }

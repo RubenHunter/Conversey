@@ -1,3 +1,4 @@
+@using System.Globalization
 @using System.Text.Json
 @using Conversey.UI_MVC.Resources
 @using Conversey.UI_MVC.Models
@@ -12,6 +13,29 @@
     ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[] { (I18n["Analytics"], null, true) };
     var isProjectView = Model.SelectedProject != null;
 }
+
+<style>
+    .chart-tooltip svg { pointer-events: none; }
+    .tooltip-popover {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        color: #fff;
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 8px 12px;
+        border-radius: 8px;
+        white-space: normal;
+        width: 240px;
+        z-index: 60;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        pointer-events: none;
+        display: none;
+    }
+    .tooltip-popover.show { display: block; }
+</style>
 
 <div class="min-h-screen bg-background font-sans text-text" data-workspace-slug="@WorkspaceContext.CurrentWorkspace.Id.Text">
     @await Html.PartialAsync("_AdminHeader")
@@ -97,6 +121,7 @@
                 <button type="submit"
                         class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
                         data-i18n="Apply Filters">Apply Filters</button>
+                <a href="@Url.Action("Index")" class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors">Clear</a>
                 <div class="relative inline-block" id="export-dropdown-container">
                     <button type="button" id="export-dropdown-btn"
                             class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors flex items-center gap-2 bg-background"
@@ -131,6 +156,24 @@
                 </div>
             </div>
 
+            <div class="bg-card rounded-xl border border-secondary/10 p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-1.5">
+                        <h2 class="text-lg font-bold">Usage Trend</h2>
+                        <span title="Ideas = number of ideas submitted on that day. Active Youth = distinct youth who submitted ideas on that day. Y-axis max = highest shown value + 1." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="trend-period-buttons">
+                        <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">7d</button>
+                        <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">1m</button>
+                        <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1y</button>
+                        <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">All</button>
+                    </div>
+                </div>
+                <div style="position:relative; height:280px"><canvas id="usage-trend-chart"></canvas></div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="bg-card rounded-xl border border-secondary/10 p-6">
                     <h2 class="text-lg font-bold mb-4">Ideas by Topic</h2>
@@ -145,7 +188,12 @@
             <div class="grid grid-cols-1 gap-6 mb-8">
                 <div class="bg-card rounded-xl border border-secondary/10 p-6" id="moderation-card-project">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-bold">Moderation / Toxicity Flags</h2>
+                        <div class="flex items-center gap-1.5">
+                            <h2 class="text-lg font-bold">Moderation / Toxicity Flags</h2>
+                            <span title="Flags detected by AI moderation. Shows count per category (Hate, Violence, Sexual, etc.). Toggle to view idea flags vs. comment flags." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
+                        </div>
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-secondary">Ideas</span>
                             <button type="button" class="toxicity-toggle-project relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors" data-mode="ideas" onclick="toggleToxicityModeProject(this)">
@@ -317,7 +365,18 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="bg-card rounded-xl border border-secondary/10 p-6">
-                    <h2 class="text-lg font-bold mb-4">Projects Overview</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-1.5">
+                            <h2 class="text-lg font-bold">Projects Overview</h2>
+                            <span title="Each circle represents a project. Size = participant count relative to other projects. Filter between All projects and Active-only projects." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="project-circles-toggle">
+                            <button type="button" data-filter="all" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">All</button>
+                            <button type="button" data-filter="Active" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">Active</button>
+                        </div>
+                    </div>
                     <div class="relative min-h-[260px]" id="project-circles-container">
                         @{
                             var colors = new[] { "#6366f1", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4" };
@@ -336,8 +395,9 @@
                             else if (ci <= 6) { angle = (ci - 3.5) * 1.6; radius = 42; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
                             else { angle = ci * 1.1; radius = 55; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
                             <a href="@Url.Action("Index", new { projectId = pp.ProjectSlug })"
-                               class="absolute rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform hover:scale-110 hover:z-20 shadow-lg"
-                               style="width:@(size)px;height:@(size)px;background:@color;left:@(tx)%;top:@(ty)%;transform:translate(-50%,-50%);min-width:60px;min-height:60px;z-index:@(10-ci)">
+                               class="project-circle-link absolute rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform hover:scale-110 hover:z-20 shadow-lg"
+                               data-status="@pp.Status"
+                               style="width:@(size)px;height:@(size)px;background:@color;left:@(tx.ToString(CultureInfo.InvariantCulture))%;top:@(ty.ToString(CultureInfo.InvariantCulture))%;transform:translate(-50%,-50%);min-width:60px;min-height:60px;z-index:@(10-ci)">
                                 <span class="text-center leading-tight">@pp.ParticipantCount<br/><span class="text-[10px] opacity-75">@pp.ProjectName[..Math.Min(pp.ProjectName.Length, 12)]</span></span>
                             </a>
                         }
@@ -345,7 +405,7 @@
                     <div class="mt-4 flex flex-wrap gap-3 justify-center" id="project-circles-legend">
                         @for (int li = 0; li < sorted.Count; li++)
                         {
-                            <div class="flex items-center gap-1.5 text-xs text-secondary">
+                            <div class="project-circle-legend flex items-center gap-1.5 text-xs text-secondary" data-status="@sorted[li].Status">
                                 <span class="w-3 h-3 rounded-full inline-block" style="background:@colors[li % colors.Length]"></span>
                                 <span>@sorted[li].ProjectName (@sorted[li].ParticipantCount)</span>
                             </div>
@@ -355,7 +415,12 @@
 
                 <div class="bg-card rounded-xl border border-secondary/10 p-6" id="moderation-card">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-bold">Moderation / Toxicity Flags</h2>
+                        <div class="flex items-center gap-1.5">
+                            <h2 class="text-lg font-bold">Moderation / Toxicity Flags</h2>
+                            <span title="Flags detected by AI moderation. Shows count per category (Hate, Violence, Sexual, etc.). Toggle to view idea flags vs. comment flags." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </span>
+                        </div>
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-secondary">Ideas</span>
                             <button type="button" id="toxicity-toggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors" data-mode="ideas" onclick="toggleToxicityMode()">
@@ -440,6 +505,24 @@
                     }
                     </div>
                 </div>
+            </div>
+
+            <div class="bg-card rounded-xl border border-secondary/10 p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-1.5">
+                        <h2 class="text-lg font-bold">Usage Trend</h2>
+                        <span title="Ideas = number of ideas submitted on that day. Active Youth = distinct youth who submitted ideas on that day. Y-axis max = highest shown value + 1." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="trend-period-buttons">
+                        <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">7d</button>
+                        <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">1m</button>
+                        <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1y</button>
+                        <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">All</button>
+                    </div>
+                </div>
+                <div style="position:relative; height:280px"><canvas id="usage-trend-chart"></canvas></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -527,10 +610,49 @@ function toggleToxicityModeProject(btn) {
         responsesContainer.classList.add('hidden');
     }
 }
+
+function filterProjectCircles(status) {
+    document.querySelectorAll('.project-circle-link, .project-circle-legend').forEach(function(el) {
+        if (status === 'all' || el.getAttribute('data-status') === status) {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+document.querySelectorAll('#project-circles-toggle button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#project-circles-toggle button').forEach(function(b) { b.classList.remove('bg-white', 'text-text', 'shadow-sm'); b.classList.add('text-text/50'); });
+        btn.classList.add('bg-white', 'text-text', 'shadow-sm');
+        btn.classList.remove('text-text/50');
+        filterProjectCircles(btn.getAttribute('data-filter') || 'all');
+    });
+});
+
+(function() {
+    var activePopover = null;
+    document.querySelectorAll('.chart-tooltip').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (activePopover) { activePopover.remove(); activePopover = null; }
+            var popover = document.createElement('div');
+            popover.className = 'tooltip-popover show';
+            popover.textContent = el.getAttribute('title') || '';
+            el.style.position = 'relative';
+            el.appendChild(popover);
+            activePopover = popover;
+        });
+    });
+    document.addEventListener('click', function() {
+        if (activePopover) { activePopover.remove(); activePopover = null; }
+    });
+})();
 </script>
 
 <script type="application/json" id="analytics-dashboard-data">@Html.Raw(Model.DashboardJson)</script>
 <script type="application/json" id="project-circles-data">@Html.Raw(Model.ProjectCirclesJson)</script>
+<script type="application/json" id="usage-trend-data">@Html.Raw(Model.UsageTrendJson)</script>
 @if (Model.SelectedProject != null)
 {
 <script type="application/json" id="project-age-range">{"min":@(Model.SelectedProject.MinAge ?? 0),"max":@(Model.SelectedProject.MaxAge ?? 150)}</script>

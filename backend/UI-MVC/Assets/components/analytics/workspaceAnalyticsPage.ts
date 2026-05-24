@@ -39,6 +39,12 @@ interface DashboardData {
   };
 }
 
+interface UsageTrendPoint {
+  date: string;
+  ideaCount: number;
+  uniqueYouth: number;
+}
+
 interface AiSummaryResponse {
   overview: string;
   trends: string[];
@@ -133,6 +139,85 @@ function renderSummary(data: AiSummaryResponse): void {
 
 function escapeHtml(text: string): string { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
 
+let trendChartInstance: any = null;
+let trendChartData: UsageTrendPoint[] = [];
+let trendHasUrlDates = false;
+
+function filterTrendByDays(data: UsageTrendPoint[], days: number): UsageTrendPoint[] {
+  if (days <= 0) return data;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  return data.filter(d => new Date(d.date + 'T00:00:00') >= cutoff);
+}
+
+function createTrendChart(data: UsageTrendPoint[]): void {
+  const canvas = document.getElementById('usage-trend-chart') as HTMLCanvasElement | null;
+  if (!canvas) return;
+
+  if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+
+  if (data.length === 0) {
+    const parent = canvas.parentElement;
+    if (parent) parent.innerHTML = '<div class="flex items-center justify-center h-full text-text/40 text-sm">No data for selected period</div>';
+    return;
+  }
+
+  const maxIdeas = Math.max(...data.map(d => d.ideaCount), 0);
+  const maxYouth = Math.max(...data.map(d => d.uniqueYouth), 0);
+  const yMax = Math.max(maxIdeas, maxYouth, 1) + 1;
+
+  trendChartInstance = new (window as any).Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.date),
+      datasets: [
+        {
+          label: 'Ideas',
+          data: data.map(d => d.ideaCount),
+          borderColor: getColor(0),
+          backgroundColor: getColor(0) + '20',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2
+        },
+        {
+          label: 'Active Youth',
+          data: data.map(d => d.uniqueYouth),
+          borderColor: getColor(2),
+          backgroundColor: getColor(2) + '20',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: true },
+        y: { beginAtZero: true, max: yMax, ticks: { stepSize: 1 } }
+      },
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: function(ctx: any) {
+              return ctx.dataset.label + ': ' + ctx.raw;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateTrendChartPeriod(days: number): void {
+  const filtered = filterTrendByDays(trendChartData, days);
+  createTrendChart(filtered);
+}
+
 async function fetchAiSummary(e: Event): Promise<void> {
   e.preventDefault();
   const btn = document.getElementById('generate-summary-btn') as HTMLButtonElement;
@@ -226,6 +311,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.ideasByStatus.length > 0) createStatusChart(data.ideasByStatus);
     } catch (e) { console.error('Failed to parse dashboard data', e); }
   }
+
+  const trendEl = document.getElementById('usage-trend-data');
+  if (trendEl?.textContent) {
+    try {
+      const data: UsageTrendPoint[] = JSON.parse(trendEl.textContent);
+      trendChartData = data;
+      const urlParams = new URLSearchParams(window.location.search);
+      trendHasUrlDates = !!(urlParams.get('dateFrom') || urlParams.get('dateTo'));
+      if (data.length > 0) {
+        if (trendHasUrlDates) {
+          createTrendChart(data);
+        } else {
+          createTrendChart(filterTrendByDays(data, 30));
+        }
+      }
+    } catch (e) { console.error('Failed to parse usage trend data', e); }
+  }
+
+  document.querySelectorAll('#trend-period-buttons button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#trend-period-buttons button').forEach(b => { b.classList.remove('bg-white', 'text-text', 'shadow-sm'); b.classList.add('text-text/50'); });
+      btn.classList.add('bg-white', 'text-text', 'shadow-sm');
+      btn.classList.remove('text-text/50');
+      const days = parseInt(btn.getAttribute('data-days') || '30');
+      if (trendHasUrlDates && days > 0) return;
+      updateTrendChartPeriod(days);
+    });
+  });
 
   document.getElementById('ai-focus-select')?.addEventListener('change', updateAiFocusInputs);
   document.getElementById('generate-summary-btn')?.addEventListener('click', fetchAiSummary);

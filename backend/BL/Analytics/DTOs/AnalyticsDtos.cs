@@ -130,3 +130,31 @@ public class AnalyticsDashboardDto
     public List<IdeaCountDto> IdeasByCategory { get; set; } = new();
     public ParticipationStatsDto Participation { get; set; } = new();
 }
+
+public class PlatformModerationStatsDto
+{
+    public int TotalFlaggedIdeas { get; set; }
+    public int TotalFlaggedComments { get; set; }
+    public int TotalIdeas { get; set; }
+    public int TotalComments { get; set; }
+    public List<IdeaCountDto> IdeaFlags { get; set; } = new();
+    public List<IdeaCountDto> CommentFlags { get; set; } = new();
+}
+
+public class PlatformUserStatsDto
+{
+    public int TotalYouth { get; set; }
+    public int YouthWithIdeas { get; set; }
+    public int YouthWithAnswers { get; set; }
+    public int YouthWithBoth { get; set; }
+    public double AvgAnswersPerYouth { get; set; }
+    public double AvgIdeasPerYouth { get; set; }
+    public double ConversionRate { get; set; }
+}
+
+public class UsageTrendPointDto
+{
+    public string Date { get; set; } = string.Empty;
+    public int IdeaCount { get; set; }
+    public int UniqueYouth { get; set; }
+}

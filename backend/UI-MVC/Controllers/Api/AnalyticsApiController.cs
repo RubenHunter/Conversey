@@ -352,4 +352,17 @@ public class AnalyticsApiController : ControllerBase
 
         return File(fullContent, "text/csv; charset=utf-8", filename);
     }
+
+    [HttpGet("usage-trend")]
+    public IActionResult GetUsageTrend(
+        [FromQuery] string? workspaceId = null,
+        [FromQuery] string? projectId = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
+    {
+        Slug? wsSlug = string.IsNullOrWhiteSpace(workspaceId) ? null : MakeSlugOrNull(workspaceId);
+        Slug? pSlug = string.IsNullOrWhiteSpace(projectId) ? null : MakeSlugOrNull(projectId);
+        var trend = _analyticsManager.GetUsageTrend(wsSlug, pSlug, from, to);
+        return Ok(trend);
+    }
 }

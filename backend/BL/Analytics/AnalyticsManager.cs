@@ -182,9 +182,9 @@ public class AnalyticsManager : IAnalyticsManager
         };
     }
 
-    public List<PlatformWorkspaceStatDto> GetPlatformStats()
+    public List<PlatformWorkspaceStatDto> GetPlatformStats(Slug? workspaceId = null)
     {
-        var stats = _repo.GetPlatformStats();
+        var stats = _repo.GetPlatformStats(workspaceId);
 
         return stats.Select(s => new PlatformWorkspaceStatDto
         {
@@ -444,5 +444,45 @@ public class AnalyticsManager : IAnalyticsManager
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         return value.Replace("\"", "\"\"");
+    }
+
+    public PlatformModerationStatsDto GetPlatformModerationStats(Slug? workspaceId = null)
+    {
+        var stats = _repo.GetPlatformModerationStats(workspaceId);
+        return new PlatformModerationStatsDto
+        {
+            TotalFlaggedIdeas = stats.TotalFlaggedIdeas,
+            TotalFlaggedComments = stats.TotalFlaggedComments,
+            TotalIdeas = stats.TotalIdeas,
+            TotalComments = stats.TotalComments,
+            IdeaFlags = stats.IdeaFlags.Select(f => new IdeaCountDto { Label = f.Label, Count = f.Count }).ToList(),
+            CommentFlags = stats.CommentFlags.Select(f => new IdeaCountDto { Label = f.Label, Count = f.Count }).ToList()
+        };
+    }
+
+    public PlatformUserStatsDto GetPlatformUserStats(Slug? workspaceId = null)
+    {
+        var stats = _repo.GetPlatformUserStats(workspaceId);
+        return new PlatformUserStatsDto
+        {
+            TotalYouth = stats.TotalYouth,
+            YouthWithIdeas = stats.YouthWithIdeas,
+            YouthWithAnswers = stats.YouthWithAnswers,
+            YouthWithBoth = stats.YouthWithBoth,
+            AvgAnswersPerYouth = stats.AvgAnswersPerYouth,
+            AvgIdeasPerYouth = stats.AvgIdeasPerYouth,
+            ConversionRate = stats.ConversionRate
+        };
+    }
+
+    public List<UsageTrendPointDto> GetUsageTrend(Slug? workspaceId = null, Slug? projectId = null, DateTime? from = null, DateTime? to = null)
+    {
+        var points = _repo.GetUsageTrend(workspaceId, projectId, from, to);
+        return points.Select(p => new UsageTrendPointDto
+        {
+            Date = p.Date.ToString("yyyy-MM-dd"),
+            IdeaCount = p.IdeaCount,
+            UniqueYouth = p.UniqueYouth
+        }).ToList();
     }
 }

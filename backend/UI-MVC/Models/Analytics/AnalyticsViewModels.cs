@@ -27,6 +27,7 @@ public class ProjectParticipantSummary
     public string ProjectSlug { get; set; } = string.Empty;
     public int ParticipantCount { get; set; }
     public int IdeaCount { get; set; }
+    public string Status { get; set; } = string.Empty;
 }
 
 public class ToxicityCount
@@ -54,6 +55,7 @@ public class WorkspaceAnalyticsViewModel
     public AiSummaryResponseDto? AiSummary { get; set; }
     public string DashboardJson { get; set; } = "{}";
     public string ProjectCirclesJson { get; set; } = "[]";
+    public string UsageTrendJson { get; set; } = "[]";
 }
 
 public class IdeasListViewModel
@@ -97,11 +99,19 @@ public class YouthOption
 public class ConverseyAnalyticsViewModel
 {
     public List<PlatformWorkspaceStatDto> PlatformStats { get; set; } = new();
+    public List<PlatformWorkspaceStatDto> AllPlatformStats { get; set; } = new();
     public AnalyticsFilterViewModel Filter { get; set; } = new();
     public AnalyticsDashboardDto? SelectedWorkspaceDashboard { get; set; }
     public AiSummaryResponseDto? AiSummary { get; set; }
+    public PlatformModerationStatsDto? ModerationStats { get; set; }
+    public PlatformUserStatsDto? UserStats { get; set; }
+    public string? SelectedWorkspaceId { get; set; }
     public string DashboardJson { get; set; } = "{}";
     public string PlatformStatsJson { get; set; } = "[]";
+    public string ModerationStatsJson { get; set; } = "{}";
+    public string UserStatsJson { get; set; } = "{}";
+    public string UsageTrendJson { get; set; } = "[]";
+    public string WorkspaceCirclesJson { get; set; } = "[]";
 }
 
 public class ExportRequestViewModel

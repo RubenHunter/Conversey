@@ -337,9 +337,12 @@ public class AnalyticsRepository : IAnalyticsRepository
         };
     }
 
-    public IReadOnlyCollection<PlatformWorkspaceStat> GetPlatformStats()
+    public IReadOnlyCollection<PlatformWorkspaceStat> GetPlatformStats(Slug? workspaceId = null)
     {
         var workspaces = _db.Workspaces.ToList();
+        if (workspaceId.HasValue)
+            workspaces = workspaces.Where(w => w.Id == workspaceId.Value).ToList();
+
         var allYouth = _db.Youths.Include(y => y.Project).ToList();
         var allAnswers = _db.Answers.Include("Youth").ToList();
         var allIdeas = _db.Ideas.Include(i => i.Youth).ToList();
@@ -717,13 +720,13 @@ public class AnalyticsRepository : IAnalyticsRepository
         {
             var idea = await _db.Ideas.FirstOrDefaultAsync(i => i.Id == id);
             if (idea == null) return false;
-            idea.MarkedForReview = !idea.MarkedForReview;
+            idea.Status = idea.Status == ModerationStatus.Pending ? ModerationStatus.Approved : ModerationStatus.Pending;
         }
         else if (type == "response")
         {
             var response = await _db.Responses.FirstOrDefaultAsync(r => r.Id == id);
             if (response == null) return false;
-            response.MarkedForReview = !response.MarkedForReview;
+            response.Status = response.Status == ModerationStatus.Pending ? ModerationStatus.Approved : ModerationStatus.Pending;
         }
         else
         {
@@ -765,5 +768,122 @@ public class AnalyticsRepository : IAnalyticsRepository
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    public PlatformModerationStats GetPlatformModerationStats(Slug? workspaceId = null)
+    {
+        var ideas = _db.Ideas.ToList();
+        var allResponses = _db.Responses.Include(r => r.Idea).ToList();
+
+        if (workspaceId.HasValue)
+        {
+            var projectIds = _db.Projects.Where(p => p.Workspace.Id == workspaceId.Value).Select(p => p.Id).ToHashSet();
+            ideas = ideas.Where(i => projectIds.Contains(i.Project.Id)).ToList();
+            allResponses = allResponses.Where(r => r.Idea != null && projectIds.Contains(r.Idea.Project.Id)).ToList();
+        }
+
+        var flaggedIdeas = ideas.Where(i => i.ModerationInfo.Sexual || i.ModerationInfo.HateAndDiscrimination || i.ModerationInfo.ViolenceAndThreats || i.ModerationInfo.DangerousAndCriminalContent || i.ModerationInfo.SelfHarm || i.ModerationInfo.Pii).ToList();
+        var flaggedResponses = allResponses.Where(r => r.ModerationInfo.Sexual || r.ModerationInfo.HateAndDiscrimination || r.ModerationInfo.ViolenceAndThreats || r.ModerationInfo.DangerousAndCriminalContent || r.ModerationInfo.SelfHarm || r.ModerationInfo.Pii).ToList();
+
+        return new PlatformModerationStats
+        {
+            TotalFlaggedIdeas = flaggedIdeas.Count,
+            TotalFlaggedComments = flaggedResponses.Count,
+            TotalIdeas = ideas.Count,
+            TotalComments = allResponses.Count,
+            IdeaFlags = new List<ToxicityCount>
+            {
+                new() { Label = "Hate & Discrimination", Count = flaggedIdeas.Count(i => i.ModerationInfo.HateAndDiscrimination) },
+                new() { Label = "Violence & Threats", Count = flaggedIdeas.Count(i => i.ModerationInfo.ViolenceAndThreats) },
+                new() { Label = "Sexual Content", Count = flaggedIdeas.Count(i => i.ModerationInfo.Sexual) },
+                new() { Label = "Self Harm", Count = flaggedIdeas.Count(i => i.ModerationInfo.SelfHarm) },
+                new() { Label = "Dangerous / Criminal", Count = flaggedIdeas.Count(i => i.ModerationInfo.DangerousAndCriminalContent) },
+                new() { Label = "PII", Count = flaggedIdeas.Count(i => i.ModerationInfo.Pii) }
+            },
+            CommentFlags = new List<ToxicityCount>
+            {
+                new() { Label = "Hate & Discrimination", Count = flaggedResponses.Count(r => r.ModerationInfo.HateAndDiscrimination) },
+                new() { Label = "Violence & Threats", Count = flaggedResponses.Count(r => r.ModerationInfo.ViolenceAndThreats) },
+                new() { Label = "Sexual Content", Count = flaggedResponses.Count(r => r.ModerationInfo.Sexual) },
+                new() { Label = "Self Harm", Count = flaggedResponses.Count(r => r.ModerationInfo.SelfHarm) },
+                new() { Label = "Dangerous / Criminal", Count = flaggedResponses.Count(r => r.ModerationInfo.DangerousAndCriminalContent) },
+                new() { Label = "PII", Count = flaggedResponses.Count(r => r.ModerationInfo.Pii) }
+            }
+        };
+    }
+
+    public PlatformUserStats GetPlatformUserStats(Slug? workspaceId = null)
+    {
+        var allYouth = _db.Youths.ToList();
+        var allAnswers = _db.Answers.Include("Youth").ToList();
+        var allIdeas = _db.Ideas.Include(i => i.Youth).ToList();
+
+        if (workspaceId.HasValue)
+        {
+            var projectIds = _db.Projects.Where(p => p.Workspace.Id == workspaceId.Value).Select(p => p.Id).ToHashSet();
+            allYouth = allYouth.Where(y => projectIds.Contains(y.Project.Id)).ToList();
+            var youthIdSet = new HashSet<Guid>(allYouth.Select(y => y.Id));
+            allAnswers = allAnswers.Where(a => youthIdSet.Contains(a.Youth.Id)).ToList();
+            allIdeas = allIdeas.Where(i => youthIdSet.Contains(i.Youth.Id)).ToList();
+        }
+
+        var totalYouth = allYouth.Count;
+        var youthWithAnswersSet = new HashSet<Guid>(allAnswers.Select(a => a.Youth.Id));
+        var youthWithIdeasSet = new HashSet<Guid>(allIdeas.Select(i => i.Youth.Id));
+        var youthWithBoth = youthWithAnswersSet.Intersect(youthWithIdeasSet).Count();
+
+        return new PlatformUserStats
+        {
+            TotalYouth = totalYouth,
+            YouthWithAnswers = youthWithAnswersSet.Count,
+            YouthWithIdeas = youthWithIdeasSet.Count,
+            YouthWithBoth = youthWithBoth,
+            AvgAnswersPerYouth = totalYouth > 0 ? Math.Round((double)allAnswers.Count / totalYouth, 1) : 0,
+            AvgIdeasPerYouth = totalYouth > 0 ? Math.Round((double)allIdeas.Count / totalYouth, 1) : 0,
+            ConversionRate = youthWithAnswersSet.Count > 0 ? Math.Round((double)youthWithBoth / youthWithAnswersSet.Count * 100, 1) : 0
+        };
+    }
+
+    public IReadOnlyCollection<UsageTrendPoint> GetUsageTrend(Slug? workspaceId = null, Slug? projectId = null, DateTime? from = null, DateTime? to = null)
+    {
+        var ideasQuery = _db.Ideas.AsQueryable();
+        if (projectId.HasValue)
+        {
+            ideasQuery = ideasQuery.Where(i => i.Project.Id == projectId.Value);
+        }
+        else if (workspaceId.HasValue)
+        {
+            var projectIds = _db.Projects.Where(p => p.Workspace.Id == workspaceId.Value).Select(p => p.Id).ToHashSet();
+            ideasQuery = ideasQuery.Where(i => projectIds.Contains(i.Project.Id));
+        }
+
+        var fromDate = EnsureUtc(from) ?? DateTime.UtcNow.AddMonths(-3);
+        var toDate = EnsureUtc(to) ?? DateTime.UtcNow;
+        if (to.HasValue) toDate = toDate.Date.AddDays(1);
+
+        var ideas = ideasQuery
+            .Include(i => i.Youth)
+            .Where(i => i.SubmissionDate >= fromDate && i.SubmissionDate <= toDate)
+            .ToList();
+
+        var dailyGroups = ideas
+            .GroupBy(i => i.SubmissionDate.Date)
+            .OrderBy(g => g.Key);
+
+        var result = new List<UsageTrendPoint>();
+        foreach (var group in dailyGroups)
+        {
+            var dayIdeas = group.ToList();
+            var uniqueYouth = new HashSet<Guid>(dayIdeas.Select(i => i.Youth.Id)).Count;
+
+            result.Add(new UsageTrendPoint
+            {
+                Date = group.Key,
+                IdeaCount = dayIdeas.Count,
+                UniqueYouth = uniqueYouth
+            });
+        }
+
+        return result.AsReadOnly();
     }
 }

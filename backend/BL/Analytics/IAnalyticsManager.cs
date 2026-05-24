@@ -16,7 +16,10 @@ public interface IAnalyticsManager
     List<IdeaCountDto> GetIdeasByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
     List<IdeaCountDto> GetIdeasByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
     ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
-    List<PlatformWorkspaceStatDto> GetPlatformStats();
+    List<PlatformWorkspaceStatDto> GetPlatformStats(Slug? workspaceId = null);
+    PlatformModerationStatsDto GetPlatformModerationStats(Slug? workspaceId = null);
+    PlatformUserStatsDto GetPlatformUserStats(Slug? workspaceId = null);
+    List<UsageTrendPointDto> GetUsageTrend(Slug? workspaceId = null, Slug? projectId = null, DateTime? from = null, DateTime? to = null);
     Task<AiSummaryResponseDto> GenerateIdeaSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AnalyticsFilterRequest? filters);
     Task<AiSummaryResponseDto?> GetCachedSummaryAsync(Slug workspaceId, Slug? projectId);
     Task SaveSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AiSummaryResponseDto response);

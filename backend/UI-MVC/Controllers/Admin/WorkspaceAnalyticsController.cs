@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Analytics;
@@ -42,6 +43,10 @@ public class WorkspaceAnalyticsController : Controller
         [FromQuery] string? status = null)
     {
         var workspace = _workspaceContext.CurrentWorkspace;
+
+        DateTime? parsedDateFrom = ParseDate(Request.Query["dateFrom"]);
+        DateTime? parsedDateTo = ParseDate(Request.Query["dateTo"]);
+
         var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspace.Id);
         Project? selectedProject = null;
 
@@ -52,8 +57,8 @@ public class WorkspaceAnalyticsController : Controller
 
         var filter = new AnalyticsFilterViewModel
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         };
@@ -76,8 +81,8 @@ public class WorkspaceAnalyticsController : Controller
 
         var filters = new AnalyticsFilterRequest
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         };
@@ -92,11 +97,11 @@ public class WorkspaceAnalyticsController : Controller
 
         if (selectedProject == null)
         {
-            var hasFilters = !string.IsNullOrWhiteSpace(status) || topicId.HasValue || dateFrom.HasValue || dateTo.HasValue;
+            var hasFilters = !string.IsNullOrWhiteSpace(status) || topicId.HasValue || parsedDateFrom.HasValue || parsedDateTo.HasValue;
             var partFilters = hasFilters ? new AnalyticsFilterParams
             {
-                DateFrom = dateFrom,
-                DateTo = dateTo,
+                DateFrom = parsedDateFrom,
+                DateTo = parsedDateTo,
                 TopicId = topicId,
                 Status = status
             } : null;
@@ -109,7 +114,8 @@ public class WorkspaceAnalyticsController : Controller
                     ProjectName = p.Name,
                     ProjectSlug = p.Id.Text,
                     ParticipantCount = pStats.TotalYouth,
-                    IdeaCount = pStats.YouthWithIdeas
+                    IdeaCount = pStats.YouthWithIdeas,
+                    Status = p.Status.ToString()
                 });
                 totalWorkspaceParticipants += pStats.TotalYouth;
             }
@@ -117,8 +123,8 @@ public class WorkspaceAnalyticsController : Controller
 
         foreach (var t in _analyticsRepo.GetToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         }))
@@ -129,8 +135,8 @@ public class WorkspaceAnalyticsController : Controller
         var responseToxicityStats = new List<Models.Analytics.ToxicityCount>();
         foreach (var t in _analyticsRepo.GetResponseToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         }))
@@ -142,15 +148,15 @@ public class WorkspaceAnalyticsController : Controller
 
         var distinctFlaggedIdeas = _analyticsRepo.GetDistinctFlaggedIdeaCount(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         });
         var distinctFlaggedResponses = _analyticsRepo.GetDistinctFlaggedResponseCount(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
-            DateFrom = dateFrom,
-            DateTo = dateTo,
+            DateFrom = parsedDateFrom,
+            DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         });
@@ -158,6 +164,13 @@ public class WorkspaceAnalyticsController : Controller
         var emailPct = _analyticsRepo.GetEmailPercentage(workspace.Id, projectSlug);
 
         var cachedSummary = await _analyticsManager.GetCachedSummaryAsync(workspace.Id, projectSlug);
+
+        var trend = new List<UsageTrendPointDto>();
+        try
+        {
+            trend = _analyticsManager.GetUsageTrend(workspace.Id, projectSlug, parsedDateFrom, parsedDateTo);
+        }
+        catch { }
 
         var vm = new WorkspaceAnalyticsViewModel
         {
@@ -177,7 +190,8 @@ public class WorkspaceAnalyticsController : Controller
             Dashboard = dashboard,
             AiSummary = cachedSummary,
             DashboardJson = JsonSerializer.Serialize(dashboard, jsonOpts),
-            ProjectCirclesJson = JsonSerializer.Serialize(projectParticipants, jsonOpts)
+            ProjectCirclesJson = JsonSerializer.Serialize(projectParticipants, jsonOpts),
+            UsageTrendJson = JsonSerializer.Serialize(trend, jsonOpts)
         };
 
         return View("~/Views/WorkspaceAdmin/Analytics/Index.cshtml", vm);
@@ -347,5 +361,13 @@ public class WorkspaceAnalyticsController : Controller
         };
 
         return View("~/Views/WorkspaceAdmin/Analytics/AnswersList.cshtml", vm);
+    }
+
+    private static DateTime? ParseDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+            return parsed;
+        return null;
     }
 }

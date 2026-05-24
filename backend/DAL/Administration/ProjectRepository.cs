@@ -62,6 +62,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
+            .Include(p => p.Topic)
             .Where(p => p.Workspace.Id == workspaceId)
             .ToList()
             .AsReadOnly();

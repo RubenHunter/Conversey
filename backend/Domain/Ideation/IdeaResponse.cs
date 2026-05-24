@@ -16,7 +16,7 @@ public class IdeaResponse
     public ModerationStatus Status { get; set; }
     
     public ModerationInfo ModerationInfo { get; set; }
-    public bool MarkedForReview { get; set; }
+    public bool MarkedForReview => Status == ModerationStatus.Pending;
     
     [Required]
     public Idea Idea { get; set; }
