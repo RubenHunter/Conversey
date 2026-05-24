@@ -19,7 +19,7 @@ type Question = {
 
 type FixedQuestion = Question & {
     type: QuestionType.MultipleChoice | QuestionType.SingleChoice;
-    possibleAnswers: readonly Answer[];
+    possibleAnswers: Answer[];
 };
 
 type RangeQuestion = Question & {

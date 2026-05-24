@@ -34,7 +34,7 @@ function createSetRangeAnswerComponent(modal: PagedModalComponent, question: Ran
                     Previous
                 </button>
     
-                <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-blue-700focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Create
                 </button>
     

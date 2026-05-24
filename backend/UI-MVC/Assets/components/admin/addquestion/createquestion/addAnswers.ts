@@ -4,7 +4,7 @@ import {createDragAndDropListComponent} from "../../../dragAndDropList.ts";
 import {AnswerComponent, createAnswerComponent} from "./answerComponent.ts";
 import {createQuestionComponent} from "../question.ts";
 import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
-import {FixedQuestion} from "../../../../models/question.ts";
+import {Answer, FixedQuestion} from "../../../../models/question.ts";
 
 type AddAnswersComponent = HTMLFormElement;
 
@@ -27,7 +27,7 @@ function createAddAnswersComponent(dialog: PagedModalComponent, question: FixedQ
                     Previous
                 </button>
     
-                <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-blue-700focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Create
                 </button>
     
@@ -45,19 +45,28 @@ function createAddAnswersComponent(dialog: PagedModalComponent, question: FixedQ
     component.addEventListener('submit', submit);
     previousButton.addEventListener('click', previous);
 
+    for (const answer of question.possibleAnswers ?? []) {
+        addAnswer(answer);
+    }
+
     return component;
 
     function clickAddAnswer() {
-        const answerComponent = createAnswerComponent();
-        answerList.addElement(answerComponent);
+        const answerComponent = addAnswer({text: ""});
         answerComponent.edit();
+    }
+    
+    function addAnswer(answer: Answer): AnswerComponent {
+        const answerComponent = createAnswerComponent(answer);
+        answerList.addElement(answerComponent);
+        return answerComponent;
     }
 
     function submit() {
-        let answers: string[] = [];
-        for (let child of answerList.children) {
-            const answer = child as AnswerComponent;
-            answers.push(answer.text);
+        const answers: Answer[] = [];
+        for (const answerListItem of answerList.children) {
+            const answerComponent: AnswerComponent = answerListItem.firstChild as AnswerComponent;
+            answers.push(answerComponent.answer);
         }
         question.possibleAnswers = answers;
         rootQuestionList.addElement(createQuestionComponent(question))
