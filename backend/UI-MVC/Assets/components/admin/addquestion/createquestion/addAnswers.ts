@@ -1,10 +1,10 @@
-import {PagedModalComponent} from "../../../PagedModal.ts";
+import {PagedModalComponent} from "../../../pagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
-import {createDragAndDropListComponent} from "../../../DragAndDropList.ts";
-import {AnswerComponent, createAnswerComponent} from "./AnswerComponent.ts";
-import {createQuestionComponent} from "../Question.ts";
-import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
-import {FixedQuestion} from "../../../../models/Question.ts";
+import {createDragAndDropListComponent} from "../../../dragAndDropList.ts";
+import {AnswerComponent, createAnswerComponent} from "./answerComponent.ts";
+import {createQuestionComponent} from "../question.ts";
+import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
+import {FixedQuestion} from "../../../../models/question.ts";
 
 type AddAnswersComponent = HTMLFormElement;
 

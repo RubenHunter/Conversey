@@ -14,7 +14,7 @@ import {showLayoutPicker} from '../components/layoutPicker'
 import {getSurveyStrings} from '../../../i18n/survey'
 import {renderScrollNav} from '../../shared/scrollNav'
 import {hasAnswer} from '../../chat/utils/chatHelpers'
-import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from "../../../models/Question.ts";
+import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from "../../../models/question.ts";
 import {ResponseAnswer} from "../../../models/response.ts";
 
 const sessionLayoutCache = new Map<string, typeof InteractionType.Chat | typeof InteractionType.VerticalScroll>()

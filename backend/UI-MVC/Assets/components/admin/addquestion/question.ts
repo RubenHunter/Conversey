@@ -1,9 +1,9 @@
-import {createDraggableComponent, Draggable} from "../../DragAndDropList.ts";
-import {Question} from "../../../models/Question.ts";
+import {createDraggableComponent, Draggable} from "../../dragAndDropList.ts";
+import {Question} from "../../../models/question.ts";
 import {htmlToElement} from "../../../utils/dom.ts";
-import {deselect, rootQuestionList, select} from "../../../modules/AddQuestionPage.ts";
-import {createPagedModalComponent} from "../../PagedModal.ts";
-import {createSetQuestionTypeComponent} from "./createquestion/SetQuestionType.ts";
+import {deselect, rootQuestionList, select} from "../../../modules/addQuestionPage.ts";
+import {createPagedModalComponent} from "../../pagedModal.ts";
+import {createSetQuestionTypeComponent} from "./createquestion/setQuestionType.ts";
 
 export {createQuestionComponent, createQuestionPlaceholderComponent};
 export type {QuestionComponent, QuestionPlaceholderComponent};

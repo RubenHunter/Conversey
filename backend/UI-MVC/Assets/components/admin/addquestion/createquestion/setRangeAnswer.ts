@@ -1,8 +1,8 @@
-import {createQuestionComponent} from "../Question.ts";
-import {PagedModalComponent} from "../../../PagedModal.ts";
+import {createQuestionComponent} from "../question.ts";
+import {PagedModalComponent} from "../../../pagedModal.ts";
 import {htmlToElement} from "../../../../utils/dom.ts";
-import {rootQuestionList} from "../../../../modules/AddQuestionPage.ts";
-import {RangeQuestion} from "../../../../models/Question.ts";
+import {rootQuestionList} from "../../../../modules/addQuestionPage.ts";
+import {RangeQuestion} from "../../../../models/question.ts";
 
 
 export type {SetRangeAnswerComponent};

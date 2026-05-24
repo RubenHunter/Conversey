@@ -1,6 +1,6 @@
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
-import {FixedQuestion} from "../../../models/Question.ts";
+import {FixedQuestion} from "../../../models/question.ts";
 
 export function renderMultipleChoiceQuestion(question: FixedQuestion, index: number): QuestionComponent {
     let selectedOptionIds: number[] = []

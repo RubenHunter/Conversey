@@ -1,4 +1,4 @@
-import {createModalComponent, type ModalComponent} from "./Modal.ts";
+import {createModalComponent, type ModalComponent} from "./modal.ts";
 
 export type {PagedModalComponent};
 

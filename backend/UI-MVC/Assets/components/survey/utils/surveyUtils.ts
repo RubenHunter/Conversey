@@ -1,6 +1,6 @@
 import { createSpeakerButton, getSpeechLanguage } from '../../../services/speechService'
 import { getSurveyStrings } from '../../../i18n/survey'
-import {Question, QuestionType} from "../../../models/Question.ts";
+import {Question, QuestionType} from "../../../models/question.ts";
 
 export function esc(value: string): string {
     return value

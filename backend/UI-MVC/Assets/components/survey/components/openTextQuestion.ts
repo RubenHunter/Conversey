@@ -3,7 +3,7 @@ import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/
 import { bindMicButton, getSpeechLanguage } from '../../../services/speechService'
 import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import { getSurveyStrings } from '../../../i18n/survey'
-import {OpenQuestion} from "../../../models/Question.ts";
+import {OpenQuestion} from "../../../models/question.ts";
 
 export function renderOpenTextQuestion(question: OpenQuestion, index: number): QuestionComponent {
     const t = getSurveyStrings()

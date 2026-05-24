@@ -1,6 +1,6 @@
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
-import {RangeQuestion} from "../../../models/Question.ts";
+import {RangeQuestion} from "../../../models/question.ts";
 
 export function renderScaleQuestion(question: RangeQuestion, index: number): QuestionComponent {
     let scaleValue: number | null = null

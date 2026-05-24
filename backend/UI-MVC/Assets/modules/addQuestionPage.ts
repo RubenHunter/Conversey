@@ -1,15 +1,15 @@
-import {createDragAndDropListComponent, DragAndDropListComponent} from "../components/DragAndDropList.ts";
+import {createDragAndDropListComponent, DragAndDropListComponent} from "../components/dragAndDropList.ts";
 import {
     createQuestionComponent,
     createQuestionPlaceholderComponent,
     QuestionComponent
-} from "../components/admin/addquestion/Question.ts";
-import {createSectionComponent, SectionComponent} from "../components/admin/addquestion/Section.ts";
-import {createPagedModalComponent} from "../components/PagedModal.ts";
-import {createSetQuestionTypeComponent} from "../components/admin/addquestion/createquestion/SetQuestionType.ts";
-import {createModalComponent} from "../components/Modal.ts";
-import {createAddSectionComponent} from "../components/admin/addquestion/AddSectionComponent.ts";
-import {QuestionType} from "../models/Question.ts";
+} from "../components/admin/addquestion/question.ts";
+import {createSectionComponent, SectionComponent} from "../components/admin/addquestion/section.ts";
+import {createPagedModalComponent} from "../components/pagedModal.ts";
+import {createSetQuestionTypeComponent} from "../components/admin/addquestion/createquestion/setQuestionType.ts";
+import {createModalComponent} from "../components/modal.ts";
+import {createAddSectionComponent} from "../components/admin/addquestion/addSectionComponent.ts";
+import {QuestionType} from "../models/question.ts";
 
 export {select, deselect, rootQuestionList};
 

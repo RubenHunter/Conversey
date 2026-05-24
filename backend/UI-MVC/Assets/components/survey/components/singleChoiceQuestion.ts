@@ -1,6 +1,6 @@
 import { generateQuestionHeader } from '../utils/surveyUtils'
 import {initQuestionSpeakerForWrapper} from '../utils/surveyUtils'
-import {FixedQuestion} from "../../../models/Question.ts";
+import {FixedQuestion} from "../../../models/question.ts";
 
 export type QuestionAnswer = number | string | number[] | null
 

@@ -1,4 +1,4 @@
-import {QuestionType, type Answer, type Question, FixedQuestion, RangeQuestion} from '../models/Question'
+import {QuestionType, type Answer, type Question, FixedQuestion, RangeQuestion} from '../models/question.ts'
 import {ChoiceDto, QuestionDto} from "../api/dtos/questionDto.ts";
 
 export {mapQuestionDtosToQuestions};

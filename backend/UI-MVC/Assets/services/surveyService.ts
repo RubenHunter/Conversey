@@ -1,5 +1,5 @@
 import { mapSurveyResponseToApiResponseDto } from '../mappers/responseMapper'
-import type { Question } from '../models/Question'
+import type { Question } from '../models/question.ts'
 import type { SurveyResponse } from '../models/response'
 import { apiFetch } from './apiService.ts'
 import { getOrCreateProjectYouthId, normalizeSlugForClient } from './youthIdService.ts'

@@ -1,7 +1,7 @@
-import {createQuestionPlaceholderComponent} from "./Question.ts";
-import {createDragAndDropListComponent, DragAndDropListComponent} from "../../DragAndDropList.ts";
+import {createQuestionPlaceholderComponent} from "./question.ts";
+import {createDragAndDropListComponent, DragAndDropListComponent} from "../../dragAndDropList.ts";
 import {htmlToElement} from "../../../utils/dom.ts";
-import {deselect, select} from "../../../modules/AddQuestionPage.ts";
+import {deselect, select} from "../../../modules/addQuestionPage.ts";
 
 export type {SectionComponent};
 export {createSectionComponent};
