@@ -6,6 +6,7 @@ public class AiPromptsViewModel
 {
     public IReadOnlyList<AiPrompt> Prompts { get; set; } = Array.Empty<AiPrompt>();
     public string SearchQuery { get; set; } = string.Empty;
+    public Dictionary<string, string> DefaultDescriptions { get; set; } = new();
 }
 
 public class AiPromptEditViewModel

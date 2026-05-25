@@ -214,7 +214,7 @@ export function renderAiSummary(container: HTMLElement | null, data: AiSummaryRe
 
   let stalenessHtml = '';
   if (data.generatedAt) {
-    const generated = new Date(data.generatedAt + 'Z');
+    const generated = new Date(data.generatedAt);
     const diffMs = Date.now() - generated.getTime();
     const diffMin = Math.floor(diffMs / 60000);
     const ageLabel =

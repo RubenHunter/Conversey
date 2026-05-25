@@ -336,9 +336,18 @@ public sealed class AiAdminManager : IAiAdminManager
         };
     }
 
-    public Task<IReadOnlyList<AiPrompt>> GetAllPromptsAsync()
+    public async Task<IReadOnlyList<AiPrompt>> GetAllPromptsAsync()
     {
-        return _promptRepository.GetAllPromptsAsync();
+        var prompts = await _promptRepository.GetAllPromptsAsync();
+        foreach (var prompt in prompts)
+        {
+            if (string.IsNullOrWhiteSpace(prompt.Description) &&
+                DefaultPrompts.TryGetValue(prompt.Name, out var defaultPrompt))
+            {
+                prompt.Description = defaultPrompt.Description;
+            }
+        }
+        return prompts;
     }
 
     public async Task<AiPrompt> GetPromptByIdAsync(int id)
