@@ -25,11 +25,11 @@
                 @foreach (var stat in Model.StatWidgets)
                 {
                     <div class="bg-white rounded-xl border border-secondary/10 p-5 shadow-sm">
-                        <p class="text-xs font-semibold text-secondary uppercase tracking-wider">@stat.Label</p>
+                        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="@stat.Label">@stat.Label</p>
                         <p class="text-3xl font-bold text-primary mt-1">@stat.Value</p>
                         @if (!string.IsNullOrEmpty(stat.SubLabel))
                         {
-                            <p class="text-xs text-text/50 mt-1">@stat.SubLabel</p>
+                            <p class="text-xs text-text/50 mt-1" data-i18n="@stat.SubLabel">@stat.SubLabel</p>
                         }
                     </div>
                 }
@@ -84,12 +84,12 @@
         {
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 mb-6 animate-enter" style="animation-delay:160ms">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-bold">Usage Trend</h2>
+                    <h2 class="text-lg font-bold" data-i18n="Usage Trend">Usage Trend</h2>
                     <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="dashboard-trend-periods">
-                        <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">7d</button>
-                        <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">1m</button>
+                        <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="7d">7d</button>
+                        <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-i18n="1m">1m</button>
                         <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1y</button>
-                        <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">All</button>
+                        <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="All">All</button>
                     </div>
                 </div>
                 <div style="position:relative; height:280px"><canvas id="dashboard-usage-trend"></canvas></div>

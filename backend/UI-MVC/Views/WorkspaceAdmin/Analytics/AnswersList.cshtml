@@ -21,18 +21,18 @@
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-bold">Survey Answers</h1>
+                <h1 class="text-2xl font-bold" data-i18n="Survey Answers">Survey Answers</h1>
                 <p class="text-secondary text-sm mt-1">@Model.OpenAnswers.Count answers shown</p>
             </div>
-            <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline">&larr; Back to Analytics</a>
+            <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline" data-i18n="← Back to Analytics">&larr; Back to Analytics</a>
         </div>
 
         <form method="get" class="mb-6" id="answers-filter-form">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-card rounded-xl border border-secondary/10">
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Project</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Project">Project</label>
                     <select name="projectId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" onchange="this.form.submit()">
-                        <option value="">All Projects</option>
+                        <option value="" data-i18n="All Projects">All Projects</option>
                         @foreach (var p in Model.AvailableProjects)
                         {
                             <option value="@p.Id.Text" selected="@(Model.SelectedProjectId == p.Id.Text)">@p.Name</option>
@@ -40,9 +40,9 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Question Type</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Question Type">Question Type</label>
                     <select name="questionType" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background">
-                        <option value="">All Types</option>
+                        <option value="" data-i18n="All Types">All Types</option>
                         @foreach (var t in Model.AvailableQuestionTypes)
                         {
                             <option value="@t" selected="@(Model.QuestionType == t)">@t</option>
@@ -50,40 +50,40 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Youth Filter</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Youth Filter">Youth Filter</label>
                     <select name="youthId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background">
-                        <option value="">All Youth</option>
+                        <option value="" data-i18n="All Youth">All Youth</option>
                         @foreach (var y in Model.AvailableYouth)
                         {
                             <option value="@y.Id" selected="@(Model.YouthId == y.Id.ToString())">@y.Display</option>
                         }
                     </select>
-                    <p class="text-[10px] text-secondary/50 mt-0.5">Type to search by name or email</p>
+                    <p class="text-[10px] text-secondary/50 mt-0.5" data-i18n="Type to search by name or email">Type to search by name or email</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Text Search</label>
-                    <input type="text" name="questionSearch" value="@Model.QuestionSearch" placeholder="Search in questions or answers..." class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background"/>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Text Search">Text Search</label>
+                    <input type="text" name="questionSearch" value="@Model.QuestionSearch" placeholder="Search in questions or answers..." class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" data-i18n-placeholder="Search in questions or answers..."/>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Date From</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Date From">Date From</label>
                     <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background"/>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Date To</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Date To">Date To</label>
                     <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background"/>
                 </div>
                 <div class="flex items-end gap-2">
-                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">Apply</button>
+                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" data-i18n="Apply">Apply</button>
                     <div class="relative inline-block" id="export-dropdown-container-answers">
                         <button type="button" id="export-dropdown-btn-answers"
-                                class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors flex items-center gap-2 bg-background">
+                                class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors flex items-center gap-2 bg-background" data-i18n="Export CSV">
                             Export CSV
                         </button>
                         <div id="export-dropdown-menu-answers" class="hidden absolute right-0 mt-1 w-64 bg-white rounded-lg border border-secondary/10 shadow-lg z-50 py-1">
                             <a href="#" data-export-filtered="false"
-                               class="export-answers-link block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text">Download all answers</a>
+                               class="export-answers-link block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download all answers">Download all answers</a>
                             <a href="#" data-export-filtered="true"
-                               class="export-answers-link block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text">Download with active filters</a>
+                               class="export-answers-link block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download with active filters">Download with active filters</a>
                         </div>
                     </div>
                 </div>
@@ -96,12 +96,12 @@
                     <thead>
                         <tr class="border-b border-secondary/10 text-left bg-secondary/5">
                             <th class="py-3 px-4 font-semibold w-8"></th>
-                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id">ID <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="project">Project <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="type">Type <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="question">Question <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="answer">Answer <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth">Youth <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id" data-i18n="ID">ID <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="project" data-i18n="Project">Project <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="type" data-i18n="Type">Type <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="question" data-i18n="Question">Question <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="answer" data-i18n="Answer">Answer <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth" data-i18n="Youth">Youth <span class="sort-arrow text-[10px]"></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -136,7 +136,7 @@
                                 <td colspan="6" class="py-4 px-6">
                                     <div class="bg-background rounded-lg border border-primary/20 p-5 max-w-full">
                                         <div class="flex items-center gap-2 mb-3">
-                                            <span class="text-xs font-semibold text-primary uppercase tracking-wider">Full Answer</span>
+                                            <span class="text-xs font-semibold text-primary uppercase tracking-wider" data-i18n="Full Answer">Full Answer</span>
                                             <span class="text-[10px] text-secondary">@a.QuestionType &mdash; @a.ProjectName</span>
                                         </div>
                                         <p class="text-xs font-semibold text-secondary mb-1">@a.QuestionText</p>

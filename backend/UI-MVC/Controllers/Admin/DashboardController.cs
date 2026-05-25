@@ -3,6 +3,7 @@ using Conversey.BL.Analytics;
 using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
+using Conversey.UI_MVC.Controllers.Admin.Helpers;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Security;
@@ -83,7 +84,7 @@ public class DashboardController : Controller
                 new() { Label = "Youths", Value = platformStats.Sum(p => p.YouthCount).ToString(), SubLabel = "Total participants" },
                 new() { Label = "Ideas", Value = platformStats.Sum(p => p.IdeaCount).ToString(), SubLabel = "Total submissions" }
             },
-            ComparisonWidget = BuildPlatformComparisonWidget(platformStats),
+            ComparisonWidget = DashboardWidgetBuilders.BuildPlatformComparisonWidget(platformStats),
             QuickLinksWidget = new QuickLinksWidgetViewModel
             {
                 Title = "Links",
@@ -94,9 +95,9 @@ public class DashboardController : Controller
                     new() { Title = "Rate Limits", Description = "Limits for AI endpoints", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75'/></svg>", IconBgHex = "#ECFCE7", IconFgHex = "#6DE92A", NavigateUrl = "/admin/ai/rate-limits" }
                 }
             },
-            EngagementWidget = BuildPlatformEngagementWidget(platformStats, moderation),
-            UsageTrendChart = BuildUsageTrendChart(usageTrend),
-            UsageTrendJson = System.Text.Json.JsonSerializer.Serialize(usageTrend.Select(t => new { date = t.Date, ideaCount = t.IdeaCount, uniqueYouth = t.UniqueYouth }))
+            EngagementWidget = DashboardWidgetBuilders.BuildPlatformEngagementWidget(platformStats, moderation),
+            UsageTrendChart = DashboardWidgetBuilders.BuildUsageTrendChart(usageTrend),
+            UsageTrendJson = DashboardWidgetBuilders.SerializeUsageTrendJson(usageTrend)
         };
 
         return View("~/Views/Admin/Dashboard.cshtml", viewModel);
@@ -131,7 +132,7 @@ public class DashboardController : Controller
                 new() { Label = "Answers", Value = dashboard.OpenAnswers.Count.ToString(), SubLabel = "Survey responses" },
                 new() { Label = "Conversion", Value = $"{dashboard.Participation.ConversionRate:F1}%", SubLabel = "Youth with ideas/answers" }
             },
-            ComparisonWidget = BuildWorkspaceComparisonWidget(dashboard, workspaceId),
+            ComparisonWidget = DashboardWidgetBuilders.BuildWorkspaceComparisonWidget(_projectManager.GetAllProjectsFromWorkspaceId(workspaceId).ToList()),
             QuickLinksWidget = new QuickLinksWidgetViewModel
             {
                 Title = "Links",
@@ -142,161 +143,11 @@ public class DashboardController : Controller
                     new() { Title = "Analytics", Description = "View workspace statistics", Icon = "<svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'/></svg>", IconBgHex = "#ECFCE7", IconFgHex = "#22c55e", NavigateUrl = "/admin/workspace/analytics" }
                 }
             },
-            EngagementWidget = BuildWorkspaceEngagementWidget(dashboard, moderation),
-            UsageTrendChart = BuildUsageTrendChart(usageTrend),
-            UsageTrendJson = System.Text.Json.JsonSerializer.Serialize(usageTrend.Select(t => new { date = t.Date, ideaCount = t.IdeaCount, uniqueYouth = t.UniqueYouth }))
+            EngagementWidget = DashboardWidgetBuilders.BuildWorkspaceEngagementWidget(dashboard, moderation),
+            UsageTrendChart = DashboardWidgetBuilders.BuildUsageTrendChart(usageTrend),
+            UsageTrendJson = DashboardWidgetBuilders.SerializeUsageTrendJson(usageTrend)
         };
 
         return View("~/Views/Admin/Dashboard.cshtml", viewModel);
-    }
-
-    private static ComparisonWidgetViewModel BuildPlatformComparisonWidget(List<PlatformWorkspaceStatDto> stats)
-    {
-        var colors = new[] { "primary", "secondary", "accent", "indigo", "violet", "amber", "emerald", "rose", "cyan", "slate" };
-        return new ComparisonWidgetViewModel
-        {
-            Title = "Workspaces",
-            SubTitle = "All workspaces",
-            TitleUrl = "/admin/conversey/analytics",
-            SubTitleUrl = "/admin/workspaces",
-            ToggleLabel = "Projects",
-            ToggleSecondaryLabel = "Youths",
-            Items = stats.Select((w, i) => new ComparisonItemViewModel
-            {
-                Label = w.WorkspaceName,
-                Value = w.ProjectCount,
-                Color = colors[i % colors.Length],
-                NavigateUrl = $"/admin/conversey/analytics?workspaceId={w.WorkspaceSlug}"
-            }).ToList(),
-            AllItems = stats.Select((w, i) => new ComparisonItemViewModel
-            {
-                Label = w.WorkspaceName,
-                Value = w.YouthCount,
-                Color = colors[i % colors.Length],
-                NavigateUrl = $"/admin/conversey/analytics?workspaceId={w.WorkspaceSlug}"
-            }).ToList()
-        };
-    }
-
-    private static EngagementWidgetViewModel BuildPlatformEngagementWidget(List<PlatformWorkspaceStatDto> stats, PlatformModerationStatsDto moderation)
-    {
-        var totalYouth = stats.Sum(s => s.YouthCount);
-        var totalIdeas = stats.Sum(s => s.IdeaCount);
-        var totalAnswers = stats.Sum(s => s.AnswerCount);
-        var avgIdeasPerYouth = totalYouth > 0 ? totalIdeas / (double)totalYouth : 0;
-        var gaugePct = totalYouth > 0 ? Math.Min(100, (int)Math.Round((double)totalIdeas / totalYouth * 100)) : 0;
-
-        return new EngagementWidgetViewModel
-        {
-            Title = "Engagement Overview",
-            GaugePercentage = gaugePct,
-            GaugeLabel = gaugePct >= 100 ? "Max Ideas/Youth" : "Idea Rate",
-            GaugeColor = gaugePct >= 100 ? "text-green-400" : "text-yellow-400",
-            Bars = new List<EngagementBarViewModel>
-            {
-                new() { Label = "Avg Ideas/Youth", SubLabel = $"{avgIdeasPerYouth:F1} per participant", Current = (int)Math.Round(avgIdeasPerYouth * 100), Max = 100, DisplayValue = $"{avgIdeasPerYouth:F1}", Color = "bg-green-500" },
-                new() { Label = "Surveys", SubLabel = $"{totalYouth} youth participated", Current = totalYouth, Max = Math.Max(totalYouth, 1), DisplayValue = $"{totalYouth}", Color = "bg-blue-500" },
-                new() { Label = "Flagged", SubLabel = $"{moderation.TotalFlaggedIdeas + moderation.TotalFlaggedComments} content items", Current = moderation.TotalFlaggedIdeas + moderation.TotalFlaggedComments, Max = Math.Max(totalIdeas, 1), DisplayValue = $"{(moderation.TotalFlaggedIdeas + moderation.TotalFlaggedComments)}", Color = "bg-orange-500" }
-            }
-        };
-    }
-
-    private ComparisonWidgetViewModel BuildWorkspaceComparisonWidget(AnalyticsDashboardDto dashboard, Slug workspaceId)
-    {
-        var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspaceId);
-        var colors = new[] { "primary", "secondary", "accent", "indigo", "violet", "amber", "emerald", "rose", "cyan", "slate" };
-        var hexColors = new[] { "#6366f1", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4" };
-
-        var projectItems = projects.Select(p => new ComparisonItemViewModel
-        {
-            Label = p.Name,
-            Value = p.Youth?.Count() ?? 0,
-            Color = "primary",
-            NavigateUrl = $"/admin/workspace/analytics?projectId={p.Name}"
-        }).ToList();
-
-        return new ComparisonWidgetViewModel
-        {
-            Title = "Projects Overview",
-            SubTitle = "All Projects",
-            TitleUrl = "/admin/projects",
-            SubTitleUrl = "/admin/projects",
-            Items = projectItems,
-            AllItems = projects.Where(p => p.Status == Status.Active).Select(p => new ComparisonItemViewModel
-            {
-                Label = p.Name,
-                Value = p.Youth?.Count() ?? 0,
-                Color = "secondary",
-                NavigateUrl = $"/admin/workspace/analytics?projectId={p.Name}"
-            }).ToList(),
-            Id = workspaceId.ToString(),
-            Size = WidgetSize.Large
-        };
-    }
-
-    private static EngagementWidgetViewModel BuildWorkspaceEngagementWidget(AnalyticsDashboardDto dashboard, PlatformModerationStatsDto moderation)
-    {
-        var p = dashboard.Participation;
-        return new EngagementWidgetViewModel
-        {
-            Title = "Participant Engagement",
-            GaugePercentage = (int)Math.Round(p.ConversionRate),
-            GaugeLabel = "Conversion Rate",
-            GaugeColor = "text-green-400",
-            Bars = new List<EngagementBarViewModel>
-            {
-                new() { Label = "Youth with Ideas", SubLabel = $"{p.YouthWithIdeas} of {p.TotalYouth}", Current = p.YouthWithIdeas, Max = Math.Max(p.TotalYouth, 1), DisplayValue = $"{p.YouthWithIdeas}/{p.TotalYouth}", Color = "bg-green-500" },
-                new() { Label = "Avg Ideas/Youth", SubLabel = "Average per participant", Current = (int)Math.Round(p.AvgIdeasPerYouth * 100), Max = 100, DisplayValue = $"{p.AvgIdeasPerYouth:F1}", Color = "bg-purple-500" },
-                new() { Label = "Flagged Content", SubLabel = "Moderation flags", Current = moderation.TotalFlaggedIdeas + moderation.TotalFlaggedComments, Max = Math.Max(dashboard.Ideas.Count, 1), DisplayValue = $"{moderation.TotalFlaggedIdeas + moderation.TotalFlaggedComments}", Color = "bg-orange-500" }
-            }
-        };
-    }
-
-    private static ChartWidgetViewModel BuildUsageTrendChart(List<UsageTrendPointDto> trend)
-    {
-        var labels = trend.Select(t => t.Date).ToList();
-        var ideaValues = trend.Select(t => t.IdeaCount).Cast<object>().ToList();
-        var youthValues = trend.Select(t => t.UniqueYouth).Cast<object>().ToList();
-
-        var allValues = trend.SelectMany(t => new[] { t.IdeaCount, t.UniqueYouth }).DefaultIfEmpty(0);
-        var yMax = allValues.Max() + 1;
-
-        return new ChartWidgetViewModel
-        {
-            Title = "Usage Trend",
-            Type = "line",
-            Data = new
-            {
-                labels,
-                datasets = new[]
-                {
-                    new { label = "Ideas", data = ideaValues, borderColor = "#6366f1", backgroundColor = "rgba(99,102,241,0.1)", tension = 0.3, fill = true },
-                    new { label = "Active Youth", data = youthValues, borderColor = "#f97316", backgroundColor = "rgba(249,115,22,0.1)", tension = 0.3, fill = true }
-                }
-            },
-            Options = new
-            {
-                scales = new
-                {
-                    y = new
-                    {
-                        beginAtZero = true,
-                        max = yMax,
-                        ticks = new { stepSize = 1 }
-                    }
-                },
-                plugins = new
-                {
-                    legend = new { position = "bottom" }
-                }
-            },
-            Periods = new List<PeriodViewModel>
-            {
-                new() { Id = "7d", Label = "7d", IsActive = false },
-                new() { Id = "1m", Label = "1m", IsActive = true },
-                new() { Id = "total", Label = "Total", IsActive = false }
-            },
-            ActivePeriod = "1m"
-        };
     }
 }

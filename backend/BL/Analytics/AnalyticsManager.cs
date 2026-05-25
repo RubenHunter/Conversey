@@ -35,7 +35,7 @@ public class AnalyticsManager : IAnalyticsManager
             IdeasByTopic = GetIdeasByTopic(workspaceId, projectId, filters),
             IdeasByStatus = GetIdeasByStatus(workspaceId, projectId, filters),
             IdeasByCategory = GetIdeasByCategory(workspaceId, projectId, filters),
-            Participation = GetParticipationStats(workspaceId, projectId, ToRepoFilters(filters))
+            Participation = GetParticipationStats(workspaceId, projectId, filters)
         };
     }
 
@@ -169,9 +169,9 @@ public class AnalyticsManager : IAnalyticsManager
         return stats.Select(s => new IdeaCountDto { Label = s.Category, Count = s.Count }).ToList();
     }
 
-    public ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    public ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
     {
-        var stats = _repo.GetParticipationStats(workspaceId, projectId, filters);
+        var stats = _repo.GetParticipationStats(workspaceId, projectId, ToRepoFilters(filters));
 
         return new ParticipationStatsDto
         {
@@ -531,24 +531,30 @@ public class AnalyticsManager : IAnalyticsManager
         return _repo.GetTopicsForWorkspace(workspaceId);
     }
 
-    public IReadOnlyList<ToxicityCount> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    public IReadOnlyList<IdeaCountDto> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
     {
-        return _repo.GetToxicityStats(workspaceId, projectId, filters);
+        return _repo.GetToxicityStats(workspaceId, projectId, ToRepoFilters(filters))
+            .Select(t => new IdeaCountDto { Label = t.Label, Count = t.Count })
+            .ToList()
+            .AsReadOnly();
     }
 
-    public IReadOnlyList<ToxicityCount> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    public IReadOnlyList<IdeaCountDto> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
     {
-        return _repo.GetResponseToxicityStats(workspaceId, projectId, filters);
+        return _repo.GetResponseToxicityStats(workspaceId, projectId, ToRepoFilters(filters))
+            .Select(t => new IdeaCountDto { Label = t.Label, Count = t.Count })
+            .ToList()
+            .AsReadOnly();
     }
 
-    public int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    public int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
     {
-        return _repo.GetDistinctFlaggedIdeaCount(workspaceId, projectId, filters);
+        return _repo.GetDistinctFlaggedIdeaCount(workspaceId, projectId, ToRepoFilters(filters));
     }
 
-    public int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    public int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
     {
-        return _repo.GetDistinctFlaggedResponseCount(workspaceId, projectId, filters);
+        return _repo.GetDistinctFlaggedResponseCount(workspaceId, projectId, ToRepoFilters(filters));
     }
 
     public int GetTotalComments(Slug workspaceId, Slug? projectId)

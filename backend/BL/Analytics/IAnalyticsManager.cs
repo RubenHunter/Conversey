@@ -2,7 +2,6 @@ using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
-using Conversey.DAL.Analytics;
 
 namespace Conversey.BL.Analytics;
 
@@ -17,7 +16,7 @@ public interface IAnalyticsManager
     List<IdeaCountDto> GetIdeasByTopic(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
     List<IdeaCountDto> GetIdeasByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
     List<IdeaCountDto> GetIdeasByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters);
-    ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null);
     List<PlatformWorkspaceStatDto> GetPlatformStats(Slug? workspaceId = null);
     PlatformModerationStatsDto GetPlatformModerationStats(Slug? workspaceId = null);
     PlatformUserStatsDto GetPlatformUserStats(Slug? workspaceId = null);
@@ -35,10 +34,10 @@ public interface IAnalyticsManager
     Task<bool> ToggleMarkedForReviewAsync(string type, int id);
 
     IReadOnlyCollection<Topic> GetTopicsForWorkspace(Slug workspaceId);
-    IReadOnlyList<ToxicityCount> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
-    IReadOnlyList<ToxicityCount> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
-    int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
-    int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    IReadOnlyList<IdeaCountDto> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null);
+    IReadOnlyList<IdeaCountDto> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null);
+    int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null);
+    int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null);
     int GetTotalComments(Slug workspaceId, Slug? projectId);
     double GetEmailPercentage(Slug workspaceId, Slug? projectId);
     IReadOnlyCollection<Youth> GetYouthList(Slug workspaceId, Slug? projectId);

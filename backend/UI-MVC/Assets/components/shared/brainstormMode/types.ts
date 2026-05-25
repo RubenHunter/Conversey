@@ -16,7 +16,7 @@ export type {
     RejectedPhrase,
     ExtractKeyPhrasesRequest,
     ExtractKeyPhrasesResponse,
-} from '../../../services/api/brainstormTypes';
+} from '../../../api/dtos/brainstormTypes';
 
 // ============================================================================
 // Modal Types

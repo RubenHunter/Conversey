@@ -1,11 +1,9 @@
-using System.Globalization;
 using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Analytics;
 using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.DAL.Analytics;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Analytics;
 using Conversey.UI_MVC.Security;
@@ -20,15 +18,18 @@ public class WorkspaceAnalyticsController : Controller
     private readonly WorkspaceContext _workspaceContext;
     private readonly IAnalyticsManager _analyticsManager;
     private readonly IProjectManager _projectManager;
+    private readonly ILogger<WorkspaceAnalyticsController> _logger;
 
     public WorkspaceAnalyticsController(
         WorkspaceContext workspaceContext,
         IAnalyticsManager analyticsManager,
-        IProjectManager projectManager)
+        IProjectManager projectManager,
+        ILogger<WorkspaceAnalyticsController> logger)
     {
         _workspaceContext = workspaceContext;
         _analyticsManager = analyticsManager;
         _projectManager = projectManager;
+        _logger = logger;
     }
 
     [HttpGet("/admin/workspace/analytics")]
@@ -41,8 +42,8 @@ public class WorkspaceAnalyticsController : Controller
     {
         var workspace = _workspaceContext.CurrentWorkspace;
         ViewData["WorkspaceName"] = workspace.Name;
-        DateTime? parsedDateFrom = ParseDate(Request.Query["dateFrom"]);
-        DateTime? parsedDateTo = ParseDate(Request.Query["dateTo"]);
+        DateTime? parsedDateFrom = ModelStateHelper.ParseDate(Request.Query["dateFrom"]);
+        DateTime? parsedDateTo = ModelStateHelper.ParseDate(Request.Query["dateTo"]);
         var projects = _projectManager.GetAllProjectsFromWorkspaceId(workspace.Id);
         Project? selectedProject = null;
 
@@ -94,7 +95,7 @@ public class WorkspaceAnalyticsController : Controller
         if (selectedProject == null)
         {
             var hasFilters = !string.IsNullOrWhiteSpace(status) || topicId.HasValue || parsedDateFrom.HasValue || parsedDateTo.HasValue;
-            var partFilters = hasFilters ? new AnalyticsFilterParams
+            var partFilters = hasFilters ? new AnalyticsFilterRequest
             {
                 DateFrom = parsedDateFrom,
                 DateTo = parsedDateTo,
@@ -117,45 +118,30 @@ public class WorkspaceAnalyticsController : Controller
             }
         }
 
-        foreach (var t in _analyticsManager.GetToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
+        var toxicityFilters = new AnalyticsFilterRequest
         {
             DateFrom = parsedDateFrom,
             DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
-        }))
+        };
+
+        foreach (var t in _analyticsManager.GetToxicityStats(workspace.Id, projectSlug, toxicityFilters))
         {
             toxicityStats.Add(new Models.Analytics.ToxicityCount { Label = t.Label, Count = t.Count });
         }
 
         var responseToxicityStats = new List<Models.Analytics.ToxicityCount>();
-        foreach (var t in _analyticsManager.GetResponseToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
-        {
-            DateFrom = parsedDateFrom,
-            DateTo = parsedDateTo,
-            TopicId = topicId,
-            Status = status
-        }))
+        foreach (var t in _analyticsManager.GetResponseToxicityStats(workspace.Id, projectSlug, toxicityFilters))
         {
             responseToxicityStats.Add(new Models.Analytics.ToxicityCount { Label = t.Label, Count = t.Count });
         }
 
         var totalComments = _analyticsManager.GetTotalComments(workspace.Id, projectSlug);
 
-        var distinctFlaggedIdeas = _analyticsManager.GetDistinctFlaggedIdeaCount(workspace.Id, projectSlug, new AnalyticsFilterParams
-        {
-            DateFrom = parsedDateFrom,
-            DateTo = parsedDateTo,
-            TopicId = topicId,
-            Status = status
-        });
-        var distinctFlaggedResponses = _analyticsManager.GetDistinctFlaggedResponseCount(workspace.Id, projectSlug, new AnalyticsFilterParams
-        {
-            DateFrom = parsedDateFrom,
-            DateTo = parsedDateTo,
-            TopicId = topicId,
-            Status = status
-        });
+        var distinctFlaggedIdeas = _analyticsManager.GetDistinctFlaggedIdeaCount(workspace.Id, projectSlug, toxicityFilters);
+
+        var distinctFlaggedResponses = _analyticsManager.GetDistinctFlaggedResponseCount(workspace.Id, projectSlug, toxicityFilters);
 
         var emailPct = _analyticsManager.GetEmailPercentage(workspace.Id, projectSlug);
 
@@ -166,7 +152,10 @@ public class WorkspaceAnalyticsController : Controller
         {
             trend = _analyticsManager.GetUsageTrend(workspace.Id, projectSlug, parsedDateFrom, parsedDateTo);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load usage trend for workspace {WorkspaceId}", workspace.Id);
+        }
 
         var vm = new WorkspaceAnalyticsViewModel
         {
@@ -421,13 +410,5 @@ public class WorkspaceAnalyticsController : Controller
         };
 
         return View("~/Views/WorkspaceAdmin/Analytics/Moderation.cshtml", vm);
-    }
-
-    private static DateTime? ParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
-            return parsed;
-        return null;
     }
 }

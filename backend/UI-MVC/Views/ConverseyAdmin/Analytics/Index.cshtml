@@ -49,9 +49,9 @@
         <form method="get" class="mb-8" id="filter-form">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-card rounded-xl border border-secondary/10">
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Workspace</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Workspace">Workspace</label>
                     <select name="workspaceId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" onchange="this.form.submit()">
-                        <option value="">All Workspaces</option>
+                        <option value="" data-i18n="All Workspaces">All Workspaces</option>
                         @foreach (var ws in Model.AllPlatformStats)
                         {
                             <option value="@ws.WorkspaceSlug" selected="@(Model.SelectedWorkspaceId == ws.WorkspaceSlug)">@ws.WorkspaceName</option>
@@ -59,16 +59,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Date From</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Date From">Date From</label>
                     <input type="date" name="dateFrom" value="@Context.Request.Query["dateFrom"]" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background"/>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-secondary mb-1">Date To</label>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Date To">Date To</label>
                     <input type="date" name="dateTo" value="@Context.Request.Query["dateTo"]" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background"/>
                 </div>
                 <div class="flex items-end gap-2">
-                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">Apply Filters</button>
-                    <a href="/admin/conversey/analytics" class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors">Clear</a>
+                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" data-i18n="Apply Filters">Apply Filters</button>
+                    <a href="/admin/conversey/analytics" class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors" data-i18n="Clear">Clear</a>
                 </div>
             </div>
         </form>
@@ -101,16 +101,16 @@
         <div class="bg-card rounded-xl border border-secondary/10 p-6 mb-8">
             <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div class="flex items-center gap-1.5">
-                    <h2 class="text-lg font-bold">Usage Trend</h2>
-                    <span title="Ideas = number of ideas submitted on that day. Active Youth = distinct youth who submitted ideas on that day. Y-axis max = highest shown value + 1." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                    <h2 class="text-lg font-bold" data-i18n="Usage Trend">Usage Trend</h2>
+                    <span title="Ideas = number of ideas submitted on that day. Active Youth = distinct youth who submitted ideas on that day. Y-axis max = highest shown value + 1." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary" data-i18n-title="Ideas = number of ideas submitted on that day. Active Youth = distinct youth who submitted ideas on that day. Y-axis max = highest shown value + 1.">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
                 </div>
                 <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="trend-period-buttons">
-                    <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">7d</button>
-                    <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1m</button>
-                    <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1y</button>
-                    <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">All</button>
+                    <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-i18n="7d">7d</button>
+                    <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="1m">1m</button>
+                    <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="1y">1y</button>
+                    <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="All">All</button>
                 </div>
             </div>
             <div style="position:relative; height:280px"><canvas id="usage-trend-chart"></canvas></div>
@@ -120,14 +120,14 @@
             <div class="bg-card rounded-xl border border-secondary/10 p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-1.5">
-                        <h2 class="text-lg font-bold">Workspace Overview</h2>
-                        <span title="Each circle represents a workspace. Toggle between Youth (participant count) and Projects (project count) views. Circles sized proportionally." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                        <h2 class="text-lg font-bold" data-i18n="Workspace Overview">Workspace Overview</h2>
+                        <span title="Each circle represents a workspace. Toggle between Youth (participant count) and Projects (project count) views. Circles sized proportionally." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary" data-i18n-title="Each circle represents a workspace. Toggle between Youth (participant count) and Projects (project count) views. Circles sized proportionally.">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </span>
                     </div>
                     <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="circles-mode-buttons">
-                    <button type="button" data-mode="youth" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm">Youth</button>
-                    <button type="button" data-mode="projects" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">Projects</button>
+                    <button type="button" data-mode="youth" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-i18n="Youth">Youth</button>
+                    <button type="button" data-mode="projects" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="Projects">Projects</button>
                 </div>
             </div>
             <div class="relative min-h-[260px]" id="workspace-circles-container"></div>
@@ -138,28 +138,28 @@
             <div class="bg-card rounded-xl border border-secondary/10 p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-1.5">
-                        <h2 class="text-lg font-bold">Platform Moderation</h2>
-                        <span title="Flags detected by AI moderation across all workspaces. Shows count per category. Toggle to view idea flags vs. comment flags." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary">
+                        <h2 class="text-lg font-bold" data-i18n="Platform Moderation">Platform Moderation</h2>
+                        <span title="Flags detected by AI moderation across all workspaces. Shows count per category. Toggle to view idea flags vs. comment flags." class="chart-tooltip cursor-help text-secondary/50 hover:text-secondary" data-i18n-title="Flags detected by AI moderation across all workspaces. Shows count per category. Toggle to view idea flags vs. comment flags.">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </span>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
-                        <span class="text-secondary">Ideas</span>
+                        <span class="text-secondary" data-i18n="Ideas">Ideas</span>
                         <button type="button" class="moderation-toggle relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors" data-mode="ideas" onclick="toggleModerationMode(this)">
                             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
                         </button>
-                        <span class="text-secondary">Comments</span>
+                        <span class="text-secondary" data-i18n="Comments">Comments</span>
                     </div>
                 </div>
                 <div class="moderation-ideas-container">
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="bg-accent/10 rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Flagged Ideas</p>
+                        <p class="text-xs text-secondary" data-i18n="Flagged Ideas">Flagged Ideas</p>
                         <p class="text-2xl font-bold text-accent">@Model.ModerationStats.TotalFlaggedIdeas</p>
                         <p class="text-[10px] text-secondary">of @Model.ModerationStats.TotalIdeas total</p>
                     </div>
                     <div class="bg-accent/10 rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">% of All Ideas</p>
+                        <p class="text-xs text-secondary" data-i18n="% of All Ideas">% of All Ideas</p>
                         <p class="text-2xl font-bold text-accent">@(Model.ModerationStats.TotalIdeas > 0 ? Math.Round((double)Model.ModerationStats.TotalFlaggedIdeas / Model.ModerationStats.TotalIdeas * 100, 1) : 0)%</p>
                     </div>
                 </div>
@@ -176,12 +176,12 @@
                 <div class="moderation-comments-container hidden">
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="bg-accent/10 rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Flagged Comments</p>
+                        <p class="text-xs text-secondary" data-i18n="Flagged Comments">Flagged Comments</p>
                         <p class="text-2xl font-bold text-accent">@Model.ModerationStats.TotalFlaggedComments</p>
                         <p class="text-[10px] text-secondary">of @Model.ModerationStats.TotalComments total</p>
                     </div>
                     <div class="bg-accent/10 rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">% of All Comments</p>
+                        <p class="text-xs text-secondary" data-i18n="% of All Comments">% of All Comments</p>
                         <p class="text-2xl font-bold text-accent">@(Model.ModerationStats.TotalComments > 0 ? Math.Round((double)Model.ModerationStats.TotalFlaggedComments / Model.ModerationStats.TotalComments * 100, 1) : 0)%</p>
                     </div>
                 </div>
@@ -202,29 +202,29 @@
             {
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div class="bg-card rounded-xl border border-secondary/10 p-6">
-                <h2 class="text-lg font-bold mb-4">Platform Users</h2>
+                <h2 class="text-lg font-bold mb-4" data-i18n="Platform Users">Platform Users</h2>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-background rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Total Youth</p>
+                        <p class="text-xs text-secondary" data-i18n="Total Youth">Total Youth</p>
                         <p class="text-xl font-bold">@Model.UserStats.TotalYouth</p>
                     </div>
                     <div class="bg-background rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Conversion Rate</p>
+                        <p class="text-xs text-secondary" data-i18n="Conversion Rate">Conversion Rate</p>
                         <p class="text-xl font-bold">@Model.UserStats.ConversionRate%</p>
                     </div>
                     <div class="bg-background rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Answers per Youth</p>
+                        <p class="text-xs text-secondary" data-i18n="Answers per Youth">Answers per Youth</p>
                         <p class="text-xl font-bold">@Model.UserStats.AvgAnswersPerYouth</p>
                     </div>
                     <div class="bg-background rounded-lg p-3 text-center">
-                        <p class="text-xs text-secondary">Ideas per Youth</p>
+                        <p class="text-xs text-secondary" data-i18n="Ideas per Youth">Ideas per Youth</p>
                         <p class="text-xl font-bold">@Model.UserStats.AvgIdeasPerYouth</p>
                     </div>
                 </div>
                 <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithIdeas</p><p class="text-secondary">With Ideas</p></div>
-                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithAnswers</p><p class="text-secondary">With Answers</p></div>
-                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithBoth</p><p class="text-secondary">With Both</p></div>
+                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithIdeas</p><p class="text-secondary" data-i18n="With Ideas">With Ideas</p></div>
+                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithAnswers</p><p class="text-secondary" data-i18n="With Answers">With Answers</p></div>
+                    <div class="bg-background rounded p-2"><p class="font-bold">@Model.UserStats.YouthWithBoth</p><p class="text-secondary" data-i18n="With Both">With Both</p></div>
             </div>
             </div>
             </div>
@@ -286,7 +286,7 @@
                         <p class="text-2xl font-bold">@Model.SelectedWorkspaceDashboard.Ideas.Count</p>
                     </div>
                     <div class="bg-card rounded-xl border border-secondary/10 p-4">
-                        <p class="text-xs text-secondary">Ideas per Youth</p>
+                        <p class="text-xs text-secondary" data-i18n="Ideas per Youth">Ideas per Youth</p>
                         <p class="text-2xl font-bold">@Model.SelectedWorkspaceDashboard.Participation.AvgIdeasPerYouth</p>
                     </div>
                     <div class="bg-card rounded-xl border border-secondary/10 p-4">

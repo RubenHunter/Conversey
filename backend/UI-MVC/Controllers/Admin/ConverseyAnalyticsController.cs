@@ -1,6 +1,4 @@
-using System.Globalization;
 using System.Text.Json;
-using Conversey.BL.Administration;
 using Conversey.BL.Analytics;
 using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Common;
@@ -15,10 +13,12 @@ namespace Conversey.UI_MVC.Controllers.Admin;
 public class ConverseyAnalyticsController : Controller
 {
     private readonly IAnalyticsManager _analyticsManager;
+    private readonly ILogger<ConverseyAnalyticsController> _logger;
 
-    public ConverseyAnalyticsController(IAnalyticsManager analyticsManager)
+    public ConverseyAnalyticsController(IAnalyticsManager analyticsManager, ILogger<ConverseyAnalyticsController> logger)
     {
         _analyticsManager = analyticsManager;
+        _logger = logger;
     }
 
     [HttpGet("/admin/conversey/analytics")]
@@ -28,8 +28,8 @@ public class ConverseyAnalyticsController : Controller
         [FromQuery] DateTime? dateTo = null)
     {
         Slug? wsSlug = string.IsNullOrWhiteSpace(workspaceId) ? null : Slug.FromName(workspaceId);
-        DateTime? parsedDateFrom = ParseDate(Request.Query["dateFrom"]);
-        DateTime? parsedDateTo = ParseDate(Request.Query["dateTo"]);
+        DateTime? parsedDateFrom = ModelStateHelper.ParseDate(Request.Query["dateFrom"]);
+        DateTime? parsedDateTo = ModelStateHelper.ParseDate(Request.Query["dateTo"]);
 
         List<PlatformWorkspaceStatDto> platformStats;
         PlatformModerationStatsDto? modStats = null;
@@ -40,8 +40,9 @@ public class ConverseyAnalyticsController : Controller
         {
             platformStats = _analyticsManager.GetPlatformStats(wsSlug);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to load platform stats");
             platformStats = new List<PlatformWorkspaceStatDto>();
         }
 
@@ -49,24 +50,34 @@ public class ConverseyAnalyticsController : Controller
         {
             modStats = _analyticsManager.GetPlatformModerationStats(wsSlug);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load platform moderation stats");
+        }
 
         try
         {
             userStats = _analyticsManager.GetPlatformUserStats(wsSlug);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load platform user stats");
+        }
 
         try
         {
             trend = _analyticsManager.GetUsageTrend(wsSlug, null, parsedDateFrom, parsedDateTo);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load usage trend");
+        }
 
         var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         var allPlatformStats = new List<PlatformWorkspaceStatDto>();
-        try { allPlatformStats = _analyticsManager.GetPlatformStats(); } catch { }
+        try { allPlatformStats = _analyticsManager.GetPlatformStats(); }
+        catch (Exception ex) { _logger.LogError(ex, "Failed to load all platform stats"); }
 
         var circlesData = allPlatformStats.Select(ws => new
         {
@@ -109,8 +120,9 @@ public class ConverseyAnalyticsController : Controller
         {
             dashboard = await _analyticsManager.GetDashboardAsync(workspaceSlug, null, null);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to load workspace analytics dashboard for {WorkspaceSlug}", slug);
             dashboard = new AnalyticsDashboardDto();
         }
 
@@ -118,7 +130,10 @@ public class ConverseyAnalyticsController : Controller
         {
             trend = _analyticsManager.GetUsageTrend(workspaceSlug);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load usage trend for {WorkspaceSlug}", slug);
+        }
 
         var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -135,13 +150,5 @@ public class ConverseyAnalyticsController : Controller
         };
 
         return View("~/Views/ConverseyAdmin/Analytics/Index.cshtml", vm);
-    }
-
-    private static DateTime? ParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
-            return parsed;
-        return null;
     }
 }
