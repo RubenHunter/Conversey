@@ -882,7 +882,7 @@ export async function renderChatSurveyPage(
         // Save answers snapshot for language-independent history reconstruction
         const snapshot: Record<number, QuestionAnswer> = {}
         for (let i = 0; i < questions.length; i++) {
-            snapshot[questions[i].id] = components[i].getAnswer()
+            snapshot[questions[i].id!] = components[i].getAnswer()
         }
         localStorage.setItem(`survey-answers-snapshot-${projectSlugKey}`, JSON.stringify(snapshot))
 
@@ -1004,7 +1004,7 @@ export async function renderChatSurveyPage(
         // Questions
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i]
-            const answer = snapshot[q.id]
+            const answer = snapshot[q.id!]
             if (answer === undefined || answer === null) continue
 
             // AI bubble: question text
@@ -1030,7 +1030,7 @@ export async function renderChatSurveyPage(
             speakerBtn.innerHTML = SPEAKER_SVG
 
             let bubbleOrWrapper: HTMLElement = qBubble
-            if (q.isRequired) {
+            if (q.required) {
                 const wrapper = document.createElement('div')
                 wrapper.className = 'chat-bubble-wrapper'
                 wrapper.appendChild(qBubble)
@@ -1821,87 +1821,88 @@ export async function renderChatSurveyPage(
 
              // For open text questions, show as clickable editable bubble
              if (q.type === QuestionType.Open) {
-             // For open text questions, show as clickable editable bubble(s)
-             if (q.type === QuestionType.Open) {
-                 const questionId = questions[i].id!
-                 const drafts = openTextDraftsByQuestionId.get(questionId)
-                 const answer = components[i].getAnswer()
-                 
-                 if (drafts && drafts.length > 0) {
-                     drafts.forEach((message) => {
+                 // For open text questions, show as clickable editable bubble(s)
+                 if (q.type === QuestionType.Open) {
+                     const questionId = questions[i].id!
+                     const drafts = openTextDraftsByQuestionId.get(questionId)
+                     const answer = components[i].getAnswer()
+
+                     if (drafts && drafts.length > 0) {
+                         drafts.forEach((message) => {
+                             const row = document.createElement('div')
+                             row.className = 'chat-row chat-row--user'
+                             const bubble = document.createElement('div')
+                             bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                             bubble.textContent = message
+                             bubble.addEventListener('click', createEditHandler(i, bubble))
+                             row.appendChild(bubble)
+                             messagesEl.appendChild(row)
+                         })
+                     } else {
+                         const displayText = formatAnswerForDisplay(q, answer)
                          const row = document.createElement('div')
                          row.className = 'chat-row chat-row--user'
                          const bubble = document.createElement('div')
                          bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                         bubble.textContent = message
+                         bubble.textContent = displayText || '\u200B'
                          bubble.addEventListener('click', createEditHandler(i, bubble))
                          row.appendChild(bubble)
                          messagesEl.appendChild(row)
-                     })
+                     }
+
+                     // Show confirmed checkmark row for open text
+                     const confirmRow = document.createElement('div')
+                     confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                     confirmRow.setAttribute('data-confirm-for', String(i))
+                     confirmRow.innerHTML = `
+                     <div class="chat-confirm-line"></div>
+                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                     <div class="chat-confirm-line"></div>`
+                     messagesEl.appendChild(confirmRow)
                  } else {
-                     const displayText = formatAnswerForDisplay(q, answer)
-                     const row = document.createElement('div')
-                     row.className = 'chat-row chat-row--user'
-                     const bubble = document.createElement('div')
-                     bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                     bubble.textContent = displayText || '\u200B'
-                     bubble.addEventListener('click', createEditHandler(i, bubble))
-                     row.appendChild(bubble)
-                     messagesEl.appendChild(row)
-                 }
+                     // For other question types, show the actual question component with answer pre-selected
+                     const block = document.createElement('div')
+                     block.className = 'chat-question-block'
+                     block.setAttribute('data-question-index', String(i))
 
-                 // Show confirmed checkmark row for open text
-                 const confirmRow = document.createElement('div')
-                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                 confirmRow.setAttribute('data-confirm-for', String(i))
-                 confirmRow.innerHTML = `
-                     <div class="chat-confirm-line"></div>
-                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
-                     <div class="chat-confirm-line"></div>`
-                 messagesEl.appendChild(confirmRow)
-             } else {
-                 // For other question types, show the actual question component with answer pre-selected
-                 const block = document.createElement('div')
-                 block.className = 'chat-question-block'
-                 block.setAttribute('data-question-index', String(i))
+                     const answerRegion = document.createElement('div')
+                     answerRegion.className = 'chat-answer-region'
 
-                 const answerRegion = document.createElement('div')
-                 answerRegion.className = 'chat-answer-region'
+                     const el = components[i].getElement()
+                     el.classList.add('chat-question-component')
+                     answerRegion.appendChild(el)
 
-                 const el = components[i].getElement()
-                 el.classList.add('chat-question-component')
-                 answerRegion.appendChild(el)
-
-                 const confirmRow = document.createElement('div')
-                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                 confirmRow.setAttribute('data-confirm-for', String(i))
-                 confirmRow.innerHTML = `
+                     const confirmRow = document.createElement('div')
+                     confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                     confirmRow.setAttribute('data-confirm-for', String(i))
+                     confirmRow.innerHTML = `
                      <div class="chat-confirm-line"></div>
                      <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
                      <div class="chat-confirm-line"></div>`
 
-                 block.appendChild(answerRegion)
-                 block.appendChild(confirmRow)
-                 messagesEl.appendChild(block)
+                     block.appendChild(answerRegion)
+                     block.appendChild(confirmRow)
+                     messagesEl.appendChild(block)
 
-                 // Re-apply answer after DOM append so range slider positions correctly
-                 const saved = savedProgress!.answersByQuestionId.get(q.id)
-                 if (saved !== undefined && saved !== null) {
-                     components[i].setAnswer(saved)
+                     // Re-apply answer after DOM append so range slider positions correctly
+                     const saved = savedProgress!.answersByQuestionId.get(q.id!)
+                     if (saved !== undefined && saved !== null) {
+                         components[i].setAnswer(saved)
+                     }
                  }
              }
+
+             scrollToBottom()
+
+             // Show resume message then continue
+             await appendAiBubble(t.resuming)
+
+             if (resumeAt < questions.length) {
+                 await revealQuestion(resumeAt)
+             } else {
+                 await showSubmitSection()
+             }
          }
-
-        scrollToBottom()
-
-        // Show resume message then continue
-        await appendAiBubble(t.resuming)
-
-        if (resumeAt < questions.length) {
-            await revealQuestion(resumeAt)
-        } else {
-            await showSubmitSection()
-        }
     } else {
         if (savedProgress) {
             confirmedUpToIndex = Math.max(0, Math.min(savedProgress.currentQuestionIndex, questions.length))
