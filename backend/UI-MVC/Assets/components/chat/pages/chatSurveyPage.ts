@@ -4,7 +4,7 @@ import type { Project } from '../../../models/project'
 import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
-import { QuestionType } from '../../../models/question.ts'
+import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from '../../../models/question.ts'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
 import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
@@ -116,12 +116,12 @@ export async function renderChatSurveyPage(
 
     const components: QuestionComponent[] = questions.map((q, i) =>
         q.type === QuestionType.SingleChoice
-            ? renderSingleChoiceQuestion(q, i)
+            ? renderSingleChoiceQuestion(q as FixedQuestion, i)
             : q.type === QuestionType.MultipleChoice
-            ? renderMultipleChoiceQuestion(q, i)
+            ? renderMultipleChoiceQuestion(q as FixedQuestion, i)
             : q.type === QuestionType.Scale
-            ? renderScaleQuestion(q, i)
-            : renderOpenTextQuestion(q, i),
+            ? renderScaleQuestion(q as RangeQuestion, i)
+            : renderOpenTextQuestion(q as OpenQuestion, i),
     )
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
@@ -194,7 +194,7 @@ export async function renderChatSurveyPage(
             // Update component answer
             components[questionIndex].setAnswer(newText || null)
             answeredState[questionIndex] = true
-            const qId = questions[questionIndex].id
+            const qId = questions[questionIndex].id!
             openTextDraftsByQuestionId.set(qId, [newText])
             
             // Update openTextState.messages if editing current active question
@@ -273,7 +273,7 @@ export async function renderChatSurveyPage(
     function persistProgress(nextConfirmedUpToIndex: number = confirmedUpToIndex): void {
         confirmedUpToIndex = nextConfirmedUpToIndex
         const byId = new Map<number, QuestionAnswer>(
-            questions.map((q, i) => [q.id, components[i].getAnswer()] as const),
+            questions.map((q, i) => [q.id!, components[i].getAnswer()] as const),
         )
         saveSurveyProgress(projectSlugKey, questions, confirmedUpToIndex, byId, {
             openTextDraftsByQuestionId,
@@ -477,7 +477,7 @@ export async function renderChatSurveyPage(
          const bundled = openTextState.messages.join('\n\n')
          components[openTextState.questionIndex].setAnswer(bundled)
          answeredState[openTextState.questionIndex] = true
-         const questionId = questions[openTextState.questionIndex].id
+         const questionId = questions[openTextState.questionIndex].id!
          openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
          updateProgress()
          persistProgress()
@@ -505,7 +505,7 @@ export async function renderChatSurveyPage(
 
             components[index].setAnswer(editedText || null)
             answeredState[index] = editedText.length > 0
-            const questionId = questions[index].id
+            const questionId = questions[index].id!
             if (editedText) {
                 openTextDraftsByQuestionId.set(questionId, [editedText])
             } else {
@@ -535,7 +535,7 @@ export async function renderChatSurveyPage(
             sendOpenTextMessage()
         }
 
-        if (openTextState.messages.length === 0 && questions[index].isRequired) {
+        if (openTextState.messages.length === 0 && questions[index].required) {
             await appendAiBubble(t.pleaseFill, { animated: false })
             return
         }
@@ -543,7 +543,7 @@ export async function renderChatSurveyPage(
         // If no messages but question is not required, show an empty bubble so user can click to edit
         // Place empty bubble BEFORE the confirm row (above the checkmark)
         let emptyBubble: HTMLElement | null = null
-        if (openTextState.messages.length === 0 && !questions[index].isRequired) {
+        if (openTextState.messages.length === 0 && !questions[index].required) {
             const row = document.createElement('div')
             row.className = 'chat-row chat-row--user'
             const bubble = document.createElement('div')
@@ -556,7 +556,7 @@ export async function renderChatSurveyPage(
 
         const bundled = openTextState.messages.join('\n\n')
         components[index].setAnswer(bundled || null)
-        openTextDraftsByQuestionId.delete(questions[index].id)
+        openTextDraftsByQuestionId.delete(questions[index].id!)
 
         // Insert empty bubble before the confirm row, not after
         if (emptyBubble && openTextState.floatingConfirmRow) {
@@ -584,7 +584,7 @@ export async function renderChatSurveyPage(
 
     // ===== Input state management =====
     function activateOpenTextInput(questionIndex: number): void {
-         const questionId = questions[questionIndex].id
+         const questionId = questions[questionIndex].id!
          const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
          openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
  
@@ -749,7 +749,7 @@ export async function renderChatSurveyPage(
         await appendAiBubble(q.text, {
             bubbleClass: 'chat-bubble--question-title',
             questionNum: index + 1,
-            required: q.isRequired,
+            required: q.required,
         })
 
         if (q.hint?.trim()) {
@@ -822,7 +822,7 @@ export async function renderChatSurveyPage(
 
             // Validate required questions before submitting
             for (let i = 0; i < questions.length; i++) {
-                if (questions[i].isRequired && !hasAnswer(components[i].getAnswer())) {
+                if (questions[i].required && !hasAnswer(components[i].getAnswer())) {
                     await appendAiBubble(t.pleaseFill, { animated: false })
                     scrollToBottom()
                     return
@@ -1795,7 +1795,7 @@ export async function renderChatSurveyPage(
 
         // Restore answers to components
         for (let i = 0; i < questions.length; i++) {
-            const saved = savedProgress!.answersByQuestionId.get(questions[i].id)
+            const saved = savedProgress!.answersByQuestionId.get(questions[i].id!)
             if (saved !== undefined && saved !== null) {
                 components[i].setAnswer(saved)
                 answeredState[i] = hasAnswer(saved)
@@ -1816,12 +1816,14 @@ export async function renderChatSurveyPage(
                  animated: false,
                  bubbleClass: 'chat-bubble--question-title',
                  questionNum: i + 1,
-                 required: q.isRequired,
+                 required: q.required,
              })
 
+             // For open text questions, show as clickable editable bubble
+             if (q.type === QuestionType.Open) {
              // For open text questions, show as clickable editable bubble(s)
              if (q.type === QuestionType.Open) {
-                 const questionId = questions[i].id
+                 const questionId = questions[i].id!
                  const drafts = openTextDraftsByQuestionId.get(questionId)
                  const answer = components[i].getAnswer()
                  

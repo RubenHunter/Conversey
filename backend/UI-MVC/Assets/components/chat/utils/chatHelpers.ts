@@ -1,4 +1,4 @@
-import { QuestionType } from '../../../models/question.ts'
+import {FixedQuestion, QuestionType} from '../../../models/question.ts'
 import type { Question } from '../../../models/question.ts'
 import type { ResponseAnswer } from '../../../models/response'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
@@ -20,27 +20,27 @@ export function mapAnswersToResponse(questions: Question[], components: Question
         if (q.type === QuestionType.SingleChoice) {
             const id = answer as number
             if (id != null) {
-                acc.push({ questionId: q.id, selectedOptionId: id })
+                acc.push({ questionId: q.id!, selectedOptionId: id })
             }
             return acc
         }
         if (q.type === QuestionType.MultipleChoice) {
             const ids = Array.isArray(answer) ? answer : []
             ids.forEach((id) => {
-                acc.push({ questionId: q.id, selectedOptionId: id })
+                acc.push({ questionId: q.id!, selectedOptionId: id })
             })
             return acc
         }
         if (q.type === QuestionType.Scale) {
             const val = answer as number
             if (val != null) {
-                acc.push({ questionId: q.id, selectedOptionId: val })
+                acc.push({ questionId: q.id!, selectedOptionId: val })
             }
             return acc
         }
         const text = answer as string
         if (text?.trim()) {
-            acc.push({ questionId: q.id, openTextValue: text })
+            acc.push({ questionId: q.id!, openTextValue: text })
         }
         return acc
     }, [])
@@ -50,13 +50,15 @@ export function formatAnswerForDisplay(question: Question, answer: QuestionAnswe
     if (answer === null || answer === '') return ''
     if (typeof answer === 'string') return answer
     if (typeof answer === 'number') {
-        if (question.type === QuestionType.SingleChoice && question.options) {
-            return question.options.find((option) => option.id === answer)?.text ?? String(answer)
+        if (question.type === QuestionType.SingleChoice) {
+            const singleChoicQuestion = question as FixedQuestion;
+            return singleChoicQuestion.possibleAnswers.find((option) => option.id === answer)?.text ?? String(answer)
         }
         return String(answer)
     }
-    if (Array.isArray(answer) && question.options) {
-        return answer.map((id) => question.options?.find((option) => option.id === id)?.text ?? String(id)).join(', ')
+    if (Array.isArray(answer)) {
+        const fixedQuestion = question as FixedQuestion;
+        return answer.map((id) => fixedQuestion.possibleAnswers.find((option) => option.id === id)?.text ?? String(id)).join(', ')
     }
     return ''
 }
