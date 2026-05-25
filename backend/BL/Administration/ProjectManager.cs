@@ -88,14 +88,16 @@ public class ProjectManager: IProjectManager
             interactionForm,
             imageUrl,
             nudgingStrength,
+            null,
+            null,
             Status.Active,
             null
         );
     }
 
     public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string slug,
-        ProjectTheme theme = null)
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, int? minAge, int? maxAge,
+        Status status, string slug, ProjectTheme theme = null)
     {
         var resolvedTheme = theme ?? ProjectTheme.Default;
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
@@ -131,6 +133,8 @@ public class ProjectManager: IProjectManager
                 EndDate = endDate.ToUniversalTime(),
                 InteractionForm = interactionForm,
                 NudgingStrength = nudgingStrength,
+                MinAge = minAge,
+                MaxAge = maxAge,
                 Workspace = workspace
             };
 
@@ -158,6 +162,8 @@ public class ProjectManager: IProjectManager
         existing.EndDate = endDate.ToUniversalTime();
         existing.InteractionForm = interactionForm;
         existing.NudgingStrength = Math.Clamp(nudgingStrength, 1, 5);
+        existing.MinAge = minAge;
+        existing.MaxAge = maxAge;
         existing.Workspace = workspace;
 
         Validate(existing);
@@ -206,6 +212,8 @@ public class ProjectManager: IProjectManager
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
         existing.NudgingStrength = updatedProject.NudgingStrength;
+        existing.MinAge = updatedProject.MinAge;
+        existing.MaxAge = updatedProject.MaxAge;
         existing.Workspace = updatedProject.Workspace;
         
         

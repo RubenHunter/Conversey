@@ -58,6 +58,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 StartDate = sourceProject.StartDate.Date,
                 EndDate = sourceProject.EndDate.Date,
                 NudgingStrength = sourceProject.NudgingStrength,
+                MinAge = sourceProject.MinAge,
+                MaxAge = sourceProject.MaxAge,
                 Status = Status.Draft,
                 Slug = string.Empty,
                 ThemePrimary = (sourceProject.Theme ?? ProjectTheme.Default).Primary,
@@ -113,6 +115,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 Status.Active,
                 projectStep1.Slug,
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
@@ -194,6 +198,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 StartDate = project.StartDate.Date,
                 EndDate = project.EndDate.Date,
                 NudgingStrength = project.NudgingStrength,
+                MinAge = project.MinAge,
+                MaxAge = project.MaxAge,
                 Slug = project.Id.ToString(),
                 Status = project.Status,
                 ThemePrimary = (project.Theme ?? ProjectTheme.Default).Primary,
@@ -233,6 +239,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 projectStep1.Status,
                 id.ToString(),
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
@@ -286,6 +294,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 Status.Draft,
                 projectStep1.Slug,
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
@@ -529,7 +539,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     InteractionForm = projectStep1.InteractionForm,
                     StartDate = projectStep1.StartDate,
                     EndDate = projectStep1.EndDate,
-                    Status = projectStep1.Status
+                    Status = projectStep1.Status,
+                    MinAge = projectStep1.MinAge,
+                    MaxAge = projectStep1.MaxAge
                 },
                 FormAction = project == null ? "CreateProject" : "EditProject",
                 SubmitLabel = project == null ? "Create Project" : "Update Project",

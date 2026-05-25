@@ -247,6 +247,7 @@ builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentA
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<AdminI18nService>();

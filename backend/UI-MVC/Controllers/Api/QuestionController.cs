@@ -1,5 +1,6 @@
 using Conversey.BL.Survey;
 using Conversey.UI_MVC.Models.Dto;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
@@ -14,18 +15,25 @@ public class QuestionController : ControllerBase
 {
     private readonly IQuestionManager _questionManager;
     private readonly ILogger<QuestionController> _logger;
+    private readonly IProjectAccessService _projectAccessService;
 
-    public QuestionController(IQuestionManager questionManager, ILogger<QuestionController> logger)
+    public QuestionController(IQuestionManager questionManager, ILogger<QuestionController> logger, IProjectAccessService projectAccessService)
     {
         _questionManager = questionManager;
         _logger = logger;
+        _projectAccessService = projectAccessService;
     }
 
     [HttpGet("questions")]
-    public ActionResult<IReadOnlyCollection<QuestionDto>> GetQuestions(Slug workspaceId, Slug projectId)
+    public async Task<ActionResult<IReadOnlyCollection<QuestionDto>>> GetQuestions(Slug workspaceId, Slug projectId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var dtos = _questionManager.GetQuestions(workspaceId, projectId)
                 .Select(question => QuestionDto.From(question))
                 .ToList()
@@ -40,10 +48,15 @@ public class QuestionController : ControllerBase
     }
 
     [HttpPost("answers")]
-    public ActionResult SubmitAnswers(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
+    public async Task<ActionResult> SubmitAnswers(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             _questionManager.SubmitAnswers(
                 workspaceId,
                 projectId,
@@ -73,8 +86,13 @@ public class QuestionController : ControllerBase
 
     // Backward-compatible alias while frontend switches from /responses to /answers.
     [HttpPost("responses")]
-    public ActionResult SubmitResponsesAlias(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
+    public async Task<ActionResult> SubmitResponsesAlias(Slug workspaceId, Slug projectId, [FromBody] SurveyAnswerSubmissionRequestDto submission)
     {
-        return SubmitAnswers(workspaceId, projectId, submission);
+        return await SubmitAnswers(workspaceId, projectId, submission);
+    }
+
+    private async Task<bool> IsActiveProjectOrAdmin(Slug workspaceId, Slug projectId)
+    {
+        return await _projectAccessService.IsActiveProjectOrAdminAsync(workspaceId, projectId, User);
     }
 }
