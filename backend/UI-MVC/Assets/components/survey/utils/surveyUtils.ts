@@ -23,7 +23,7 @@ function getAnswerHint(question: Question): string {
             return t.answerHintSingleChoice
         case QuestionType.MultipleChoice:
             return t.answerHintMultipleChoice
-        case QuestionType.scale:
+        case QuestionType.Scale:
             return t.answerHintScale
         case QuestionType.Open:
             return t.answerHintOpenText

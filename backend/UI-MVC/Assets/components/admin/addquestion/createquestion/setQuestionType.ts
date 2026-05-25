@@ -79,7 +79,7 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
                 rootQuestionList.addElement(createQuestionComponent(question));
                 modal.destroy();
                 break;
-            case QuestionType.scale:
+            case QuestionType.Scale:
                 modal.setPage(createSetRangeAnswerComponent(modal, question as RangeQuestion))
                 break;
         }

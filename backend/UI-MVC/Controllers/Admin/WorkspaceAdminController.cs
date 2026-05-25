@@ -67,7 +67,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 ThemeFont = (sourceProject.Theme ?? ProjectTheme.Default).Font
             };
 
-            return View(await CreateFormVmAsync(projectStep1Copy, null, true));
+            return View(await CreateFormVmAsync(projectStep1Copy, null, true, sourceProject));
         }
         catch (NotFoundException notFoundException)
         {
@@ -362,7 +362,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         foreach (var dto in dtos)
         {
-            if (string.IsNullOrWhiteSpace(dto.Text)) continue;
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Text)) continue;
 
             Question question = dto.Type switch
             {
@@ -474,22 +474,23 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 
-    private async Task<ProjectViewModel> CreateFormVmAsync(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
+    private async Task<ProjectViewModel> CreateFormVmAsync(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false, Project copyFromProject = null)
     {
         var isCreatePage = project == null;
+        var dataSource = project ?? copyFromProject;
 
         var step2 = new CreateStep2SurveyViewModel();
-        if (project != null)
+        if (dataSource != null)
         {
-            var existingQuestions = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, project.Id);
+            var existingQuestions = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, dataSource.Id);
             if (existingQuestions.Any())
                 step2.QuestionsJson = SerializeQuestionsToJson(existingQuestions);
         }
 
         var step3 = new CreateStep3IdeationViewModel();
-        if (project?.Topic != null && project.Topic.Any())
+        if (dataSource?.Topic != null && dataSource.Topic.Any())
         {
-            var topicRows = project.Topic.Select(t => new TopicRowViewModel
+            var topicRows = dataSource.Topic.Select(t => new TopicRowViewModel
             {
                 TopicName = t.Name,
                 TopicContext = t.Context ?? string.Empty,
@@ -505,9 +506,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             .ToList();
 
         var step4 = new CreateStep4AiConfigViewModel();
-        if (project != null)
+        if (dataSource != null)
         {
-            var existingOverrides = await aiAdminManager.GetProjectPromptOverridesAsync(project.Id.ToString());
+            var existingOverrides = await aiAdminManager.GetProjectPromptOverridesAsync(dataSource.Id.ToString());
             if (existingOverrides.Any())
             {
                 var overrideDtos = existingOverrides.Select(o => new { promptName = o.PromptName, userPromptTemplate = o.UserPromptTemplate });

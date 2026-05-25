@@ -757,7 +757,7 @@ export async function renderChatSurveyPage(
             await appendAiBubble(q.hint.trim())
         }
 
-        if (q.type === QuestionType.OpenText) {
+        if (q.type === QuestionType.Open) {
             const hintRow = document.createElement('div')
             hintRow.className = 'chat-row chat-row--hint'
             hintRow.innerHTML = `
@@ -1048,7 +1048,7 @@ export async function renderChatSurveyPage(
             messagesEl.appendChild(qRow)
 
             // User answer
-            if (q.type === QuestionType.OpenText) {
+            if (q.type === QuestionType.Open) {
                 const text = (answer ?? '') as string
                 const userRow = document.createElement('div')
                 userRow.className = 'chat-row chat-row--user'
@@ -1820,7 +1820,7 @@ export async function renderChatSurveyPage(
              })
 
              // For open text questions, show as clickable editable bubble(s)
-             if (q.type === QuestionType.OpenText) {
+             if (q.type === QuestionType.Open) {
                  const questionId = questions[i].id
                  const drafts = openTextDraftsByQuestionId.get(questionId)
                  const answer = components[i].getAnswer()

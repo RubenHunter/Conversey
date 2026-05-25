@@ -17,12 +17,7 @@ export class StepDraftManager {
 
     persist(): void {
         const fields = this.collectFields();
-        const existing = this.readData();
-        const data: StepDraftData = {
-            fields,
-            draftSynced: existing?.draftSynced ?? false,
-        };
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        localStorage.setItem(this.storageKey, JSON.stringify({ fields, draftSynced: false }));
     }
 
     hydrate(): void {

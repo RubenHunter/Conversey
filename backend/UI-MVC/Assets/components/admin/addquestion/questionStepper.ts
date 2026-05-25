@@ -1,6 +1,6 @@
-import { rootQuestionList, getListQuestions } from '../../modules/addQuestionPage.ts';
-import { createQuestionComponent } from '../admin/addquestion/question.ts';
-import type { Question } from '../../models/question.ts';
+import { rootQuestionList, getListQuestions } from '../../../modules/addQuestionPage.ts';
+import { createQuestionComponent } from './question.ts';
+import type { Question } from '../../../models/question.ts';
 
 function getHiddenField(): HTMLInputElement | null {
     return document.querySelector<HTMLInputElement>(

@@ -22,6 +22,9 @@ export default defineConfig(async () => {
         'components_completedPage': './Assets/components/shared/completedPage.ts',
         'components_ideas_ideasPage': './Assets/components/ideas/pages/ideasPage.ts',
         'components_survey_surveyPage': './Assets/components/survey/pages/surveyPage.ts',
+        'components_projectsPage': './Assets/components/shared/projectsPage.ts',
+        'components_questionStepper': './Assets/components/admin/addquestion/questionStepper.ts',
+        'components_topicManager': './Assets/components/shared/topicManager.ts',
     };
     
     Object.assign(inputEntries, additionalEntries);

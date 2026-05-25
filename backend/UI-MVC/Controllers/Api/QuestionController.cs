@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Common;
+using Microsoft.Extensions.Logging;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
@@ -12,10 +13,12 @@ namespace Conversey.UI_MVC.Controllers.Api;
 public class QuestionController : ControllerBase
 {
     private readonly IQuestionManager _questionManager;
+    private readonly ILogger<QuestionController> _logger;
 
-    public QuestionController(IQuestionManager questionManager)
+    public QuestionController(IQuestionManager questionManager, ILogger<QuestionController> logger)
     {
         _questionManager = questionManager;
+        _logger = logger;
     }
 
     [HttpGet("questions")]
@@ -58,7 +61,13 @@ public class QuestionController : ControllerBase
         }
         catch (ValidationException e)
         {
+            _logger.LogWarning("Survey answer submission validation failed for project {ProjectId}: {Message}", projectId, e.Message);
             return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Unexpected error during survey answer submission for project {ProjectId}", projectId);
+            throw;
         }
     }
 

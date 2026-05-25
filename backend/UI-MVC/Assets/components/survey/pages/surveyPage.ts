@@ -126,7 +126,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 ? renderSingleChoiceQuestion(question as FixedQuestion, index)
                 : question.type === QuestionType.MultipleChoice
                     ? renderMultipleChoiceQuestion(question as FixedQuestion, index)
-                : question.type === QuestionType.scale
+                : question.type === QuestionType.Scale
                     ? renderScaleQuestion(question as RangeQuestion, index)
                     : renderOpenTextQuestion(question as OpenQuestion, index)
 
@@ -390,7 +390,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                     selectedOptionId,
                 }))
             }
-            if (question.type === QuestionType.scale) {
+            if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
                 if (scaleValue == null) return []
                 return { questionId: question.id!, selectedOptionId: scaleValue }

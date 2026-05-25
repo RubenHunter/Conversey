@@ -122,6 +122,9 @@ public class QuestionDto
             case SingleChoiceQuestion choiceQuestion:
                 dto.PossibleAnswers = choiceQuestion.PossibleChoices.Select(ChoiceDto.From);
                 break;
+            case MultipleChoiceQuestion multipleChoiceQuestion:
+                dto.PossibleAnswers = multipleChoiceQuestion.PossibleChoices.Select(ChoiceDto.From);
+                break;
             case ScaleQuestion scaleQuestion:
                 dto.LowerBound = scaleQuestion.LowerBound;
                 dto.UpperBound = scaleQuestion.UpperBound;

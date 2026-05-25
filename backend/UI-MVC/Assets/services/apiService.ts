@@ -12,7 +12,8 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     })
 
     if (!response.ok) {
-        throw new Error(`API error ${response.status}: ${response.statusText} at ${url}`)
+        const errorBody = await response.text().catch(() => '')
+        throw new Error(`API error ${response.status}: ${response.statusText} at ${url}${errorBody ? ` — ${errorBody.slice(0, 300)}` : ''}`)
     }
 
     if (response.status === 204) {

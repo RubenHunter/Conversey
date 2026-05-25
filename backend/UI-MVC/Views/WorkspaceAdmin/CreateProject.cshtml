@@ -31,7 +31,6 @@
         imageUrl = Model.CreateStep1ViewModel.ImageUrl,
         imageUploadSignature = "",
         nudgingStrength = Model.CreateStep1ViewModel.NudgingStrength.ToString(),
-        status = Model.CreateStep1ViewModel.Status.ToString(),
         slug = "",
         draftSynced = false,
         themePrimary = Model.CreateStep1ViewModel.ThemePrimary,
@@ -40,7 +39,10 @@
         themePreset = Model.CreateStep1ViewModel.ThemePreset,
         themeFont = Model.CreateStep1ViewModel.ThemeFont,
         minAge = Model.CreateStep1ViewModel.MinAge.HasValue ? Model.CreateStep1ViewModel.MinAge.Value.ToString() : "0",
-        maxAge = Model.CreateStep1ViewModel.MaxAge.HasValue ? Model.CreateStep1ViewModel.MaxAge.Value.ToString() : "150"
+        maxAge = Model.CreateStep1ViewModel.MaxAge.HasValue ? Model.CreateStep1ViewModel.MaxAge.Value.ToString() : "150",
+        questionsJson = Model.CreateStep2ViewModel.QuestionsJson ?? "[]",
+        topicsJson = Model.CreateStep3ViewModel.TopicsJson ?? "[]",
+        promptsJson = Model.CreateStep4ViewModel.PromptsJson ?? "[]"
     })'></div>
 }
 

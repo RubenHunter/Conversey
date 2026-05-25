@@ -90,14 +90,7 @@
                     </div>
                 </div>
 
-                <div class="pt-3 border-t border-text/10 grid grid-cols-3 gap-2">
-                    <div>
-                        <label asp-for="CreateStep1ViewModel.Status" class="block text-xs font-medium text-text/60 mb-1">Status</label>
-                        <select asp-for="CreateStep1ViewModel.Status"
-                                asp-items="Html.GetEnumSelectList<Status>()"
-                                class="w-full rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs">
-                        </select>
-                    </div>
+                <div class="pt-3 border-t border-text/10 grid grid-cols-2 gap-2">
                     <div>
                         <label asp-for="CreateStep1ViewModel.StartDate" class="block text-xs font-medium text-text/60 mb-1">Start</label>
                         <input asp-for="CreateStep1ViewModel.StartDate" type="date"

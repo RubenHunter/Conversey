@@ -25,7 +25,6 @@ const STEP1_FIELD_MAP: Record<string, string> = {
     endDate: 'CreateStep1ViewModel.EndDate',
     imageUrl: 'CreateStep1ViewModel.ImageUrl',
     imageUploadSignature: 'step1ImageUploadSignature',
-    status: 'CreateStep1ViewModel.Status',
     themePrimary: 'CreateStep1ViewModel.ThemePrimary',
     themeSecondary: 'CreateStep1ViewModel.ThemeSecondary',
     themeAccent: 'CreateStep1ViewModel.ThemeAccent',
@@ -55,7 +54,6 @@ class ProjectDraftManager {
     private readonly step1ImageUploadStatus: HTMLElement | null;
     private readonly step1ImageUploadError: HTMLElement | null;
     private readonly step1Slug: HTMLInputElement | null;
-    private readonly step1Status: HTMLSelectElement | null;
     private readonly step1NameWarning: HTMLElement | null;
     private readonly saveDraftBtn: HTMLButtonElement | null;
 
@@ -91,7 +89,6 @@ class ProjectDraftManager {
         this.step1ImageUploadStatus = container.querySelector('#step1ImageUploadStatus');
         this.step1ImageUploadError = container.querySelector('#step1ImageUploadError');
         this.step1Slug = container.querySelector('input[name="CreateStep1ViewModel.Slug"]');
-        this.step1Status = container.querySelector('select[name="CreateStep1ViewModel.Status"]');
         this.step1NameWarning = container.querySelector('#step1NameWarning');
         this.saveDraftBtn = container.querySelector('#saveDraftBtn');
 
@@ -125,6 +122,13 @@ class ProjectDraftManager {
         this.bindStep4NudgingSlider();
         this.bindStep4AdvancedToggle();
         this.bindStep4PromptModal(container);
+
+        window.addEventListener('beforeunload', (e) => {
+            if (this.shouldBlockExit()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     }
 
     getStepperHooks(): StepperHooks {
@@ -214,6 +218,8 @@ class ProjectDraftManager {
         const imageOk = await this.ensureStep1ImageUploaded();
         if (!imageOk) return;
 
+        this.injectStepFieldsIntoForm(2, step1Manager.form);
+        this.injectStepFieldsIntoForm(3, step1Manager.form);
         this.injectStepFieldsIntoForm(4, step1Manager.form);
 
         this.clearAllLocalDrafts();
@@ -353,22 +359,12 @@ class ProjectDraftManager {
             }
         }
 
-        const previousStatus = this.step1Status?.value ?? '';
-        if (this.step1Status) {
-            this.step1Status.value = 'Draft';
-            payload.set(this.step1Status.name, 'Draft');
-        }
-
         try {
             const response = await fetch(this.draftSaveUrl, {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: payload,
             });
-
-            if (this.step1Status) {
-                this.step1Status.value = previousStatus;
-            }
 
             if (!response.ok) {
                 await this.handleDraftSaveError(response);
@@ -476,6 +472,28 @@ class ProjectDraftManager {
             }
             localStorage.setItem(step1Manager.storageKey, JSON.stringify({ fields, draftSynced: false }));
 
+            const step2Manager = this.stepManagers.get(2);
+            if (step2Manager) {
+                const qJson = parsed['questionsJson'];
+                if (typeof qJson === 'string' && qJson && qJson !== '[]') {
+                    localStorage.setItem(step2Manager.storageKey, JSON.stringify({
+                        fields: { 'CreateStep2ViewModel.QuestionsJson': qJson },
+                        draftSynced: false,
+                    }));
+                }
+            }
+
+            const step3Manager = this.stepManagers.get(3);
+            if (step3Manager) {
+                const tJson = parsed['topicsJson'];
+                if (typeof tJson === 'string' && tJson && tJson !== '[]') {
+                    localStorage.setItem(step3Manager.storageKey, JSON.stringify({
+                        fields: { 'CreateStep3ViewModel.TopicsJson': tJson },
+                        draftSynced: false,
+                    }));
+                }
+            }
+
             const step4Manager = this.stepManagers.get(4);
             if (step4Manager) {
                 const step4Fields: Record<string, string> = {};
@@ -486,6 +504,10 @@ class ProjectDraftManager {
                     } else if (value !== undefined && value !== null) {
                         step4Fields[formName] = String(value);
                     }
+                }
+                const pJson = parsed['promptsJson'];
+                if (typeof pJson === 'string' && pJson && pJson !== '[]') {
+                    step4Fields['CreateStep4ViewModel.PromptsJson'] = pJson;
                 }
                 if (Object.keys(step4Fields).length > 0) {
                     localStorage.setItem(step4Manager.storageKey, JSON.stringify({ fields: step4Fields, draftSynced: false }));
@@ -502,8 +524,10 @@ class ProjectDraftManager {
 
     private clearDraftIfNeeded(): void {
         if (!this.isCreatePage || this.isCopyFlow) return;
-        const meta = this.readMeta();
-        if (meta) return;
+        if (sessionStorage.getItem('recoverDraft') === '1') {
+            sessionStorage.removeItem('recoverDraft');
+            return;
+        }
         this.clearAllLocalDrafts();
     }
 
@@ -790,6 +814,7 @@ class ProjectDraftManager {
         if (this.step4NudgingStrength && this.step4NudgingDisplay) {
             this.step4NudgingDisplay.textContent = this.step4NudgingStrength.value;
         }
+        this.refreshStep4OverridesFromJson();
     }
 
     // ── Step 1: age sliders ─────────────────────────────────────────────────

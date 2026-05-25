@@ -104,6 +104,26 @@ public class QuestionRepository : IQuestionRepository
         var questions = _dbContext.Questions
             .Where(q => q.Project.Id == projectId)
             .ToList();
+
+        if (questions.Count == 0) return;
+
+        var questionIds = questions.Select(q => q.Id).ToHashSet();
+
+        var choices = _dbContext.Set<Choice>()
+            .Where(c => questionIds.Contains(c.Question.Id))
+            .ToList();
+
+        if (choices.Count > 0)
+        {
+            var choiceIds = choices.Select(c => c.Id).ToHashSet();
+            var singleChoiceAnswers = _dbContext.Set<SingleChoiceAnswer>()
+                .Where(a => choiceIds.Contains(a.Value.Id))
+                .ToList();
+            if (singleChoiceAnswers.Count > 0)
+                _dbContext.Set<SingleChoiceAnswer>().RemoveRange(singleChoiceAnswers);
+            _dbContext.Set<Choice>().RemoveRange(choices);
+        }
+
         _dbContext.Questions.RemoveRange(questions);
         _dbContext.SaveChanges();
     }
