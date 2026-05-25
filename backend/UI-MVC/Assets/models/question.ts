@@ -6,7 +6,7 @@ enum QuestionType {
     Open = 'Open',
     MultipleChoice = 'MultipleChoice',
     SingleChoice = 'SingleChoice',
-    scale = 'Scale',
+    Scale = 'Scale',
 }
 
 type Question = {
@@ -23,7 +23,7 @@ type FixedQuestion = Question & {
 };
 
 type RangeQuestion = Question & {
-    type: QuestionType.scale;
+    type: QuestionType.Scale;
     min: number;
     max: number;
 };

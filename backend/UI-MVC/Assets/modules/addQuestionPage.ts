@@ -22,7 +22,6 @@ const rootQuestionList: DragAndDropListComponent = createDragAndDropListComponen
 rootQuestionElement.appendChild(rootQuestionList);
 const selected: (QuestionComponent | SectionComponent)[] = [];
 
-
 createQuestionButton.addEventListener('click', clickCreateQuestion);
 createSectionButton.addEventListener('click', clickCreateSection);
 deleteButton.addEventListener('click', clickDeleteButton);

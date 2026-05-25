@@ -23,7 +23,7 @@ function mapQuestionDtoToQuestion(dto: QuestionDto): Question {
                 required: dto.required,
                 possibleAnswers: dto.possibleAnswers!.map((option) => mapChoiceToAnswer(option)),
             } as FixedQuestion;
-        case QuestionType.scale:
+        case QuestionType.Scale:
             return {
                 id: id,
                 text: dto.text,
