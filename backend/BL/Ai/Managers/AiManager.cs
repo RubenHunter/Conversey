@@ -11,6 +11,7 @@ public sealed class AiManager : IAiManager
 {
     private readonly IAiProvider _provider;
     private readonly IPromptRepository _promptRepository;
+    private readonly IProjectPromptRepository _projectPromptRepository;
     private readonly IAuditRepository _auditRepository;
     private readonly IModerationKeywordRepository _moderationKeywordRepository;
     private readonly IAiPricingService _pricingService;
@@ -21,10 +22,11 @@ public sealed class AiManager : IAiManager
     private const string CompletionsModelType = "Completions";
     private const string ModerationModelType = "Moderation";
 
-    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IAuditRepository auditRepository, IModerationKeywordRepository moderationKeywordRepository, IAiPricingService pricingService, string completionsModel, string moderationModel, decimal temperature = 1.0m)
+    public AiManager(IAiProvider provider, IPromptRepository promptRepository, IProjectPromptRepository projectPromptRepository, IAuditRepository auditRepository, IModerationKeywordRepository moderationKeywordRepository, IAiPricingService pricingService, string completionsModel, string moderationModel, decimal temperature = 1.0m)
     {
         _provider = provider;
         _promptRepository = promptRepository;
+        _projectPromptRepository = projectPromptRepository;
         _auditRepository = auditRepository;
         _moderationKeywordRepository = moderationKeywordRepository;
         _pricingService = pricingService;
@@ -110,7 +112,7 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationPrompt);
+            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationPrompt, projectId);
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? AiPromptDefaults.BuildModerationSystemPrompt()
                 : prompt.SystemPrompt;
@@ -143,7 +145,7 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationGenerateAlternative);
+            var prompt = await LoadPromptAsync(AiPromptKeys.ModerationGenerateAlternative, projectId);
             var systemPrompt = string.IsNullOrWhiteSpace(prompt.SystemPrompt)
                 ? "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text."
                 : prompt.SystemPrompt;
@@ -171,12 +173,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingSystem);
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingSystem, projectId);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? AiPromptDefaults.BuildNudgingSystemPrompt(request.NudgingMode)
                 : PromptRenderer.Render(systemPrompt.SystemPrompt, new Dictionary<string, string> { ["NudgingModeDescription"] = AiPromptDefaults.DescribeNudgingMode(request.NudgingMode) });
 
-            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingUser);
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaNudgingUser, projectId);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildNudgingUserPrompt(request)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildNudgingVariables(request));
@@ -211,12 +213,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingSystem);
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingSystem, projectId);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingUser);
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaRankingUser, projectId);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildIdeaRankingPrompt(referenceIdea, candidateIdeas, preferDifferent, cappedLimit)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildRankingVariables(referenceIdea, candidateIdeas, preferDifferent, cappedLimit));
@@ -256,12 +258,12 @@ public sealed class AiManager : IAiManager
         var startTime = DateTime.UtcNow;
         try
         {
-            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationSystem);
+            var systemPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationSystem, projectId);
             var systemContent = string.IsNullOrWhiteSpace(systemPrompt.SystemPrompt)
                 ? "You assign semantic categories to youth ideas. Return only strict JSON."
                 : systemPrompt.SystemPrompt;
 
-            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationUser);
+            var userPrompt = await LoadPromptAsync(AiPromptKeys.IdeaCategorizationUser, projectId);
             var userContent = string.IsNullOrWhiteSpace(userPrompt.UserPromptTemplate)
                 ? AiPromptDefaults.BuildCategorizationPrompt(ideas, existingCategories, cappedMax)
                 : PromptRenderer.Render(userPrompt.UserPromptTemplate, AiPromptDefaults.BuildCategorizationVariables(ideas, existingCategories, cappedMax));
@@ -375,8 +377,19 @@ public sealed class AiManager : IAiManager
         }
     }
 
-    private async Task<AiPrompt> LoadPromptAsync(string name)
+    private async Task<AiPrompt> LoadPromptAsync(string name, string projectId = null)
     {
+        if (!string.IsNullOrEmpty(projectId))
+        {
+            var projectOverride = await _projectPromptRepository.GetOverrideAsync(projectId, name);
+            if (projectOverride != null)
+            {
+                var basePrompt = await _promptRepository.GetPromptAsync(name) ?? new AiPrompt { Name = name };
+                basePrompt.UserPromptTemplate = projectOverride.UserPromptTemplate;
+                return basePrompt;
+            }
+        }
+
         var prompt = await _promptRepository.GetPromptAsync(name);
         return prompt ?? new AiPrompt { Name = name };
     }

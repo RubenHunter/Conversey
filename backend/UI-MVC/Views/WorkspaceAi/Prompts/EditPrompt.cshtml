@@ -52,38 +52,12 @@
             <input type="hidden" asp-for="Prompt.Id" />
             <input type="hidden" asp-for="Prompt.Name" />
 
-            @if (!string.IsNullOrWhiteSpace(Model.Prompt.SystemPrompt))
-            {
-                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6 opacity-80">
-                    <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
-                        <div>
-                            <h2 class="text-sm font-semibold text-text" data-i18n="System Prompt">System Prompt</h2>
-                            <p class="text-xs text-text/50 mt-0.5" data-i18n="Read-only - managed by platform admins.">Read-only - managed by platform admins.</p>
-                        </div>
-                        <svg class="w-4 h-4 text-text/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    </div>
-                    <div class="px-6 py-4">
-                        <pre class="max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/60">@Model.Prompt.SystemPrompt</pre>
-                    </div>
-                </div>
-            }
-            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
-                <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-sm font-semibold text-text" data-i18n="User Prompt Template">User Prompt Template</h2>
-                        <p class="text-xs text-text/50 mt-0.5" data-i18n="Template sent as the user message. Variables like {{X}} are substituted at runtime.">Template sent as the user message. Variables like {{X}} are substituted at runtime.</p>
-                    </div>
-                    <button type="button" class="info-toggle text-text/40 hover:text-primary transition-colors" data-target="user-info">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </button>
-                </div>
-                <div id="user-info" class="hidden px-6 py-3 bg-background/50 border-b border-secondary/10">
-                    <p class="text-xs text-text/60" data-i18n="The user prompt is the actual content sent to the AI. Use placeholders like {{X}} or {{Y}} for dynamic values. Workspace admins can only edit user prompts - system prompts are managed by platform admins.">The user prompt is the actual content sent to the AI. Use placeholders like {{X}} or {{Y}} for dynamic values. Workspace admins can only edit user prompts - system prompts are managed by platform admins.</p>
-                </div>
-                <div class="px-6 py-4">
-                    <textarea asp-for="Prompt.UserPromptTemplate" rows="10" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 font-mono text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-y"></textarea>
-                </div>
-            </div>
+            @await Html.PartialAsync("_PromptEditCard", (
+                Prompt: Model.Prompt,
+                TextareaName: "Prompt.UserPromptTemplate",
+                TextareaId: "promptUserTemplate",
+                ReadOnly: false
+            ))
 
             <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
                 <div class="px-6 py-4 border-b border-secondary/10">

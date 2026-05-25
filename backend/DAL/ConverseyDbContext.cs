@@ -6,6 +6,7 @@ using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Administration;
 using Conversey.DAL.Ideation;
+using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -35,6 +36,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<ModerationKeyword>  ModerationKeywords { get; set; }
     public DbSet<AiCostLimit> AiCostLimits { get; set; }
     public DbSet<AiModelPricing> AiModelPricings { get; set; }
+    public DbSet<ProjectAiPromptOverride> ProjectAiPromptOverrides { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
@@ -111,8 +113,7 @@ public class ConverseyDbContext : IdentityDbContext
             .HasForeignKey(c => c.ProjectId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        
-   
+        modelBuilder.ApplyConfiguration(new ProjectAiPromptOverrideConfig());
 
     }
 

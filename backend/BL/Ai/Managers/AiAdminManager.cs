@@ -10,6 +10,7 @@ public sealed class AiAdminManager : IAiAdminManager
 {
     private readonly IAuditRepository _auditRepository;
     private readonly IPromptRepository _promptRepository;
+    private readonly IProjectPromptRepository _projectPromptRepository;
     private readonly IProviderConfigRepository _providerConfigRepository;
     private readonly IRateLimitConfigRepository _rateLimitConfigRepository;
     private readonly IModerationKeywordRepository _moderationKeywordRepository;
@@ -109,6 +110,7 @@ public sealed class AiAdminManager : IAiAdminManager
     public AiAdminManager(
         IAuditRepository auditRepository,
         IPromptRepository promptRepository,
+        IProjectPromptRepository projectPromptRepository,
         IProviderConfigRepository providerConfigRepository,
         IRateLimitConfigRepository rateLimitConfigRepository,
         IModerationKeywordRepository moderationKeywordRepository,
@@ -119,6 +121,7 @@ public sealed class AiAdminManager : IAiAdminManager
     {
         _auditRepository = auditRepository;
         _promptRepository = promptRepository;
+        _projectPromptRepository = projectPromptRepository;
         _providerConfigRepository = providerConfigRepository;
         _rateLimitConfigRepository = rateLimitConfigRepository;
         _moderationKeywordRepository = moderationKeywordRepository;
@@ -353,6 +356,25 @@ public sealed class AiAdminManager : IAiAdminManager
         }
 
         return Task.FromResult<AiPrompt>(null);
+    }
+
+    public Task<IReadOnlyList<ProjectAiPromptOverride>> GetProjectPromptOverridesAsync(string projectId)
+    {
+        return _projectPromptRepository.GetOverridesForProjectAsync(projectId);
+    }
+
+    public async Task SaveProjectPromptOverridesAsync(string projectId, IEnumerable<ProjectAiPromptOverride> overrides)
+    {
+        foreach (var o in overrides)
+        {
+            o.ProjectId = projectId;
+            await _projectPromptRepository.SaveOverrideAsync(o);
+        }
+    }
+
+    public Task DeleteProjectPromptOverridesAsync(string projectId)
+    {
+        return _projectPromptRepository.DeleteOverridesForProjectAsync(projectId);
     }
 
     public Task<IReadOnlyList<AiProviderConfig>> GetAllProviderConfigsAsync()

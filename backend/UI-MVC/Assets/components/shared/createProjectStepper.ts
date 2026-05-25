@@ -7,6 +7,11 @@ interface MetaData {
     slug: string;
 }
 
+interface PromptOverride {
+    promptName: string;
+    userPromptTemplate: string;
+}
+
 interface ImageUploadResponse {
     imageUrl?: unknown;
     error?: unknown;
@@ -66,6 +71,8 @@ class ProjectDraftManager {
 
     private readonly step4NudgingStrength: HTMLInputElement | null;
     private readonly step4NudgingDisplay: HTMLElement | null;
+    private readonly step4PromptsJson: HTMLInputElement | null;
+    private readonly step4Overrides: Map<string, string> = new Map();
 
     private currentStep = 1;
     private saveDraftFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -100,6 +107,7 @@ class ProjectDraftManager {
 
         this.step4NudgingStrength = container.querySelector('#step4NudgingStrength');
         this.step4NudgingDisplay = container.querySelector('#step4NudgingDisplay');
+        this.step4PromptsJson = container.querySelector('#step4PromptsJson');
 
         this.discoverForms(container);
         this.migrateOldDraft();
@@ -115,6 +123,8 @@ class ProjectDraftManager {
         this.bindStep1FontPicker(container);
         this.bindStep1AgeSliders();
         this.bindStep4NudgingSlider();
+        this.bindStep4AdvancedToggle();
+        this.bindStep4PromptModal(container);
     }
 
     getStepperHooks(): StepperHooks {
@@ -863,6 +873,136 @@ class ProjectDraftManager {
             btn.classList.toggle('bg-text/5', selected);
             btn.classList.toggle('border-text/35', selected);
         });
+
+        this.refreshStep4OverridesFromJson();
+    }
+
+    // ── Step 4: advanced settings toggle ───────────────────────────────────
+
+    private bindStep4AdvancedToggle(): void {
+        const toggle = document.getElementById('step4AdvancedToggle');
+        const panel = document.getElementById('step4AdvancedPanel');
+        const chevron = document.getElementById('step4AdvancedChevron');
+        if (!toggle || !panel || !chevron) return;
+
+        toggle.addEventListener('click', () => {
+            const isOpen = panel.style.maxHeight !== '' && panel.style.maxHeight !== '0px';
+            if (isOpen) {
+                panel.style.maxHeight = '0px';
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                panel.style.maxHeight = `${panel.scrollHeight}px`;
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        });
+    }
+
+    // ── Step 4: prompt modal ────────────────────────────────────────────────
+
+    private bindStep4PromptModal(container: HTMLElement): void {
+        const modal = document.getElementById('step4PromptModal');
+        const titleEl = document.getElementById('step4ModalTitle');
+        const descEl = document.getElementById('step4ModalDescription');
+        const textarea = document.getElementById('step4ModalTextarea') as HTMLTextAreaElement | null;
+        const applyBtn = document.getElementById('step4ModalApply');
+        const cancelBtn = document.getElementById('step4ModalCancel');
+        const closeBtn = document.getElementById('step4ModalClose');
+        const resetBtn = document.getElementById('step4ModalReset');
+        if (!modal || !textarea) return;
+
+        let activePromptName = '';
+        let activeGlobalTemplate = '';
+
+        const openModal = (name: string, description: string, globalTemplate: string) => {
+            activePromptName = name;
+            activeGlobalTemplate = globalTemplate;
+            if (titleEl) titleEl.textContent = name;
+            if (descEl) descEl.textContent = description;
+            textarea.value = this.step4Overrides.get(name) ?? globalTemplate;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => textarea.focus(), 50);
+        };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        container.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.prompt-edit-btn');
+            if (!btn) return;
+            openModal(
+                btn.dataset.promptName ?? '',
+                btn.dataset.promptDescription ?? '',
+                btn.dataset.globalTemplate ?? '',
+            );
+        });
+
+        applyBtn?.addEventListener('click', () => {
+            if (!activePromptName) return;
+            const val = textarea.value;
+            if (val.trim()) {
+                this.step4Overrides.set(activePromptName, val);
+            } else {
+                this.step4Overrides.delete(activePromptName);
+            }
+            this.persistStep4Overrides();
+            this.updatePromptCardBadge(activePromptName, this.step4Overrides.has(activePromptName));
+            closeModal();
+        });
+
+        resetBtn?.addEventListener('click', () => {
+            textarea.value = activeGlobalTemplate;
+        });
+
+        cancelBtn?.addEventListener('click', closeModal);
+        closeBtn?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    }
+
+    private persistStep4Overrides(): void {
+        if (!this.step4PromptsJson) return;
+        const overrides: PromptOverride[] = [];
+        for (const [name, template] of this.step4Overrides) {
+            overrides.push({ promptName: name, userPromptTemplate: template });
+        }
+        this.step4PromptsJson.value = JSON.stringify(overrides);
+        this.step4PromptsJson.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    private updatePromptCardBadge(promptName: string, hasOverride: boolean): void {
+        const btn = document.querySelector<HTMLElement>(`.prompt-edit-btn[data-prompt-name="${CSS.escape(promptName)}"]`);
+        if (!btn) return;
+        const card = btn.closest<HTMLElement>('[data-name]');
+        if (!card) return;
+        let badge = card.querySelector<HTMLElement>('.prompt-override-badge');
+        if (hasOverride && !badge) {
+            badge = document.createElement('span');
+            badge.className = 'prompt-override-badge flex-shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary';
+            badge.textContent = 'Customized';
+            const nameEl = card.querySelector('h2');
+            nameEl?.parentElement?.appendChild(badge);
+        } else if (!hasOverride && badge) {
+            badge.remove();
+        }
+    }
+
+    private refreshStep4OverridesFromJson(): void {
+        this.step4Overrides.clear();
+        const raw = this.step4PromptsJson?.value;
+        if (!raw || raw === '[]') return;
+        try {
+            const parsed = JSON.parse(raw) as Array<{ promptName?: string; userPromptTemplate?: string }>;
+            for (const item of parsed) {
+                if (item.promptName && item.userPromptTemplate) {
+                    this.step4Overrides.set(item.promptName, item.userPromptTemplate);
+                }
+            }
+            for (const [name] of this.step4Overrides) {
+                this.updatePromptCardBadge(name, true);
+            }
+        } catch { /* ignore */ }
     }
 
     // ── Step 1: font picker ─────────────────────────────────────────────────

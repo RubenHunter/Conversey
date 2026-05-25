@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Conversey.BL.Administration;
+using Conversey.BL.Ai;
 using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Survey;
 using Conversey.BL.Survey;
@@ -14,7 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager) : Controller
+public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
@@ -36,12 +38,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
     [HttpGet("/admin/projects/new")]
-    public IActionResult CreateProject([FromQuery] string? copy)
+    public async Task<IActionResult> CreateProject([FromQuery] string? copy)
     {
         if (string.IsNullOrWhiteSpace(copy))
         {
             var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
-            return View(CreateFormVm(projectStep1, null, false));
+            return View(await CreateFormVmAsync(projectStep1, null, false));
         }
 
         try
@@ -65,13 +67,13 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 ThemeFont = (sourceProject.Theme ?? ProjectTheme.Default).Font
             };
 
-            return View(CreateFormVm(projectStep1Copy, null, true));
+            return View(await CreateFormVmAsync(projectStep1Copy, null, true));
         }
         catch (NotFoundException notFoundException)
         {
             ModelState.AddModelError(string.Empty, notFoundException.Message);
             var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
-            return View(CreateFormVm(projectStep1, null, false));
+            return View(await CreateFormVmAsync(projectStep1, null, false));
         }
     }
     
@@ -89,7 +91,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         if (!ModelState.IsValid)
         {
-            return View(CreateFormVm(projectStep1));
+            return View(await CreateFormVmAsync(projectStep1));
         }
 
         try
@@ -98,7 +100,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             {
                 ModelState.AddModelError("CreateStep1ViewModel.Name",
                     "Project name already exists. Draft can save, but creation blocked until name unique.");
-                return View(CreateFormVm(projectStep1));
+                return View(await CreateFormVmAsync(projectStep1));
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
@@ -122,6 +124,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             var step3 = projectViewModel.CreateStep3ViewModel;
             SaveTopicsFromStep3(step3, project.Id);
 
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, project.Id);
+
             return RedirectToAction("Projects");
         }
         catch (NotFoundException notFoundException)
@@ -134,7 +139,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
-        return View(CreateFormVm(projectStep1));
+        return View(await CreateFormVmAsync(projectStep1));
     }
 
     [HttpPost("/admin/projects/new/upload-image")]
@@ -174,13 +179,13 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
     [HttpGet("/admin/project/{id}")]
-    public IActionResult EditProject(Slug id)
+    public async Task<IActionResult> EditProject(Slug id)
     {
         try
         {
             var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
 
-            return View(CreateFormVm(new CreateProjectIntroAndPresentationViewModel
+            return View(await CreateFormVmAsync(new CreateProjectIntroAndPresentationViewModel
             {
                 Name = project.Name,
                 Description = project.Description,
@@ -205,7 +210,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             throw;
         }
     }
-    
+
     [HttpPost("/admin/project/{id}")]
     public async Task<IActionResult> EditProject(Slug id, ProjectViewModel projectViewModel)
     {
@@ -215,7 +220,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             if (!ModelState.IsValid)
             {
-                return View(CreateFormVm(projectStep1, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+                return View(await CreateFormVmAsync(projectStep1, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
@@ -236,6 +241,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             var step2 = projectViewModel.CreateStep2ViewModel;
             SaveQuestionsFromStep2(step2, id);
 
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, id);
+
             return RedirectToAction("Projects");
         }
         catch (NotFoundException notFoundException)
@@ -247,7 +255,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
-        return View(CreateFormVm(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+        return View(await CreateFormVmAsync(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
     }
 
     [HttpPost("/admin/projects/draft")]
@@ -288,6 +296,9 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             var step3 = projectViewModel.CreateStep3ViewModel;
             SaveTopicsFromStep3(step3, project.Id);
+
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, project.Id);
 
             return Json(new { slug = project.Id.ToString() });
         }
@@ -463,7 +474,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         }
     }
 
-    private ProjectViewModel CreateFormVm(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
+    private async Task<ProjectViewModel> CreateFormVmAsync(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
     {
         var isCreatePage = project == null;
 
@@ -487,6 +498,23 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             step3.TopicsJson = JsonSerializer.Serialize(topicRows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         }
 
+        var allPrompts = await aiAdminManager.GetAllPromptsAsync();
+        var step4Prompts = allPrompts
+            .Where(p => !p.Name.EndsWith("System", StringComparison.OrdinalIgnoreCase)
+                        && !p.Name.StartsWith("Moderation", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var step4 = new CreateStep4AiConfigViewModel();
+        if (project != null)
+        {
+            var existingOverrides = await aiAdminManager.GetProjectPromptOverridesAsync(project.Id.ToString());
+            if (existingOverrides.Any())
+            {
+                var overrideDtos = existingOverrides.Select(o => new { promptName = o.PromptName, userPromptTemplate = o.UserPromptTemplate });
+                step4.PromptsJson = JsonSerializer.Serialize(overrideDtos, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            }
+        }
+
         return new ProjectViewModel
         {
             AdminFormViewModel = new AdminFormViewModel<Project>
@@ -508,6 +536,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             CreateStep1ViewModel = projectStep1,
             CreateStep2ViewModel = step2,
             CreateStep3ViewModel = step3,
+            CreateStep4ViewModel = step4,
+            Step4Prompts = step4Prompts,
             StepperViewModel = new StepperViewModel
             {
                 Title = project == null ? "Creating a Project" : "Editing a Project",
@@ -551,6 +581,35 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             }
         };
     }
+
+    private async Task SavePromptsFromStep4(CreateStep4AiConfigViewModel step4, Slug projectId)
+    {
+        if (step4 == null || string.IsNullOrWhiteSpace(step4.PromptsJson) || step4.PromptsJson == "[]")
+            return;
+
+        List<PromptOverrideDto> dtos;
+        try
+        {
+            dtos = JsonSerializer.Deserialize<List<PromptOverrideDto>>(step4.PromptsJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException) { return; }
+
+        if (dtos == null || dtos.Count == 0) return;
+
+        var overrides = dtos
+            .Where(d => !string.IsNullOrWhiteSpace(d.PromptName) && !string.IsNullOrWhiteSpace(d.UserPromptTemplate))
+            .Select(d => new ProjectAiPromptOverride
+            {
+                PromptName = d.PromptName,
+                UserPromptTemplate = d.UserPromptTemplate
+            })
+            .ToList();
+
+        await aiAdminManager.SaveProjectPromptOverridesAsync(projectId.ToString(), overrides);
+    }
+
+    private record PromptOverrideDto(string PromptName, string UserPromptTemplate);
     
     private AdminFormViewModel<Project> EditFormVm(Project project)
     {

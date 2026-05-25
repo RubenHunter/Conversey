@@ -1,0 +1,47 @@
+@using Conversey.BL.Domain.Ai
+@model (AiPrompt Prompt, string EditUrl, bool HasOverride)
+
+<div class="bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow prompt-item"
+     data-name="@(Model.Prompt.Name?.ToLowerInvariant() ?? "")"
+     data-desc="@(Model.Prompt.Description?.ToLowerInvariant() ?? "")">
+    <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
+        <div class="flex items-start gap-2 min-w-0">
+            <div class="min-w-0">
+                <h2 class="text-sm font-semibold text-text">@Model.Prompt.Name</h2>
+                <p class="mt-1 text-xs text-text/50">@(string.IsNullOrWhiteSpace(Model.Prompt.Description) ? "No description" : Model.Prompt.Description)</p>
+            </div>
+            @if (Model.HasOverride)
+            {
+                <span class="flex-shrink-0 mt-0.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary" data-i18n="Customized">Customized</span>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Model.EditUrl))
+        {
+            <a href="@Model.EditUrl"
+               class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0 ml-3"
+               data-i18n="Edit">Edit</a>
+        }
+        else
+        {
+            <button type="button"
+                    class="prompt-edit-btn px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0 ml-3"
+                    data-prompt-name="@Model.Prompt.Name"
+                    data-prompt-description="@Model.Prompt.Description"
+                    data-global-template="@Model.Prompt.UserPromptTemplate"
+                    data-i18n="Edit">Edit</button>
+        }
+    </div>
+    <div class="px-6 py-4">
+        @if (!string.IsNullOrWhiteSpace(Model.Prompt.UserPromptTemplate))
+        {
+            <div>
+                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="User Prompt Template">User Prompt Template</h3>
+                <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@Model.Prompt.UserPromptTemplate</pre>
+            </div>
+        }
+        else
+        {
+            <span class="text-xs text-text/40" data-i18n="No custom user prompt configured. Default is used.">No custom user prompt configured. Default is used.</span>
+        }
+    </div>
+</div>

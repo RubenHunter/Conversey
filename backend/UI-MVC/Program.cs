@@ -60,6 +60,7 @@ builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IPromptRepository, PromptRepository>();
+builder.Services.AddScoped<IProjectPromptRepository, ProjectPromptRepository>();
 builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
 builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
 builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
@@ -183,11 +184,12 @@ builder.Services.AddScoped<IAiManager>(provider =>
         var factory = provider.GetRequiredService<IHttpClientFactory>();
         var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
         var promptRepo = provider.GetRequiredService<IPromptRepository>();
+        var projectPromptRepo = provider.GetRequiredService<IProjectPromptRepository>();
         var auditRepo = provider.GetRequiredService<IAuditRepository>();
         var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
         var pricingService = provider.GetRequiredService<IAiPricingService>();
 
-        return new AiManager(mistralProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
+        return new AiManager(mistralProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
     }
 
     throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
@@ -491,13 +493,14 @@ static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProvide
     }
 
     var promptRepo = provider.GetRequiredService<IPromptRepository>();
+    var projectPromptRepo = provider.GetRequiredService<IProjectPromptRepository>();
     var auditRepo = provider.GetRequiredService<IAuditRepository>();
     var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
     var pricingService = provider.GetRequiredService<IAiPricingService>();
     var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
     var moderationModel = config.ModerationModel;
 
-    return new AiManager(aiProvider, promptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
+    return new AiManager(aiProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
 }
 
 static ISpeechManager BuildSpeechManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
