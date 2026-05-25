@@ -1,5 +1,7 @@
 using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Analytics;
 
 namespace Conversey.BL.Analytics;
@@ -31,4 +33,17 @@ public interface IAnalyticsManager
     List<ModerationQueueItemDto> GetModerationQueue(Slug workspaceId, Slug? projectId, int? topicId, int? ideaId);
     Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null);
     Task<bool> ToggleMarkedForReviewAsync(string type, int id);
+
+    IReadOnlyCollection<Topic> GetTopicsForWorkspace(Slug workspaceId);
+    IReadOnlyList<ToxicityCount> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    IReadOnlyList<ToxicityCount> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null);
+    int GetTotalComments(Slug workspaceId, Slug? projectId);
+    double GetEmailPercentage(Slug workspaceId, Slug? projectId);
+    IReadOnlyCollection<Youth> GetYouthList(Slug workspaceId, Slug? projectId);
+    IReadOnlyCollection<string> GetDistinctCategories(Slug workspaceId, Slug? projectId);
+    IReadOnlyCollection<string> GetDistinctQuestionTypes(Slug workspaceId, Slug? projectId);
+    IReadOnlyCollection<IdeaResponse> GetResponsesForIdeas(HashSet<int> ideaIds);
+    HashSet<int> GetIdeaIdsCommentedByYouth(Guid youthId, HashSet<Slug> projectIds);
 }

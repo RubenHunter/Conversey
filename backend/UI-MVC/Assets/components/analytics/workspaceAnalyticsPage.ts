@@ -1,3 +1,19 @@
+import {
+  getChartColor,
+  filterTrendByDays,
+  createTrendChart,
+  createBarChart,
+  createDoughnutChart,
+  STATUS_COLORS,
+  renderAiSummary,
+  setDynamicChartHeight,
+  setupButtonToggle,
+  type TrendPoint,
+  type IdeaCountItem,
+} from './shared/chartHelpers';
+import { fetchAiSummary, buildExportUrl } from '../../services/analyticsService';
+import { t } from '../../utils/adminI18n';
+
 interface ChoiceQuestionStat {
   questionId: number;
   questionText: string;
@@ -15,19 +31,14 @@ interface ScaleQuestionStat {
   distribution: Record<string, number>;
 }
 
-interface IdeaCount {
-  label: string;
-  count: number;
-}
-
 interface DashboardData {
   choiceQuestionStats: ChoiceQuestionStat[];
   scaleQuestionStats: ScaleQuestionStat[];
   openAnswers: unknown[];
   ideas: unknown[];
-  ideasByTopic: IdeaCount[];
-  ideasByStatus: IdeaCount[];
-  ideasByCategory: IdeaCount[];
+  ideasByTopic: IdeaCountItem[];
+  ideasByStatus: IdeaCountItem[];
+  ideasByCategory: IdeaCountItem[];
   participation: {
     totalYouth: number;
     youthWithAnswers: number;
@@ -39,236 +50,142 @@ interface DashboardData {
   };
 }
 
-interface UsageTrendPoint {
-  date: string;
-  ideaCount: number;
-  uniqueYouth: number;
-}
+(globalThis as any).submitFormPreserveFilters = function (form: HTMLFormElement): void {
+  const dateFrom =
+    (form.querySelector('input[name="dateFrom"]') as HTMLInputElement)?.value || '';
+  const dateTo =
+    (form.querySelector('input[name="dateTo"]') as HTMLInputElement)?.value || '';
+  const topicId =
+    (form.querySelector('select[name="topicId"]') as HTMLSelectElement)?.value || '';
+  const status =
+    (form.querySelector('select[name="status"]') as HTMLSelectElement)?.value || '';
 
-interface AiSummaryResponse {
-  overview: string;
-  trends: string[];
-  minorityViews: string[];
-  notableQuotes: string[];
-  suggestedActions: string[];
-  generatedAt?: string;
-}
-
-const palette = [
-  '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4',
-  '#3b82f6', '#6366f1', '#a855f7', '#f472b6', '#fb923c'
-];
-
-function getColor(index: number): string { return palette[index % palette.length]; }
-
-(globalThis as any).submitFormPreserveFilters = function(form: HTMLFormElement): void {
-  const dateFrom = (form.querySelector('input[name="dateFrom"]') as HTMLInputElement)?.value || '';
-  const dateTo = (form.querySelector('input[name="dateTo"]') as HTMLInputElement)?.value || '';
-  const topicId = (form.querySelector('select[name="topicId"]') as HTMLSelectElement)?.value || '';
-  const status = (form.querySelector('select[name="status"]') as HTMLSelectElement)?.value || '';
-  if (dateFrom) { const df = document.createElement('input'); df.type = 'hidden'; df.name = 'dateFrom'; df.value = dateFrom; form.appendChild(df); }
-  if (dateTo) { const dt = document.createElement('input'); dt.type = 'hidden'; dt.name = 'dateTo'; dt.value = dateTo; form.appendChild(dt); }
-  if (topicId) { const ti = document.createElement('input'); ti.type = 'hidden'; ti.name = 'topicId'; ti.value = topicId; form.appendChild(ti); }
-  if (status) { const si = document.createElement('input'); si.type = 'hidden'; si.name = 'status'; si.value = status; form.appendChild(si); }
+  if (dateFrom) {
+    const df = document.createElement('input');
+    df.type = 'hidden';
+    df.name = 'dateFrom';
+    df.value = dateFrom;
+    form.appendChild(df);
+  }
+  if (dateTo) {
+    const dt = document.createElement('input');
+    dt.type = 'hidden';
+    dt.name = 'dateTo';
+    dt.value = dateTo;
+    form.appendChild(dt);
+  }
+  if (topicId) {
+    const ti = document.createElement('input');
+    ti.type = 'hidden';
+    ti.name = 'topicId';
+    ti.value = topicId;
+    form.appendChild(ti);
+  }
+  if (status) {
+    const si = document.createElement('input');
+    si.type = 'hidden';
+    si.name = 'status';
+    si.value = status;
+    form.appendChild(si);
+  }
   form.submit();
 };
 
-function createTopicChart(data: IdeaCount[]): void {
+function createTopicChart(data: IdeaCountItem[]): void {
   const canvas = document.getElementById('ideas-by-topic-chart') as HTMLCanvasElement | null;
-  if (!canvas || !canvas.parentElement) return;
-  canvas.style.maxWidth = canvas.parentElement.clientWidth + 'px';
-  canvas.style.maxHeight = '280px';
-  new (window as any).Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: data.map(d => d.label),
-      datasets: [{ label: 'Ideas', data: data.map(d => d.count), backgroundColor: data.map((_, i) => getColor(i)), borderRadius: 4 }]
-    },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-  });
-}
-
-function createStatusChart(data: IdeaCount[]): void {
-  const canvas = document.getElementById('ideas-by-status-chart') as HTMLCanvasElement | null;
-  if (!canvas || !canvas.parentElement) return;
-  canvas.style.maxWidth = canvas.parentElement.clientWidth + 'px';
-  canvas.style.maxHeight = '280px';
-  const statusColors: Record<string, string> = { 'Approved': '#22c55e', 'Pending': '#eab308', 'Rejected': '#f43f5e' };
-  new (window as any).Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels: data.map(d => d.label),
-      datasets: [{ data: data.map(d => d.count), backgroundColor: data.map(d => statusColors[d.label] || getColor(0)), borderWidth: 0 }]
-    },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
-  });
-}
-
-function renderSummary(data: AiSummaryResponse): void {
-  const container = document.getElementById('ai-summary-container');
-  if (!container) return;
-
-  let stalenessHtml = '';
-  if (data.generatedAt) {
-    const generated = new Date(data.generatedAt + 'Z');
-    const diffMs = Date.now() - generated.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    const ageLabel = diffMin < 1 ? 'just now' :
-      diffMin < 60 ? `${diffMin} minutes ago` :
-      diffMin < 1440 ? `${Math.floor(diffMin / 60)} hours ago` :
-      `${Math.floor(diffMin / 1440)} days ago`;
-    stalenessHtml = `<div class="mb-3 text-xs text-accent bg-accent/5 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>Generated ${ageLabel} &mdash; data may be outdated. Click "Generate Summary" to refresh.</span>
-    </div>`;
-  }
-
-  container.innerHTML = `${stalenessHtml}
-    <div class="space-y-4 mt-4">
-      <div class="p-4 bg-background rounded-lg border border-secondary/10">
-        <h3 class="text-sm font-semibold text-secondary mb-2">Overview</h3>
-        <p class="text-sm">${escapeHtml(data.overview)}</p>
-      </div>
-      ${data.trends.length > 0 ? `<div class="p-4 bg-background rounded-lg border border-secondary/10"><h3 class="text-sm font-semibold text-secondary mb-2">Trends</h3><ul class="list-disc list-inside text-sm space-y-1">${data.trends.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></div>` : ''}
-      ${data.minorityViews.length > 0 ? `<div class="p-4 bg-background rounded-lg border border-accent/20"><h3 class="text-sm font-semibold text-accent mb-2">Minority Views</h3><ul class="list-disc list-inside text-sm space-y-1">${data.minorityViews.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul></div>` : ''}
-      ${data.notableQuotes.length > 0 ? `<div class="p-4 bg-background rounded-lg border border-secondary/10"><h3 class="text-sm font-semibold text-secondary mb-2">Notable Quotes</h3><ul class="text-sm space-y-2">${data.notableQuotes.map(q => `<li class="italic border-l-2 border-primary pl-3">"${escapeHtml(q)}"</li>`).join('')}</ul></div>` : ''}
-      ${data.suggestedActions.length > 0 ? `<div class="p-4 bg-background rounded-lg border border-primary/20"><h3 class="text-sm font-semibold text-primary mb-2">Suggested Actions</h3><ul class="list-disc list-inside text-sm space-y-1">${data.suggestedActions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>` : ''}
-    </div>`;
-}
-
-function escapeHtml(text: string): string { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
-
-let trendChartInstance: any = null;
-let trendChartData: UsageTrendPoint[] = [];
-let trendHasUrlDates = false;
-
-function filterTrendByDays(data: UsageTrendPoint[], days: number): UsageTrendPoint[] {
-  if (days <= 0) return data;
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  cutoff.setHours(0, 0, 0, 0);
-  return data.filter(d => new Date(d.date + 'T00:00:00') >= cutoff);
-}
-
-function createTrendChart(data: UsageTrendPoint[]): void {
-  const canvas = document.getElementById('usage-trend-chart') as HTMLCanvasElement | null;
   if (!canvas) return;
 
-  if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+  setDynamicChartHeight(canvas.parentElement, data.length, 280, 28, 600);
 
-  if (data.length === 0) {
-    const parent = canvas.parentElement;
-    if (parent) parent.innerHTML = '<div class="flex items-center justify-center h-full text-text/40 text-sm">No data for selected period</div>';
-    return;
-  }
-
-  const maxIdeas = Math.max(...data.map(d => d.ideaCount), 0);
-  const maxYouth = Math.max(...data.map(d => d.uniqueYouth), 0);
-  const yMax = Math.max(maxIdeas, maxYouth, 1) + 1;
-
-  trendChartInstance = new (window as any).Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: data.map(d => d.date),
-      datasets: [
-        {
-          label: 'Ideas',
-          data: data.map(d => d.ideaCount),
-          borderColor: getColor(0),
-          backgroundColor: getColor(0) + '20',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        },
-        {
-          label: 'Active Youth',
-          data: data.map(d => d.uniqueYouth),
-          borderColor: getColor(2),
-          backgroundColor: getColor(2) + '20',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2
-        }
-      ]
+  createBarChart(canvas, data.map(d => d.label), [
+    {
+      label: t('analytics.ideas', 'Ideas'),
+      data: data.map(d => d.count),
+      backgroundColor: data.map((_, i) => getChartColor(i)),
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { display: true },
-        y: { beginAtZero: true, max: yMax, ticks: { stepSize: 1 } }
-      },
-      plugins: {
-        legend: { position: 'bottom' },
-        tooltip: {
-          callbacks: {
-            label: function(ctx: any) {
-              return ctx.dataset.label + ': ' + ctx.raw;
-            }
-          }
-        }
-      }
-    }
-  });
+  ]);
 }
+
+function createStatusChart(data: IdeaCountItem[]): void {
+  const canvas = document.getElementById('ideas-by-status-chart') as HTMLCanvasElement | null;
+  if (!canvas) return;
+
+  createDoughnutChart(
+    canvas,
+    data.map(d => d.label),
+    data.map(d => d.count),
+    data.map(d => STATUS_COLORS[d.label] || getChartColor(0))
+  );
+}
+
+let trendChartInstance: any = null;
+let trendChartData: TrendPoint[] = [];
+let trendHasUrlDates = false;
 
 function updateTrendChartPeriod(days: number): void {
   const filtered = filterTrendByDays(trendChartData, days);
-  createTrendChart(filtered);
+  const canvas = document.getElementById('usage-trend-chart') as HTMLCanvasElement | null;
+  if (!canvas) return;
+
+  setDynamicChartHeight(canvas.parentElement, trendChartData.length, 280, 4, 600);
+
+  trendChartInstance = createTrendChart(canvas, filtered, trendChartInstance);
 }
 
-async function fetchAiSummary(e: Event): Promise<void> {
+async function handleGenerateSummary(e: Event): Promise<void> {
   e.preventDefault();
-  const btn = document.getElementById('generate-summary-btn') as HTMLButtonElement;
-  const originalText = btn.textContent || 'Generate Summary';
-  btn.disabled = true; btn.textContent = 'Generating...';
+  const btn = document.getElementById('generate-summary-btn') as HTMLButtonElement | null;
+  if (!btn) return;
+
+  const originalText = btn.textContent || t('analytics.generateSummary', 'Generate Summary');
+  btn.disabled = true;
+  btn.textContent = t('analytics.generating', 'Generating...');
 
   const container = document.getElementById('ai-summary-container');
-  if (container) container.innerHTML = '<p class="text-secondary text-sm">Generating summary...</p>';
+  if (container) {
+    container.innerHTML = `<p class="text-secondary text-sm">${t('analytics.generating', 'Generating summary...')}</p>`;
+  }
 
   try {
-    const focusSelect = document.getElementById('ai-focus-select') as HTMLSelectElement;
-    const focusType = focusSelect?.value || '';
     let focus = '';
+    const focusSelect = document.getElementById('ai-focus-select') as HTMLSelectElement | null;
+    const focusType = focusSelect?.value || '';
+
     if (focusType === 'age') {
-      const minAge = (document.getElementById('ai-focus-age-min') as HTMLInputElement)?.value || '';
-      const maxAge = (document.getElementById('ai-focus-age-max') as HTMLInputElement)?.value || '';
+      const minAge =
+        (document.getElementById('ai-focus-age-min') as HTMLInputElement)?.value || '';
+      const maxAge =
+        (document.getElementById('ai-focus-age-max') as HTMLInputElement)?.value || '';
       focus = `Age group ${minAge}-${maxAge}`;
     } else if (focusType === 'topic') {
-      const topic = (document.getElementById('ai-focus-topic-input') as HTMLInputElement)?.value || '';
+      const topic =
+        (document.getElementById('ai-focus-topic-input') as HTMLInputElement)?.value || '';
       focus = topic ? `Topic: ${topic}` : '';
     } else if (focusType === 'sentiment') {
       focus = 'Sentiment analysis';
     }
 
-    const wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug')
-      || window.location.hostname.split('.')[0] || 'unknown';
+    const wsSlug =
+      document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') ||
+      window.location.hostname.split('.')[0] ||
+      'unknown';
 
-    const params = new URLSearchParams();
-    params.set('workspaceId', wsSlug);
     const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('projectId');
-    if (projectId) params.set('projectId', projectId);
+    const currentFilters = {
+      workspaceId: wsSlug,
+      projectId: urlParams.get('projectId') || undefined,
+    };
 
-    const dateFrom = urlParams.get('dateFrom') || (document.querySelector('input[name="dateFrom"]') as HTMLInputElement)?.value;
-    const dateTo = urlParams.get('dateTo') || (document.querySelector('input[name="dateTo"]') as HTMLInputElement)?.value;
-    const topicId = urlParams.get('topicId') || (document.querySelector('select[name="topicId"]') as HTMLSelectElement)?.value;
-    const status = urlParams.get('status') || (document.querySelector('select[name="status"]') as HTMLSelectElement)?.value;
-    if (dateFrom) params.set('dateFrom', dateFrom);
-    if (dateTo) params.set('dateTo', dateTo);
-    if (topicId) params.set('topicId', topicId);
-    if (status) params.set('status', status);
-
-    const resp = await fetch(`/api/admin/analytics/ai-summary?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ focus, language: 'English' })
-    });
-    if (resp.ok) { const data: AiSummaryResponse = await resp.json(); renderSummary(data); }
-    else { if (container) container.innerHTML = '<p class="text-red-500 text-sm">Failed to generate summary.</p>'; }
-  } catch { if (container) container.innerHTML = '<p class="text-red-500 text-sm">Error generating summary.</p>'; }
-  finally { btn.disabled = false; btn.textContent = originalText; }
+    const data = await fetchAiSummary(wsSlug, currentFilters, focus);
+    renderAiSummary(container, data);
+  } catch {
+    if (container) {
+      container.innerHTML = `<p class="text-red-500 text-sm">${t('analytics.summaryError', 'Error generating summary.')}</p>`;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 function updateAiFocusInputs(): void {
@@ -277,26 +194,32 @@ function updateAiFocusInputs(): void {
   if (!container) return;
 
   if (focusVal === 'age') {
-    const agesEl = document.getElementById('project-age-ranges') || document.getElementById('project-age-range');
-    let globalMin = 0, globalMax = 150;
+    const agesEl =
+      document.getElementById('project-age-ranges') ||
+      document.getElementById('project-age-range');
+    let globalMin = 0,
+      globalMax = 150;
     if (agesEl) {
       try {
-        const data = JSON.parse(agesEl.textContent || '{}');
-        if (Array.isArray(data)) {
-          const ages = data as {min:number,max:number}[];
+        const raw = JSON.parse(agesEl.textContent || '{}');
+        if (Array.isArray(raw)) {
+          const ages = raw as { min: number; max: number }[];
           globalMin = Math.min(...ages.map(a => a.min));
           globalMax = Math.max(...ages.map(a => a.max));
         } else {
-          globalMin = (data as {min:number,max:number}).min;
-          globalMax = (data as {min:number,max:number}).max;
+          globalMin = (raw as { min: number; max: number }).min;
+          globalMax = (raw as { min: number; max: number }).max;
         }
-      } catch {}
+      } catch {
+        /* empty */
+      }
     }
     container.innerHTML = `<input type="number" id="ai-focus-age-min" min="${globalMin}" max="${globalMax}" placeholder="From ${globalMin}" class="w-16 rounded-lg border border-secondary/20 px-2 py-1.5 text-sm bg-background" />
                           <span class="text-xs text-secondary">to</span>
                           <input type="number" id="ai-focus-age-max" min="${globalMin}" max="${globalMax}" placeholder="To ${globalMax}" class="w-16 rounded-lg border border-secondary/20 px-2 py-1.5 text-sm bg-background" />`;
   } else if (focusVal === 'topic') {
-    container.innerHTML = '<input type="text" id="ai-focus-topic-input" placeholder="Enter topic keyword..." class="w-40 rounded-lg border border-secondary/20 px-3 py-1.5 text-sm bg-background" />';
+    container.innerHTML =
+      '<input type="text" id="ai-focus-topic-input" placeholder="Enter topic keyword..." class="w-40 rounded-lg border border-secondary/20 px-3 py-1.5 text-sm bg-background" />';
   } else {
     container.innerHTML = '';
   }
@@ -309,73 +232,89 @@ document.addEventListener('DOMContentLoaded', () => {
       const data: DashboardData = JSON.parse(dashboardEl.textContent);
       if (data.ideasByTopic.length > 0) createTopicChart(data.ideasByTopic);
       if (data.ideasByStatus.length > 0) createStatusChart(data.ideasByStatus);
-    } catch (e) { console.error('Failed to parse dashboard data', e); }
+    } catch (e) {
+      console.error('Failed to parse dashboard data', e);
+    }
   }
 
   const trendEl = document.getElementById('usage-trend-data');
   if (trendEl?.textContent) {
     try {
-      const data: UsageTrendPoint[] = JSON.parse(trendEl.textContent);
+      const data: TrendPoint[] = JSON.parse(trendEl.textContent);
       trendChartData = data;
       const urlParams = new URLSearchParams(window.location.search);
       trendHasUrlDates = !!(urlParams.get('dateFrom') || urlParams.get('dateTo'));
       if (data.length > 0) {
-        if (trendHasUrlDates) {
-          createTrendChart(data);
-        } else {
-          createTrendChart(filterTrendByDays(data, 30));
+        const canvas = document.getElementById('usage-trend-chart') as HTMLCanvasElement | null;
+        if (canvas) {
+          setDynamicChartHeight(canvas.parentElement, data.length, 280, 4, 600);
+          if (trendHasUrlDates) {
+            trendChartInstance = createTrendChart(canvas, data, trendChartInstance);
+          } else {
+            trendChartInstance = createTrendChart(
+              canvas,
+              filterTrendByDays(data, 30),
+              trendChartInstance
+            );
+          }
         }
       }
-    } catch (e) { console.error('Failed to parse usage trend data', e); }
+    } catch (e) {
+      console.error('Failed to parse usage trend data', e);
+    }
   }
 
-  document.querySelectorAll('#trend-period-buttons button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#trend-period-buttons button').forEach(b => { b.classList.remove('bg-white', 'text-text', 'shadow-sm'); b.classList.add('text-text/50'); });
-      btn.classList.add('bg-white', 'text-text', 'shadow-sm');
-      btn.classList.remove('text-text/50');
-      const days = parseInt(btn.getAttribute('data-days') || '30');
-      if (trendHasUrlDates && days > 0) return;
-      updateTrendChartPeriod(days);
-    });
+  setupButtonToggle('trend-period-buttons', btn => {
+    const days = parseInt(btn.getAttribute('data-days') || '30');
+    if (trendHasUrlDates && days > 0) return;
+    updateTrendChartPeriod(days);
   });
 
   document.getElementById('ai-focus-select')?.addEventListener('change', updateAiFocusInputs);
-  document.getElementById('generate-summary-btn')?.addEventListener('click', fetchAiSummary);
+  document
+    .getElementById('generate-summary-btn')
+    ?.addEventListener('click', handleGenerateSummary);
 
   const exportBtn = document.getElementById('export-dropdown-btn');
   const exportMenu = document.getElementById('export-dropdown-menu');
   if (exportBtn && exportMenu) {
-    exportBtn.addEventListener('click', (e) => { e.stopPropagation(); exportMenu.classList.toggle('hidden'); });
+    exportBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      exportMenu.classList.toggle('hidden');
+    });
     document.addEventListener('click', () => exportMenu.classList.add('hidden'));
-    exportMenu.addEventListener('click', (e) => e.stopPropagation());
+    exportMenu.addEventListener('click', e => e.stopPropagation());
   }
 
   document.querySelectorAll('.export-link').forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', e => {
       e.preventDefault();
       const el = link as HTMLElement;
-      const type = el.dataset.exportType;
+      const type = el.dataset.exportType || 'combined';
       const filterAware = el.dataset.filterAware === 'true';
-      const wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug')
-        || window.location.hostname.split('.')[0] || 'unknown';
-      const params = new URLSearchParams();
-      params.set('workspaceId', wsSlug);
-      if (type) params.set('type', type);
+
+      const wsSlug =
+        document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') ||
+        window.location.hostname.split('.')[0] ||
+        'unknown';
+
       const urlParams = new URLSearchParams(window.location.search);
-      const projectId = urlParams.get('projectId');
-      if (projectId) params.set('projectId', projectId);
+      const filters: Record<string, string | undefined> = {
+        projectId: urlParams.get('projectId') || undefined,
+      };
+
       if (filterAware) {
-        const dateFrom = (document.querySelector('input[name="dateFrom"]') as HTMLInputElement)?.value;
-        const dateTo = (document.querySelector('input[name="dateTo"]') as HTMLInputElement)?.value;
-        const topicId = (document.querySelector('select[name="topicId"]') as HTMLSelectElement)?.value;
-        const status = (document.querySelector('select[name="status"]') as HTMLSelectElement)?.value;
-        if (dateFrom) params.set('dateFrom', dateFrom);
-        if (dateTo) params.set('dateTo', dateTo);
-        if (topicId) params.set('topicId', topicId);
-        if (status) params.set('status', status);
+        filters.dateFrom =
+          (document.querySelector('input[name="dateFrom"]') as HTMLInputElement)?.value;
+        filters.dateTo =
+          (document.querySelector('input[name="dateTo"]') as HTMLInputElement)?.value;
+        filters.topicId =
+          (document.querySelector('select[name="topicId"]') as HTMLSelectElement)?.value;
+        filters.status =
+          (document.querySelector('select[name="status"]') as HTMLSelectElement)?.value;
       }
-      window.location.href = `/api/admin/analytics/export?${params.toString()}`;
+
+      window.location.href = buildExportUrl(wsSlug, type, filters);
       exportMenu?.classList.add('hidden');
     });
   });

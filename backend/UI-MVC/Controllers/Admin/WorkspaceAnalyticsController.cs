@@ -20,18 +20,15 @@ public class WorkspaceAnalyticsController : Controller
     private readonly WorkspaceContext _workspaceContext;
     private readonly IAnalyticsManager _analyticsManager;
     private readonly IProjectManager _projectManager;
-    private readonly IAnalyticsRepository _analyticsRepo;
 
     public WorkspaceAnalyticsController(
         WorkspaceContext workspaceContext,
         IAnalyticsManager analyticsManager,
-        IProjectManager projectManager,
-        IAnalyticsRepository analyticsRepo)
+        IProjectManager projectManager)
     {
         _workspaceContext = workspaceContext;
         _analyticsManager = analyticsManager;
         _projectManager = projectManager;
-        _analyticsRepo = analyticsRepo;
     }
 
     [HttpGet("/admin/workspace/analytics")]
@@ -70,7 +67,7 @@ public class WorkspaceAnalyticsController : Controller
         }
         else
         {
-            filter.AvailableTopics = _analyticsRepo.GetTopicsForWorkspace(workspace.Id)
+            filter.AvailableTopics = _analyticsManager.GetTopicsForWorkspace(workspace.Id)
                 .Select(t => new TopicOption { Id = t.Id, Name = t.Name })
                 .DistinctBy(t => t.Id)
                 .ToList();
@@ -107,7 +104,7 @@ public class WorkspaceAnalyticsController : Controller
 
             foreach (var p in projects)
             {
-                var pStats = _analyticsRepo.GetParticipationStats(workspace.Id, p.Id, partFilters);
+                var pStats = _analyticsManager.GetParticipationStats(workspace.Id, p.Id, partFilters);
                 projectParticipants.Add(new ProjectParticipantSummary
                 {
                     ProjectName = p.Name,
@@ -120,7 +117,7 @@ public class WorkspaceAnalyticsController : Controller
             }
         }
 
-        foreach (var t in _analyticsRepo.GetToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
+        foreach (var t in _analyticsManager.GetToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
             DateFrom = parsedDateFrom,
             DateTo = parsedDateTo,
@@ -132,7 +129,7 @@ public class WorkspaceAnalyticsController : Controller
         }
 
         var responseToxicityStats = new List<Models.Analytics.ToxicityCount>();
-        foreach (var t in _analyticsRepo.GetResponseToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
+        foreach (var t in _analyticsManager.GetResponseToxicityStats(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
             DateFrom = parsedDateFrom,
             DateTo = parsedDateTo,
@@ -143,16 +140,16 @@ public class WorkspaceAnalyticsController : Controller
             responseToxicityStats.Add(new Models.Analytics.ToxicityCount { Label = t.Label, Count = t.Count });
         }
 
-        var totalComments = _analyticsRepo.GetTotalComments(workspace.Id, projectSlug);
+        var totalComments = _analyticsManager.GetTotalComments(workspace.Id, projectSlug);
 
-        var distinctFlaggedIdeas = _analyticsRepo.GetDistinctFlaggedIdeaCount(workspace.Id, projectSlug, new AnalyticsFilterParams
+        var distinctFlaggedIdeas = _analyticsManager.GetDistinctFlaggedIdeaCount(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
             DateFrom = parsedDateFrom,
             DateTo = parsedDateTo,
             TopicId = topicId,
             Status = status
         });
-        var distinctFlaggedResponses = _analyticsRepo.GetDistinctFlaggedResponseCount(workspace.Id, projectSlug, new AnalyticsFilterParams
+        var distinctFlaggedResponses = _analyticsManager.GetDistinctFlaggedResponseCount(workspace.Id, projectSlug, new AnalyticsFilterParams
         {
             DateFrom = parsedDateFrom,
             DateTo = parsedDateTo,
@@ -160,7 +157,7 @@ public class WorkspaceAnalyticsController : Controller
             Status = status
         });
 
-        var emailPct = _analyticsRepo.GetEmailPercentage(workspace.Id, projectSlug);
+        var emailPct = _analyticsManager.GetEmailPercentage(workspace.Id, projectSlug);
 
         var cachedSummary = await _analyticsManager.GetCachedSummaryAsync(workspace.Id, projectSlug);
 
@@ -237,7 +234,7 @@ public class WorkspaceAnalyticsController : Controller
             else
                 projectIds = new HashSet<Slug>(projects.Select(p => p.Id));
 
-            var youthCommentedIdeaIds = _analyticsRepo.GetIdeaIdsCommentedByYouth(parsedYouthId.Value, projectIds);
+            var youthCommentedIdeaIds = _analyticsManager.GetIdeaIdsCommentedByYouth(parsedYouthId.Value, projectIds);
 
             if (youthCommentedIdeaIds.Count > 0)
             {
@@ -256,7 +253,7 @@ public class WorkspaceAnalyticsController : Controller
             ideas = ideas.Where(i => i.SemanticCategories.Contains(category, StringComparer.OrdinalIgnoreCase)).ToList();
 
         var ideaIds = new HashSet<int>(ideas.Select(i => i.Id));
-        var allResponses = _analyticsRepo.GetResponsesForIdeas(ideaIds);
+        var allResponses = _analyticsManager.GetResponsesForIdeas(ideaIds);
 
         var comments = new Dictionary<int, List<CommentItemViewModel>>();
         foreach (var idea in ideas)
@@ -281,12 +278,12 @@ public class WorkspaceAnalyticsController : Controller
             comments[idea.Id] = ideaComments;
         }
 
-        var topics = _analyticsRepo.GetTopicsForWorkspace(workspace.Id);
+        var topics = _analyticsManager.GetTopicsForWorkspace(workspace.Id);
         if (projectSlug.HasValue)
             topics = topics.Where(t => t.Project.Id == projectSlug.Value).ToList();
 
-        var youthList = _analyticsRepo.GetYouthList(workspace.Id, projectSlug);
-        var categories = _analyticsRepo.GetDistinctCategories(workspace.Id, projectSlug);
+        var youthList = _analyticsManager.GetYouthList(workspace.Id, projectSlug);
+        var categories = _analyticsManager.GetDistinctCategories(workspace.Id, projectSlug);
 
         var vm = new IdeasListViewModel
         {
@@ -343,8 +340,8 @@ public class WorkspaceAnalyticsController : Controller
 
         allAnswers = allAnswers.OrderBy(a => a.YouthEmail ?? "").ThenBy(a => a.QuestionText).ToList();
 
-        var youthList = _analyticsRepo.GetYouthList(workspace.Id, projectSlug);
-        var questionTypes = _analyticsRepo.GetDistinctQuestionTypes(workspace.Id, projectSlug);
+        var youthList = _analyticsManager.GetYouthList(workspace.Id, projectSlug);
+        var questionTypes = _analyticsManager.GetDistinctQuestionTypes(workspace.Id, projectSlug);
 
         var vm = new AnswersListViewModel
         {
@@ -387,7 +384,7 @@ public class WorkspaceAnalyticsController : Controller
 
         var queue = _analyticsManager.GetModerationQueue(workspace.Id, projectSlug, parsedTopicId, parsedIdeaId);
 
-        var topics = _analyticsRepo.GetTopicsForWorkspace(workspace.Id);
+        var topics = _analyticsManager.GetTopicsForWorkspace(workspace.Id);
         if (projectSlug.HasValue)
             topics = topics.Where(t => t.Project.Id == projectSlug.Value).ToList();
 

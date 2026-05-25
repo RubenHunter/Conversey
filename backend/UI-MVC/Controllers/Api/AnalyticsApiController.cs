@@ -2,7 +2,6 @@ using System.Text;
 using Conversey.BL.Analytics;
 using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Common;
-using Conversey.DAL.Analytics;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +14,10 @@ namespace Conversey.UI_MVC.Controllers.Api;
 public class AnalyticsApiController : ControllerBase
 {
     private readonly IAnalyticsManager _analyticsManager;
-    private readonly IAnalyticsRepository _analyticsRepo;
 
-    public AnalyticsApiController(IAnalyticsManager analyticsManager, IAnalyticsRepository analyticsRepo)
+    public AnalyticsApiController(IAnalyticsManager analyticsManager)
     {
         _analyticsManager = analyticsManager;
-        _analyticsRepo = analyticsRepo;
     }
 
     private static Slug MakeSlug(string value) => new() { Text = value };

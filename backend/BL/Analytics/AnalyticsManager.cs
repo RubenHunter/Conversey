@@ -2,8 +2,10 @@ using System.Text;
 using System.Text.Json;
 using Conversey.BL.Ai;
 using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Domain.Ideation;
 using Conversey.DAL.Analytics;
 using Conversey.DAL.Subplatform.Ai;
 
@@ -522,5 +524,65 @@ public class AnalyticsManager : IAnalyticsManager
     public async Task<bool> ToggleMarkedForReviewAsync(string type, int id)
     {
         return await _repo.ToggleMarkedForReviewAsync(type, id);
+    }
+
+    public IReadOnlyCollection<Topic> GetTopicsForWorkspace(Slug workspaceId)
+    {
+        return _repo.GetTopicsForWorkspace(workspaceId);
+    }
+
+    public IReadOnlyList<ToxicityCount> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    {
+        return _repo.GetToxicityStats(workspaceId, projectId, filters);
+    }
+
+    public IReadOnlyList<ToxicityCount> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    {
+        return _repo.GetResponseToxicityStats(workspaceId, projectId, filters);
+    }
+
+    public int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    {
+        return _repo.GetDistinctFlaggedIdeaCount(workspaceId, projectId, filters);
+    }
+
+    public int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterParams? filters = null)
+    {
+        return _repo.GetDistinctFlaggedResponseCount(workspaceId, projectId, filters);
+    }
+
+    public int GetTotalComments(Slug workspaceId, Slug? projectId)
+    {
+        return _repo.GetTotalComments(workspaceId, projectId);
+    }
+
+    public double GetEmailPercentage(Slug workspaceId, Slug? projectId)
+    {
+        return _repo.GetEmailPercentage(workspaceId, projectId);
+    }
+
+    public IReadOnlyCollection<Youth> GetYouthList(Slug workspaceId, Slug? projectId)
+    {
+        return _repo.GetYouthList(workspaceId, projectId);
+    }
+
+    public IReadOnlyCollection<string> GetDistinctCategories(Slug workspaceId, Slug? projectId)
+    {
+        return _repo.GetDistinctCategories(workspaceId, projectId);
+    }
+
+    public IReadOnlyCollection<string> GetDistinctQuestionTypes(Slug workspaceId, Slug? projectId)
+    {
+        return _repo.GetDistinctQuestionTypes(workspaceId, projectId);
+    }
+
+    public IReadOnlyCollection<IdeaResponse> GetResponsesForIdeas(HashSet<int> ideaIds)
+    {
+        return _repo.GetResponsesForIdeas(ideaIds);
+    }
+
+    public HashSet<int> GetIdeaIdsCommentedByYouth(Guid youthId, HashSet<Slug> projectIds)
+    {
+        return _repo.GetIdeaIdsCommentedByYouth(youthId, projectIds);
     }
 }

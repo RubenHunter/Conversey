@@ -3,6 +3,7 @@ declare global {
         __ChartData: Record<string, {
             type: string;
             data: unknown;
+            options?: unknown;
             periods?: Array<{ id: string; label: string; isActive: boolean }>;
             periodData?: Record<string, unknown>;
         }>;
