@@ -1,13 +1,6 @@
 @model Conversey.UI_MVC.Models.Admin.QuickLinksWidgetViewModel
 
 <div class="bg-white rounded-xl border border-secondary/10 shadow-sm overflow-hidden h-full flex flex-col quick-links-widget">
-    @if (!string.IsNullOrEmpty(Model.Title))
-    {
-        <div class="px-5 pt-4 pb-2 border-b border-secondary/10 shrink-0">
-            <h3 class="text-xs font-semibold text-text/40 uppercase tracking-wider" data-i18n="@Model.Title">@Model.Title</h3>
-        </div>
-    }
-
     <div class="flex flex-col divide-y divide-secondary/10 flex-1 quick-links-list">
         @foreach (var item in Model.Items)
         {
@@ -19,7 +12,7 @@
             {
                 <button type="button"
                         class="flex items-center gap-4 px-5 py-4 hover:bg-secondary/5 transition-colors group text-left flex-1 quick-link-card"
-                        data-health-check="true">
+                        data-health-check="true" style="cursor: pointer;">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="@iconStyle">
                         @Html.Raw(item.Icon)
                     </div>
