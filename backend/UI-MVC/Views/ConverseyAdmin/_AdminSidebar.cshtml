@@ -66,6 +66,14 @@
             AI Dashboard
         </a>
 
+        @* ── Costs ── *@
+        <a href="/admin/ai/costs" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-text/70 hover:text-primary hover:bg-primary/5 transition-all shrink-0" data-sidebar-page="/admin/ai/costs">
+            <span class="w-8 h-8 rounded-lg bg-background border border-secondary/10 flex items-center justify-center text-primary shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m2 0h2v14H3V5h2m4 0v14"></path></svg>
+            </span>
+            Costs
+        </a>
+
         @* ── Analytics ── *@
         <a href="/admin/conversey/analytics" class="sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-text/70 hover:text-primary hover:bg-primary/5 transition-all shrink-0" data-sidebar-page="/admin/conversey/analytics">
             <span class="w-8 h-8 rounded-lg bg-background border border-secondary/10 flex items-center justify-center text-primary shrink-0">
@@ -92,70 +100,3 @@
         </form>
     </div>
 </aside>
-
-<script>
-(function() {
-    var currentPath = window.location.pathname;
-
-    function highlightLink(link) {
-        var page = link.getAttribute('data-sidebar-page');
-        if (page && currentPath.startsWith(page)) {
-            link.classList.remove('text-text/70', 'text-text/50');
-            link.classList.add('text-primary', 'bg-primary/5');
-            return true;
-        }
-        return false;
-    }
-
-    document.querySelectorAll('[data-sidebar-page]').forEach(function(link) {
-        highlightLink(link);
-    });
-
-    var LS_KEY = 'conversey_sidebar_sections';
-
-    function loadState() {
-        try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
-    }
-
-    function saveState(state) {
-        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
-    }
-
-    var state = loadState();
-
-    document.querySelectorAll('[data-sidebar-toggle]').forEach(function(toggle) {
-        var section = toggle.getAttribute('data-sidebar-toggle');
-        var content = document.querySelector('[data-sidebar-content="' + section + '"]');
-        var chevron = toggle.querySelector('.sidebar-chevron');
-        if (!content) return;
-
-        function setOpen(open) {
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            if (open) {
-                content.classList.remove('hidden');
-                if (chevron) chevron.style.transform = 'rotate(180deg)';
-            } else {
-                content.classList.add('hidden');
-                if (chevron) chevron.style.transform = '';
-            }
-            state[section] = open;
-            saveState(state);
-        }
-
-        var hasActiveChild = content.querySelectorAll('[data-sidebar-page]').length > 0 &&
-            Array.from(content.querySelectorAll('[data-sidebar-page]')).some(function(link) {
-                return currentPath.startsWith(link.getAttribute('data-sidebar-page') || '');
-            });
-
-        var stored = state[section];
-        var shouldOpen = hasActiveChild || stored === true;
-
-        if (shouldOpen) setOpen(true);
-
-        toggle.addEventListener('click', function() {
-            var isOpen = toggle.getAttribute('aria-expanded') === 'true';
-            setOpen(!isOpen);
-        });
-    });
-})();
-</script>

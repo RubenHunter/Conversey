@@ -39,7 +39,7 @@
         <!-- Row 1: Navigation Cards -->
         @if (Model.NavCards.Any())
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
                 @foreach (var navCard in Model.NavCards)
                 {
                     @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
