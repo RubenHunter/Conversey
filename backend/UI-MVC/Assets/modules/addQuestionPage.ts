@@ -16,7 +16,6 @@ const rootQuestionElement: HTMLOListElement = document.getElementById('question-
 const createQuestionButton: HTMLButtonElement = document.getElementById('create-question-button') as HTMLButtonElement;
 const createSectionButton: HTMLButtonElement = document.getElementById('create-section-button') as HTMLButtonElement;
 const deleteButton: HTMLButtonElement = document.getElementById('delete-button') as HTMLButtonElement;
-console.log('load')
 const rootQuestionList: DragAndDropListComponent = createDragAndDropListComponent(createQuestionPlaceholderComponent());
 rootQuestionElement.appendChild(rootQuestionList);
 const selected: (QuestionComponent | SectionComponent)[] = [];

@@ -6,6 +6,7 @@ using Conversey.BL.Analytics;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Survey;
 using Conversey.BL.Domain.Survey;
 using Conversey.BL.Survey;
 using Conversey.UI_MVC.Models;
@@ -17,7 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager) : Controller
+public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
@@ -28,7 +29,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     [HttpGet("/admin/projects")]
     public IActionResult Projects()
     {
-        var projects = projectManager.GetAllProjectsFromWorkspaceId(workspaceContext.CurrentWorkspace.Id);
+        var projects = projectManager.GetAllProjectsFromWorkspaceId(currentWorkspace.Id);
         var cardVms = projects.Select(p => new ProjectCardViewModel()
         {
             Id = p.Id,
@@ -63,7 +64,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         try
         {
-            var sourceProject = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = copy });
+            var sourceProject = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = copy });
             var projectStep1Copy = new CreateProjectIntroAndPresentationViewModel
             {
                 Name = sourceProject.Name,
@@ -92,12 +93,6 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
             return View(await CreateFormVmAsync(projectStep1, null, false));
         }
-    }
-    
-    [HttpGet("/admin/projects/new/questions")]
-    public IActionResult AddQuestions()
-    {
-        return View("AddQuestions/AddQuestions");
     }
 
     [HttpPost("/admin/projects/new")]
@@ -210,7 +205,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            var project = projectManager.GetProjectById(currentWorkspace.Id, id);
 
             return View(await CreateFormVmAsync(new CreateProjectIntroAndPresentationViewModel
             {
@@ -254,7 +249,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -309,7 +304,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             var project = projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -347,7 +342,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            projectManager.RemoveProject(id, workspaceContext.CurrentWorkspace.Id);
+            projectManager.RemoveProject(id, currentWorkspace.Id);
             return RedirectToAction("Projects");
         }
         catch (Exception ex)
@@ -362,7 +357,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            var project = projectManager.GetProjectById(currentWorkspace.Id, id);
             project.Status = Status.Archived;
             projectManager.EditProject(project);
             return Ok();
@@ -579,8 +574,8 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 Title = project == null ? "Creating a Project" : "Editing a Project",
                 EntityName = "Project",
                 DraftStoragePrefix = isCreatePage
-                    ? $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-create"
-                    : $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-edit:{project?.Id}",
+                    ? $"workspace:{currentWorkspace.Id}:project-create"
+                    : $"workspace:{currentWorkspace.Id}:project-edit:{project?.Id}",
                 ImageUploadUrl = Url.Action(nameof(UploadCreateProjectImage)) ?? "/admin/projects/new/upload-image",
                 DraftSaveUrl = Url.Action(nameof(SaveDraft)) ?? "/admin/projects/draft",
                 ProjectListUrl = Url.Action(nameof(Projects)) ?? "/admin/projects",
@@ -684,7 +679,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         try
         {
-            var existing = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = slugText });
+            var existing = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = slugText });
             return existing.Status != Status.Draft;
         }
         catch (NotFoundException)
