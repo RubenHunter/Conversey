@@ -14,15 +14,15 @@
         for (int ci = 0; ci < sorted.Count; ci++)
         {
             var item = sorted[ci];
-            var size = Math.Max(70, (int)(200.0 * item.Value / total));
+            var size = Math.Max(70, (int)(250.0 * item.Value / total));
             var color = colors[ci % colors.Length];
             double tx, ty;
             if (ci == 0) { tx = centerX; ty = centerY; }
-            else if (ci <= 3) { var angle = ci * 2.4; var radius = 22; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
-            else if (ci <= 6) { var angle = (ci - 3.5) * 1.6; var radius = 38; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
+            else if (ci <= 3) { var angle = ci * 2.4; var radius = 35; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
+            else if (ci <= 6) { var angle = (ci - 3.5) * 1.6; var radius = 48; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
             else { var angle = ci * 1.1; var radius = 50; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
 
-            html.Append($"<a href='{(item.NavigateUrl ?? Model.TitleUrl)}' class='dashboard-circle-link absolute rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform hover:scale-110 hover:z-20 shadow-lg {visibility}' style='width:{size}px;height:{size}px;background:{color};left:{tx.ToString(CultureInfo.InvariantCulture)}%;top:{ty.ToString(CultureInfo.InvariantCulture)}%;transform:translate(-50%,-50%);min-width:60px;min-height:60px;z-index:{10-ci}'><span class='text-center leading-tight'>{item.Value}<br/><span class='text-[10px] opacity-75'>{(item.Label.Length > 12 ? item.Label[..12] : item.Label)}</span></span></a>");
+            html.Append($"<a href='{(item.NavigateUrl ?? Model.TitleUrl)}' class='dashboard-circle-link absolute rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform hover:z-20 shadow-lg {visibility}' style='width:{size}px;height:{size}px;background:{color};left:{tx.ToString(CultureInfo.InvariantCulture)}%;top:{ty.ToString(CultureInfo.InvariantCulture)}%;transform:translate(-50%,-50%);min-width:60px;min-height:60px;z-index:{10-ci}'><span class='text-center leading-tight'>{item.Value}<br/><span class='text-[10px] opacity-75'>{(item.Label.Length > 12 ? item.Label[..12] : item.Label)}</span></span></a>");
         }
         return html.ToString();
     }
@@ -68,3 +68,9 @@
         <p class="text-secondary text-sm text-center py-8" data-i18n="No data available">No data available</p>
     }
 </div>
+
+<style>
+    .dashboard-circle-link:hover {
+        transform: translate(-50%, -50%) scale(1.10) !important;
+    }
+</style>
