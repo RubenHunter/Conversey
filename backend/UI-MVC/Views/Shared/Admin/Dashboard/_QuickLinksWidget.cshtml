@@ -11,7 +11,7 @@
     <div class="flex flex-col divide-y divide-secondary/10 flex-1 quick-links-list">
         @foreach (var item in Model.Items)
         {
-            string iconStyle = !string.IsNullOrEmpty(item.IconBgHex) && !string.IsNullOrEmpty(item.IconFgHex)
+            var iconStyle = !string.IsNullOrEmpty(item.IconBgHex) && !string.IsNullOrEmpty(item.IconFgHex)
                 ? $"background-color:{item.IconBgHex}; color:{item.IconFgHex}"
                 : string.Empty;
 
@@ -27,9 +27,6 @@
                         <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
                         <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
                     </div>
-                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
                 </button>
             }
             else if (item.IsModal)
@@ -47,9 +44,6 @@
                         <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
                         <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
                     </div>
-                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
                 </button>
             }
             else
@@ -65,9 +59,6 @@
                         <span class="font-semibold text-sm text-text group-hover:text-primary transition-colors block" data-i18n="@item.Title">@item.Title</span>
                         <span class="text-xs text-text/50 mt-0.5 block" data-i18n="@item.Description">@item.Description</span>
                     </div>
-                    <svg class="quick-link-arrow ml-auto w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                    </svg>
                 </a>
             }
         }
