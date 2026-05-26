@@ -1,13 +1,23 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
+@using Conversey.BL.Domain.Ai
 @model Conversey.UI_MVC.Models.AiAdmin.AiPromptsViewModel
 @inject AdminContext AdminContext
 @{
+    string GetDescription(AiPrompt prompt)
+    {
+        if (!string.IsNullOrWhiteSpace(prompt.Description))
+            return prompt.Description;
+        if (Model.DefaultDescriptions.TryGetValue(prompt.Name, out var desc) && !string.IsNullOrWhiteSpace(desc))
+            return desc;
+        return "No description";
+    }
+
     ViewData["Title"] = "AI Prompts";
     ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", "/admin", false),
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("AI Settings", "/admin/ai", false),
         ("Prompts", null, true)
     };
@@ -41,11 +51,11 @@
         <div class="space-y-4">
             @foreach (var prompt in Model.Prompts)
             {
-                <div class="prompt-item bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow" data-name="@(prompt.Name?.ToLowerInvariant() ?? "")" data-desc="@(prompt.Description?.ToLowerInvariant() ?? "")">
+                <div class="prompt-item bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow" data-name="@(prompt.Name?.ToLowerInvariant() ?? "")" data-desc="@(GetDescription(prompt).ToLowerInvariant())">
                     <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
                         <div>
                             <h2 class="text-sm font-semibold text-text">@prompt.Name</h2>
-                            <p class="mt-1 text-xs text-text/50" data-i18n="No description">@(string.IsNullOrWhiteSpace(prompt.Description) ? "No description" : prompt.Description)</p>
+                            <p class="mt-1 text-xs text-text/50">@GetDescription(prompt)</p>
                         </div>
                         <a href="@Url.Action("EditPrompt", new { id = prompt.Id })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0" data-i18n="Edit">Edit</a>
                     </div>

@@ -1,0 +1,127 @@
+@model Conversey.UI_MVC.Models.Admin.DashboardViewModel
+@using Conversey.UI_MVC.Models
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
+
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<div class="min-h-screen bg-background font-sans text-text admin-dashboard">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-7xl mx-auto">
+
+        <!-- Page Title -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="dashboard.title">@Model.PageTitle</h1>
+            <p class="mt-2 text-sm text-text/60" data-i18n="dashboard.description">@Model.PageDescription</p>
+        </div>
+
+        <!-- Row 0: Stat Cards -->
+        @if (Model.StatWidgets.Any())
+        {
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
+                @foreach (var stat in Model.StatWidgets)
+                {
+                    <div class="bg-white rounded-xl border border-secondary/10 p-5 shadow-sm">
+                        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="@stat.Label">@stat.Label</p>
+                        <p class="text-3xl font-bold text-primary mt-1">@stat.Value</p>
+                        @if (!string.IsNullOrEmpty(stat.SubLabel))
+                        {
+                            <p class="text-xs text-text/50 mt-1" data-i18n="@stat.SubLabel">@stat.SubLabel</p>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Row 1: Navigation Cards -->
+        @if (Model.NavCards.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 animate-enter" style="animation-delay:0ms">
+                @foreach (var navCard in Model.NavCards)
+                {
+                    @await Html.PartialAsync("~/Views/Shared/Admin/_NavCard.cshtml", navCard)
+                }
+            </div>
+        }
+
+         <!-- Row 3: Widget Row — Comparison (2 cols) | QuickLinks (1 col) | Engagement (1 col) -->
+        @{
+            bool hasComparison = Model.ComparisonWidget != null;
+            bool hasQuickLinks = Model.QuickLinksWidget != null && Model.QuickLinksWidget.Items.Any();
+            bool hasEngagement = Model.EngagementWidget != null;
+            int widgetCols = (hasComparison ? 2 : 0) + (hasQuickLinks ? 1 : 0) + (hasEngagement ? 1 : 0);
+            bool isComparisonFullWidth = hasComparison && Model.ComparisonWidget!.Items.Count > 10;
+        }
+        @if (widgetCols > 0)
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-stretch animate-enter" style="animation-delay:80ms">
+                @if (hasComparison)
+                {
+                    <div class="@(isComparisonFullWidth ? "lg:col-span-4" : "lg:col-span-2")">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_ComparisonWidget.cshtml", Model.ComparisonWidget)
+                    </div>
+                }
+                @if (hasQuickLinks)
+                {
+                    <div class="lg:col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_QuickLinksWidget.cshtml", Model.QuickLinksWidget)
+                    </div>
+                }
+                @if (hasEngagement)
+                {
+                    <div class="lg:col-span-1">
+                        @await Html.PartialAsync("~/Views/Shared/Admin/Dashboard/_EngagementWidget.cshtml", Model.EngagementWidget)
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Row 4: Usage Trend Chart -->
+        @if (Model.UsageTrendChart != null)
+        {
+            <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 mb-6 animate-enter" style="animation-delay:160ms">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold" data-i18n="Usage Trend">Usage Trend</h2>
+                    <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="dashboard-trend-periods">
+                        <button type="button" data-days="7" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="7d">7d</button>
+                        <button type="button" data-days="30" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-i18n="1m">1m</button>
+                        <button type="button" data-days="365" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text">1y</button>
+                        <button type="button" data-days="0" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="All">All</button>
+                    </div>
+                </div>
+                <div style="position:relative; height:280px"><canvas id="dashboard-usage-trend"></canvas></div>
+            </div>
+            <script type="application/json" id="dashboard-usage-trend-data">@Html.Raw(Model.UsageTrendJson)</script>
+        }
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<script>
+(function() {
+    var toggle = document.getElementById('dashboard-circles-toggle');
+    if (!toggle) return;
+    toggle.querySelectorAll('button').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            toggle.querySelectorAll('button').forEach(function(b) { b.classList.remove('bg-white', 'text-text', 'shadow-sm'); b.classList.add('text-text/50'); });
+            btn.classList.add('bg-white', 'text-text', 'shadow-sm');
+            btn.classList.remove('text-text/50');
+            var filter = btn.getAttribute('data-filter');
+            var showClass = filter === 'all' ? 'circle-all' : 'circle-active';
+            var hideClass = filter === 'all' ? 'circle-active' : 'circle-all';
+            document.querySelectorAll('.' + hideClass).forEach(function(el) { el.classList.add('hidden'); });
+            document.querySelectorAll('.' + showClass).forEach(function(el) { el.classList.remove('hidden'); });
+            var showLegend = filter === 'all' ? 'legend-all' : 'legend-active';
+            var hideLegend = filter === 'all' ? 'legend-active' : 'legend-all';
+            document.querySelectorAll('.' + hideLegend).forEach(function(el) { el.classList.add('hidden'); });
+            document.querySelectorAll('.' + showLegend).forEach(function(el) { el.classList.remove('hidden'); });
+        });
+    });
+})();
+</script>
+

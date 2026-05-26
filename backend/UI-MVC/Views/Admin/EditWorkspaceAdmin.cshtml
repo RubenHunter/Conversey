@@ -1,13 +1,18 @@
 @using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.WorkspaceAdmin>
 @inject IAdminI18nService I18n
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
+@inject IAdminI18nService AdminI18n
 @{
     ViewData["Title"] = "Edit Workspace Admin";
-    ViewData["WorkspaceName"] = "Conversey";
+    ViewData["WorkspaceName"] = "Conversey Platform";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Workspaces", Url.Action("Workspaces", "ConverseyAdmin"), false),
-        ("Edit workspace admin", null, true)
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("Workspaces", "/admin/workspaces", false),
+        ("Edit Workspace Admin", null, true)
     };
     var formViewData = new ViewDataDictionary(ViewData)
     {

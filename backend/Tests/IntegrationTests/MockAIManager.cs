@@ -97,4 +97,14 @@ public class MockAiManager : IAiManager
         }
         return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
     }
+
+    public Task<string> CompletePlainTextAsync(
+        string systemPrompt,
+        string userPrompt,
+        string? workspaceId = null,
+        string? projectId = null,
+        string? displayPromptName = null)
+    {
+        return Task.FromResult("[Mock] Plain text completion response.");
+    }
 }

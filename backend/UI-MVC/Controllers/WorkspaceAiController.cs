@@ -155,6 +155,24 @@ public class WorkspaceAiController : Controller
         if (workspace == null) return NotFound();
 
         var prompts = await _aiAdminManager.GetAllPromptsAsync();
+
+        var defaultDescriptions = new Dictionary<string, string>();
+        foreach (var prompt in prompts)
+        {
+            if (string.IsNullOrWhiteSpace(prompt.Description))
+            {
+                var defaultPrompt = await _aiAdminManager.GetDefaultPromptAsync(prompt.Name);
+                if (defaultPrompt?.Description != null)
+                {
+                    prompt.Description = defaultPrompt.Description;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(prompt.Description))
+            {
+                defaultDescriptions[prompt.Name] = prompt.Description;
+            }
+        }
+
         var workspacePrompts = prompts
             .Where(p => !p.Name.EndsWith("System", StringComparison.OrdinalIgnoreCase)
                         && !p.Name.StartsWith("Moderation", StringComparison.OrdinalIgnoreCase))
@@ -175,7 +193,8 @@ public class WorkspaceAiController : Controller
             Prompts = workspacePrompts,
             Projects = projects,
             SelectedProjectId = projectId ?? string.Empty,
-            SearchQuery = search ?? string.Empty
+            SearchQuery = search ?? string.Empty,
+            DefaultDescriptions = defaultDescriptions
         };
 
         ViewData["WorkspaceName"] = workspace.Name;

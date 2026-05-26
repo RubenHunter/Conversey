@@ -104,6 +104,20 @@ public sealed class AiAdminManager : IAiAdminManager
             SystemPrompt = "",
             UserPromptTemplate = "",
             Description = "User prompt template for text generation from bubbles. Fallback uses AiPromptDefaults.BuildTextFromBubblesUserPrompt when template is empty. Variables: Transcript, Bubbles, Language, RejectedPhrases."
+        },
+        ["AnalyticsIdeaSummarySystem"] = new()
+        {
+            Name = "AnalyticsIdeaSummarySystem",
+            SystemPrompt = "You are an insightful data analyst for a youth participation platform. Your task is to analyze a collection of youth-contributed ideas and produce a clear, structured summary.\n\nReturn ONLY a JSON object with this exact schema:\n{\"overview\":\"A 2-3 sentence overview of the main themes across all ideas.\",\"trends\":[\"trend 1\",\"trend 2\",\"trend 3\"],\"minorityViews\":[\"niche or less common perspective 1\",\"niche or less common perspective 2\"],\"notableQuotes\":[\"direct quote or close paraphrase 1\",\"direct quote or close paraphrase 2\"],\"suggestedActions\":[\"actionable recommendation 1\",\"actionable recommendation 2\"]}\n\nRules:\n- overview: concise, covers breadth of all ideas seen\n- trends: 2-4 recurring patterns or dominant themes\n- minorityViews: 1-3 ideas that stand out from the mainstream (unique, dissenting, or niche)\n- notableQuotes: 2-3 exact or near-exact quotes from the ideas that are particularly insightful\n- suggestedActions: 2-3 concrete recommendations based on what youth are saying\n- Write in {{Language}}.\n- If focus instruction provided, prioritize that angle while still covering general patterns.",
+            UserPromptTemplate = "",
+            Description = "System prompt for AI-generated summary of youth ideas in the analytics dashboard. Language variable injected at runtime."
+        },
+        ["AnalyticsIdeaSummaryUser"] = new()
+        {
+            Name = "AnalyticsIdeaSummaryUser",
+            SystemPrompt = "",
+            UserPromptTemplate = "",
+            Description = "User prompt template for AI-generated idea summaries. Fallback uses AiPromptDefaults.BuildIdeaSummaryUserPrompt when template is empty. Variables: Ideas, Focus, Language."
         }
     };
 
@@ -325,9 +339,18 @@ public sealed class AiAdminManager : IAiAdminManager
         };
     }
 
-    public Task<IReadOnlyList<AiPrompt>> GetAllPromptsAsync()
+    public async Task<IReadOnlyList<AiPrompt>> GetAllPromptsAsync()
     {
-        return _promptRepository.GetAllPromptsAsync();
+        var prompts = await _promptRepository.GetAllPromptsAsync();
+        foreach (var prompt in prompts)
+        {
+            if (string.IsNullOrWhiteSpace(prompt.Description) &&
+                DefaultPrompts.TryGetValue(prompt.Name, out var defaultPrompt))
+            {
+                prompt.Description = defaultPrompt.Description;
+            }
+        }
+        return prompts;
     }
 
     public async Task<AiPrompt> GetPromptByIdAsync(int id)

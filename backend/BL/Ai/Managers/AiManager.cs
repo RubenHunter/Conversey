@@ -394,6 +394,38 @@ public sealed class AiManager : IAiManager
         return prompt ?? new AiPrompt { Name = name };
     }
 
+    public async Task<string> CompletePlainTextAsync(
+        string systemPrompt,
+        string userPrompt,
+        string? workspaceId = null,
+        string? projectId = null,
+        string? displayPromptName = null)
+    {
+        if (string.IsNullOrWhiteSpace(userPrompt))
+            return string.Empty;
+
+        var startTime = DateTime.UtcNow;
+        try
+        {
+            var result = await _provider.CompleteAsync(systemPrompt, userPrompt, _completionsModel, _temperature);
+            var duration = DateTime.UtcNow - startTime;
+
+            var cost = await ComputeCostAsync(_completionsModel, result.PromptTokens, result.CompletionTokens);
+            var promptLabel = displayPromptName ?? "PlainTextCompletion";
+            await _auditRepository.LogAiCallAsync(_completionsModel, CompletionsModelType, result.PromptTokens, result.CompletionTokens, cost, startTime, duration, _provider.ProviderName, promptLabel, workspaceId, projectId);
+
+            return !string.IsNullOrWhiteSpace(result.Content) ? result.Content.Trim() : string.Empty;
+        }
+        catch (AiException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new AiException("Plain text completion failed", ex);
+        }
+    }
+
     private async Task<decimal> ComputeCostAsync(string modelName, int inputTokens, int outputTokens)
     {
         if (inputTokens == 0 && outputTokens == 0) return 0m;

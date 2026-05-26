@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
+using Conversey.BL.Analytics;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
@@ -9,6 +10,7 @@ using Conversey.BL.Ideation;
 using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
+using Conversey.DAL.Analytics;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
@@ -67,6 +69,7 @@ builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordReposi
 builder.Services.AddScoped<ICostLimitRepository, CostLimitRepository>();
 builder.Services.AddScoped<IModelPricingRepository, ModelPricingRepository>();
 builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
@@ -76,6 +79,7 @@ builder.Services.AddScoped<IQuestionManager, QuestionManager>();
 builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 builder.Services.AddScoped<IAiPricingService, AiPricingService>();
+builder.Services.AddScoped<IAnalyticsManager, AnalyticsManager>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
@@ -247,7 +251,8 @@ builder.Services.AddScoped<ISpeechManager>(provider =>
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
-builder.Services.AddSingleton<AdminContext>();
+builder.Services.AddScoped<AdminContext>();
+builder.Services.AddScoped<AdminContextMiddleware>();
 builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
 builder.Services.AddScoped<IAdminAccessService, AdminAccessService>();
@@ -327,6 +332,7 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AdminContextMiddleware>();
 
 app.MapRazorPages();
 

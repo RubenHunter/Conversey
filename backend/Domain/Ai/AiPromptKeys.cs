@@ -14,4 +14,6 @@ public static class AiPromptKeys
     public const string ExtractKeyPhrasesUser = "ExtractKeyPhrasesUser";
     public const string GenerateTextFromBubblesSystem = "GenerateTextFromBubblesSystem";
     public const string GenerateTextFromBubblesUser = "GenerateTextFromBubblesUser";
+    public const string AnalyticsIdeaSummarySystem = "AnalyticsIdeaSummarySystem";
+    public const string AnalyticsIdeaSummaryUser = "AnalyticsIdeaSummaryUser";
 }

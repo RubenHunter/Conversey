@@ -1,15 +1,18 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
 @using Conversey.UI_MVC.Resources
 @model IEnumerable<Conversey.BL.Domain.Administration.Workspace>
+@inject AdminContext AdminContext
 @Html.AntiForgeryToken()
 @inject IAdminI18nService I18n
 
 @{
     ViewData["Title"] = "Workspaces";
-    ViewData["WorkspaceName"] = "Conversey";
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("Workspaces", null, true)
     };
     var workspaces = Model ?? [];
@@ -49,7 +52,6 @@
         ["ImageUploadUrl"] = Url.Action("UploadCreateWorkspaceImage", "ConverseyAdmin") ?? "/admin/workspaces/new/upload-image"
     };
 }
-
 <div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
 

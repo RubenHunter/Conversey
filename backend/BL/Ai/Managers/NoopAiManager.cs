@@ -170,6 +170,16 @@ public sealed class NoopAiManager : IAiManager
         return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
     }
 
+    public Task<string> CompletePlainTextAsync(
+        string systemPrompt,
+        string userPrompt,
+        string? workspaceId = null,
+        string? projectId = null,
+        string? displayPromptName = null)
+    {
+        return Task.FromResult("[NoopAiManager] Summary generation is unavailable without a configured AI provider. Here is a sample summary:\n\n{\"overview\":\"A diverse set of ideas from youth participants covering multiple themes.\",\"trends\":[\"Youth are actively engaged in topics they care about\",\"Ideas center around improving community and support systems\"],\"minorityViews\":[\"Some unique perspectives challenge conventional thinking\"],\"notableQuotes\":[\"The system should adapt to individual needs\"],\"suggestedActions\":[\"Review ideas for actionable patterns\",\"Group similar proposals for focused discussion\"]}");
+    }
+
     private static string NormalizeCategoryKey(string value)
     {
         return new string((value ?? string.Empty)

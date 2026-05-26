@@ -19,6 +19,12 @@ public class Project
     [StringLength(2048)]
     public string ImageUrl { get; set; }
     public Status Status { get; set; }
+    
+    [Range(0, 150)]
+    public int? MinAge { get; set; }
+    
+    [Range(0, 150)]
+    public int? MaxAge { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }

@@ -1,0 +1,235 @@
+@using Conversey.UI_MVC.Resources
+@using Conversey.UI_MVC.Models
+@model Conversey.UI_MVC.Models.Analytics.ModerationViewModel
+@inject IAdminI18nService I18n
+@inject WorkspaceContext WorkspaceContext
+@inject AdminContext AdminContext
+
+@{
+    ViewData["Title"] = "Moderation";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[] {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
+        (I18n["Analytics"], "/admin/workspace/analytics", false),
+        ("Moderation", null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text" data-workspace-slug="@WorkspaceContext.CurrentWorkspace.Id.Text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold" data-i18n="Moderation">Moderation</h1>
+                <p class="text-secondary text-sm mt-1">@Model.TotalCount item@(Model.TotalCount != 1 ? "s" : "") pending review</p>
+            </div>
+            <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline" data-i18n="← Back to Analytics">&larr; Back to Analytics</a>
+        </div>
+
+        <form method="get" class="mb-6" id="moderation-filter-form">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-card rounded-xl border border-secondary/10">
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Project">Project</label>
+                    <select name="projectId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" onchange="this.form.submit()">
+                        <option value="" data-i18n="All Projects">All Projects</option>
+                        @foreach (var p in Model.AvailableProjects)
+                        {
+                            <option value="@p.Id.Text" selected="@(Model.SelectedProjectId == p.Id.Text)">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Topic">Topic</label>
+                    <select name="topicId" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background">
+                        <option value="" data-i18n="All Topics">All Topics</option>
+                        @foreach (var t in Model.AvailableTopics)
+                        {
+                            <option value="@t.Id" selected="@(Model.TopicId == t.Id.ToString())">@t.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-secondary mb-1" data-i18n="Idea ID">Idea ID</label>
+                    <input type="number" name="ideaId" value="@Model.IdeaId" placeholder="Filter by idea ID" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background" min="1" data-i18n-placeholder="Filter by idea ID"/>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90" data-i18n="Apply">Apply</button>
+                    <a href="/admin/workspace/moderation" class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors" data-i18n="Clear">Clear</a>
+                </div>
+            </div>
+        </form>
+
+        @if (!Model.Items.Any())
+        {
+            <div class="bg-card rounded-xl border border-secondary/10 p-12 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary/5 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-secondary/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h3 class="text-lg font-semibold text-text mb-1" data-i18n="All clear">All clear</h3>
+                <p class="text-sm text-secondary">
+                    @if (Model.SelectedProjectId != null || Model.TopicId != null || Model.IdeaId != null)
+                    {
+                        <span data-i18n="No pending items match the current filters. Try adjusting or clearing your filters.">No pending items match the current filters. Try adjusting or clearing your filters.</span>
+                    }
+                    else
+                    {
+                        <span data-i18n="No ideas or comments are currently pending review. Flagged content awaiting moderation will appear here.">No ideas or comments are currently pending review. Flagged content awaiting moderation will appear here.</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="bg-card rounded-xl border border-secondary/10 overflow-hidden moderation-card"
+                         data-type="@item.Type" data-id="@item.Id"
+                         data-flag-sexual="@item.FlagSexual.ToString().ToLowerInvariant()"
+                         data-flag-hate="@item.FlagHate.ToString().ToLowerInvariant()"
+                         data-flag-violence="@item.FlagViolence.ToString().ToLowerInvariant()"
+                         data-flag-dangerous="@item.FlagDangerous.ToString().ToLowerInvariant()"
+                         data-flag-selfharm="@item.FlagSelfHarm.ToString().ToLowerInvariant()"
+                         data-flag-pii="@item.FlagPii.ToString().ToLowerInvariant()"
+                         data-rejection-reason="@item.RejectionReason">
+                        <div class="p-5">
+                            <div class="flex items-start justify-between gap-4 mb-3">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold @(item.Type == "idea" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent")" data-i18n="@(item.Type == "idea" ? "Idea" : "Comment")">
+                                        @(item.Type == "idea" ? "Idea" : "Comment")
+                                    </span>
+                                    @if (item.FlagLabels.Count > 0)
+                                    {
+                                        foreach (var flag in item.FlagLabels)
+                                        {
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-600 border border-red-100">@flag</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-50 text-yellow-600 border border-yellow-100" data-i18n="Manually flagged">Manually flagged</span>
+                                    }
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="text-[10px] text-secondary block">#@item.Id</span>
+                                    <span class="text-[10px] text-secondary/50">@item.SubmissionDate.ToString("yyyy-MM-dd HH:mm")</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">@item.Content</p>
+                            </div>
+
+                            @if (item.Type == "response" && !string.IsNullOrWhiteSpace(item.ParentIdeaContent))
+                            {
+                                <div class="mb-3 p-3 rounded-lg bg-background border border-secondary/10">
+                                    <span class="text-[10px] font-semibold text-secondary uppercase block mb-1">In response to idea #@item.ParentIdeaId</span>
+                                    <p class="text-xs text-secondary leading-relaxed">@(item.ParentIdeaContent.Length > 200 ? item.ParentIdeaContent[..200] + "..." : item.ParentIdeaContent)</p>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(item.RejectionReason))
+                            {
+                                <div class="mb-3 p-3 rounded-lg bg-red-50 border border-red-100">
+                                    <span class="text-[10px] font-semibold text-red-600 uppercase block mb-1" data-i18n="Previously rejected — reason">Previously rejected &mdash; reason</span>
+                                    <p class="text-xs text-red-700 leading-relaxed">@item.RejectionReason</p>
+                                </div>
+                            }
+
+                            <div class="flex items-center gap-2 text-[10px] text-secondary/50 mb-4">
+                                <span>@item.ProjectName</span>
+                                @if (!string.IsNullOrWhiteSpace(item.TopicName))
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.TopicName</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(item.YouthEmail))
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.YouthEmail</span>
+                                }
+                                else if (item.YouthId.HasValue)
+                                {
+                                    <span>&middot;</span>
+                                    <span>@item.YouthId.Value.ToString()[..8]</span>
+                                }
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <button type="button"
+                                        class="moderate-btn-accept rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                                        data-type="@item.Type" data-id="@item.Id">
+                                    <span data-i18n="Accept">Accept</span>
+                                </button>
+                                <button type="button"
+                                        class="moderate-btn-deny rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                        data-type="@item.Type" data-id="@item.Id">
+                                    <span data-i18n="Deny">Deny</span>
+                                </button>
+                                <span class="moderation-result text-sm font-semibold hidden ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </main>
+</div>
+
+<div id="deny-reason-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+        <h3 class="text-lg font-bold text-text mb-1" data-i18n="Rejection reason">Rejection reason</h3>
+        <p class="text-sm text-secondary mb-2" id="deny-modal-item-label"></p>
+
+        <div class="mb-4">
+            <span class="text-xs font-semibold text-secondary uppercase" data-i18n="Moderation flags">Moderation flags</span>
+            <p class="text-[10px] text-secondary/50 mb-2" data-i18n="Select the categories that apply to this content.">Select the categories that apply to this content.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="sexual" />
+                    <span class="text-sm font-medium" data-i18n="Sexual Content">Sexual Content</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="hate" />
+                    <span class="text-sm font-medium" data-i18n="Hate &amp; Discrimination">Hate & Discrimination</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="violence" />
+                    <span class="text-sm font-medium" data-i18n="Violence &amp; Threats">Violence & Threats</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="dangerous" />
+                    <span class="text-sm font-medium" data-i18n="Dangerous / Criminal">Dangerous / Criminal</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="selfharm" />
+                    <span class="text-sm font-medium" data-i18n="Self Harm">Self Harm</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 rounded-lg border border-secondary/10 hover:bg-secondary/5 cursor-pointer">
+                    <input type="checkbox" class="deny-flag-checkbox rounded" data-flag="pii" />
+                    <span class="text-sm font-medium" data-i18n="PII (Personal Info)">PII (Personal Info)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="deny-free-text" class="block text-xs font-semibold text-secondary uppercase mb-1" data-i18n="Additional notes">Additional notes</label>
+            <textarea id="deny-free-text" rows="3" class="w-full rounded-lg border border-secondary/20 px-3 py-2 text-sm bg-background resize-none" placeholder="Optional: add more context about this rejection..." data-i18n-placeholder="Optional: add more context about this rejection..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" id="deny-modal-cancel"
+                    class="rounded-lg border border-secondary/20 px-4 py-2 text-sm font-semibold hover:bg-secondary/5 transition-colors" data-i18n="Cancel">
+                Cancel
+            </button>
+            <button type="button" id="deny-modal-confirm"
+                    class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors" data-i18n="Confirm Deny">
+                Confirm Deny
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" vite-src="~/components/analytics/moderationPage.ts"></script>
+}

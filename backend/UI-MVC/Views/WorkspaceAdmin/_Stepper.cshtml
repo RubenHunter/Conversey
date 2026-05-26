@@ -14,18 +14,18 @@
     
     @* Header Section *@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
-        <h1 class="text-4xl font-bold tracking-tight">@Model.StepperViewModel.Title</h1>
+        <h1 class="text-4xl font-bold tracking-tight" data-i18n="@Model.StepperViewModel.Title">@Model.StepperViewModel.Title</h1>
         
         <div class="flex items-center gap-3">
             <button id="saveDraftBtn" type="button" class="px-6 py-2 border border-text/20 rounded-lg hover:bg-text/5 transition-colors">
                 Save as draft
             </button>
             <div class="flex gap-2">
-                <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all" data-i18n="< Back">
-                    < Back
+                <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all" data-i18n="&lt; Back">
+                    &lt; Back
                 </button>
-                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all" data-i18n="Next >">
-                    Next >
+                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all" data-i18n="Next &gt;">
+                    Next &gt;
                 </button>
             </div>
         </div>
@@ -54,8 +54,8 @@
                      <div class="step-dot w-2 h-2 rounded-full bg-text scale-0 transition-transform duration-300"></div>
                  </div>
              
-                 <span class="mt-4 text-xs uppercase text-text/50 font-medium" data-i18n="step">step</span><span> @stepNum</span>
-                 <span class="text-sm font-bold text-center">@Model.StepperViewModel.Steps[i].Label</span>
+                 <span class="mt-4 text-xs uppercase text-text/50 font-medium" data-i18n="Step">Step</span><span> @stepNum</span>
+                 <span class="text-sm font-bold text-center" data-i18n="@Model.StepperViewModel.Steps[i].Label">@Model.StepperViewModel.Steps[i].Label</span>
              </div>
          }
      </div>

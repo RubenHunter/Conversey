@@ -1,0 +1,47 @@
+@model Conversey.UI_MVC.Models.Analytics.WorkspaceAnalyticsViewModel
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-card rounded-xl border border-secondary/10 p-5">
+        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="Participants">Participants</p>
+        <p class="text-3xl font-bold text-primary mt-1">@Model.Dashboard.Participation.TotalYouth</p>
+    </div>
+    <div class="bg-card rounded-xl border border-secondary/10 p-5">
+        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="Ideas">Ideas</p>
+        <p class="text-3xl font-bold text-primary mt-1">@Model.Dashboard.Ideas.Count</p>
+    </div>
+    <div class="bg-card rounded-xl border border-secondary/10 p-5">
+        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="Conversion Rate">Conversion Rate</p>
+        <p class="text-3xl font-bold text-primary mt-1">@Model.Dashboard.Participation.ConversionRate%</p>
+        <p class="text-xs text-secondary mt-1">@Model.Dashboard.Participation.YouthWithBoth / @Model.Dashboard.Participation.YouthWithAnswers answered + gave ideas</p>
+    </div>
+    <div class="bg-card rounded-xl border border-secondary/10 p-5">
+        <p class="text-xs font-semibold text-secondary uppercase tracking-wider" data-i18n="Open Answers">Open Answers</p>
+        <p class="text-3xl font-bold text-primary mt-1">@Model.Dashboard.OpenAnswers.Count</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-card rounded-xl border border-secondary/10 p-4">
+        <p class="text-xs text-secondary" data-i18n="Avg Answers/Youth">Avg Answers/Youth</p>
+        <p class="text-xl font-bold">@Model.Dashboard.Participation.AvgAnswersPerYouth</p>
+    </div>
+    <div class="bg-card rounded-xl border border-secondary/10 p-4">
+        <p class="text-xs text-secondary" data-i18n="Avg Ideas/Youth">Avg Ideas/Youth</p>
+        <p class="text-xl font-bold">@Model.Dashboard.Participation.AvgIdeasPerYouth</p>
+    </div>
+    <div class="bg-card rounded-xl border border-secondary/10 p-4">
+        <p class="text-xs text-secondary" data-i18n="Youth with Ideas">Youth with Ideas</p>
+        <p class="text-xl font-bold">@Model.Dashboard.Participation.YouthWithIdeas</p>
+    </div>
+    @if (Model.SelectedProject != null)
+    {
+        <div class="bg-card rounded-xl border border-secondary/10 p-4">
+            <p class="text-xs text-secondary" data-i18n="Target Demographic">Target Demographic</p>
+            <p class="text-xl font-bold">
+                @(Model.SelectedProject.MinAge.HasValue && Model.SelectedProject.MaxAge.HasValue
+                    ? $"{Model.SelectedProject.MinAge}-{Model.SelectedProject.MaxAge}"
+                    : "-")
+            </p>
+        </div>
+    }
+</div>

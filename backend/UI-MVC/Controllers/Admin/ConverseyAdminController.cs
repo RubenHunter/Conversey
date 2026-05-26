@@ -2,15 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
-using Conversey.DAL;
-using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models.Admin;
-using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.AdminManagement;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
@@ -26,7 +22,8 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
         {
             TempData["ForcePasswordChange"] = true;
         }
-        return View();
+        // Redirect to the unified dashboard route
+        return Redirect("/admin");
     }
 
     [HttpGet("/admin/conversey/admins")]

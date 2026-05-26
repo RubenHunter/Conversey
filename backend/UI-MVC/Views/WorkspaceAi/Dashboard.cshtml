@@ -2,8 +2,15 @@
 @using Conversey.BL.Domain.Administration
 @model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiDashboardViewModel
 @inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
 @{
     ViewData["Title"] = "AI Settings";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        ("AI Settings", null, true)
+    };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
 }
 

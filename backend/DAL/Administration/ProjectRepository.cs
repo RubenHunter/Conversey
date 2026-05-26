@@ -63,6 +63,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
+            .Include(p => p.Topic)
             .Where(p => p.Workspace.Id == workspaceId)
             .ToList()
             .AsReadOnly();
@@ -146,6 +147,14 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
         builder
             .Property(p => p.NudgingStrength)
             .HasDefaultValue(3);
+
+        builder
+            .Property(p => p.MinAge)
+            .IsRequired(false);
+
+        builder
+            .Property(p => p.MaxAge)
+            .IsRequired(false);
 
         #endregion
 
