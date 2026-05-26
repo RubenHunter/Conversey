@@ -2,6 +2,7 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Administration;
 
@@ -299,3 +300,21 @@ public class AdminRepository : IAdminRepository
         return (emailExists, usernameExists);
     }
 }
+
+#region WorkspaceAdminUserConfig
+public class WorkspaceAdminUserConfig : IEntityTypeConfiguration<WorkspaceAdminUser>
+{
+    public void Configure(EntityTypeBuilder<WorkspaceAdminUser> builder)
+    {
+        #region Relations
+
+        builder
+            .HasOne(wa => wa.Workspace)
+            .WithMany()
+            .HasForeignKey("WorkspaceId")
+            .IsRequired();
+
+        #endregion
+    }
+}
+#endregion

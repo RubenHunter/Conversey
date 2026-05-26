@@ -1,6 +1,7 @@
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Subplatform.Ai;
 
@@ -114,3 +115,51 @@ public class AuditRepository : IAuditRepository
             .ToDictionary(g => g.Key, g => g.Sum(l => l.Cost));
     }
 }
+
+#region AiAuditLogConfig
+public class AiAuditLogConfig : IEntityTypeConfiguration<AiAuditLog>
+{
+    public void Configure(EntityTypeBuilder<AiAuditLog> builder)
+    {
+        #region Relations
+
+        builder
+            .HasOne(a => a.Workspace)
+            .WithMany()
+            .HasForeignKey(a => a.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
+            .HasOne(a => a.Project)
+            .WithMany()
+            .HasForeignKey(a => a.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        #endregion
+    }
+}
+#endregion
+
+#region AiCostLimitConfig
+public class AiCostLimitConfig : IEntityTypeConfiguration<AiCostLimit>
+{
+    public void Configure(EntityTypeBuilder<AiCostLimit> builder)
+    {
+        #region Relations
+
+        builder
+            .HasOne(c => c.Workspace)
+            .WithMany()
+            .HasForeignKey(c => c.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
+            .HasOne(c => c.Project)
+            .WithMany()
+            .HasForeignKey(c => c.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        #endregion
+    }
+}
+#endregion

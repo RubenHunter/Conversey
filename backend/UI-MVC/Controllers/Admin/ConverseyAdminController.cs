@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
+using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Models.AdminManagement;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;

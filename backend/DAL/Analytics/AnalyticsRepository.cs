@@ -4,6 +4,7 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Analytics;
 
@@ -42,7 +43,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         var result = new List<QuestionChoiceStat>();
 
         var singleAnswers = _db.Answers
-            .OfType<Answer<SingleChoice>>()
+            .OfType<SingleChoiceAnswer>()
             .Include(a => a.Question).ThenInclude(q => q.Project)
             .Include(a => a.Value)
             .Include(a => a.Youth)
@@ -64,7 +65,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         }
 
         var multiAnswers = _db.Answers
-            .OfType<Answer<MultipleChoice>>()
+            .OfType<MultipleChoiceAnswer>()
             .Include(a => a.Question).ThenInclude(q => q.Project)
             .Include(a => a.Value)
             .Include(a => a.Youth)
@@ -74,15 +75,19 @@ public class AnalyticsRepository : IAnalyticsRepository
 
         foreach (var a in multiAnswers)
         {
-            result.Add(new QuestionChoiceStat
+            if (a.Value == null) continue;
+            foreach (var choice in a.Value)
             {
-                QuestionId = a.Question!.Id,
-                QuestionText = a.Question.Text,
-                QuestionType = "MultipleChoice",
-                ChoiceId = a.Value?.Id ?? 0,
-                ChoiceText = a.Value?.Text ?? string.Empty,
-                Count = 1
-            });
+                result.Add(new QuestionChoiceStat
+                {
+                    QuestionId = a.Question!.Id,
+                    QuestionText = a.Question.Text,
+                    QuestionType = "MultipleChoice",
+                    ChoiceId = choice.Id,
+                    ChoiceText = choice.Text,
+                    Count = 1
+                });
+            }
         }
 
         return result
@@ -607,12 +612,12 @@ public class AnalyticsRepository : IAnalyticsRepository
         if (hasScale) types.Add("Scale");
 
         var hasSingle = _db.Questions
-            .OfType<ChoiceQuestion<SingleChoice>>()
+            .OfType<SingleChoiceQuestion>()
             .Any(q => projectIds.Contains(EF.Property<Slug>(q, "ProjectId")));
         if (hasSingle) types.Add("SingleChoice");
 
         var hasMulti = _db.Questions
-            .OfType<ChoiceQuestion<MultipleChoice>>()
+            .OfType<MultipleChoiceQuestion>()
             .Any(q => projectIds.Contains(EF.Property<Slug>(q, "ProjectId")));
         if (hasMulti) types.Add("MultipleChoice");
 
@@ -638,14 +643,14 @@ public class AnalyticsRepository : IAnalyticsRepository
             .ToList()
             .Where(a => a.Question != null && projectIds.Contains(a.Question.Project.Id));
 
-        var singleAnswers = _db.Answers.OfType<Answer<SingleChoice>>()
+        var singleAnswers = _db.Answers.OfType<SingleChoiceAnswer>()
             .Include(a => a.Question).ThenInclude(q => q.Project)
             .Include(a => a.Value)
             .Include(a => a.Youth)
             .ToList()
             .Where(a => a.Question != null && projectIds.Contains(a.Question.Project.Id));
 
-        var multiAnswers = _db.Answers.OfType<Answer<MultipleChoice>>()
+        var multiAnswers = _db.Answers.OfType<MultipleChoiceAnswer>()
             .Include(a => a.Question).ThenInclude(q => q.Project)
             .Include(a => a.Value)
             .Include(a => a.Youth)
@@ -677,12 +682,28 @@ public class AnalyticsRepository : IAnalyticsRepository
             });
 
         foreach (var a in multiAnswers)
-            result.Add(new AnswerListItem
+        {
+            if (a.Value == null)
             {
-                AnswerId = a.Id, QuestionText = a.Question!.Text, QuestionType = "MultipleChoice",
-                Value = a.Value?.Text ?? "", YouthId = a.Youth?.Id, YouthEmail = a.Youth?.Email,
-                ProjectName = a.Question.Project.Name
-            });
+                result.Add(new AnswerListItem
+                {
+                    AnswerId = a.Id, QuestionText = a.Question!.Text, QuestionType = "MultipleChoice",
+                    Value = "", YouthId = a.Youth?.Id, YouthEmail = a.Youth?.Email,
+                    ProjectName = a.Question.Project.Name
+                });
+                continue;
+            }
+
+            foreach (var choice in a.Value)
+            {
+                result.Add(new AnswerListItem
+                {
+                    AnswerId = a.Id, QuestionText = a.Question!.Text, QuestionType = "MultipleChoice",
+                    Value = choice.Text ?? "", YouthId = a.Youth?.Id, YouthEmail = a.Youth?.Email,
+                    ProjectName = a.Question.Project.Name
+                });
+            }
+        }
 
         return result.AsReadOnly();
     }
@@ -898,15 +919,22 @@ public class AnalyticsRepository : IAnalyticsRepository
 
     public PlatformModerationStats GetPlatformModerationStats(Slug? workspaceId = null)
     {
-        var ideas = _db.Ideas.ToList();
-        var allResponses = _db.Responses.Include(r => r.Idea).ToList();
+        var ideasQuery = _db.Ideas.AsQueryable();
+        var responsesQuery = _db.Responses.Include(r => r.Idea).AsQueryable();
 
         if (workspaceId.HasValue)
         {
-            var projectIds = _db.Projects.Where(p => p.Workspace.Id == workspaceId.Value).Select(p => p.Id).ToHashSet();
-            ideas = ideas.Where(i => projectIds.Contains(i.Project.Id)).ToList();
-            allResponses = allResponses.Where(r => r.Idea != null && projectIds.Contains(r.Idea.Project.Id)).ToList();
+            ideasQuery = ideasQuery
+                .Include(i => i.Project)
+                .Where(i => i.Project != null && i.Project.Workspace.Id == workspaceId.Value);
+
+            responsesQuery = responsesQuery
+                .Include(r => r.Idea).ThenInclude(i => i.Project)
+                .Where(r => r.Idea != null && r.Idea.Project != null && r.Idea.Project.Workspace.Id == workspaceId.Value);
         }
+
+        var ideas = ideasQuery.ToList();
+        var allResponses = responsesQuery.ToList();
 
         var flaggedIdeas = ideas.Where(i => i.ModerationInfo.Sexual || i.ModerationInfo.HateAndDiscrimination || i.ModerationInfo.ViolenceAndThreats || i.ModerationInfo.DangerousAndCriminalContent || i.ModerationInfo.SelfHarm || i.ModerationInfo.Pii).ToList();
         var flaggedResponses = allResponses.Where(r => r.ModerationInfo.Sexual || r.ModerationInfo.HateAndDiscrimination || r.ModerationInfo.ViolenceAndThreats || r.ModerationInfo.DangerousAndCriminalContent || r.ModerationInfo.SelfHarm || r.ModerationInfo.Pii).ToList();
@@ -940,18 +968,21 @@ public class AnalyticsRepository : IAnalyticsRepository
 
     public PlatformUserStats GetPlatformUserStats(Slug? workspaceId = null)
     {
-        var allYouth = _db.Youths.ToList();
-        var allAnswers = _db.Answers.Include("Youth").ToList();
-        var allIdeas = _db.Ideas.Include(i => i.Youth).ToList();
+        var youthQuery = _db.Youths.AsQueryable();
+        var answersQuery = _db.Answers.Include("Youth").AsQueryable();
+        var ideasQuery = _db.Ideas.Include(i => i.Youth).AsQueryable();
 
         if (workspaceId.HasValue)
         {
-            var projectIds = _db.Projects.Where(p => p.Workspace.Id == workspaceId.Value).Select(p => p.Id).ToHashSet();
-            allYouth = allYouth.Where(y => projectIds.Contains(y.Project.Id)).ToList();
-            var youthIdSet = new HashSet<Guid>(allYouth.Select(y => y.Id));
-            allAnswers = allAnswers.Where(a => youthIdSet.Contains(a.Youth.Id)).ToList();
-            allIdeas = allIdeas.Where(i => youthIdSet.Contains(i.Youth.Id)).ToList();
+            youthQuery = youthQuery
+                .Include(y => y.Project)
+                .Where(y => y.Project != null && y.Project.Workspace.Id == workspaceId.Value);
         }
+
+        var allYouth = youthQuery.ToList();
+        var youthIdSet = new HashSet<Guid>(allYouth.Select(y => y.Id));
+        var allAnswers = answersQuery.Where(a => youthIdSet.Contains(a.Youth.Id)).ToList();
+        var allIdeas = ideasQuery.Where(i => youthIdSet.Contains(i.Youth.Id)).ToList();
 
         var totalYouth = allYouth.Count;
         var youthWithAnswersSet = new HashSet<Guid>(allAnswers.Select(a => a.Youth.Id));
@@ -1013,3 +1044,28 @@ public class AnalyticsRepository : IAnalyticsRepository
         return result.AsReadOnly();
     }
 }
+
+
+#region SavedAiSummaryConfig
+public class SavedAiSummaryConfig : IEntityTypeConfiguration<SavedAiSummary>
+{
+    public void Configure(EntityTypeBuilder<SavedAiSummary> builder)
+    {
+        #region Relations
+
+        builder
+            .HasOne(s => s.Workspace)
+            .WithMany()
+            .HasForeignKey(s => s.WorkspaceId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
+            .HasOne(s => s.Project)
+            .WithMany()
+            .HasForeignKey(s => s.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        #endregion
+    }
+}
+#endregion

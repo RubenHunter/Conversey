@@ -5,6 +5,7 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Administration;
+using Conversey.DAL.Analytics;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
@@ -76,58 +77,55 @@ public class ConverseyDbContext : IdentityDbContext
         modelBuilder.ApplyConfiguration(new IdeaReactionConfig());
         modelBuilder.ApplyConfiguration(new ResponseReactionConfig());
         
-
-        // WorkspaceAdmin
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasKey(wa => wa.Id);
-        //
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasOne(wa => wa.Workspace);
-
-        modelBuilder.Entity<WorkspaceAdminUser>()
-            .HasOne(wa => wa.Workspace)
-            .WithMany()
-            .HasForeignKey("WorkspaceId")
-            .IsRequired();
-
-        modelBuilder.Entity<AiAuditLog>()
-            .HasOne(a => a.Workspace)
-            .WithMany()
-            .HasForeignKey(a => a.WorkspaceId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiAuditLog>()
-            .HasOne(a => a.Project)
-            .WithMany()
-            .HasForeignKey(a => a.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiCostLimit>()
-            .HasOne(c => c.Workspace)
-            .WithMany()
-            .HasForeignKey(c => c.WorkspaceId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiCostLimit>()
-            .HasOne(c => c.Project)
-            .WithMany()
-            .HasForeignKey(c => c.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<SavedAiSummary>()
-            .HasOne(s => s.Workspace)
-            .WithMany()
-            .HasForeignKey(s => s.WorkspaceId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<SavedAiSummary>()
-            .HasOne(s => s.Project)
-            .WithMany()
-            .HasForeignKey(s => s.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull);
-
+        modelBuilder.ApplyConfiguration(new WorkspaceAdminUserConfig());
+        modelBuilder.ApplyConfiguration(new AiAuditLogConfig());
+        modelBuilder.ApplyConfiguration(new AiCostLimitConfig());
+        modelBuilder.ApplyConfiguration(new SavedAiSummaryConfig());
+        
         modelBuilder.ApplyConfiguration(new ProjectAiPromptOverrideConfig());
 
+        
+        // modelBuilder.Entity<WorkspaceAdminUser>()
+        //     .HasOne(wa => wa.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey("WorkspaceId")
+        //     .IsRequired();
+        //
+        // modelBuilder.Entity<AiAuditLog>()
+        //     .HasOne(a => a.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(a => a.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiAuditLog>()
+        //     .HasOne(a => a.Project)
+        //     .WithMany()
+        //     .HasForeignKey(a => a.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiCostLimit>()
+        //     .HasOne(c => c.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(c => c.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiCostLimit>()
+        //     .HasOne(c => c.Project)
+        //     .WithMany()
+        //     .HasForeignKey(c => c.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<SavedAiSummary>()
+        //     .HasOne(s => s.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(s => s.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<SavedAiSummary>()
+        //     .HasOne(s => s.Project)
+        //     .WithMany()
+        //     .HasForeignKey(s => s.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
     }
 
     public bool CreateDatabase(bool resetDatabase)

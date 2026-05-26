@@ -1,4 +1,5 @@
 @using Conversey.BL.Domain.Administration
+@using Conversey.BL.Domain.Survey
 @using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
 @inject WorkspaceContext WorkspaceContext
@@ -7,132 +8,400 @@
 @Html.AntiForgeryToken()
 
 @{
-    ViewData["Title"] = I18n["Project Details"];
+    ViewData["Title"] = Model.Name;
     ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
         (I18n["Projects"], "/admin/projects", false),
         (Model.Name, null, true)
     };
+
+    var theme        = Model.Theme ?? ProjectTheme.Default;
+    var statusClasses = Model.Status switch
+    {
+        Status.Active   => "bg-primary/10 text-primary border-primary/20",
+        Status.Draft    => "bg-secondary/20 text-secondary border-secondary/30",
+        Status.Archived => "bg-text/5 text-text/50 border-text/15",
+        _               => "bg-text/5 text-text/50 border-text/15"
+    };
+
+    var questionCount = Model.Questions?.Count() ?? 0;
+    var topicCount    = Model.Topic?.Count() ?? 0;
+    var youthCount    = Model.Youth?.Count() ?? 0;
+    var ideaCount     = Model.ProjectIdeas?.Count() ?? 0;
+    var hasImage      = !string.IsNullOrWhiteSpace(Model.ImageUrl);
+
+    var heroStyle     = $"background: linear-gradient(135deg, {theme.Primary}18 0%, {theme.Secondary}12 100%);";
+    var swatchPrimary = $"background:{theme.Primary}";
+    var swatchSecond  = $"background:{theme.Secondary}";
+    var swatchAccent  = $"background:{theme.Accent}";
+    var swatchBar     = $"background: linear-gradient(to right, {theme.Primary}, {theme.Secondary}, {theme.Accent});";
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
 
-    <main class="p-8 w-full max-w-400 mx-auto">
+    <main class="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-        <!-- Back -->
-        <div class="mb-6">
-            <a href="@Url.Action("Projects", "WorkspaceAdmin")"
-               class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                ← @I18n["Back to projects"]
-            </a>
-        </div>
+        @* ── HERO ──  *@
+        <div class="relative rounded-2xl overflow-hidden border border-text/10 shadow-sm" style="@heroStyle">
 
-        <!-- Card -->
-        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+            @if (hasImage)
+            {
+                <div class="absolute inset-0"
+                     style="background-image:url('@Model.ImageUrl'); background-size:cover; background-position:center; opacity:0.12;"></div>
+                <div class="absolute inset-0"
+                     style="background:linear-gradient(to right, var(--color-background) 45%, transparent 100%);"></div>
+            }
 
-            <!-- Header -->
-            <div class="flex items-start justify-between border-b border-gray-200 px-6 py-5">
-                <div>
-                    <div class="text-xs uppercase tracking-widest text-secondary font-semibold">
-                        @I18n["Project Details"]
-                    </div>
-                    <h1 class="mt-1 text-3xl font-bold text-text tracking-tight">
-                        @Model.Name
-                    </h1>
+            <div class="relative z-10 flex flex-col sm:flex-row items-start gap-6 p-6 sm:p-8">
 
-                    <p class="mt-1 text-sm text-gray-500">
-                        @I18n["Project ID"]: @Model.Id.Text
-                    </p>
+                @* Poster image  *@
+                <div class="shrink-0 w-28 h-40 rounded-xl overflow-hidden border border-text/10 shadow-md" style="@heroStyle">
+                    @if (hasImage)
+                    {
+                        <img src="@Model.ImageUrl" alt="@Model.Name" class="w-full h-full object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-text/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 18h16.5M21 12V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75V18" />
+                            </svg>
+                        </div>
+                    }
                 </div>
 
-                <!-- Status badge -->
-                @{
-                    var statusColor = Model.Status switch
+                @* Title + meta  *@
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-widest font-bold border @statusClasses">
+                            @Model.Status
+                        </span>
+                        <span class="text-xs text-text/35 font-mono">@Model.Id.Text</span>
+                    </div>
+
+                    <h1 class="text-3xl font-bold tracking-tight leading-tight mb-3">@Model.Name</h1>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
                     {
-                        Status.Active => "bg-primary/10 text-primary",
-                        Status.Draft => "bg-secondary/20 text-secondary",
-                        Status.Archived => "bg-text/5 text-text/60",
-                        _ => "bg-text/5 text-text/60"
-                    };
+                        <p class="text-sm text-text/60 leading-relaxed line-clamp-3 max-w-2xl mb-4">@Model.Description</p>
+                    }
+
+                    <div class="flex flex-wrap gap-2">
+                        @if (Model.StartDate != default || Model.EndDate != default)
+                        {
+                            <span class="inline-flex items-center gap-1.5 bg-background/70 border border-text/10 rounded-full px-3 py-1 text-xs text-text/55 backdrop-blur-sm">
+                                <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                @(Model.StartDate == default ? "–" : Model.StartDate.ToString("d MMM yyyy"))
+                                →
+                                @(Model.EndDate == default ? "–" : Model.EndDate.ToString("d MMM yyyy"))
+                            </span>
+                        }
+                        <span class="inline-flex items-center gap-1.5 bg-background/70 border border-text/10 rounded-full px-3 py-1 text-xs text-text/55 backdrop-blur-sm">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            @Model.InteractionForm
+                        </span>
+                        @if (Model.MinAge.HasValue || Model.MaxAge.HasValue)
+                        {
+                            <span class="inline-flex items-center gap-1.5 bg-background/70 border border-text/10 rounded-full px-3 py-1 text-xs text-text/55 backdrop-blur-sm">
+                                <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Age @(Model.MinAge ?? 0)–@(Model.MaxAge ?? 150)
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                @* Actions  *@
+                <div class="shrink-0 flex flex-row sm:flex-col gap-2 self-start">
+                    <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"
+                       class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm shadow-primary/25 hover:bg-primary/90 transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Edit
+                    </a>
+                    <a href="@Url.Action("Projects", "WorkspaceAdmin")"
+                       class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-text/15 px-4 py-2 text-sm font-medium text-text/60 hover:bg-text/5 transition-all">
+                        ← Back
+                    </a>
+                    <button type="button"
+                            data-delete-id="@Model.Id.Text"
+                            data-delete-name="@Model.Name"
+                            data-delete-endpoint="/admin/project/delete/@Model.Id.Text"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/25 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/5 transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @* ── STATS ROW ──  *@
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl border border-text/10 p-4 flex items-center gap-3 shadow-sm">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-text">@youthCount</div>
+                    <div class="text-[10px] font-semibold text-text/45 uppercase tracking-wide">Responses</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-text/10 p-4 flex items-center gap-3 shadow-sm">
+                <div class="w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-text">@ideaCount</div>
+                    <div class="text-[10px] font-semibold text-text/45 uppercase tracking-wide">Ideas</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-text/10 p-4 flex items-center gap-3 shadow-sm">
+                <div class="w-10 h-10 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-text">@questionCount</div>
+                    <div class="text-[10px] font-semibold text-text/45 uppercase tracking-wide">Questions</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-text/10 p-4 flex items-center gap-3 shadow-sm">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-text">@topicCount</div>
+                    <div class="text-[10px] font-semibold text-text/45 uppercase tracking-wide">Topics</div>
+                </div>
+            </div>
+        </div>
+
+        @* ── MAIN GRID ──  *@
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+            @* LEFT 2/3  *@
+            <div class="lg:col-span-2 space-y-5">
+
+                @* Description (full)  *@
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <div class="bg-white rounded-xl border border-text/10 p-5 shadow-sm">
+                        <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider mb-3">Description</h2>
+                        <p class="text-sm text-text/70 leading-relaxed whitespace-pre-line">@Model.Description</p>
+                    </div>
                 }
 
-                <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] uppercase tracking-widest font-bold @statusColor">
-                    @Model.Status
-                </span>
+                @* Questions  *@
+                @if (questionCount > 0)
+                {
+                    <div class="bg-white rounded-xl border border-text/10 shadow-sm overflow-hidden">
+                        <div class="px-5 py-4 border-b border-text/10 flex items-center justify-between">
+                            <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider">Survey Questions</h2>
+                            <span class="text-xs font-bold bg-secondary/20 text-secondary px-2.5 py-0.5 rounded-full">@questionCount</span>
+                        </div>
+                        <div class="divide-y divide-text/5">
+                            @{ int qIdx = 1; }
+                            @foreach (var question in Model.Questions)
+                            {
+                                var qLabel = question switch
+                                {
+                                    ScaleQuestion          => "Scale",
+                                    SingleChoiceQuestion   => "Single choice",
+                                    MultipleChoiceQuestion => "Multiple choice",
+                                    _                      => "Open"
+                                };
+                                var qColor = question switch
+                                {
+                                    ScaleQuestion          => "bg-primary/10 text-primary",
+                                    SingleChoiceQuestion   => "bg-accent/10 text-accent",
+                                    MultipleChoiceQuestion => "bg-accent/10 text-accent",
+                                    _                      => "bg-secondary/20 text-secondary"
+                                };
+                                <div class="px-5 py-3.5 flex items-start gap-3">
+                                    <span class="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-text/5 flex items-center justify-center text-[10px] font-bold text-text/35">@qIdx</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm text-text font-medium leading-snug">@question.Text</p>
+                                        @if (question is ScaleQuestion sq)
+                                        {
+                                            <p class="text-xs text-text/40 mt-0.5">Range: @sq.LowerBound – @sq.UpperBound</p>
+                                        }
+                                        @if (question is ChoiceQuestion cq && cq.PossibleChoices?.Any() == true)
+                                        {
+                                            <div class="flex flex-wrap gap-1 mt-1.5">
+                                                @foreach (var c in cq.PossibleChoices.Take(6))
+                                                {
+                                                    <span class="text-[10px] bg-text/5 text-text/50 rounded px-1.5 py-0.5">@c.Text</span>
+                                                }
+                                                @if (cq.PossibleChoices.Count() > 6)
+                                                {
+                                                    <span class="text-[10px] text-text/35">+@(cq.PossibleChoices.Count() - 6) more</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        @if (question.Required)
+                                        {
+                                            <span class="text-[10px] text-accent/70 font-semibold">Required</span>
+                                        }
+                                        <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full @qColor">@qLabel</span>
+                                    </div>
+                                </div>
+                                qIdx++;
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* Topics  *@
+                @if (topicCount > 0)
+                {
+                    <div class="bg-white rounded-xl border border-text/10 shadow-sm overflow-hidden">
+                        <div class="px-5 py-4 border-b border-text/10 flex items-center justify-between">
+                            <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider">Ideation Topics</h2>
+                            <span class="text-xs font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">@topicCount</span>
+                        </div>
+                        <div class="divide-y divide-text/5">
+                            @foreach (var topic in Model.Topic)
+                            {
+                                <div class="px-5 py-3.5 flex items-start justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-text">@topic.Name</p>
+                                        @if (!string.IsNullOrWhiteSpace(topic.Context))
+                                        {
+                                            <p class="text-xs text-text/50 mt-0.5 leading-relaxed">@topic.Context</p>
+                                        }
+                                    </div>
+                                    <div class="shrink-0 text-right">
+                                        <span class="text-[10px] text-text/35 uppercase tracking-wide block">Max loads</span>
+                                        <span class="text-sm font-bold text-primary">@topic.MaxBroadSelectionLoads</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* Empty state  *@
+                @if (questionCount == 0 && topicCount == 0)
+                {
+                    <div class="rounded-xl border-2 border-dashed border-text/10 p-8 text-center">
+                        <p class="text-sm text-text/40">No survey questions or ideation topics yet.</p>
+                        <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"
+                           class="inline-flex mt-3 items-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+                            Edit project to add content →
+                        </a>
+                    </div>
+                }
             </div>
 
-            <!-- Body -->
-            <div class="px-6 py-6 space-y-6">
+            @* RIGHT 1/3  *@
+            <div class="space-y-5">
 
-                <!-- Description -->
-                <div>
-                    <h2 class="text-sm font-semibold text-gray-700">@I18n["Description"]</h2>
-                    <p class="mt-2 whitespace-normal text-sm text-gray-600">
-                        @(string.IsNullOrWhiteSpace(Model.Description) ? I18n["No description provided."] : Model.Description)
-                    </p>
+                @* Project info  *@
+                <div class="bg-white rounded-xl border border-text/10 p-5 shadow-sm">
+                    <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider mb-4">Details</h2>
+                    <dl class="space-y-0 divide-y divide-text/5">
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">Status</dt>
+                            <dd class="text-xs font-bold border rounded-full px-2.5 py-0.5 @statusClasses">@Model.Status</dd>
+                        </div>
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">Interaction mode</dt>
+                            <dd class="text-xs font-semibold text-text">@Model.InteractionForm</dd>
+                        </div>
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">Start date</dt>
+                            <dd class="text-xs font-semibold text-text">@(Model.StartDate == default ? "–" : Model.StartDate.ToString("d MMM yyyy"))</dd>
+                        </div>
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">End date</dt>
+                            <dd class="text-xs font-semibold text-text">@(Model.EndDate == default ? "–" : Model.EndDate.ToString("d MMM yyyy"))</dd>
+                        </div>
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">Age group</dt>
+                            <dd class="text-xs font-semibold text-text">@(Model.MinAge ?? 0) – @(Model.MaxAge ?? 150)</dd>
+                        </div>
+                        <div class="flex justify-between items-center py-2.5">
+                            <dt class="text-xs text-text/50">Workspace</dt>
+                            <dd class="text-xs font-semibold text-text truncate max-w-[140px]">@Model.Workspace?.Name</dd>
+                        </div>
+                    </dl>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                @* Theme  *@
+                <div class="bg-white rounded-xl border border-text/10 p-5 shadow-sm space-y-4">
+                    <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider">Theme</h2>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Status"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.Status</p>
+                    <div class="h-8 rounded-lg overflow-hidden" style="@swatchBar"></div>
+
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        @foreach (var (label, swatch) in new (string, string)[] { ("Primary", swatchPrimary), ("Secondary", swatchSecond), ("Accent", swatchAccent) })
+                        {
+                            <div>
+                                <div class="w-7 h-7 rounded-full mx-auto mb-1.5 ring-2 ring-white shadow" style="@swatch;"></div>
+                                <div class="text-[10px] text-text/45 font-medium">@label</div>
+                            </div>
+                        }
                     </div>
 
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Interaction Type"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.InteractionForm</p>
-                    </div>
-
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["AI Nudging Strength"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">@Model.NudgingStrength</p>
-                    </div>
-
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Start Date"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
-                            @(Model.StartDate == default ? "-" : Model.StartDate.ToString("yyyy-MM-dd"))
-                        </p>
-                    </div>
-
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["End Date"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
-                            @(Model.EndDate == default ? "-" : Model.EndDate.ToString("yyyy-MM-dd"))
-                        </p>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <h3 class="text-xs font-semibold uppercase text-gray-500">@I18n["Workspace"]</h3>
-                        <p class="mt-1 text-sm text-gray-800">
-                            @Model.Workspace?.Name
-                        </p>
-                    </div>
-
+                    @if (!string.IsNullOrWhiteSpace(theme.Font))
+                    {
+                        <div class="pt-3 border-t border-text/5 flex justify-between items-center">
+                            <span class="text-xs text-text/50">Font</span>
+                            <span class="text-xs font-semibold text-text" style="font-family: @theme.Font, sans-serif;">@theme.Font</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(theme.Preset) && theme.Preset != "custom")
+                    {
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-text/50">Preset</span>
+                            <span class="text-xs font-semibold text-text capitalize">@theme.Preset</span>
+                        </div>
+                    }
                 </div>
+
+                @* AI config  *@
+                <div class="bg-white rounded-xl border border-text/10 p-5 shadow-sm space-y-3">
+                    <h2 class="text-xs font-bold text-text/50 uppercase tracking-wider">AI Configuration</h2>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-text/50">Nudging strength</span>
+                            <span class="text-xs font-bold text-primary">@Model.NudgingStrength / 5</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <div class="flex-1 h-2 rounded-full @(i <= Model.NudgingStrength ? "bg-primary" : "bg-text/10")"></div>
+                            }
+                        </div>
+                        <div class="flex justify-between mt-1.5">
+                            <span class="text-[10px] text-text/35">Minimal</span>
+                            <span class="text-[10px] text-text/35">Maximum</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            <!-- Footer actions -->
-            <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
-
-                <a href="@Url.Action("EditProject", "WorkspaceAdmin", new { id = Model.Id.Text })"
-                   class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
-                    @I18n["Edit"]
-                </a>
-
-                <button type="button"
-                        data-delete-id="@Model.Id.Text"
-                        data-delete-name="@Model.Name"
-                        data-delete-endpoint="/admin/project/delete/@Model.Id.Text"
-                        class="inline-flex items-center justify-center rounded-xl border border-accent/30 px-5 py-2.5 text-sm font-bold text-accent hover:bg-accent/5 transition-all">
-                    @I18n["Delete"]
-                </button>
-            </div>
-
         </div>
+
     </main>
 </div>
 
