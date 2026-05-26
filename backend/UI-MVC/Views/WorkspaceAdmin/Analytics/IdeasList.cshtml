@@ -26,6 +26,7 @@
                     <label class="flex items-center gap-1.5 text-sm text-secondary">
                         <span class="text-xs">Show:</span>
                         <select id="ideas-page-size" class="rounded border border-secondary/20 px-2 py-1 text-xs bg-background">
+                            <option value="25">25</option>
                             <option value="100">100</option>
                             <option value="500">500</option>
                             <option value="-1">All</option>
@@ -120,15 +121,15 @@
                     <thead>
                         <tr class="border-b border-secondary/10 text-left bg-secondary/5">
                             <th class="py-3 px-4 font-semibold w-8"></th>
-                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id" data-i18n="ID">ID <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="content" data-i18n="Content">Content <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none max-w-[120px]" data-sort="summary" data-i18n="AI Summary">AI Summary <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none w-16 text-center" data-sort="comments" data-i18n="Comments">Comments <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="topic" data-i18n="Topic">Topic <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="status" data-i18n="Status">Status <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="categories" data-i18n="Categories">Categories <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="date" data-i18n="Date">Date <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth" data-i18n="Youth">Youth <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id" data-i18n="ID"> ID</th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="content" data-i18n="Content">Content </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none max-w-[120px]" data-sort="summary" data-i18n="AI Summary">AI Summary </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none w-16 text-center" data-sort="comments" data-i18n="Comments">Comments </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="topic" data-i18n="Topic">Topic </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="status" data-i18n="Status">Status </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="categories" data-i18n="Categories">Categories </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="date" data-i18n="Date">Date </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth" data-i18n="Youth">Youth</th>
                             <th class="py-3 px-4 font-semibold w-10" data-i18n="MFR">MFR</th>
                         </tr>
                     </thead>
@@ -262,198 +263,20 @@
     </main>
 </div>
 
+<script type="module" vite-src="~/components/analytics/listPage.ts"></script>
+<style>
+th[data-sort-dir="asc"]::after,
+th[data-sort-dir="desc"]::after {
+    display: inline-block;
+    width: 0.75rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+th[data-sort-dir="asc"]::after  { content: '\2191'; }
+th[data-sort-dir="desc"]::after { content: '\2193'; }
+</style>
 <script>
-document.querySelectorAll('.idea-row').forEach(function(row) {
-    row.addEventListener('click', function() {
-        var ideaId = row.getAttribute('data-idea-id');
-        var expandRow = document.querySelector('.idea-expand-row[data-idea-id="' + ideaId + '"]');
-        var chevron = row.querySelector('.chevron');
-        if (expandRow) {
-            var isExpanded = !expandRow.classList.contains('hidden');
-            expandRow.classList.toggle('hidden');
-            if (chevron) {
-                if (isExpanded) chevron.classList.remove('rotate-90');
-                else chevron.classList.add('rotate-90');
-            }
-        }
-    });
-});
-
-(function() {
-    var exportBtn = document.getElementById('export-dropdown-btn-ideas');
-    var exportMenu = document.getElementById('export-dropdown-menu-ideas');
-    if (exportBtn && exportMenu) {
-        exportBtn.addEventListener('click', function(e) { e.stopPropagation(); exportMenu.classList.toggle('hidden'); });
-        document.addEventListener('click', function() { exportMenu.classList.add('hidden'); });
-        exportMenu.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-
-    document.querySelectorAll('.export-ideas-link').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var filterAware = link.dataset.exportFiltered === 'true';
-            var wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') || window.location.hostname.split('.')[0];
-            var params = new URLSearchParams();
-            params.set('workspaceId', wsSlug);
-            params.set('type', 'ideas-only');
-            if (filterAware) {
-                var formEl = document.getElementById('ideas-filter-form');
-                if (formEl) {
-                    var fd = new FormData(formEl);
-                    for (var pair of fd.entries()) {
-                        if (pair[1] && typeof pair[1] === 'string' && pair[0] !== '') params.set(pair[0], pair[1]);
-                    }
-                }
-            }
-            window.location.href = '/api/admin/analytics/export?' + params.toString();
-            exportMenu.classList.add('hidden');
-        });
-    });
-})();
-
-(function() {
-    var pageSizeSelect = document.getElementById('ideas-page-size');
-    var infoEl = document.getElementById('ideas-pagination-info');
-    var paginationEl = document.getElementById('ideas-pagination');
-    var prevBtn = document.getElementById('ideas-prev');
-    var nextBtn = document.getElementById('ideas-next');
-    var pageNumsEl = document.getElementById('ideas-page-nums');
-    var tbody = document.querySelector('#ideas-table tbody');
-    if (!pageSizeSelect || !tbody) return;
-
-    var currentPage = 1;
-    var pageSize = parseInt(pageSizeSelect.value);
-    var totalPages = 0;
-
-    function getRows() {
-        return tbody.querySelectorAll('tr.idea-row');
-    }
-
-    function renderPage() {
-        var rows = getRows();
-        var totalItems = rows.length;
-        pageSize = parseInt(pageSizeSelect.value);
-        totalPages = pageSize === -1 ? 1 : Math.ceil(totalItems / pageSize);
-        if (currentPage > totalPages) currentPage = totalPages;
-
-        var start = pageSize === -1 ? 0 : (currentPage - 1) * pageSize;
-        var end = pageSize === -1 ? totalItems : Math.min(start + pageSize, totalItems);
-        var pageRowIds = new Set();
-        for (var i = start; i < end; i++) {
-            pageRowIds.add(rows[i].getAttribute('data-idea-id'));
-        }
-
-        rows.forEach(function(row) {
-            var id = row.getAttribute('data-idea-id');
-            var expandRow = tbody.querySelector('.idea-expand-row[data-idea-id="' + id + '"]');
-            if (pageRowIds.has(id)) {
-                row.style.display = '';
-                if (expandRow) expandRow.style.display = '';
-            } else {
-                row.style.display = 'none';
-                if (expandRow) {
-                    expandRow.classList.add('hidden');
-                    expandRow.style.display = 'none';
-                }
-            }
-        });
-
-        infoEl.textContent = 'Showing ' + (totalItems === 0 ? 0 : start + 1) + '-' + end + ' of ' + totalItems + ' ideas';
-
-        if (totalPages <= 1) {
-            paginationEl.style.display = 'none';
-        } else {
-            paginationEl.style.display = '';
-        }
-
-        prevBtn.disabled = currentPage <= 1;
-        nextBtn.disabled = currentPage >= totalPages;
-
-        var pageNumsHtml = '';
-        var maxPages = Math.min(totalPages, 7);
-        var startPage = Math.max(1, currentPage - 3);
-        var endPage = Math.min(totalPages, startPage + maxPages - 1);
-        if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
-
-        for (var p = startPage; p <= endPage; p++) {
-            if (p === currentPage) {
-                pageNumsHtml += '<span class="px-2 py-1 rounded bg-primary text-white text-xs font-semibold">' + p + '</span>';
-            } else {
-                pageNumsHtml += '<button class="ideas-page-num px-2 py-1 rounded border border-secondary/20 text-xs hover:bg-secondary/5" data-page="' + p + '">' + p + '</button>';
-            }
-        }
-        pageNumsEl.innerHTML = pageNumsHtml;
-
-        pageNumsEl.querySelectorAll('.ideas-page-num').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                currentPage = parseInt(this.getAttribute('data-page'));
-                renderPage();
-            });
-        });
-    }
-
-    pageSizeSelect.addEventListener('change', function() {
-        currentPage = 1;
-        renderPage();
-    });
-
-    prevBtn.addEventListener('click', function() {
-        if (currentPage > 1) { currentPage--; renderPage(); }
-    });
-
-    nextBtn.addEventListener('click', function() {
-        if (currentPage < totalPages) { currentPage++; renderPage(); }
-    });
-
-    window._ideasRenderPage = renderPage;
-    renderPage();
-})();
-
-(function() {
-    var table = document.getElementById('ideas-table');
-    if (!table) return;
-    var headers = table.querySelectorAll('th[data-sort]');
-    var currentSort = { col: null, asc: true };
-
-    headers.forEach(function(th) {
-        th.addEventListener('click', function() {
-            var col = th.getAttribute('data-sort');
-            var asc = currentSort.col === col ? !currentSort.asc : true;
-            currentSort = { col: col, asc: asc };
-
-            headers.forEach(function(h) {
-                var arrow = h.querySelector('.sort-arrow');
-                if (arrow) arrow.textContent = '';
-            });
-            var arrow = th.querySelector('.sort-arrow');
-            if (arrow) arrow.textContent = asc ? ' ▲' : ' ▼';
-
-            var tbody = table.querySelector('tbody');
-            var rows = Array.from(tbody.querySelectorAll('tr.idea-row'));
-            rows.sort(function(a, b) {
-                var aVal = (a.querySelector('[data-col="' + col + '"]')?.textContent || '').trim().toLowerCase();
-                var bVal = (b.querySelector('[data-col="' + col + '"]')?.textContent || '').trim().toLowerCase();
-                if (col === 'id') { aVal = aVal.replace('#',''); bVal = bVal.replace('#',''); return asc ? parseInt(aVal) - parseInt(bVal) : parseInt(bVal) - parseInt(aVal); }
-                if (col === 'comments') return asc ? parseInt(aVal) - parseInt(bVal) : parseInt(bVal) - parseInt(aVal);
-                if (col === 'date') return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-            });
-
-            var expandRows = tbody.querySelectorAll('tr.idea-expand-row');
-            var expandMap = {};
-            expandRows.forEach(function(r) { expandMap[r.getAttribute('data-idea-id')] = r; });
-
-            rows.forEach(function(row, i) {
-                tbody.appendChild(row);
-                var expandRow = expandMap[row.getAttribute('data-idea-id')];
-                if (expandRow) tbody.appendChild(expandRow);
-            });
-
-            if (window._ideasRenderPage) window._ideasRenderPage();
-        });
-    });
-})();
-
 (function() {
     document.querySelectorAll('.mark-review-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {

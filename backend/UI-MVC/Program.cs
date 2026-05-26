@@ -168,18 +168,17 @@ builder.Services.AddScoped<IAiManager>(provider =>
     var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
     var activeDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled);
 
+    IAiManager inner;
     if (activeDbConfig != null)
     {
-        return BuildAiManagerFromDbConfig(provider, activeDbConfig);
+        inner = BuildAiManagerFromDbConfig(provider, activeDbConfig);
     }
-
-    if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    else if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
     {
         var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
-        return new NoopAiManager(keywordRepo);
+        inner = new NoopAiManager(keywordRepo);
     }
-
-    if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    else if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -198,10 +197,17 @@ builder.Services.AddScoped<IAiManager>(provider =>
         var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
         var pricingService = provider.GetRequiredService<IAiPricingService>();
 
-        return new AiManager(mistralProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
+        inner = new AiManager(mistralProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
+    }
+    else
+    {
+        throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
     }
 
-    throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
+    var costLimitRepo = provider.GetRequiredService<ICostLimitRepository>();
+    var auditRepoWrap = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepoWrap = provider.GetRequiredService<IModerationKeywordRepository>();
+    return new CostLimitEnforcingAiManager(inner, costLimitRepo, auditRepoWrap, keywordRepoWrap);
 });
 
 builder.Services.AddSingleton<IVoiceManager, MistralVoiceManager>();

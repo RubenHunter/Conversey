@@ -358,8 +358,8 @@ public class WorkspaceAiController : Controller
         }
 
         limit.LimitAmount = form.LimitAmount;
-        limit.PeriodStart = form.PeriodStart;
-        limit.PeriodEnd = form.PeriodEnd;
+        limit.PeriodStart = DateTime.SpecifyKind(form.PeriodStart, DateTimeKind.Utc);
+        limit.PeriodEnd = DateTime.SpecifyKind(form.PeriodEnd, DateTimeKind.Utc);
         limit.IsActive = form.IsActive;
         limit.WorkspaceId = workspace.Id;
         limit.ProjectId = null;
@@ -388,8 +388,8 @@ public class WorkspaceAiController : Controller
         }
 
         limit.LimitAmount = form.LimitAmount;
-        limit.PeriodStart = form.PeriodStart;
-        limit.PeriodEnd = form.PeriodEnd;
+        limit.PeriodStart = DateTime.SpecifyKind(form.PeriodStart, DateTimeKind.Utc);
+        limit.PeriodEnd = DateTime.SpecifyKind(form.PeriodEnd, DateTimeKind.Utc);
         limit.IsActive = form.IsActive;
         limit.WorkspaceId = workspace.Id;
         limit.ProjectId = Slug.FromName(projectId);
