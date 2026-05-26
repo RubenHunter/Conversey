@@ -22,7 +22,17 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold" data-i18n="Survey Answers">Survey Answers</h1>
-                <p class="text-secondary text-sm mt-1">@Model.OpenAnswers.Count answers shown</p>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="text-secondary text-sm" id="answers-pagination-info">@Model.OpenAnswers.Count answers</span>
+                    <label class="flex items-center gap-1.5 text-sm text-secondary">
+                        <span class="text-xs">Show:</span>
+                        <select id="answers-page-size" class="rounded border border-secondary/20 px-2 py-1 text-xs bg-background">
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="-1">All</option>
+                        </select>
+                    </label>
+                </div>
             </div>
             <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline" data-i18n="← Back to Analytics">&larr; Back to Analytics</a>
         </div>
@@ -149,6 +159,12 @@
                 </table>
             </div>
         </div>
+
+        <div id="answers-pagination" class="flex items-center justify-between mt-4" style="display:none">
+            <button id="answers-prev" class="px-3 py-1.5 rounded border border-secondary/20 text-sm hover:bg-secondary/5 disabled:opacity-30" disabled>Prev</button>
+            <span id="answers-page-nums" class="flex items-center gap-1 text-sm"></span>
+            <button id="answers-next" class="px-3 py-1.5 rounded border border-secondary/20 text-sm hover:bg-secondary/5 disabled:opacity-30">Next</button>
+        </div>
     </main>
 </div>
 
@@ -202,6 +218,104 @@ document.querySelectorAll('.answer-row').forEach(function(row) {
 })();
 
 (function() {
+    var pageSizeSelect = document.getElementById('answers-page-size');
+    var infoEl = document.getElementById('answers-pagination-info');
+    var paginationEl = document.getElementById('answers-pagination');
+    var prevBtn = document.getElementById('answers-prev');
+    var nextBtn = document.getElementById('answers-next');
+    var pageNumsEl = document.getElementById('answers-page-nums');
+    var tbody = document.querySelector('#answers-table tbody');
+    if (!pageSizeSelect || !tbody) return;
+
+    var currentPage = 1;
+    var pageSize = parseInt(pageSizeSelect.value);
+    var totalPages = 0;
+
+    function getRows() {
+        return tbody.querySelectorAll('tr.answer-row');
+    }
+
+    function renderPage() {
+        var rows = getRows();
+        var totalItems = rows.length;
+        pageSize = parseInt(pageSizeSelect.value);
+        totalPages = pageSize === -1 ? 1 : Math.ceil(totalItems / pageSize);
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        var start = pageSize === -1 ? 0 : (currentPage - 1) * pageSize;
+        var end = pageSize === -1 ? totalItems : Math.min(start + pageSize, totalItems);
+        var pageRowIds = new Set();
+        for (var i = start; i < end; i++) {
+            pageRowIds.add(rows[i].getAttribute('data-answer-id'));
+        }
+
+        rows.forEach(function(row) {
+            var id = row.getAttribute('data-answer-id');
+            var expandRow = tbody.querySelector('.answer-expand-row[data-answer-id="' + id + '"]');
+            if (pageRowIds.has(id)) {
+                row.style.display = '';
+                if (expandRow) expandRow.style.display = '';
+            } else {
+                row.style.display = 'none';
+                if (expandRow) {
+                    expandRow.classList.add('hidden');
+                    expandRow.style.display = 'none';
+                }
+            }
+        });
+
+        infoEl.textContent = 'Showing ' + (totalItems === 0 ? 0 : start + 1) + '-' + end + ' of ' + totalItems + ' answers';
+
+        if (totalPages <= 1) {
+            paginationEl.style.display = 'none';
+        } else {
+            paginationEl.style.display = '';
+        }
+
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+
+        var pageNumsHtml = '';
+        var maxPages = Math.min(totalPages, 7);
+        var startPage = Math.max(1, currentPage - 3);
+        var endPage = Math.min(totalPages, startPage + maxPages - 1);
+        if (endPage - startPage < maxPages - 1) startPage = Math.max(1, endPage - maxPages + 1);
+
+        for (var p = startPage; p <= endPage; p++) {
+            if (p === currentPage) {
+                pageNumsHtml += '<span class="px-2 py-1 rounded bg-primary text-white text-xs font-semibold">' + p + '</span>';
+            } else {
+                pageNumsHtml += '<button class="answers-page-num px-2 py-1 rounded border border-secondary/20 text-xs hover:bg-secondary/5" data-page="' + p + '">' + p + '</button>';
+            }
+        }
+        pageNumsEl.innerHTML = pageNumsHtml;
+
+        pageNumsEl.querySelectorAll('.answers-page-num').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                currentPage = parseInt(this.getAttribute('data-page'));
+                renderPage();
+            });
+        });
+    }
+
+    pageSizeSelect.addEventListener('change', function() {
+        currentPage = 1;
+        renderPage();
+    });
+
+    prevBtn.addEventListener('click', function() {
+        if (currentPage > 1) { currentPage--; renderPage(); }
+    });
+
+    nextBtn.addEventListener('click', function() {
+        if (currentPage < totalPages) { currentPage++; renderPage(); }
+    });
+
+    window._answersRenderPage = renderPage;
+    renderPage();
+})();
+
+(function() {
     var table = document.getElementById('answers-table');
     if (!table) return;
     var headers = table.querySelectorAll('th[data-sort]');
@@ -238,6 +352,8 @@ document.querySelectorAll('.answer-row').forEach(function(row) {
                 var expandRow = expandMap[row.getAttribute('data-answer-id')];
                 if (expandRow) tbody.appendChild(expandRow);
             });
+
+            if (window._answersRenderPage) window._answersRenderPage();
         });
     });
 })();

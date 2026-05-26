@@ -730,7 +730,7 @@ public class AnalyticsRepository : IAnalyticsRepository
         return _db.Responses
             .Include(r => r.Idea)
             .ToList()
-            .Where(r => r.Idea != null && r.Youth.Id == youthId && projectIds.Contains(r.Idea.Project.Id))
+            .Where(r => r.Idea != null && r.Youth != null && r.Youth.Id == youthId && projectIds.Contains(r.Idea.Project.Id))
             .Select(r => r.Idea!.Id)
             .Distinct()
             .ToHashSet();
