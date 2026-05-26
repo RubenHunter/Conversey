@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
+using Conversey.BL.Analytics;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
@@ -16,7 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager) : Controller
+public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
@@ -28,13 +29,27 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     public IActionResult Projects()
     {
         var projects = projectManager.GetAllProjectsFromWorkspaceId(workspaceContext.CurrentWorkspace.Id);
-        return View(projects.Select(p => new ProjectCardViewModel()
+        var cardVms = projects.Select(p => new ProjectCardViewModel()
         {
             Id = p.Id,
             Title = p.Name,
             ImageUrl = p.ImageUrl,
             Status = p.Status
-        }).ToList());
+        }).ToList();
+
+        var participation = analyticsManager.GetParticipationStats(workspaceContext.CurrentWorkspace.Id, null);
+        var platformStats = analyticsManager.GetPlatformStats(workspaceContext.CurrentWorkspace.Id).FirstOrDefault();
+
+        var vm = new ProjectsPageViewModel
+        {
+            Projects         = cardVms,
+            TotalProjects    = cardVms.Count,
+            ParticipantCount = participation.TotalYouth,
+            IdeaCount        = platformStats?.IdeaCount ?? 0,
+            AnswerCount      = platformStats?.AnswerCount ?? 0,
+        };
+
+        return View(vm);
     }
 
     [HttpGet("/admin/projects/new")]
@@ -171,8 +186,16 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
-            return View(project);
+            var project       = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            var participation = analyticsManager.GetParticipationStats(workspaceContext.CurrentWorkspace.Id, id);
+            var vm = new ProjectDetailsViewModel
+            {
+                Project          = project,
+                Questions        = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, id),
+                ParticipantCount = participation.TotalYouth,
+                IdeaCount        = analyticsManager.GetIdeaStats(workspaceContext.CurrentWorkspace.Id, id, null).Count,
+            };
+            return View(vm);
         }
         catch (NotFoundException e)
         {

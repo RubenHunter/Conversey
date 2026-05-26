@@ -9,7 +9,7 @@
     ViewData["WorkspaceName"] = AdminContext.GetWorkspace()?.Name ?? "Workspace";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
+        ("Dashboard", "/admin/workspace", false),
         (I18n["Projects"], "/admin/projects", false),
         (I18n["Create"], null, true)
     };
