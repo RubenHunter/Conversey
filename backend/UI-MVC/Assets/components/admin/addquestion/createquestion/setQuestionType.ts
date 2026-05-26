@@ -35,6 +35,11 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
                         ${options}
                     </select>
                 </label>
+                
+                <label class="block text-sm font-medium text-gray-700">
+                    Required
+                    <input name="question-required" type="checkbox">
+                </label>
             </main>
             <footer class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
 
@@ -53,6 +58,7 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
     const cancelButton = component.elements.namedItem('cancel')! as HTMLSelectElement;
     const selectElement = component.elements.namedItem('question-type')! as HTMLSelectElement;
     const questionInput = component.elements.namedItem('question-text')! as HTMLInputElement;
+    const requiredCheckbox = component.elements.namedItem('question-required')! as HTMLInputElement;
     
     selectElement.value = question.type;
     questionInput.value = question.text;
@@ -60,6 +66,7 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
     selectElement.addEventListener('change', setType);
     cancelButton.addEventListener('cancel', cancel);
     component.addEventListener('submit', submit);
+    requiredCheckbox.addEventListener('change', changeRequired);
 
     updateSubmitButton();
 
@@ -99,6 +106,10 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
                 text = 'Next';
         }
         submitButton.innerHTML = text;
+    }
+    
+    function changeRequired() {
+        question.required = requiredCheckbox.checked;
     }
 
     function cancel() {
