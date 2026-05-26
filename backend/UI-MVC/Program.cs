@@ -104,7 +104,7 @@ builder.Services.AddDataProtection()
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
 {
-options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
+    options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
         {
             policy.AddRequirements(new WorkspaceAdminRequirement());
         });
@@ -112,6 +112,11 @@ options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
         options.AddPolicy(ConverseyAdminPolicy.Name, policy =>
         {
             policy.AddRequirements(new ConverseyAdminRequirement());
+        });
+
+        options.AddPolicy(AdminPolicy.Name, policy =>
+        {
+            policy.AddRequirements(new AdminRequirement());
         });
 });
 
@@ -245,8 +250,10 @@ builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().Curr
 builder.Services.AddSingleton<AdminContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
+builder.Services.AddScoped<IAdminAccessService, AdminAccessService>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminHandler>();
 builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 
 builder.Services.AddHttpContextAccessor();

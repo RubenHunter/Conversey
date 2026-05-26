@@ -3,11 +3,12 @@ using Conversey.UI_MVC.Models.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Conversey.DAL;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 
-[Authorize(Roles = "ConverseyAdmin,WorkspaceAdmin")]
+[Authorize(Policy = AdminPolicy.Name)]
 public class AdminProfileController(
     UserManager<IdentityUser> userManager,
     SignInManager<IdentityUser> signInManager,
