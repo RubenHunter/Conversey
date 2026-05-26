@@ -2,7 +2,7 @@
 @inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
-<div id="dynamic-stepper" class="w-full max-w-5xl mx-auto p-6 bg-background text-text" 
+<div id="dynamic-stepper" class="w-full max-w-7xl mx-auto p-6 bg-background text-text" 
      data-total-steps="@Model.StepperViewModel.Steps.Count" 
      data-entity="@Model.StepperViewModel.EntityName"
      data-draft-storage-prefix="@Model.StepperViewModel.DraftStoragePrefix"
@@ -12,6 +12,9 @@
      data-is-create-page="@Model.StepperViewModel.IsCreatePage.ToString().ToLowerInvariant()"
      data-is-copy-flow="@Model.StepperViewModel.IsCopyFlow.ToString().ToLowerInvariant()">
     
+    <div class="flex flex-col gap-10">
+        <div class="w-full">
+
     @* Header Section *@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
         <h1 class="text-4xl font-bold tracking-tight" data-i18n="@Model.StepperViewModel.Title">@Model.StepperViewModel.Title</h1>
@@ -24,7 +27,7 @@
                 <button id="prevBtn" type="button" class="hidden px-8 py-2 border border-text rounded-lg hover:bg-text/5 transition-all" data-i18n="&lt; Back">
                     &lt; Back
                 </button>
-                <button id="nextBtn" type="button" class="px-8 py-2 bg-text text-background rounded-lg hover:opacity-90 transition-all" data-i18n="Next &gt;">
+                <button id="nextBtn" type="button" class="px-8 py-2 !bg-primary !text-white rounded-lg hover:opacity-90 transition-all" data-i18n="Next &gt;">
                     Next &gt;
                 </button>
             </div>
@@ -60,13 +63,63 @@
          }
      </div>
 
-    @* Content Area *@
-    <div class="step-content-container relative overflow-hidden min-h-75">
-        @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
-        {
-            <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
+        </div>
+
+        @* Content + Preview *@
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
+            @* Content Area *@
+            <div class="step-content-container relative overflow-hidden min-h-75 flex-1 min-w-0">
+                @for (int i = 0; i < Model.StepperViewModel.Steps.Count; i++)
+                {
+                    <div id="step-content-@(i+1)" class="step-pane hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                        @await Html.PartialAsync(Model.StepperViewModel.Steps[i].PartialViewName, Model)
+                        </div>
+                }
+            </div>
+
+            @* Preview section *@
+            <section class="w-full lg:w-[360px] lg:shrink-0">
+                <div class="rounded-3xl border border-text/10 bg-gradient-to-br from-background via-white to-background shadow-[0_24px_60px_-40px_rgba(5,3,10,0.45)]">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-text/10">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.2em] text-text/50">Live Preview</p>
+                            <p class="text-lg font-semibold text-text">Participant view</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                                <span class="h-2 w-2 rounded-full bg-primary"></span>
+                                Live
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="rounded-2xl border border-text/10 bg-background/70 p-2">
+                            <iframe id="project-preview-iframe"
+                                    class="w-full rounded-xl"
+                                    style="min-height: 600px;"
+                                    src="/admin/projects/preview?prefix=@Uri.EscapeDataString(Model.StepperViewModel.DraftStoragePrefix)"
+                                    title="Project preview">
+                            </iframe>
+                        </div>
+                        <p class="mt-3 text-xs text-text/60">Updates as you change step data.</p>
+                    </div>
                 </div>
-        }
+            </section>
+        </div>
     </div>
+</div>
+
+@* Floating action buttons *@
+<div class="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+    <button type="button"
+            class="rounded-full bg-background/90 backdrop-blur border border-text/15 px-5 py-3 text-sm font-semibold text-text shadow-lg hover:bg-background transition-colors"
+            onclick="document.getElementById('saveDraftBtn')?.click()">
+        Save as draft
+    </button>
+    <button type="button"
+            class="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity"
+            onclick="document.getElementById('nextBtn')?.click()"
+            data-i18n="Next &gt;">
+        Next &gt;
+    </button>
 </div>

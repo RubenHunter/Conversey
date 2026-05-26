@@ -46,7 +46,7 @@
             <p id="step1ImageUploadError" class="text-xs text-red-600 text-center -mt-1"></p>
 
             <div class="flex items-center gap-2 mt-0.5">
-                <label asp-for="CreateStep1ViewModel.InteractionForm" class="text-sm font-semibold text-text shrink-0">Chat mode</label>
+                <label asp-for="CreateStep1ViewModel.InteractionForm" class="text-sm font-semibold text-text shrink-0">Interaction</label>
                 <select asp-for="CreateStep1ViewModel.InteractionForm"
                         asp-items="Html.GetEnumSelectList<InteractionType>()"
                         class="flex-1 min-w-0 rounded-lg border border-text/20 bg-background px-2 py-1.5 text-sm">
@@ -71,21 +71,21 @@
                 <div>
                     <label class="block text-sm font-semibold text-text mb-2">Age group</label>
                     <div class="space-y-2.5">
-                        <div class="flex items-center gap-3">
+                        <div class="range-slider">
                             <span class="text-xs text-text/55 w-7 shrink-0">Min</span>
                             <input type="range" id="step1MinAge" name="CreateStep1ViewModel.MinAge"
                                    min="0" max="150" step="1"
                                    value="@(Model.CreateStep1ViewModel.MinAge ?? 0)"
-                                   class="flex-1 cursor-pointer accent-text" />
-                            <span id="step1MinAgeDisplay" class="text-xs font-mono font-medium text-text w-8 text-right shrink-0">@(Model.CreateStep1ViewModel.MinAge ?? 0)</span>
+                                   class="flex-1" />
+                            <span id="step1MinAgeDisplay" class="range-slider-badge">@(Model.CreateStep1ViewModel.MinAge ?? 0)</span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="range-slider">
                             <span class="text-xs text-text/55 w-7 shrink-0">Max</span>
                             <input type="range" id="step1MaxAge" name="CreateStep1ViewModel.MaxAge"
                                    min="0" max="150" step="1"
                                    value="@(Model.CreateStep1ViewModel.MaxAge ?? 150)"
-                                   class="flex-1 cursor-pointer accent-text" />
-                            <span id="step1MaxAgeDisplay" class="text-xs font-mono font-medium text-text w-8 text-right shrink-0">@(Model.CreateStep1ViewModel.MaxAge ?? 150)</span>
+                                   class="flex-1" />
+                            <span id="step1MaxAgeDisplay" class="range-slider-badge">@(Model.CreateStep1ViewModel.MaxAge ?? 150)</span>
                         </div>
                     </div>
                 </div>
@@ -182,10 +182,6 @@
             </div>
         </div>
 
-        @* ── PREVIEW placeholder ── *@
-        <div class="w-60 shrink-0 rounded-2xl border border-text/15 flex items-center justify-center p-6 bg-text/[0.02]" style="min-height: 380px;">
-            <p class="text-lg font-bold text-center text-text/30 leading-snug">Live preview<br/>will come<br/>here later</p>
-        </div>
     </div>
 </form>
 

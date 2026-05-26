@@ -3,6 +3,16 @@ interface StepDraftData {
     draftSynced: boolean;
 }
 
+function notifyPreviewIframes(storageKey: string): void {
+    const iframes = document.querySelectorAll<HTMLIFrameElement>('iframe')
+    for (const iframe of iframes) {
+        iframe.contentWindow?.postMessage(
+            { type: 'draft-changed', storageKey },
+            window.location.origin,
+        )
+    }
+}
+
 export class StepDraftManager {
     readonly storageKey: string;
 
@@ -18,6 +28,7 @@ export class StepDraftManager {
     persist(): void {
         const fields = this.collectFields();
         localStorage.setItem(this.storageKey, JSON.stringify({ fields, draftSynced: false }));
+        notifyPreviewIframes(this.storageKey);
     }
 
     hydrate(): void {

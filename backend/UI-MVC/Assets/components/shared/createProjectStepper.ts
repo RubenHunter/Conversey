@@ -74,6 +74,7 @@ class ProjectDraftManager {
 
     private currentStep = 1;
     private saveDraftFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+    private uploadAbortController: AbortController | null = null;
 
     constructor(container: HTMLElement) {
         this.draftStoragePrefix = container.dataset.draftStoragePrefix || '';
@@ -123,12 +124,7 @@ class ProjectDraftManager {
         this.bindStep4AdvancedToggle();
         this.bindStep4PromptModal(container);
 
-        window.addEventListener('beforeunload', (e) => {
-            if (this.shouldBlockExit()) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
+        // Native beforeunload removed. Custom _DraftExitModal handles exit confirmation.
     }
 
     getStepperHooks(): StepperHooks {
@@ -284,6 +280,11 @@ class ProjectDraftManager {
         this.setUploadError('');
         this.setUploadStatus('Uploading image...');
 
+        if (this.uploadAbortController) {
+            this.uploadAbortController.abort();
+        }
+        this.uploadAbortController = new AbortController();
+
         const payload = new FormData();
         payload.append('imageFile', selectedFile);
         payload.append('__RequestVerificationToken', antiForgeryToken);
@@ -293,6 +294,7 @@ class ProjectDraftManager {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: payload,
+                signal: this.uploadAbortController.signal,
             });
 
             const responseBody = await this.parseUploadResponse(response);
@@ -308,12 +310,21 @@ class ProjectDraftManager {
                 return false;
             }
 
-            if (this.step1ImageUrl) this.step1ImageUrl.value = responseBody.imageUrl;
+            if (this.step1ImageUrl) {
+                this.step1ImageUrl.value = responseBody.imageUrl;
+                this.step1ImageUrl.dispatchEvent(new Event('input', { bubbles: true }));
+            }
             if (this.step1ImageUploadSignature) this.step1ImageUploadSignature.value = currentSignature;
+
+            if (this.step1ImageFile) this.step1ImageFile.value = '';
 
             this.setUploadStatus('Image uploaded.');
             return true;
-        } catch {
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                this.setUploadStatus('');
+                return false;
+            }
             this.setUploadError('Image upload failed. Check connection and retry.');
             this.setUploadStatus('');
             return false;
@@ -528,6 +539,8 @@ class ProjectDraftManager {
             sessionStorage.removeItem('recoverDraft');
             return;
         }
+        const metaKey = `${this.draftStoragePrefix}:meta`;
+        if (localStorage.getItem(metaKey)) return;
         this.clearAllLocalDrafts();
     }
 
@@ -686,6 +699,8 @@ class ProjectDraftManager {
                 if (typeof result === 'string') showPreview(result);
             };
             reader.readAsDataURL(file);
+
+            this.ensureStep1ImageUploaded();
         });
 
         const existingUrl = this.step1ImageUrl?.value.trim();

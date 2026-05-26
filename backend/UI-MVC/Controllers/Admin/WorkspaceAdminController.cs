@@ -668,6 +668,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         return await projectManager.UploadProjectImage(stream, projectStep1.ImageFile.FileName, projectStep1.ImageFile.ContentType);
     }
 
+    [HttpGet("/admin/projects/preview")]
+    public IActionResult Preview(string prefix)
+    {
+        return View("Preview", prefix);
+    }
+
     private bool ProjectExistsAsNonDraft(CreateProjectIntroAndPresentationViewModel projectStep1)
     {
         if (string.IsNullOrWhiteSpace(projectStep1.Name)) return false;
