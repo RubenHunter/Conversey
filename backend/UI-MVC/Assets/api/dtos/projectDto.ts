@@ -34,6 +34,8 @@ export interface ApiProjectDto {
     OrganizationId?: ApiSlugValue
     organizationName?: string
     OrganizationName?: string
+    organizationLogo?: string
+    OrganizationLogo?: string
     name?: string
     Name?: string
     description?: string

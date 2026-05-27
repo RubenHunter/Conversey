@@ -9,6 +9,7 @@ public class ProjectDto
     public Slug Id { get; set; }
     public Slug OrganizationId { get; set; }
     public string OrganizationName { get; set; }
+    public string? OrganizationLogo { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public string ImageUrl { get; set; }
@@ -34,6 +35,7 @@ public class ProjectDto
             Id = project.Id,
             OrganizationId = project.Workspace.Id,
             OrganizationName = project.Workspace.Name,
+            OrganizationLogo = project.Workspace.ImageUrl,
             Name = project.Name,
             Description = project.Description ?? string.Empty,
             ImageUrl = project.ImageUrl ?? string.Empty,

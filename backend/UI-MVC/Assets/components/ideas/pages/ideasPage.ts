@@ -88,7 +88,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
     let lastScrollTop: number = 0
 
-    const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug })
+    const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug, organizationLogo: project.organizationLogo })
 
     container.innerHTML = `
         <div class="ideas-shell h-svh w-full self-stretch overflow-hidden flex flex-col bg-[var(--color-bg)]">

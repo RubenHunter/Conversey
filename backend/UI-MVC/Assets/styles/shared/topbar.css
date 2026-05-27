@@ -70,6 +70,14 @@
   font-weight: 800;
 }
 
+.survey-topbar-logo-img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  display: block;
+}
+
 .survey-topbar-name {
   font-size: var(--font-size-sm);
   font-weight: 700;

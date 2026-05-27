@@ -41,6 +41,7 @@ const CONFIGS: Record<string, PageElements> = {
         pageNumClass: 'ideas-page-num',
         exportType: 'ideas-only',
         renderPageFn: '_ideasRenderPage',
+        type: 'idea',
     },
     answer: {
         type: 'answer',
@@ -62,6 +63,7 @@ const CONFIGS: Record<string, PageElements> = {
         pageNumClass: 'answers-page-num',
         exportType: 'answers-only',
         renderPageFn: '_answersRenderPage',
+        type: 'answer',
     },
 };
 
