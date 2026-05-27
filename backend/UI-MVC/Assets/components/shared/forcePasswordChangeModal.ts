@@ -43,11 +43,10 @@ class ForcePasswordChangeModal {
             return;
         }
 
-        const currentPassword = (document.getElementById("forceCurrentPassword") as HTMLInputElement | null)?.value ?? "";
         const newPassword = (document.getElementById("forceNewPassword") as HTMLInputElement | null)?.value ?? "";
         const confirmPassword = (document.getElementById("forceConfirmPassword") as HTMLInputElement | null)?.value ?? "";
 
-        if (!currentPassword || !newPassword || !confirmPassword) {
+        if (!newPassword || !confirmPassword) {
             this.showError("Fill in all password fields.");
             return;
         }
