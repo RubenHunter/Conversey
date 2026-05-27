@@ -5,7 +5,9 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
 using Conversey.DAL.Administration;
+using Conversey.DAL.Analytics;
 using Conversey.DAL.Ideation;
+using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -19,6 +21,7 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
     public DbSet<WorkspaceAdminUser> WorkspaceAdmins { get; set; }
     public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectTheme> ProjectThemes { get; set; }
     public DbSet<Topic> Topics { get; set; }
     public DbSet<Youth> Youths { get; set; }
     public DbSet<Idea> Ideas { get; set; }
@@ -34,6 +37,8 @@ public class ConverseyDbContext : IdentityDbContext
     public DbSet<ModerationKeyword>  ModerationKeywords { get; set; }
     public DbSet<AiCostLimit> AiCostLimits { get; set; }
     public DbSet<AiModelPricing> AiModelPricings { get; set; }
+    public DbSet<SavedAiSummary> SavedAiSummaries { get; set; }
+    public DbSet<ProjectAiPromptOverride> ProjectAiPromptOverrides { get; set; }
 
     public ConverseyDbContext(DbContextOptions options) : base(options)
     {
@@ -47,6 +52,8 @@ public class ConverseyDbContext : IdentityDbContext
 
         modelBuilder.ApplyConfiguration(new ProjectConfig());
 
+        modelBuilder.ApplyConfiguration(new ProjectThemeConfig());
+
         modelBuilder.ApplyConfiguration(new TopicConfig());
 
         modelBuilder.ApplyConfiguration(new YouthConfig());
@@ -57,13 +64,10 @@ public class ConverseyDbContext : IdentityDbContext
         modelBuilder.ApplyConfiguration(new ScaleQuestionConfig());
         modelBuilder.ApplyConfiguration(new SingleChoiceQuestionConfig());
         modelBuilder.ApplyConfiguration(new MultipleChoiceQuestionConfig());
-        modelBuilder.ApplyConfiguration(new SingleChoiceConfig());
-        modelBuilder.ApplyConfiguration(new MultipleChoiceConfig());
+        modelBuilder.ApplyConfiguration(new ChoiceConfig());
         modelBuilder.ApplyConfiguration(new AnswerStringConfig());
         modelBuilder.ApplyConfiguration(new AnswerIntConfig());
-        modelBuilder.ApplyConfiguration(new AnswerSingleChoiceConfig());
-        modelBuilder.ApplyConfiguration(new AnswerMultipleChoiceConfig());
-
+        modelBuilder.ApplyConfiguration(new AnswerChoiceConfig());
 
         // Idea
 
@@ -73,47 +77,55 @@ public class ConverseyDbContext : IdentityDbContext
         modelBuilder.ApplyConfiguration(new IdeaReactionConfig());
         modelBuilder.ApplyConfiguration(new ResponseReactionConfig());
         
-
-        // WorkspaceAdmin
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasKey(wa => wa.Id);
-        //
-        // modelBuilder.Entity<WorkspaceAdmin>()
-        //     .HasOne(wa => wa.Workspace);
-
-        modelBuilder.Entity<WorkspaceAdminUser>()
-            .HasOne(wa => wa.Workspace)
-            .WithMany()
-            .HasForeignKey("WorkspaceId")
-            .IsRequired();
-
-        modelBuilder.Entity<AiAuditLog>()
-            .HasOne(a => a.Workspace)
-            .WithMany()
-            .HasForeignKey(a => a.WorkspaceId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiAuditLog>()
-            .HasOne(a => a.Project)
-            .WithMany()
-            .HasForeignKey(a => a.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiCostLimit>()
-            .HasOne(c => c.Workspace)
-            .WithMany()
-            .HasForeignKey(c => c.WorkspaceId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<AiCostLimit>()
-            .HasOne(c => c.Project)
-            .WithMany()
-            .HasForeignKey(c => c.ProjectId)
-            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.ApplyConfiguration(new WorkspaceAdminUserConfig());
+        modelBuilder.ApplyConfiguration(new AiAuditLogConfig());
+        modelBuilder.ApplyConfiguration(new AiCostLimitConfig());
+        modelBuilder.ApplyConfiguration(new SavedAiSummaryConfig());
+        
+        modelBuilder.ApplyConfiguration(new ProjectAiPromptOverrideConfig());
 
         
-   
-
+        // modelBuilder.Entity<WorkspaceAdminUser>()
+        //     .HasOne(wa => wa.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey("WorkspaceId")
+        //     .IsRequired();
+        //
+        // modelBuilder.Entity<AiAuditLog>()
+        //     .HasOne(a => a.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(a => a.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiAuditLog>()
+        //     .HasOne(a => a.Project)
+        //     .WithMany()
+        //     .HasForeignKey(a => a.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiCostLimit>()
+        //     .HasOne(c => c.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(c => c.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<AiCostLimit>()
+        //     .HasOne(c => c.Project)
+        //     .WithMany()
+        //     .HasForeignKey(c => c.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<SavedAiSummary>()
+        //     .HasOne(s => s.Workspace)
+        //     .WithMany()
+        //     .HasForeignKey(s => s.WorkspaceId)
+        //     .OnDelete(DeleteBehavior.SetNull);
+        //
+        // modelBuilder.Entity<SavedAiSummary>()
+        //     .HasOne(s => s.Project)
+        //     .WithMany()
+        //     .HasForeignKey(s => s.ProjectId)
+        //     .OnDelete(DeleteBehavior.SetNull);
     }
 
     public bool CreateDatabase(bool resetDatabase)

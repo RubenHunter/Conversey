@@ -3,6 +3,7 @@ using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Api;
@@ -12,17 +13,24 @@ namespace Conversey.UI_MVC.Controllers.Api;
 public class IdeaResponsesController : ControllerBase
 {
     private readonly IIdeaManager _ideaManager;
+    private readonly IProjectAccessService _projectAccessService;
 
-    public IdeaResponsesController(IIdeaManager ideaManager)
+    public IdeaResponsesController(IIdeaManager ideaManager, IProjectAccessService projectAccessService)
     {
         _ideaManager = ideaManager;
+        _projectAccessService = projectAccessService;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<ResponseDto>> GetApprovedResponsesByYouth(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] Guid youthId)
+    public async Task<ActionResult<IEnumerable<ResponseDto>>> GetApprovedResponsesByYouth(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] Guid youthId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var responses = _ideaManager.GetApprovedResponsesByYouth(workspaceId, projectId, topicId, ideaId, youthId)
                 .Select(ResponseDto.From)
                 .ToList()
@@ -41,6 +49,11 @@ public class IdeaResponsesController : ControllerBase
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var submission = await _ideaManager.AddResponseAsync(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Text);
             return Ok(submission switch
             {
@@ -60,10 +73,15 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPut("{responseId:int}")]
-    public ActionResult<ResponseDto> UpdateAfterSafetyReview(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] UpdateResponseAfterSafetyReviewDto request)
+    public async Task<ActionResult<ResponseDto>> UpdateAfterSafetyReview(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] UpdateResponseAfterSafetyReviewDto request)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             ModerationStatus newStatus = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved;
             var updated = _ideaManager.ChangeResponse(workspaceId, projectId, topicId, ideaId, request.YouthId, responseId, newStatus, request.Text);
             return Ok(ResponseDto.From(updated));
@@ -79,10 +97,15 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpGet("{responseId:int}/reactions")]
-    public ActionResult<IEnumerable<ReactionDto>> GetReactionSummary(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId)
+    public async Task<ActionResult<IEnumerable<ReactionDto>>> GetReactionSummary(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var reactions = _ideaManager.GetResponseReactionsByResponseId(workspaceId, projectId, topicId, ideaId, responseId)
                 .GroupBy(r => r.Emoji)
                 .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
@@ -97,10 +120,15 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpPost("{responseId:int}/reactions")]
-    public ActionResult<CreatedReactionDto> AddReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
+    public async Task<ActionResult<CreatedReactionDto>> AddReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             ResponseReaction addedReaction = _ideaManager.AddResponseReaction(workspaceId, projectId, topicId, ideaId, responseId, request.YouthId, request.Emoji);
 
             return Ok(new CreatedReactionDto
@@ -120,10 +148,15 @@ public class IdeaResponsesController : ControllerBase
     }
 
     [HttpDelete("{responseId:int}/reactions/{reactionId:int}")]
-    public ActionResult RemoveReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromQuery] Guid youthId, int reactionId)
+    public async Task<ActionResult> RemoveReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, [FromQuery] Guid youthId, int reactionId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             _ideaManager.RemoveResponseReaction(workspaceId, projectId, topicId, ideaId, responseId, youthId, reactionId);
             return NoContent();
         }
@@ -137,5 +170,9 @@ public class IdeaResponsesController : ControllerBase
         }
     }
 
-}
+    private async Task<bool> IsActiveProjectOrAdmin(Slug workspaceId, Slug projectId)
+    {
+        return await _projectAccessService.IsActiveProjectOrAdminAsync(workspaceId, projectId, User);
+    }
 
+}

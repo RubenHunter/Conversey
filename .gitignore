@@ -1,0 +1,9 @@
+# Vibe Documentation
+# README.md is used for Vibe coding assistance and must NEVER be committed to git
+/README.md
+
+# Claude configuration
+.claude/
+
+# Docs folder (generated documentation)
+/docs/

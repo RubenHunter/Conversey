@@ -328,6 +328,16 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             }
             return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
         }
+
+        public Task<string> CompletePlainTextAsync(
+            string systemPrompt,
+            string userPrompt,
+            string? workspaceId = null,
+            string? projectId = null,
+            string? displayPromptName = null)
+        {
+            return Task.FromResult("[Test] Plain text completion response.");
+        }
     }
 
     private sealed class TestAiManagerConfig

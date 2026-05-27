@@ -273,6 +273,59 @@ Rules:
         return "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in {{Language}}.";
     }
 
+    internal static string BuildIdeaSummarySystemPrompt()
+    {
+        return """
+You are an insightful data analyst for a youth participation platform. Your task is to analyze a collection of youth-contributed ideas and produce a clear, structured summary.
+
+Return ONLY a JSON object with this exact schema:
+{"overview":"A 2-3 sentence overview of the main themes across all ideas.","trends":["trend 1","trend 2","trend 3"],"minorityViews":["niche or less common perspective 1","niche or less common perspective 2"],"notableQuotes":["direct quote or close paraphrase 1","direct quote or close paraphrase 2"],"suggestedActions":["actionable recommendation 1","actionable recommendation 2"]}
+
+Rules:
+- overview: concise, covers breadth of all ideas seen
+- trends: 2-4 recurring patterns or dominant themes
+- minorityViews: 1-3 ideas that stand out from the mainstream (unique, dissenting, or niche)
+- notableQuotes: 2-3 exact or near-exact quotes from the ideas that are particularly insightful
+- suggestedActions: 2-3 concrete recommendations based on what youth are saying
+- Write in {{Language}}.
+- If focus instruction provided, prioritize that angle while still covering general patterns.
+""";
+    }
+
+    internal static string BuildIdeaSummaryUserPrompt(IReadOnlyList<string> ideas, string? focus, string language)
+    {
+        var ideasList = string.Join("\n---\n", ideas.Select((idea, idx) => $"[{idx}] {idea}"));
+
+        var focusInstruction = string.IsNullOrWhiteSpace(focus)
+            ? "No specific focus — provide a balanced summary across all topics."
+            : $"Focus your analysis primarily on: {focus}. Still mention other patterns briefly.";
+
+        return $$"""
+Project ideas from youth participants:
+
+{{ideasList}}
+
+Focus instruction: {{focusInstruction}}
+
+Analyze the ideas above and produce a structured summary in JSON format. Ensure the overview captures the breadth, trends identify the most repeated patterns, minority views highlight unique or dissenting perspectives, and suggested actions are grounded in the ideas themselves.
+""";
+    }
+
+    internal static IReadOnlyDictionary<string, string> BuildIdeaSummaryVariables(IReadOnlyList<string> ideas, string? focus, string language)
+    {
+        var ideasList = string.Join("\n---\n", ideas.Select((idea, idx) => $"[{idx}] {idea}"));
+        var focusInstruction = string.IsNullOrWhiteSpace(focus)
+            ? "No specific focus — provide a balanced summary across all topics."
+            : $"Focus your analysis primarily on: {focus}. Still mention other patterns briefly.";
+
+        return new Dictionary<string, string>
+        {
+            ["Ideas"] = ideasList,
+            ["Focus"] = focusInstruction,
+            ["Language"] = language
+        };
+    }
+
     internal static IReadOnlyDictionary<string, string> BuildKeyPhrasesVariables(
         string transcript,
         Language language,

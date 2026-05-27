@@ -2,6 +2,7 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Conversey.DAL.Administration;
 
@@ -54,9 +55,21 @@ public class AdminRepository : IAdminRepository
             .AsReadOnly();
     }
 
-    public IReadOnlyCollection<WorkspaceAdminUser> ReadAllWorkspaceAdmins()
+    public IReadOnlyCollection<WorkspaceAdmin> ReadAllWorkspaceAdmins()
     {
-        return _dbContext.WorkspaceAdmins.ToList().AsReadOnly();
+        return _dbContext.WorkspaceAdmins
+            .Include(wau => wau.Workspace)
+            .Select(wau => new WorkspaceAdmin
+            {
+                Id = Guid.Parse(wau.Id),
+                Workspace = wau.Workspace,
+                Email = wau.Email,
+                Username = wau.UserName ?? wau.Email ?? string.Empty,
+                PhoneNumber = wau.PhoneNumber,
+                FirstLogin = wau.FirstLogin,
+            })
+            .ToList()
+            .AsReadOnly();
     }
 
     public async Task CreateWorkspaceAdmin(WorkspaceAdmin workspaceAdmin, string tempPassword)
@@ -159,5 +172,149 @@ public class AdminRepository : IAdminRepository
 
         return (emailExists, usernameExists);
     }
-    
+
+    public IReadOnlyCollection<ConverseyAdmin> ReadAllConverseyAdmins()
+    {
+        return _dbContext.ConverseyAdmins
+            .Select(cau => new ConverseyAdmin
+            {
+                Id = Guid.Parse(cau.Id),
+                Email = cau.Email,
+                Username = cau.UserName ?? cau.Email ?? string.Empty,
+                PhoneNumber = cau.PhoneNumber,
+                FirstLogin = cau.FirstLogin,
+            })
+            .ToList()
+            .AsReadOnly();
+    }
+
+    public async Task<ConverseyAdmin> ReadConverseyAdminById(Guid id)
+    {
+        var converseyAdmin = await _dbContext.ConverseyAdmins
+            .FirstOrDefaultAsync(cau => cau.Id == id.ToString());
+            
+        if (converseyAdmin == null) throw new KeyNotFoundException($"Conversey Admin with ID {id} not found.");
+        
+        return new ConverseyAdmin
+        {
+            Id = Guid.Parse(converseyAdmin.Id),
+            Email = converseyAdmin.Email,
+            Username = converseyAdmin.UserName ?? converseyAdmin.Email ?? string.Empty,
+            PhoneNumber = converseyAdmin.PhoneNumber,
+            FirstLogin = converseyAdmin.FirstLogin,
+        };
+    }
+
+    public async Task CreateConverseyAdmin(ConverseyAdmin converseyAdmin, string tempPassword)
+    {
+        var converseyAdminUser = new ConverseyAdminUser
+        {
+            Email = converseyAdmin.Email,
+            UserName = string.IsNullOrWhiteSpace(converseyAdmin.Username) ? converseyAdmin.Email : converseyAdmin.Username,
+            EmailConfirmed = true,
+            PhoneNumber = converseyAdmin.PhoneNumber,
+            FirstLogin = true
+        };
+        var result = await _userManager.CreateAsync(converseyAdminUser, tempPassword);
+        var roleResult = await _userManager.AddToRoleAsync(converseyAdminUser, "ConverseyAdmin");
+        if (!result.Succeeded || !roleResult.Succeeded)
+        {
+            throw new Exception("Creation failed: " + string.Join(", ", result.Errors.Select(e => e.Description) + string.Join(", ", roleResult.Errors.Select(e => e.Description))));
+        }
+    }
+
+    public async Task SetConverseyAdminFirstLogin(Guid converseyAdminId, bool isFirstLogin)
+    {
+        var converseyAdmin = await _dbContext.ConverseyAdmins.FirstOrDefaultAsync(cau => cau.Id == converseyAdminId.ToString());
+        if (converseyAdmin == null)
+        {
+            throw new KeyNotFoundException($"Conversey Admin with ID {converseyAdminId} not found.");
+        }
+
+        converseyAdmin.FirstLogin = isFirstLogin;
+        var result = await _userManager.UpdateAsync(converseyAdmin);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to update Conversey Admin: {errors}");
+        }
+    }
+
+    public async Task UpdateConverseyAdmin(ConverseyAdmin converseyAdmin)
+    {
+        var existingUser = await _dbContext.ConverseyAdmins
+            .FirstOrDefaultAsync(cau => cau.Id == converseyAdmin.Id.ToString());
+
+        if (existingUser == null)
+            throw new KeyNotFoundException($"Conversey Admin with ID {converseyAdmin.Id} not found.");
+
+        existingUser.Email = converseyAdmin.Email;
+        existingUser.UserName = string.IsNullOrWhiteSpace(converseyAdmin.Username) ? converseyAdmin.Email : converseyAdmin.Username;
+        existingUser.PhoneNumber = converseyAdmin.PhoneNumber;
+
+        var result = await _userManager.UpdateAsync(existingUser);
+
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to update Conversey Admin: {errors}");
+        }
+    }
+
+    public async Task DeleteConverseyAdmin(Guid converseyAdminId)
+    {
+        var converseyAdmin = await _dbContext.ConverseyAdmins.FirstOrDefaultAsync(cau => cau.Id == converseyAdminId.ToString());
+        if (converseyAdmin == null)
+            throw new KeyNotFoundException();
+
+        var result = await _userManager.DeleteAsync(converseyAdmin);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new Exception($"Failed to Delete Conversey Admin: {errors}");
+        }
+    }
+
+    public async Task<(bool EmailExists, bool UsernameExists)> CheckConverseyAdminConflicts(
+        string email,
+        string username,
+        Guid? excludeConverseyAdminId = null)
+    {
+        var query = _dbContext.ConverseyAdmins.AsNoTracking();
+
+        if (excludeConverseyAdminId.HasValue)
+        {
+            var excludedId = excludeConverseyAdminId.Value.ToString();
+            query = query.Where(cau => cau.Id != excludedId);
+        }
+
+        var normalizedEmail = (email ?? string.Empty).Trim().ToUpperInvariant();
+        var normalizedUsername = (username ?? string.Empty).Trim().ToUpperInvariant();
+
+        var emailExists = !string.IsNullOrWhiteSpace(normalizedEmail) &&
+                          await query.AnyAsync(cau => cau.Email != null && cau.Email.ToUpper() == normalizedEmail);
+
+        var usernameExists = !string.IsNullOrWhiteSpace(normalizedUsername) &&
+                             await query.AnyAsync(cau => cau.UserName != null && cau.UserName.ToUpper() == normalizedUsername);
+
+        return (emailExists, usernameExists);
+    }
 }
+
+#region WorkspaceAdminUserConfig
+public class WorkspaceAdminUserConfig : IEntityTypeConfiguration<WorkspaceAdminUser>
+{
+    public void Configure(EntityTypeBuilder<WorkspaceAdminUser> builder)
+    {
+        #region Relations
+
+        builder
+            .HasOne(wa => wa.Workspace)
+            .WithMany()
+            .HasForeignKey("WorkspaceId")
+            .IsRequired();
+
+        #endregion
+    }
+}
+#endregion

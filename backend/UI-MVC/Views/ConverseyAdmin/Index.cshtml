@@ -1,25 +1,35 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
+@inject IAdminI18nService AdminI18n
 @{
     ViewData["Title"] = "Admin Panel";
+    var forcePasswordChange = TempData["ForcePasswordChange"] as bool? == true;
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", null, true)
+    };
 }
 
-<div class="min-h-screen bg-background font-sans text-text">
+<div class="min-h-screen bg-background font-sans text-text" data-force-password-change="@forcePasswordChange.ToString().ToLowerInvariant()">
     @await Html.PartialAsync("_AdminHeader")
 
     <main class="p-8 w-full max-w-400 mx-auto">
         <div class="mb-10">
-            <h1 class="text-3xl font-bold text-text tracking-tight">Conversey Admin</h1>
-            <p class="mt-2 text-sm text-text/60">Platform-wide management and configuration.</p>
+            <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Conversey Admin">Conversey Admin</h1>
+            <p class="mt-2 text-sm text-text/60" data-i18n="Platform-wide management and configuration.">Platform-wide management and configuration.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <a href="@Url.Action("Index", "AiAdmin")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-text">AI Settings</h3>
-                        <p class="text-xs text-text/50 mt-1">Configure providers, models, prompts, and monitor costs</p>
+                        <h3 class="font-semibold text-text" data-i18n="AI Settings">AI Settings</h3>
+                        <p class="text-xs text-text/50 mt-1" data-i18n="Configure providers, models, prompts, and monitor costs">Configure providers, models, prompts, and monitor costs</p>
                     </div>
                 </div>
             </a>
@@ -30,11 +40,156 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-text">Workspaces</h3>
-                        <p class="text-xs text-text/50 mt-1">Manage all workspaces and their settings</p>
+                        <h3 class="font-semibold text-text" data-i18n="Workspaces">Workspaces</h3>
+                        <p class="text-xs text-text/50 mt-1" data-i18n="Manage all workspaces and their settings">Manage all workspaces and their settings</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Index", "ConverseyAnalytics")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">Analytics</h3>
+                        <p class="text-xs text-text/50 mt-1">View platform-wide statistics and workspace comparisons</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("AdminManagement", "ConverseyAdmin")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">Admin Management</h3>
+                        <p class="text-xs text-text/50 mt-1">Manage conversey admins and view workspace admins</p>
                     </div>
                 </div>
             </a>
         </div>
     </main>
 </div>
+
+<div id="forceChangePasswordModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+        <div class="mb-4">
+            <h3 class="text-xl font-bold text-text">Change password</h3>
+            <p class="mt-1 text-sm text-text/60">You must change your password before continuing.</p>
+        </div>
+
+        <form id="forceChangePasswordForm" asp-controller="AdminProfile" asp-action="ChangePassword" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label for="forceCurrentPassword" class="mb-1 block text-sm font-semibold text-text/80">Current password</label>
+                <div class="relative">
+                    <input id="forceCurrentPassword" name="CurrentPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceCurrentPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="forceNewPassword" class="mb-1 block text-sm font-semibold text-text/80">New password</label>
+                <div class="relative">
+                    <input id="forceNewPassword" name="NewPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceNewPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="forceConfirmPassword" class="mb-1 block text-sm font-semibold text-text/80">Confirm new password</label>
+                <div class="relative">
+                    <input id="forceConfirmPassword" name="ConfirmPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceConfirmPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <ul id="forcePasswordChecklist" class="mt-1 space-y-1 text-xs text-accent">
+                <li data-requirement="length" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>At least 6 characters</span>
+                </li>
+                <li data-requirement="lowercase" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Lowercase letter</span>
+                </li>
+                <li data-requirement="uppercase" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Uppercase letter</span>
+                </li>
+                <li data-requirement="digit" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Number</span>
+                </li>
+                <li data-requirement="symbol" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Symbol</span>
+                </li>
+            </ul>
+
+            <p id="forcePasswordError" class="hidden text-sm font-medium text-accent"></p>
+
+            <div class="mt-6 flex justify-end">
+                <button type="submit"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    Update password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/passwordVisibilityToggle.ts"></script>
+    <script type="module" vite-src="~/components/shared/forcePasswordChangeModal.ts"></script>
+}

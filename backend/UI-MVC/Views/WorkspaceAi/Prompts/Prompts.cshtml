@@ -1,9 +1,27 @@
 @using Conversey.UI_MVC.Models
 @using Conversey.BL.Domain.Administration
+@using Conversey.BL.Domain.Ai
 @model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiPromptsViewModel
 @inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
 @{
+    string GetDescription(AiPrompt prompt)
+    {
+        if (!string.IsNullOrWhiteSpace(prompt.Description))
+            return prompt.Description;
+        if (Model.DefaultDescriptions.TryGetValue(prompt.Name, out var desc) && !string.IsNullOrWhiteSpace(desc))
+            return desc;
+        return "No description";
+    }
     ViewData["Title"] = "AI Prompts";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    var workspaceSlug = ViewContext.RouteData.Values["workspaceSlug"]?.ToString() ?? Model.WorkspaceId.ToString();
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
+        ("Prompts", null, true)
+    };
 }
 
 <div class="min-h-screen bg-background font-sans text-text">
@@ -57,28 +75,33 @@
         <div class="space-y-4" id="promptsList">
             @foreach (var prompt in Model.Prompts)
             {
-                <div class="bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow prompt-item" data-name="@(prompt.Name?.ToLowerInvariant() ?? "")" data-desc="@(prompt.Description?.ToLowerInvariant() ?? "")">
-                    <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
-                        <div>
-                            <h2 class="text-sm font-semibold text-text">@prompt.Name</h2>
-                            <p class="mt-1 text-xs text-text/50">@(string.IsNullOrWhiteSpace(prompt.Description) ? "No description" : prompt.Description)</p>
-                        </div>
-                        <a href="@Url.Action("EditPrompt", new { workspaceSlug = Model.WorkspaceId, id = prompt.Id, projectId = Model.SelectedProjectId })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0" data-i18n="Edit">Edit</a>
-                    </div>
-                    <div class="px-6 py-4">
-                        @if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
-                        {
-                            <div>
-                                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="User Prompt Template">User Prompt Template</h3>
-                                <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@prompt.UserPromptTemplate</pre>
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="text-xs text-text/40" data-i18n="No custom user prompt configured. Default is used.">No custom user prompt configured. Default is used.</span>
-                        }
-                    </div>
-                </div>
+                @* <div class="bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow prompt-item" data-name="@(prompt.Name?.ToLowerInvariant() ?? "")" data-desc="@(GetDescription(prompt).ToLowerInvariant())"> *@
+                @*     <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10"> *@
+                @*         <div> *@
+                @*             <h2 class="text-sm font-semibold text-text">@prompt.Name</h2> *@
+                @*             <p class="mt-1 text-xs text-text/50">@GetDescription(prompt)</p> *@
+                @*         </div> *@
+                @*         <a href="@Url.Action("EditPrompt", new { workspaceSlug = Model.WorkspaceId, id = prompt.Id, projectId = Model.SelectedProjectId })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0" data-i18n="Edit">Edit</a> *@
+                @*     </div> *@
+                @*     <div class="px-6 py-4"> *@
+                @*         @if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate)) *@
+                @*         { *@
+                @*             <div> *@
+                @*                 <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="User Prompt Template">User Prompt Template</h3> *@
+                @*                 <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@prompt.UserPromptTemplate</pre> *@
+                @*             </div> *@
+                @*         } *@
+                @*         else *@
+                @*         { *@
+                @*             <span class="text-xs text-text/40" data-i18n="No custom user prompt configured. Default is used.">No custom user prompt configured. Default is used.</span> *@
+                @*         } *@
+                @*     </div> *@
+                @* </div> *@
+                @await Html.PartialAsync("_PromptCard", (
+                    Prompt: prompt,
+                    EditUrl: Url.Action("EditPrompt", new { workspaceSlug = Model.WorkspaceId, id = prompt.Id, projectId = Model.SelectedProjectId }),
+                    HasOverride: false
+                ))
             }
         </div>
     </main>

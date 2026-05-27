@@ -9,10 +9,12 @@ namespace Conversey.BL.Administration;
 public class WorkspaceManager: IWorkspaceManager
 {
     private readonly IWorkspaceRepository _workspaceRepository;
+    private readonly ICloudStorageRepository _cloudStorageRepository;
 
-    public WorkspaceManager(IWorkspaceRepository workspaceRepository)
+    public WorkspaceManager(IWorkspaceRepository workspaceRepository, ICloudStorageRepository cloudStorageRepository)
     {
         _workspaceRepository = workspaceRepository;
+        _cloudStorageRepository = cloudStorageRepository;
     }
 
     public IEnumerable<Workspace> GetAllWorkspaces()
@@ -20,12 +22,13 @@ public class WorkspaceManager: IWorkspaceManager
         return _workspaceRepository.ReadAllWorkspaces();
     }
 
-    public Workspace AddWorkspace(string name)
+    public Workspace AddWorkspace(string name, string imageUrl = "")
     {
         var workspace = new Workspace
         {
             Id = Slug.FromName(name),
-            Name = name
+            Name = name,
+            ImageUrl = imageUrl
         };
         
         Validate(workspace);
@@ -54,6 +57,7 @@ public class WorkspaceManager: IWorkspaceManager
             throw new WorkspaceNotFoundException(updatedWorkspace.Id);
 
         existing.Name = updatedWorkspace.Name;
+        existing.ImageUrl = updatedWorkspace.ImageUrl;
 
         _workspaceRepository.UpdateWorkspace(existing);
 
@@ -63,6 +67,11 @@ public class WorkspaceManager: IWorkspaceManager
     {
         var workspace = GetWorkspaceById(id);
         _workspaceRepository.DeleteWorkspace(workspace);
+    }
+    
+    public async Task<string> UploadWorkspaceImage(Stream stream, string fileName, string contentType)
+    {
+        return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
 
     private void Validate(object obj)

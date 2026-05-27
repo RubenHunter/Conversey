@@ -88,14 +88,18 @@ public class ProjectManager: IProjectManager
             interactionForm,
             imageUrl,
             nudgingStrength,
+            null,
+            null,
             Status.Active,
             null
         );
     }
 
     public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, Status status, string? slug)
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, int? minAge, int? maxAge,
+        Status status, string slug, ProjectTheme theme = null)
     {
+        var resolvedTheme = theme ?? ProjectTheme.Default;
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
 
         if (string.IsNullOrWhiteSpace(name))
@@ -129,11 +133,24 @@ public class ProjectManager: IProjectManager
                 EndDate = endDate.ToUniversalTime(),
                 InteractionForm = interactionForm,
                 NudgingStrength = nudgingStrength,
+                MinAge = minAge,
+                MaxAge = maxAge,
                 Workspace = workspace
             };
 
             Validate(project);
             _projectRepository.CreateProject(project);
+
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = project.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+
             return project;
         }
 
@@ -145,10 +162,35 @@ public class ProjectManager: IProjectManager
         existing.EndDate = endDate.ToUniversalTime();
         existing.InteractionForm = interactionForm;
         existing.NudgingStrength = Math.Clamp(nudgingStrength, 1, 5);
+        existing.MinAge = minAge;
+        existing.MaxAge = maxAge;
         existing.Workspace = workspace;
 
         Validate(existing);
         _projectRepository.UpdateProject(existing);
+
+        if (existing.Theme == null)
+        {
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = existing.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+        }
+        else
+        {
+            existing.Theme.Primary = resolvedTheme.Primary;
+            existing.Theme.Secondary = resolvedTheme.Secondary;
+            existing.Theme.Accent = resolvedTheme.Accent;
+            existing.Theme.Preset = resolvedTheme.Preset;
+            existing.Theme.Font = resolvedTheme.Font;
+            _projectRepository.UpdateTheme(existing.Theme);
+        }
+
         return existing;
     }
 
@@ -170,6 +212,8 @@ public class ProjectManager: IProjectManager
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
         existing.NudgingStrength = updatedProject.NudgingStrength;
+        existing.MinAge = updatedProject.MinAge;
+        existing.MaxAge = updatedProject.MaxAge;
         existing.Workspace = updatedProject.Workspace;
         
         
@@ -180,21 +224,33 @@ public class ProjectManager: IProjectManager
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
     }
-
-    public async Task UpdateProjectImage(Slug projectId, Slug worspaceId, Stream stream, string fileName, string contentType)
-    {
-        // TODO image file validation
-        var imageUrl = await UploadProjectImage(stream, fileName, contentType);
-        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, worspaceId);
-        project.ImageUrl = imageUrl;
-        Validate(project);
-        _projectRepository.UpdateProject(project);
-    }
+    
 
     public async Task<string> UploadProjectImage(Stream stream, string fileName, string contentType)
     {
         return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
+
+    public void AddTopic(Slug projectId, Slug workspaceId , string name, string context)
+    {
+        var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
+        if (workspace == null)
+            throw new WorkspaceNotFoundException(workspaceId);
+        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, workspaceId);
+        if (project == null)
+            throw new ProjectNotFoundException(projectId);
+
+        var topic = new Topic
+        {
+            Name = name,
+            Context = context,
+            Project = project
+        };
+        
+        Validate(project);
+        _projectRepository.CreateTopic(topic);
+    }
+    
 
     private static bool ShouldReplaceEmail(string currentEmail, string newEmail)
     {

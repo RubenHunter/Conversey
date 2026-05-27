@@ -2,13 +2,25 @@
 @using Conversey.DAL
 @using Conversey.UI_MVC.Models.Admin
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
 @using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.AdminWorkspaceDetailsViewModel
 @Html.AntiForgeryToken()
 @inject IAdminI18nService I18n
 
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
+@inject IAdminI18nService AdminI18n
 @{
     ViewData["Title"] = "Workspace Details";
+    ViewData["WorkspaceName"] = Model.Workspace?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("Workspaces", "/admin/workspaces", false),
+        ("Workspace Details", null, true)
+    };
     ViewData["WorkspaceName"] = "Conversey";
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
@@ -16,7 +28,7 @@
         (Model.Workspace.Name, null, true)
     };
     var users = Model.WorkspaceAdmins ?? [];
-    var createWorkspaceAdminForm = new AdminFormViewModel<WorkspaceAdmin>
+    var createWorkspaceAdminForm = new AdminFormViewModel<dynamic>
     {
         FormItem = new WorkspaceAdmin
         {
@@ -25,7 +37,7 @@
         FormAction = "CreateWorkspaceAdmin",
         SubmitLabel = "Create admin"
     };
-    var editWorkspaceAdminForm = new AdminFormViewModel<WorkspaceAdmin>
+    var editWorkspaceAdminForm = new AdminFormViewModel<dynamic>
     {
         FormItem = new WorkspaceAdmin
         {
@@ -34,32 +46,32 @@
         FormAction = "EditWorkspaceAdmin",
         SubmitLabel = "Save changes"
     };
-    var createWorkspaceAdminViewData = new ViewDataDictionary(ViewData)
+    var createWorkspaceAdminViewData = new ViewDataDictionary<AdminFormViewModel<dynamic>>(ViewData, createWorkspaceAdminForm)
     {
         ["ModalTitle"] = "Create workspace admin",
         ["FormId"] = "workspaceAdminCreateForm",
         ["CloseButtonId"] = "closeWorkspaceAdminCreateModal",
         ["FormPostUrl"] = Url.Action("CreateWorkspaceAdmin", "Admin") ?? "/admin/workspaces/admins/new",
-        ["WorkspaceAdminIdInputId"] = "workspaceAdminCreateIdInput",
-        ["WorkspaceAdminEmailInputId"] = "workspaceAdminCreateEmailInput",
-        ["WorkspaceAdminUsernameInputId"] = "workspaceAdminCreateUsernameInput",
-        ["WorkspaceAdminPhoneInputId"] = "workspaceAdminCreatePhoneInput",
-        ["WorkspaceAdminServerErrorId"] = "workspaceAdminCreateServerError",
+        ["AdminIdInputId"] = "workspaceAdminCreateIdInput",
+        ["AdminEmailInputId"] = "workspaceAdminCreateEmailInput",
+        ["AdminUsernameInputId"] = "workspaceAdminCreateUsernameInput",
+        ["AdminPhoneInputId"] = "workspaceAdminCreatePhoneInput",
+        ["AdminServerErrorId"] = "workspaceAdminCreateServerError",
         ["WorkspaceIdValue"] = Model.Workspace.Id.Text,
         ["SubmitLabel"] = "Create admin"
     };
     var editWorkspaceAdminActionTemplate = Url.Action("EditWorkspaceAdmin", "Admin", new { id = "__workspaceAdminId__" }) ?? "/admin/workspace/admin/__workspaceAdminId__";
-    var editWorkspaceAdminViewData = new ViewDataDictionary(ViewData)
+    var editWorkspaceAdminViewData = new ViewDataDictionary<AdminFormViewModel<dynamic>>(ViewData, editWorkspaceAdminForm)
     {
         ["ModalTitle"] = "Edit workspace admin",
         ["FormId"] = "workspaceAdminEditForm",
         ["CloseButtonId"] = "closeWorkspaceAdminEditModal",
         ["FormActionTemplate"] = editWorkspaceAdminActionTemplate,
-        ["WorkspaceAdminIdInputId"] = "workspaceAdminEditIdInput",
-        ["WorkspaceAdminEmailInputId"] = "workspaceAdminEditEmailInput",
-        ["WorkspaceAdminUsernameInputId"] = "workspaceAdminEditUsernameInput",
-        ["WorkspaceAdminPhoneInputId"] = "workspaceAdminEditPhoneInput",
-        ["WorkspaceAdminServerErrorId"] = "workspaceAdminEditServerError",
+        ["AdminIdInputId"] = "workspaceAdminEditIdInput",
+        ["AdminEmailInputId"] = "workspaceAdminEditEmailInput",
+        ["AdminUsernameInputId"] = "workspaceAdminEditUsernameInput",
+        ["AdminPhoneInputId"] = "workspaceAdminEditPhoneInput",
+        ["AdminServerErrorId"] = "workspaceAdminEditServerError",
         ["WorkspaceIdValue"] = Model.Workspace.Id.Text,
         ["SubmitLabel"] = "Save changes"
     };
@@ -78,7 +90,8 @@
         ["FormActionTemplate"] = editWorkspaceActionTemplate,
         ["WorkspaceNameInputId"] = "workspaceEditFromDetailsNameInput",
         ["WorkspaceIdInputId"] = "workspaceEditFromDetailsIdInput",
-        ["SubmitLabel"] = "Save changes"
+        ["SubmitLabel"] = "Save changes",
+        ["ImageUploadUrl"] = Url.Action("UploadCreateWorkspaceImage", "ConverseyAdmin") ?? "/admin/workspaces/new/upload-image"
     };
 
     var openAdminModal = string.Equals(Context.Request.Query["openAdminModal"], "true", StringComparison.OrdinalIgnoreCase);
@@ -158,7 +171,9 @@
                             ["data-workspace-admin-id"] = u.Id.ToString(),
                             ["data-workspace-admin-email"] = u.Email ?? string.Empty,
                             ["data-workspace-admin-username"] = u.Username ?? string.Empty,
-                            ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty
+                            ["data-workspace-admin-phone"] = u.PhoneNumber ?? string.Empty,
+                            ["href"] = Url.Action("EditWorkspaceAdmin", "Admin", new { id = u.Id })!,
+                            ["data-i18n"] = "Edit"
                         }
                     };
                     edit.AddCssClass("font-semibold text-primary transition hover:text-primary/80");
@@ -174,7 +189,8 @@
                             ["type"] = "button",
                             ["data-delete-id"] = u.Id.ToString(),
                             ["data-delete-name"] = u.Email ?? "-",
-                            ["data-delete-endpoint"] = $"/admin/workspace-user/delete/{u.Id}"
+                            ["data-delete-endpoint"] = $"/admin/workspace-user/delete/{u.Id}",
+                            ["data-i18n"] = "Delete"
                         }
                     };
 
@@ -213,9 +229,15 @@
                     <div class="text-xs uppercase tracking-widest text-secondary font-semibold">
                         Workspace Details
                     </div>
-                    <h1 class="mt-1 text-3xl font-bold text-text tracking-tight">
-                        @Model.Workspace.Name
-                    </h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-bold text-text tracking-tight">
+                            @Model.Workspace.Name
+                        </h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Workspace.ImageUrl))
+                        {
+                            <img src="@Model.Workspace.ImageUrl" alt="@Model.Workspace.Name logo" class="w-12 h-12 rounded-xl object-contain border border-secondary/10 shrink-0" />
+                        }
+                    </div>
                     <p class="mt-1 text-sm text-text/60">
                         Workspace ID: <span class="font-semibold text-text">@Model.Workspace.Id.Text</span>
                     </p>
@@ -236,6 +258,7 @@
                    data-open-workspace-edit-modal="true"
                    data-workspace-id="@Model.Workspace.Id.Text"
                    data-workspace-name="@Model.Workspace.Name"
+                   data-workspace-image-url="@Model.Workspace.ImageUrl"
                    class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all">
                     Edit
                 </button>
@@ -255,13 +278,13 @@
 
 <div id="workspaceAdminCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
     <div class="w-full max-w-lg">
-        @await Html.PartialAsync("~/Views/Admin/_WorkspaceAdminForm.cshtml", createWorkspaceAdminForm, createWorkspaceAdminViewData)
+        @await Html.PartialAsync("~/Views/Admin/_AdminUserForm.cshtml", createWorkspaceAdminForm, createWorkspaceAdminViewData)
     </div>
 </div>
 
 <div id="workspaceAdminEditModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
     <div class="w-full max-w-lg">
-        @await Html.PartialAsync("~/Views/Admin/_WorkspaceAdminForm.cshtml", editWorkspaceAdminForm, editWorkspaceAdminViewData)
+        @await Html.PartialAsync("~/Views/Admin/_AdminUserForm.cshtml", editWorkspaceAdminForm, editWorkspaceAdminViewData)
     </div>
 </div>
 
@@ -312,8 +335,8 @@
                         class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
                     I saved it
                 </button>
+                </div>
             </div>
-        </div>
     </div>
 }
 

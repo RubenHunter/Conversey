@@ -30,4 +30,11 @@ public interface IAiManager
         IReadOnlyList<string> bubbles,
         Language language,
         IReadOnlyList<string> rejectedPhrases = null);
+
+    Task<string> CompletePlainTextAsync(
+        string systemPrompt,
+        string userPrompt,
+        string? workspaceId = null,
+        string? projectId = null,
+        string? displayPromptName = null);
 }

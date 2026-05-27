@@ -17,6 +17,8 @@ public class Idea
     public ModerationStatus Status { get; set; }
     public ModerationInfo ModerationInfo { get; set; }
     public bool QualityNudgeBypassed { get; set; }
+    public string? RejectionReason { get; set; }
+    public bool MarkedForReview => Status == ModerationStatus.Pending;
 
     public string[] SemanticCategories { get; set; } = Array.Empty<string>();
 

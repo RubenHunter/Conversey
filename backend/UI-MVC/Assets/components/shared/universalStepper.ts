@@ -5,6 +5,7 @@ export interface StepperHooks {
     onStepEnter?: (step: number) => void;
     canAdvance?: (currentStep: number) => Promise<boolean>;
     onComplete?: () => void;
+    onStepClick?: (targetStep: number, currentStep: number) => Promise<void>;
 }
 
 export class Stepper {
@@ -40,11 +41,25 @@ export class Stepper {
         this.nextBtn.addEventListener('click', () => void this.handleNext());
         this.prevBtn.addEventListener('click', () => void this.handlePrev());
 
+        this.container.querySelectorAll<HTMLElement>('.step-indicator').forEach((indicator) => {
+            indicator.addEventListener('click', () => {
+                const target = parseInt(indicator.dataset.step || '0', 10);
+                if (!Number.isFinite(target)) return;
+                void this.handleStepClick(target);
+            });
+        });
+
         this.hooks.setup?.(() => this.reset());
 
         setTimeout(() => this.positionTrack(), 0);
         this.updateUI();
         this.dispatchStepEnter(this.currentStep);
+        this.container.addEventListener('stepper:force-step', (event: Event) => {
+            const custom = event as CustomEvent<{ step?: number }>;
+            const target = custom.detail?.step;
+            if (typeof target !== 'number') return;
+            this.goToStep(target);
+        });
     }
 
     reset() {
@@ -67,6 +82,24 @@ export class Stepper {
     private handlePrev() {
         if (this.currentStep <= 1) return;
         this.goToStep(this.currentStep - 1);
+    }
+
+    private async handleStepClick(targetStep: number) {
+        const target = this.clampStep(targetStep);
+        if (target === this.currentStep) return;
+        if (this.hooks.onStepClick) {
+            await this.hooks.onStepClick(target, this.currentStep);
+            return;
+        }
+
+        if (target < this.currentStep) {
+            this.goToStep(target);
+            return;
+        }
+
+        const canAdvance = await this.hooks.canAdvance?.(this.currentStep);
+        if (canAdvance === false) return;
+        this.goToStep(target);
     }
 
     private goToStep(step: number) {
@@ -99,13 +132,16 @@ export class Stepper {
             pane.classList.add('hidden');
 
             if (stepIdx < this.currentStep) {
+                el.classList.add('cursor-pointer');
                 circle.classList.add('bg-primary', 'border-primary');
             } else if (stepIdx === this.currentStep) {
+                el.classList.remove('cursor-pointer');
                 circle.classList.add('bg-background', 'border-primary', 'ring-4', 'ring-primary/10');
                 dot.classList.remove('scale-0');
                 dot.classList.add('bg-primary');
                 pane.classList.remove('hidden');
             } else {
+                el.classList.add('cursor-pointer');
                 circle.classList.add('bg-background', 'border-text/30');
             }
         });

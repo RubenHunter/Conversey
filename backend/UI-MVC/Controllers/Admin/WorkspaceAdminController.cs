@@ -1,7 +1,14 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Conversey.BL.Administration;
+using Conversey.BL.Ai;
+using Conversey.BL.Analytics;
 using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Survey;
+using Conversey.BL.Domain.Survey;
+using Conversey.BL.Survey;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
@@ -11,39 +18,53 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjectManager projectManager) : Controller
+public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
     {
-        return View();
+        return Redirect("/admin");
     }
 
     [HttpGet("/admin/projects")]
     public IActionResult Projects()
     {
-        var projects = projectManager.GetAllProjectsFromWorkspaceId(workspaceContext.CurrentWorkspace.Id);
-        return View(projects.Select(p => new ProjectCardViewModel()
+        var projects = projectManager.GetAllProjectsFromWorkspaceId(currentWorkspace.Id);
+        var cardVms = projects.Select(p => new ProjectCardViewModel()
         {
             Id = p.Id,
             Title = p.Name,
             ImageUrl = p.ImageUrl,
             Status = p.Status
-        }).ToList());
+        }).ToList();
+
+        var participation = analyticsManager.GetParticipationStats(currentWorkspace.Id, null);
+        var platformStats = analyticsManager.GetPlatformStats(currentWorkspace.Id).FirstOrDefault();
+
+        var vm = new ProjectsPageViewModel
+        {
+            Projects         = cardVms,
+            TotalProjects    = cardVms.Count,
+            ParticipantCount = participation.TotalYouth,
+            IdeaCount        = platformStats?.IdeaCount ?? 0,
+            AnswerCount      = platformStats?.AnswerCount ?? 0,
+        };
+
+        return View(vm);
     }
 
     [HttpGet("/admin/projects/new")]
-    public IActionResult CreateProject([FromQuery] string? copy)
+    public async Task<IActionResult> CreateProject([FromQuery] string? copy)
     {
         if (string.IsNullOrWhiteSpace(copy))
         {
             var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
-            return View(CreateFormVm(projectStep1, null, false));
+            return View(await CreateFormVmAsync(projectStep1, null, false));
         }
 
         try
         {
-            var sourceProject = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = copy });
+            var sourceProject = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = copy });
             var projectStep1Copy = new CreateProjectIntroAndPresentationViewModel
             {
                 Name = sourceProject.Name,
@@ -53,17 +74,24 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 StartDate = sourceProject.StartDate.Date,
                 EndDate = sourceProject.EndDate.Date,
                 NudgingStrength = sourceProject.NudgingStrength,
+                MinAge = sourceProject.MinAge,
+                MaxAge = sourceProject.MaxAge,
                 Status = Status.Draft,
-                Slug = string.Empty
+                Slug = string.Empty,
+                ThemePrimary = (sourceProject.Theme ?? ProjectTheme.Default).Primary,
+                ThemeSecondary = (sourceProject.Theme ?? ProjectTheme.Default).Secondary,
+                ThemeAccent = (sourceProject.Theme ?? ProjectTheme.Default).Accent,
+                ThemePreset = (sourceProject.Theme ?? ProjectTheme.Default).Preset,
+                ThemeFont = (sourceProject.Theme ?? ProjectTheme.Default).Font
             };
 
-            return View(CreateFormVm(projectStep1Copy, null, true));
+            return View(await CreateFormVmAsync(projectStep1Copy, null, true, sourceProject));
         }
         catch (NotFoundException notFoundException)
         {
             ModelState.AddModelError(string.Empty, notFoundException.Message);
             var projectStep1 = new CreateProjectIntroAndPresentationViewModel();
-            return View(CreateFormVm(projectStep1, null, false));
+            return View(await CreateFormVmAsync(projectStep1, null, false));
         }
     }
 
@@ -75,7 +103,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         if (!ModelState.IsValid)
         {
-            return View(CreateFormVm(projectStep1));
+            return View(await CreateFormVmAsync(projectStep1));
         }
 
         try
@@ -84,12 +112,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             {
                 ModelState.AddModelError("CreateStep1ViewModel.Name",
                     "Project name already exists. Draft can save, but creation blocked until name unique.");
-                return View(CreateFormVm(projectStep1));
+                return View(await CreateFormVmAsync(projectStep1));
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
-            projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+            var project = projectManager.SaveProject(
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -97,9 +125,21 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 Status.Active,
-                projectStep1.Slug
+                projectStep1.Slug,
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
+
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, project.Id);
+
+            var step3 = projectViewModel.CreateStep3ViewModel;
+            SaveTopicsFromStep3(step3, project.Id);
+
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, project.Id);
 
             return RedirectToAction("Projects");
         }
@@ -113,7 +153,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
-        return View(CreateFormVm(projectStep1));
+        return View(await CreateFormVmAsync(projectStep1));
     }
 
     [HttpPost("/admin/projects/new/upload-image")]
@@ -141,8 +181,16 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
-            return View(project);
+            var project       = projectManager.GetProjectById(currentWorkspace.Id, id);
+            var participation = analyticsManager.GetParticipationStats(currentWorkspace.Id, id);
+            var vm = new ProjectDetailsViewModel
+            {
+                Project          = project,
+                Questions        = questionManager.GetQuestions(currentWorkspace.Id, id),
+                ParticipantCount = participation.TotalYouth,
+                IdeaCount        = analyticsManager.GetIdeaStats(currentWorkspace.Id, id, null).Count,
+            };
+            return View(vm);
         }
         catch (NotFoundException e)
         {
@@ -153,13 +201,13 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
     [HttpGet("/admin/project/{id}")]
-    public IActionResult EditProject(Slug id)
+    public async Task<IActionResult> EditProject(Slug id)
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            var project = projectManager.GetProjectById(currentWorkspace.Id, id);
 
-            return View(CreateFormVm(new CreateProjectIntroAndPresentationViewModel
+            return View(await CreateFormVmAsync(new CreateProjectIntroAndPresentationViewModel
             {
                 Name = project.Name,
                 Description = project.Description,
@@ -168,8 +216,15 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 StartDate = project.StartDate.Date,
                 EndDate = project.EndDate.Date,
                 NudgingStrength = project.NudgingStrength,
+                MinAge = project.MinAge,
+                MaxAge = project.MaxAge,
                 Slug = project.Id.ToString(),
-                Status = project.Status
+                Status = project.Status,
+                ThemePrimary = (project.Theme ?? ProjectTheme.Default).Primary,
+                ThemeSecondary = (project.Theme ?? ProjectTheme.Default).Secondary,
+                ThemeAccent = (project.Theme ?? ProjectTheme.Default).Accent,
+                ThemePreset = (project.Theme ?? ProjectTheme.Default).Preset,
+                ThemeFont = (project.Theme ?? ProjectTheme.Default).Font
             }, project));
         }
         catch (NotFoundException e)
@@ -179,7 +234,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             throw;
         }
     }
-    
+
     [HttpPost("/admin/project/{id}")]
     public async Task<IActionResult> EditProject(Slug id, ProjectViewModel projectViewModel)
     {
@@ -189,12 +244,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             if (!ModelState.IsValid)
             {
-                return View(CreateFormVm(projectStep1, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+                return View(await CreateFormVmAsync(projectStep1, projectManager.GetProjectById(currentWorkspace.Id, id)));
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -202,9 +257,18 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 projectStep1.Status,
-                id.ToString()
+                id.ToString(),
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
+
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, id);
+
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, id);
 
             return RedirectToAction("Projects");
         }
@@ -217,7 +281,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
-        return View(CreateFormVm(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+        return View(await CreateFormVmAsync(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(currentWorkspace.Id, id)));
     }
 
     [HttpPost("/admin/projects/draft")]
@@ -240,7 +304,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             var project = projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -248,9 +312,21 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                 projectStep1.InteractionForm,
                 imageUrl,
                 projectStep1.NudgingStrength,
+                projectStep1.MinAge,
+                projectStep1.MaxAge,
                 Status.Draft,
-                projectStep1.Slug
+                projectStep1.Slug,
+                new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
+
+            var step2 = projectViewModel.CreateStep2ViewModel;
+            SaveQuestionsFromStep2(step2, project.Id);
+
+            var step3 = projectViewModel.CreateStep3ViewModel;
+            SaveTopicsFromStep3(step3, project.Id);
+
+            var step4 = projectViewModel.CreateStep4ViewModel;
+            await SavePromptsFromStep4(step4, project.Id);
 
             return Json(new { slug = project.Id.ToString() });
         }
@@ -266,7 +342,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            projectManager.RemoveProject(id, workspaceContext.CurrentWorkspace.Id);
+            projectManager.RemoveProject(id, currentWorkspace.Id);
             return RedirectToAction("Projects");
         }
         catch (Exception ex)
@@ -281,7 +357,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     {
         try
         {
-            var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
+            var project = projectManager.GetProjectById(currentWorkspace.Id, id);
             project.Status = Status.Archived;
             projectManager.EditProject(project);
             return Ok();
@@ -293,9 +369,181 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
     }
 
 
-    private ProjectViewModel CreateFormVm(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false)
+    private void SaveQuestionsFromStep2(CreateStep2SurveyViewModel? step2, Slug projectId)
+    {
+        if (step2 == null || string.IsNullOrWhiteSpace(step2.QuestionsJson) || step2.QuestionsJson == "[]")
+            return;
+
+        List<QuestionDraftDto>? dtos;
+        try
+        {
+            dtos = JsonSerializer.Deserialize<List<QuestionDraftDto>>(step2.QuestionsJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException) { return; }
+
+        if (dtos == null || dtos.Count == 0) return;
+
+        questionManager.RemoveQuestionsForProject(currentWorkspace.Id, projectId);
+
+        var project = projectManager.GetProjectById(currentWorkspace.Id, projectId);
+
+        foreach (var dto in dtos)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Text)) continue;
+
+            Question question = dto.Type switch
+            {
+                "Scale" => new ScaleQuestion
+                {
+                    Text = dto.Text,
+                    Required = dto.Required,
+                    Project = project,
+                    LowerBound = dto.Min ?? 1,
+                    UpperBound = dto.Max ?? 5,
+                },
+                "MultipleChoice" => BuildChoiceQuestion<MultipleChoiceQuestion>(dto, project),
+                "SingleChoice" => BuildChoiceQuestion<SingleChoiceQuestion>(dto, project),
+                _ => new OpenQuestion { Text = dto.Text, Required = dto.Required, Project = project },
+            };
+
+            questionManager.AddQuestion(question);
+        }
+    }
+
+    private static TQ BuildChoiceQuestion<TQ>(QuestionDraftDto dto, Project project)
+        where TQ : ChoiceQuestion, new()
+    {
+        var q = new TQ { Text = dto.Text, Required = dto.Required, Project = project };
+        q.PossibleChoices = dto.PossibleAnswers?
+            .Where(a => !string.IsNullOrWhiteSpace(a.Text))
+            .Select(a => new Choice { Text = a.Text, Question = q })
+            .ToList() ?? new List<Choice>();
+        return q;
+    }
+
+    private string SerializeQuestionsToJson(IEnumerable<Question> questions)
+    {
+        var dtos = questions.Select<Question, object?>(q => q switch
+        {
+            SingleChoiceQuestion scq => new
+            {
+                type = "SingleChoice",
+                text = scq.Text,
+                required = scq.Required,
+                possibleAnswers = scq.PossibleChoices?.Select(c => new { text = c.Text }).ToList() ?? new(),
+            },
+            MultipleChoiceQuestion mcq => new
+            {
+                type = "MultipleChoice",
+                text = mcq.Text,
+                required = mcq.Required,
+                possibleAnswers = mcq.PossibleChoices?.Select(c => new { text = c.Text }).ToList() ?? new(),
+            },
+            ScaleQuestion sq => new
+            {
+                type = "Scale",
+                text = sq.Text,
+                required = sq.Required,
+                min = sq.LowerBound,
+                max = sq.UpperBound,
+            },
+            OpenQuestion oq => new
+            {
+                type = "Open",
+                text = oq.Text,
+                required = oq.Required,
+            },
+            _ => null,
+        }).Where(d => d != null).ToList();
+
+        return JsonSerializer.Serialize(dtos);
+    }
+
+    private record QuestionDraftDto(
+        string Type,
+        string Text,
+        bool Required,
+        List<AnswerDraftDto>? PossibleAnswers,
+        int? Min,
+        int? Max);
+
+    private record AnswerDraftDto(string Text);
+
+    private void SaveTopicsFromStep3(CreateStep3IdeationViewModel? step3, Slug projectId)
+    {
+        if (step3 == null || string.IsNullOrWhiteSpace(step3.TopicsJson))
+            return;
+
+        List<TopicRowViewModel>? topics;
+        try
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            topics = JsonSerializer.Deserialize<List<TopicRowViewModel>>(step3.TopicsJson, options);
+        }
+        catch (JsonException)
+        {
+            return;
+        }
+
+        if (topics == null) return;
+
+        foreach (var topic in topics)
+        {
+            if (!string.IsNullOrWhiteSpace(topic.TopicName))
+            {
+                projectManager.AddTopic(
+                    projectId,
+                    currentWorkspace.Id,
+                    topic.TopicName,
+                    topic.TopicContext
+                );
+            }
+        }
+    }
+
+    private async Task<ProjectViewModel> CreateFormVmAsync(CreateProjectIntroAndPresentationViewModel projectStep1, Project project = null, bool isCopy = false, Project copyFromProject = null)
     {
         var isCreatePage = project == null;
+        var dataSource = project ?? copyFromProject;
+
+        var step2 = new CreateStep2SurveyViewModel();
+        if (dataSource != null)
+        {
+            var existingQuestions = questionManager.GetQuestions(currentWorkspace.Id, dataSource.Id);
+            if (existingQuestions.Any())
+                step2.QuestionsJson = SerializeQuestionsToJson(existingQuestions);
+        }
+
+        var step3 = new CreateStep3IdeationViewModel();
+        if (dataSource?.Topic != null && dataSource.Topic.Any())
+        {
+            var topicRows = dataSource.Topic.Select(t => new TopicRowViewModel
+            {
+                TopicName = t.Name,
+                TopicContext = t.Context ?? string.Empty,
+                MaxBroadSelectionLoads = t.MaxBroadSelectionLoads,
+            }).ToList();
+            step3.TopicsJson = JsonSerializer.Serialize(topicRows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+
+        var allPrompts = await aiAdminManager.GetAllPromptsAsync();
+        var step4Prompts = allPrompts
+            .Where(p => !p.Name.EndsWith("System", StringComparison.OrdinalIgnoreCase)
+                        && !p.Name.StartsWith("Moderation", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var step4 = new CreateStep4AiConfigViewModel();
+        if (dataSource != null)
+        {
+            var existingOverrides = await aiAdminManager.GetProjectPromptOverridesAsync(dataSource.Id.ToString());
+            if (existingOverrides.Any())
+            {
+                var overrideDtos = existingOverrides.Select(o => new { promptName = o.PromptName, userPromptTemplate = o.UserPromptTemplate });
+                step4.PromptsJson = JsonSerializer.Serialize(overrideDtos, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            }
+        }
+
         return new ProjectViewModel
         {
             AdminFormViewModel = new AdminFormViewModel<Project>
@@ -309,19 +557,25 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     InteractionForm = projectStep1.InteractionForm,
                     StartDate = projectStep1.StartDate,
                     EndDate = projectStep1.EndDate,
-                    Status = projectStep1.Status
+                    Status = projectStep1.Status,
+                    MinAge = projectStep1.MinAge,
+                    MaxAge = projectStep1.MaxAge
                 },
                 FormAction = project == null ? "CreateProject" : "EditProject",
                 SubmitLabel = project == null ? "Create Project" : "Update Project",
             },
             CreateStep1ViewModel = projectStep1,
+            CreateStep2ViewModel = step2,
+            CreateStep3ViewModel = step3,
+            CreateStep4ViewModel = step4,
+            Step4Prompts = step4Prompts,
             StepperViewModel = new StepperViewModel
             {
                 Title = project == null ? "Creating a Project" : "Editing a Project",
                 EntityName = "Project",
                 DraftStoragePrefix = isCreatePage
-                    ? $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-create"
-                    : $"workspace:{workspaceContext.CurrentWorkspace.Id}:project-edit:{project?.Id}",
+                    ? $"workspace:{currentWorkspace.Id}:project-create"
+                    : $"workspace:{currentWorkspace.Id}:project-edit:{project?.Id}",
                 ImageUploadUrl = Url.Action(nameof(UploadCreateProjectImage)) ?? "/admin/projects/new/upload-image",
                 DraftSaveUrl = Url.Action(nameof(SaveDraft)) ?? "/admin/projects/draft",
                 ProjectListUrl = Url.Action(nameof(Projects)) ?? "/admin/projects",
@@ -337,17 +591,17 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
                     new StepItem
                     {
                         Label = "Survey",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_AddQuestions"
                     },
                     new StepItem
                     {
                         Label = "Ideation",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_ProjectStepIdeationForm"
                     },
                     new StepItem
                     {
                         Label = "AI Configuration",
-                        PartialViewName = "_ProjectStepPlaceholder"
+                        PartialViewName = "_ProjectStepAiConfigForm"
                     },
                     new StepItem
                     {
@@ -358,6 +612,35 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
             }
         };
     }
+
+    private async Task SavePromptsFromStep4(CreateStep4AiConfigViewModel step4, Slug projectId)
+    {
+        if (step4 == null || string.IsNullOrWhiteSpace(step4.PromptsJson) || step4.PromptsJson == "[]")
+            return;
+
+        List<PromptOverrideDto> dtos;
+        try
+        {
+            dtos = JsonSerializer.Deserialize<List<PromptOverrideDto>>(step4.PromptsJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException) { return; }
+
+        if (dtos == null || dtos.Count == 0) return;
+
+        var overrides = dtos
+            .Where(d => !string.IsNullOrWhiteSpace(d.PromptName) && !string.IsNullOrWhiteSpace(d.UserPromptTemplate))
+            .Select(d => new ProjectAiPromptOverride
+            {
+                PromptName = d.PromptName,
+                UserPromptTemplate = d.UserPromptTemplate
+            })
+            .ToList();
+
+        await aiAdminManager.SaveProjectPromptOverridesAsync(projectId.ToString(), overrides);
+    }
+
+    private record PromptOverrideDto(string PromptName, string UserPromptTemplate);
     
     private AdminFormViewModel<Project> EditFormVm(Project project)
     {
@@ -380,6 +663,12 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
         return await projectManager.UploadProjectImage(stream, projectStep1.ImageFile.FileName, projectStep1.ImageFile.ContentType);
     }
 
+    [HttpGet("/admin/projects/preview")]
+    public IActionResult Preview(string prefix)
+    {
+        return View("Preview", prefix);
+    }
+
     private bool ProjectExistsAsNonDraft(CreateProjectIntroAndPresentationViewModel projectStep1)
     {
         if (string.IsNullOrWhiteSpace(projectStep1.Name)) return false;
@@ -390,7 +679,7 @@ public class WorkspaceAdminController(WorkspaceContext workspaceContext, IProjec
 
         try
         {
-            var existing = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, new Slug { Text = slugText });
+            var existing = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = slugText });
             return existing.Status != Status.Draft;
         }
         catch (NotFoundException)

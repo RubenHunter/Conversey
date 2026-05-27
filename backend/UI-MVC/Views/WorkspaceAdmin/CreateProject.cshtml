@@ -1,20 +1,26 @@
+@using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
 @inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
     ViewData["Title"] = I18n["Create Project"];
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["WorkspaceName"] = AdminContext.GetWorkspace()?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        ("Dashboard", "/admin/workspace", false),
         (I18n["Projects"], "/admin/projects", false),
         (I18n["Create"], null, true)
     };
 }
 
-<div class="min-h-screen bg-background">
+<div class="min-h-screen bg-background font-sans text-text">
     @await Html.PartialAsync("_AdminHeader")
     
-@await Html.PartialAsync("_Stepper", Model)
+    <main class="w-full">
+        @await Html.PartialAsync("_Stepper", Model)
+    </main>
 </div>
 
 @await Html.PartialAsync("_DraftExitModal")
@@ -31,9 +37,23 @@
         imageUrl = Model.CreateStep1ViewModel.ImageUrl,
         imageUploadSignature = "",
         nudgingStrength = Model.CreateStep1ViewModel.NudgingStrength.ToString(),
-        status = Model.CreateStep1ViewModel.Status.ToString(),
         slug = "",
-        draftSynced = false
+        draftSynced = false,
+        themePrimary = Model.CreateStep1ViewModel.ThemePrimary,
+        themeSecondary = Model.CreateStep1ViewModel.ThemeSecondary,
+        themeAccent = Model.CreateStep1ViewModel.ThemeAccent,
+        themePreset = Model.CreateStep1ViewModel.ThemePreset,
+        themeFont = Model.CreateStep1ViewModel.ThemeFont,
+        minAge = Model.CreateStep1ViewModel.MinAge.HasValue ? Model.CreateStep1ViewModel.MinAge.Value.ToString() : "0",
+        maxAge = Model.CreateStep1ViewModel.MaxAge.HasValue ? Model.CreateStep1ViewModel.MaxAge.Value.ToString() : "150",
+        questionsJson = Model.CreateStep2ViewModel.QuestionsJson ?? "[]",
+        topicsJson = Model.CreateStep3ViewModel.TopicsJson ?? "[]",
+        promptsJson = Model.CreateStep4ViewModel.PromptsJson ?? "[]"
     })'></div>
+}
+
+@section Scripts
+{
+    <script type="module" vite-src="~/modules/addQuestionPage.ts"></script>
 }
     

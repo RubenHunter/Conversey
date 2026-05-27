@@ -3,11 +3,12 @@ using Conversey.UI_MVC.Models.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Conversey.DAL;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 
-[Authorize(Roles = "ConverseyAdmin,WorkspaceAdmin")]
+[Authorize(Policy = AdminPolicy.Name)]
 public class AdminProfileController(
     UserManager<IdentityUser> userManager,
     SignInManager<IdentityUser> signInManager,
@@ -133,6 +134,10 @@ public class AdminProfileController(
         if (user is WorkspaceAdminUser workspaceAdmin)
         {
             await adminManager.SetWorkspaceAdminFirstLogin(Guid.Parse(workspaceAdmin.Id), false);
+        }
+        else if (user is ConverseyAdminUser converseyAdmin)
+        {
+            await adminManager.SetConverseyAdminFirstLogin(Guid.Parse(converseyAdmin.Id), false);
         }
 
         await signInManager.RefreshSignInAsync(user);

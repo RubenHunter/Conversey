@@ -49,7 +49,7 @@
                 }
                 else
                 {
-                    <a href="#" class="font-semibold text-text hover:text-primary transition-colors" data-i18n="Dashboard">
+                    <a href="@AdminContext.GetDashboardUrl()" class="font-semibold text-text hover:text-primary transition-colors" data-i18n="Dashboard">
                         @(ViewData["Breadcrumb"] ?? "Dashboard")
                     </a>
                     <svg class="w-4 h-4 text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,9 @@
         <span class="hidden lg:flex text-xs font-medium bg-background px-3 py-1 rounded-full border border-secondary/10 text-text/60" data-i18n="Admin Portal">
             Admin Portal
         </span>
+    </div>
 
+    <div class="flex items-center gap-3">
         <div class="relative lang-dropdown">
             <button type="button" class="lang-toggle flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md border border-secondary/30 bg-white text-text/60 hover:text-primary hover:border-primary/30 transition-colors" aria-label="Change language" aria-haspopup="true" aria-expanded="false">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -72,7 +74,7 @@
                     <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/>
                 </svg>
                 <span>@AdminI18n.CurrentLanguage.ToUpperInvariant()</span>
-                <span class="text-[0.65rem] leading-none opacity-70" aria-hidden="true">▾</span>
+                <span class="text-[0.65rem] leading-none opacity-70" aria-hidden="true">&#x25BE;</span>
             </button>
             <div class="lang-menu hidden absolute right-0 mt-1.5 bg-white rounded-lg border border-secondary/10 shadow-lg py-1 z-50 min-w-[100px]">
                 @foreach (var lang in AdminI18n.SupportedLanguages)
@@ -85,9 +87,7 @@
                 }
             </div>
         </div>
-    </div>
 
-    <div class="flex items-center">
         <button class="relative text-secondary hover:text-primary transition-colors">
             <div class="absolute top-0 right-0 w-2 h-2 bg-accent rounded-full border-2 border-white"></div>
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

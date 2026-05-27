@@ -10,14 +10,18 @@ public abstract class Answer
 
     [Required]
     public Youth Youth { get; set; }
+    
+    [Required]
+    public Question Question { get; set; }
 }
 
 public class Answer<TValueType> : Answer
 {
     [Required]
     public TValueType Value { get; set; }
-    
-    [Required]
-    public Question<Answer<TValueType>> Question { get; set; }
 }
+
+public class SingleChoiceAnswer : Answer<Choice>;
+
+public class MultipleChoiceAnswer : Answer<IEnumerable<Choice>>;
 

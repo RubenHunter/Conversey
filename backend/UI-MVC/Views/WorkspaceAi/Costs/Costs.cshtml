@@ -3,8 +3,17 @@
 @using System.Text.Json
 @model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiCostsViewModel
 @inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
 @{
     ViewData["Title"] = "AI Costs & Audit";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    var workspaceSlug = ViewContext.RouteData.Values["workspaceSlug"]?.ToString() ?? Model.WorkspaceId.ToString();
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
+        ("Costs & Audit", null, true)
+    };
     var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
     var tlDaily = Model.Timeline.DailyCosts;
     var timelineData = tlDaily.Select(d => new { date = d.Date.ToString("yyyy-MM-dd"), cost = Math.Round((double)d.Cost, 4), tokens = d.InputTokens + d.OutputTokens, calls = d.CallCount }).ToList();

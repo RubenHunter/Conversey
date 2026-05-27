@@ -9,6 +9,7 @@
     var formActionTemplate = ViewData["FormActionTemplate"] as string ?? string.Empty;
     var workspaceNameInputId = ViewData["WorkspaceNameInputId"] as string ?? string.Empty;
     var workspaceIdInputId = ViewData["WorkspaceIdInputId"] as string ?? string.Empty;
+    var imageUploadUrl = ViewData["ImageUploadUrl"] as string ?? string.Empty;
     var submitLabel = ViewData["SubmitLabel"] as string ?? Model.SubmitLabel;
     var workspaceIdText = Model.FormItem?.Id.Text ?? string.Empty;
     var fallbackAction = Model.FormAction == "EditWorkspace"
@@ -28,13 +29,24 @@
         }
     </div>
 
-    <form id="@formId" method="post" action="@resolvedAction" data-action-template="@formActionTemplate" class="space-y-5">
+    <form id="@formId" method="post" action="@resolvedAction" data-action-template="@formActionTemplate" data-image-upload-url="@imageUploadUrl" class="space-y-5">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="FormItem.Id" id="@workspaceIdInputId" />
 
         <div>
             <label asp-for="FormItem.Name" class="mb-2 block text-sm font-semibold text-text/80">Workspace name</label>
             <input asp-for="FormItem.Name" id="@workspaceNameInputId" class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
             <span asp-validation-for="FormItem.Name" class="mt-1 block text-sm text-accent"></span>
+        </div>
+
+        <div>
+            <label class="mb-2 block text-sm font-semibold text-text/80" for="@formId-workspaceImageFile">Workspace image</label>
+            <input id="@formId-workspaceImageFile" type="file" accept="image/*" data-workspace-image-file
+                   class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+            <input asp-for="FormItem.ImageUrl" type="hidden" data-workspace-image-url />
+            <input type="hidden" data-workspace-image-signature />
+            <p class="mt-1 text-xs text-text/60" data-workspace-image-status></p>
+            <p class="mt-1 text-xs text-red-600" data-workspace-image-error></p>
         </div>
 
         <div class="flex justify-end gap-3 pt-3">
@@ -56,3 +68,4 @@
         </div>
     </form>
 </div>
+

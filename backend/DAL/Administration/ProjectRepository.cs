@@ -20,6 +20,7 @@ public class ProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(p => p.Workspace)
             .Include(p => p.Topic)
+            .Include(p => p.Theme)
             .SingleOrDefault(p => p.Id == projectId && EF.Property<Slug>(p, "WorkspaceId") == workspaceId);
     }
 
@@ -62,6 +63,7 @@ public class ProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(p => p.Workspace)
+            .Include(p => p.Topic)
             .Where(p => p.Workspace.Id == workspaceId)
             .ToList()
             .AsReadOnly();
@@ -90,6 +92,24 @@ public class ProjectRepository : IProjectRepository
     {
         var projects = ReadAllProjectsFromWorkspaceId(workspaceId);
         _dbContext.Projects.RemoveRange(projects);
+    }
+
+    public void CreateTopic(Topic topic)
+    {
+        _dbContext.Topics.Add(topic);
+        _dbContext.SaveChanges();
+    }
+
+    public void CreateTheme(ProjectTheme theme)
+    {
+        _dbContext.ProjectThemes.Add(theme);
+        _dbContext.SaveChanges();
+    }
+
+    public void UpdateTheme(ProjectTheme theme)
+    {
+        _dbContext.ProjectThemes.Update(theme);
+        _dbContext.SaveChanges();
     }
 
     public IReadOnlyCollection<Youth> ReadYouthsWithRealEmailsByWorkspaceId(Slug workspaceId, Slug? projectId = null)
@@ -144,6 +164,14 @@ public class ProjectConfig : IEntityTypeConfiguration<Project>
             .Property(p => p.NudgingStrength)
             .HasDefaultValue(3);
 
+        builder
+            .Property(p => p.MinAge)
+            .IsRequired(false);
+
+        builder
+            .Property(p => p.MaxAge)
+            .IsRequired(false);
+
         #endregion
 
 
@@ -193,6 +221,34 @@ public class YouthConfig : IEntityTypeConfiguration<Youth>
     public void Configure(EntityTypeBuilder<Youth> builder)
     {
         builder.HasKey(y => y.Id);
+    }
+}
+#endregion
+
+#region ProjectThemeConfig
+public class ProjectThemeConfig : IEntityTypeConfiguration<ProjectTheme>
+{
+    public void Configure(EntityTypeBuilder<ProjectTheme> builder)
+    {
+        builder.HasKey(t => t.ProjectId);
+
+        builder
+            .Property(t => t.ProjectId)
+            .HasMaxLength(50)
+            .HasConversion(
+                slug => slug.Text,
+                str => new Slug { Text = str });
+
+        builder.Property(t => t.Primary).HasMaxLength(7).HasDefaultValue(ProjectTheme.Default.Primary);
+        builder.Property(t => t.Secondary).HasMaxLength(7).HasDefaultValue(ProjectTheme.Default.Secondary);
+        builder.Property(t => t.Accent).HasMaxLength(7).HasDefaultValue(ProjectTheme.Default.Accent);
+        builder.Property(t => t.Preset).HasMaxLength(32).HasDefaultValue(ProjectTheme.Default.Preset);
+
+        builder
+            .HasOne(t => t.Project)
+            .WithOne(p => p.Theme)
+            .HasForeignKey<ProjectTheme>(t => t.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 #endregion

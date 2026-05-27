@@ -42,11 +42,11 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle at 10% 20%, #6c5ce7 2px, transparent 3px),
-    radial-gradient(circle at 40% 35%, #00cec9 2px, transparent 3px),
-    radial-gradient(circle at 75% 18%, #fd79a8 2px, transparent 3px),
-    radial-gradient(circle at 20% 75%, #6c5ce7 2px, transparent 3px),
-    radial-gradient(circle at 80% 70%, #00cec9 2px, transparent 3px);
+    radial-gradient(circle at 10% 20%, var(--color-primary) 2px, transparent 3px),
+    radial-gradient(circle at 40% 35%, var(--color-secondary) 2px, transparent 3px),
+    radial-gradient(circle at 75% 18%, var(--color-accent) 2px, transparent 3px),
+    radial-gradient(circle at 20% 75%, var(--color-primary) 2px, transparent 3px),
+    radial-gradient(circle at 80% 70%, var(--color-secondary) 2px, transparent 3px);
   animation: survey-confetti-fade 2s ease forwards;
 }
 

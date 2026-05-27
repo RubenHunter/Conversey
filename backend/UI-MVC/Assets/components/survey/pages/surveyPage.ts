@@ -1,7 +1,6 @@
 import {getProject} from '../../../services/projectService'
+import {applyTheme} from '../../../utils/theme'
 import {getQuestions, submitAnswers} from '../../../services/surveyService'
-import {QuestionType} from '../../../models/question'
-import type {ResponseAnswer} from '../../../models/response'
 import type {QuestionAnswer, QuestionComponent} from '../components/singleChoiceQuestion'
 import {renderSingleChoiceQuestion} from '../components/singleChoiceQuestion'
 import {renderMultipleChoiceQuestion} from '../components/multipleChoiceQuestion'
@@ -16,12 +15,15 @@ import {showLayoutPicker} from '../components/layoutPicker'
 import {getSurveyStrings} from '../../../i18n/survey'
 import {renderScrollNav} from '../../shared/scrollNav'
 import {hasAnswer} from '../../chat/utils/chatHelpers'
+import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from "../../../models/question.ts";
+import {ResponseAnswer} from "../../../models/response.ts";
 
 const sessionLayoutCache = new Map<string, typeof InteractionType.Chat | typeof InteractionType.VerticalScroll>()
 
 export async function renderSurveyPage(container: HTMLElement, params: ProjectContext): Promise<void> {
     const t = getSurveyStrings()
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
     const projectSlugKey = params.projectSlug
     const completedKey = `survey-completed-${projectSlugKey}`
 
@@ -106,14 +108,14 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
     function hasRequiredQuestionBefore(index: number): boolean {
         for (let i = index - 1; i >= 0; i--) {
-            if (questions[i].isRequired) return true
+            if (questions[i].required) return true
         }
         return false
     }
 
     function hasUnansweredRequiredBefore(index: number): boolean {
         for (let i = index - 1; i >= 0; i--) {
-            if (questions[i].isRequired && !answeredState[i]) return true
+            if (questions[i].required && !answeredState[i]) return true
         }
         return false
     }
@@ -121,12 +123,12 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     const components: QuestionComponent[] = questions.map((question, index) => {
         const component =
             question.type === QuestionType.SingleChoice
-                ? renderSingleChoiceQuestion(question, index)
+                ? renderSingleChoiceQuestion(question as FixedQuestion, index)
                 : question.type === QuestionType.MultipleChoice
-                    ? renderMultipleChoiceQuestion(question, index)
+                    ? renderMultipleChoiceQuestion(question as FixedQuestion, index)
                 : question.type === QuestionType.Scale
-                    ? renderScaleQuestion(question, index)
-                    : renderOpenTextQuestion(question, index)
+                    ? renderScaleQuestion(question as RangeQuestion, index)
+                    : renderOpenTextQuestion(question as OpenQuestion, index)
 
         questionsContainer.appendChild(component.getElement())
 
@@ -164,7 +166,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
     function collectAnswersByQuestionId(): Map<number, QuestionAnswer> {
         return new Map<number, QuestionAnswer>(
-            questions.map((question, index) => [question.id, components[index].getAnswer()] as const),
+            questions.map((question, index) => [question.id!, components[index].getAnswer()] as const),
         )
     }
 
@@ -185,7 +187,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         const answeredCount = answeredState.filter(Boolean).length
         headerController.updateProgress(answeredCount, questions.length)
 
-        const isReady = questions.every((q, i) => !q.isRequired || answeredState[i])
+        const isReady = questions.every((q, i) => !q.required || answeredState[i])
         
         actionBar.classList.toggle('survey-ready', isReady)
     }
@@ -263,11 +265,11 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     if (savedProgress) {
         components.forEach((component, index) => {
             const questionId = questions[index].id
-            if (!savedProgress.answersByQuestionId.has(questionId)) {
+            if (!savedProgress.answersByQuestionId.has(questionId!)) {
                 return
             }
 
-            const savedAnswer = savedProgress.answersByQuestionId.get(questionId)
+            const savedAnswer = savedProgress.answersByQuestionId.get(questionId!)
             component.setAnswer(savedAnswer ?? null)
         })
 
@@ -378,24 +380,24 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             if (question.type === QuestionType.SingleChoice) {
                 const selectedOptionId = answer as number
                 if (selectedOptionId == null) return []
-                return { questionId: question.id, selectedOptionId }
+                return { questionId: question.id!, selectedOptionId }
             }
             if (question.type === QuestionType.MultipleChoice) {
                 const selectedOptionIds = Array.isArray(answer) ? answer : []
                 if (selectedOptionIds.length === 0) return []
                 return selectedOptionIds.map((selectedOptionId) => ({
-                    questionId: question.id,
+                    questionId: question.id!,
                     selectedOptionId,
                 }))
             }
             if (question.type === QuestionType.Scale) {
                 const scaleValue = answer as number
                 if (scaleValue == null) return []
-                return { questionId: question.id, selectedOptionId: scaleValue }
+                return { questionId: question.id!, selectedOptionId: scaleValue }
             }
             const openTextValue = answer as string
             if (openTextValue == null || openTextValue === '') return []
-            return { questionId: question.id, openTextValue }
+            return { questionId: question.id!, openTextValue }
         }).flat()
         
         submitBtn.textContent = t.submitting
@@ -424,6 +426,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
 
 render(async (container, params) => {
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
 
     if (project.interactionType === InteractionType.Chat) {
         const { renderChatSurveyPage } = await import("../../chat/pages/chatSurveyPage")

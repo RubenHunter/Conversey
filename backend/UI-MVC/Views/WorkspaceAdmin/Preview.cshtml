@@ -1,0 +1,43 @@
+@{
+    Layout = null;
+}
+@model string
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Preview</title>
+
+    <environment include="Development">
+        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
+    </environment>
+    <environment include="Production">
+        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true" />
+    </environment>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        body {
+            min-height: 100vh;
+            background: var(--color-background, #ffffff);
+            color: var(--color-text, #1a1a1a);
+            font-family: var(--font-primary, system-ui, sans-serif);
+        }
+        #preview-root {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="preview-root"
+         data-draft-prefix="@Model">
+    </div>
+
+    <script type="module" vite-src="~/components/shared/previewSurvey.ts"></script>
+</body>
+</html>

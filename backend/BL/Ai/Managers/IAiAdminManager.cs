@@ -23,6 +23,9 @@ public interface IAiAdminManager
     Task<AiPrompt> GetPromptByIdAsync(int id);
     Task SavePromptAsync(AiPrompt prompt);
     Task<AiPrompt> GetDefaultPromptAsync(string promptName);
+    Task<IReadOnlyList<ProjectAiPromptOverride>> GetProjectPromptOverridesAsync(string projectId);
+    Task SaveProjectPromptOverridesAsync(string projectId, IEnumerable<ProjectAiPromptOverride> overrides);
+    Task DeleteProjectPromptOverridesAsync(string projectId);
     Task<IReadOnlyList<AiProviderConfig>> GetAllProviderConfigsAsync();
     Task<AiProviderConfig> GetProviderConfigByIdAsync(int id);
     Task SaveProviderConfigAsync(AiProviderConfig config);

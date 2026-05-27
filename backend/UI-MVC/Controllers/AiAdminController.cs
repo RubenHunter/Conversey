@@ -349,6 +349,23 @@ public class AiAdminController : Controller
     {
         var prompts = await _aiAdminManager.GetAllPromptsAsync();
 
+        var defaultDescriptions = new Dictionary<string, string>();
+        foreach (var prompt in prompts)
+        {
+            if (string.IsNullOrWhiteSpace(prompt.Description))
+            {
+                var defaultPrompt = await _aiAdminManager.GetDefaultPromptAsync(prompt.Name);
+                if (defaultPrompt?.Description != null)
+                {
+                    prompt.Description = defaultPrompt.Description;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(prompt.Description))
+            {
+                defaultDescriptions[prompt.Name] = prompt.Description;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             prompts = prompts
@@ -360,7 +377,8 @@ public class AiAdminController : Controller
         var model = new AiPromptsViewModel
         {
             Prompts = prompts,
-            SearchQuery = search ?? string.Empty
+            SearchQuery = search ?? string.Empty,
+            DefaultDescriptions = defaultDescriptions
         };
 
         return View("Prompts/Prompts", model);

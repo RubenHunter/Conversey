@@ -1,6 +1,6 @@
-import { QuestionType, type Question } from '../../../models/question'
 import { createSpeakerButton, getSpeechLanguage } from '../../../services/speechService'
 import { getSurveyStrings } from '../../../i18n/survey'
+import {Question, QuestionType} from "../../../models/question.ts";
 
 export function esc(value: string): string {
     return value
@@ -25,7 +25,7 @@ function getAnswerHint(question: Question): string {
             return t.answerHintMultipleChoice
         case QuestionType.Scale:
             return t.answerHintScale
-        case QuestionType.OpenText:
+        case QuestionType.Open:
             return t.answerHintOpenText
         default:
             return ''
@@ -34,7 +34,7 @@ function getAnswerHint(question: Question): string {
 
 export function generateQuestionHeader(question: Question, questionNumber: number): string {
     const t = getSurveyStrings()
-    const requiredBadge = question.isRequired
+    const requiredBadge = question.required
         ? `<span class="survey-required-badge">${esc(t.requiredLabel)}</span>`
         : ''
     const answerHint = getAnswerHint(question)

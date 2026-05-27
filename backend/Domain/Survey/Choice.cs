@@ -2,19 +2,13 @@
 
 namespace Conversey.BL.Domain.Survey;
 
-public abstract class Choice<TChoice>
-    where TChoice : Choice<TChoice>
+public class Choice
 {
     [Required]
     public int Id { get; set; }
     
     [Required]
     public string Text { get; set; }
-
-    [Required]
-    public ChoiceQuestion<TChoice> Question { get; set; }
+    
+    public ChoiceQuestion Question { get; set; }
 }
-
-public class SingleChoice : Choice<SingleChoice>;
-
-public class MultipleChoice : Choice<MultipleChoice>;

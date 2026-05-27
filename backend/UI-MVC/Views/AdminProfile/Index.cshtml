@@ -13,8 +13,9 @@
 
     ViewData["Title"] = I18n["Profile"];
     ViewData["WorkspaceName"] = workspaceName;
-    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
         (I18n["Profile"], null, true)
     };
 }

@@ -1,0 +1,70 @@
+@model Conversey.UI_MVC.Models.Admin.ComparisonWidgetViewModel
+@using System.Globalization
+@{
+    var colors = new[] { "#6366f1", "#8b5cf6", "#d946ef", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4" };
+    var centerX = 50; var centerY = 50;
+
+    string RenderCircles(List<Conversey.UI_MVC.Models.Admin.ComparisonItemViewModel> items, string visibility)
+    {
+        var sorted = items.OrderByDescending(i => i.Value).ToList();
+        var total = sorted.Sum(i => i.Value);
+        if (total == 0) total = 1;
+
+        var html = new System.Text.StringBuilder();
+        for (int ci = 0; ci < sorted.Count; ci++)
+        {
+            var item = sorted[ci];
+            var size = Math.Max(70, (int)(200.0 * item.Value / total));
+            var color = colors[ci % colors.Length];
+            double tx, ty;
+            if (ci == 0) { tx = centerX; ty = centerY; }
+            else if (ci <= 3) { var angle = ci * 2.4; var radius = 22; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
+            else if (ci <= 6) { var angle = (ci - 3.5) * 1.6; var radius = 38; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
+            else { var angle = ci * 1.1; var radius = 50; tx = centerX + radius * Math.Cos(angle); ty = centerY + radius * Math.Sin(angle); }
+
+            html.Append($"<a href='{(item.NavigateUrl ?? Model.TitleUrl)}' class='dashboard-circle-link absolute rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform hover:scale-110 hover:z-20 shadow-lg {visibility}' style='width:{size}px;height:{size}px;background:{color};left:{tx.ToString(CultureInfo.InvariantCulture)}%;top:{ty.ToString(CultureInfo.InvariantCulture)}%;transform:translate(-50%,-50%);min-width:60px;min-height:60px;z-index:{10-ci}'><span class='text-center leading-tight'>{item.Value}<br/><span class='text-[10px] opacity-75'>{(item.Label.Length > 12 ? item.Label[..12] : item.Label)}</span></span></a>");
+        }
+        return html.ToString();
+    }
+
+    string RenderLegend(List<Conversey.UI_MVC.Models.Admin.ComparisonItemViewModel> items, string visibility)
+    {
+        var sorted = items.OrderByDescending(i => i.Value).ToList();
+        var html = new System.Text.StringBuilder();
+        for (int li = 0; li < sorted.Count; li++)
+        {
+            html.Append($"<div class='dashboard-circle-legend flex items-center gap-1.5 text-xs text-secondary {visibility}'><span class='w-3 h-3 rounded-full inline-block' style='background:{colors[li % colors.Length]}'></span><span>{sorted[li].Label} ({sorted[li].Value})</span></div>");
+        }
+        return html.ToString();
+    }
+}
+
+<div class="bg-white rounded-xl border border-secondary/10 p-6 h-full">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold" data-i18n="@Model.Title">@Model.Title</h2>
+        <div class="flex items-center gap-1 bg-secondary/5 rounded-lg p-1" id="dashboard-circles-toggle">
+            <button type="button" data-filter="all" class="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white text-text shadow-sm" data-i18n="@Model.ToggleLabel">@Model.ToggleLabel</button>
+            <button type="button" data-filter="active" class="px-3 py-1 text-xs font-medium rounded-md transition-colors text-text/50 hover:text-text" data-i18n="@Model.ToggleSecondaryLabel">@Model.ToggleSecondaryLabel</button>
+        </div>
+    </div>
+
+    @if (Model.Items.Any() || Model.AllItems.Any())
+    {
+        var items = Model.Items.ToList();
+        var activeItems = Model.AllItems.ToList();
+        
+        <div class="relative" style="min-height:260px" id="dashboard-circles-container">
+            @Html.Raw(RenderCircles(items, "circle-all"))
+            @Html.Raw(RenderCircles(activeItems, "circle-active hidden"))
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3 justify-center" id="dashboard-circles-legend">
+            @Html.Raw(RenderLegend(items, "legend-all"))
+            @Html.Raw(RenderLegend(activeItems, "legend-active hidden"))
+        </div>
+    }
+    else
+    {
+        <p class="text-secondary text-sm text-center py-8" data-i18n="No data available">No data available</p>
+    }
+</div>

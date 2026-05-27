@@ -9,6 +9,7 @@ public class WorkspaceAiPromptsViewModel
     public IReadOnlyList<BL.Domain.Administration.Project> Projects { get; set; } = Array.Empty<BL.Domain.Administration.Project>();
     public string SelectedProjectId { get; set; } = string.Empty;
     public string SearchQuery { get; set; } = string.Empty;
+    public Dictionary<string, string> DefaultDescriptions { get; set; } = new();
 }
 
 public class WorkspaceAiPromptEditViewModel

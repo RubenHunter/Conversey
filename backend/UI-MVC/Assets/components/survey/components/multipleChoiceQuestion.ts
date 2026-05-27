@@ -1,8 +1,8 @@
-import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
 import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
+import {FixedQuestion} from "../../../models/question.ts";
 
-export function renderMultipleChoiceQuestion(question: Question, index: number): QuestionComponent {
+export function renderMultipleChoiceQuestion(question: FixedQuestion, index: number): QuestionComponent {
     let selectedOptionIds: number[] = []
     let answerCallback: (() => void) | null = null
     let isLocked = false
@@ -17,7 +17,7 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
         ${generateQuestionHeader(question, questionNumber)}
 
         <div class="survey-options" id="options-${question.id}">
-            ${(question.options ?? [])
+            ${(question.possibleAnswers ?? [])
                 .map(
                     (option) => `
                 <label class="survey-option-label multiple-choice" data-option-id="${option.id}">
@@ -77,7 +77,7 @@ export function renderMultipleChoiceQuestion(question: Question, index: number):
     return {
         getAnswer: () => selectedOptionIds,
         validate: () => {
-            if (question.isRequired && selectedOptionIds.length === 0) {
+            if (question.required && selectedOptionIds.length === 0) {
                 const errorEl = wrapper.querySelector(`#error-${question.id}`)
                 errorEl?.classList.add('show')
                 return false
