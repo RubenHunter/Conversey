@@ -156,13 +156,13 @@
 
 <div id="workspaceCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
     <div class="w-full max-w-lg">
-        @await Html.PartialAsync("_WorkspaceForm", createWorkspaceForm, createWorkspaceViewData)
+        @await Html.PartialAsync("~/Views/ConverseyAdmin/_WorkspaceForm.cshtml", createWorkspaceForm, createWorkspaceViewData)
     </div>
 </div>
 
 <div id="workspaceEditModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
     <div class="w-full max-w-lg">
-        @await Html.PartialAsync("_WorkspaceForm", editWorkspaceForm, editWorkspaceViewData)
+        @await Html.PartialAsync("~/Views/ConverseyAdmin/_WorkspaceForm.cshtml", editWorkspaceForm, editWorkspaceViewData)
     </div>
 </div>
 

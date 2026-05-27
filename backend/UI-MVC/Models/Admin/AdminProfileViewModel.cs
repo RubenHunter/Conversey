@@ -16,4 +16,11 @@ public class AdminProfileViewModel
     [Phone]
     [Display(Name = "Phone number")]
     public string PhoneNumber { get; set; }
+
+    [Display(Name = "Workspace name")]
+    [MaxLength(49)]
+    public string? WorkspaceName { get; set; }
+
+    [Display(Name = "Workspace logo URL")]
+    public string? WorkspaceLogo { get; set; }
 }

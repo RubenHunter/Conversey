@@ -1,9 +1,10 @@
-import { getOrganizationBranding } from '../../shared/organizationBranding'
+import { getOrganizationBranding, renderOrganizationBadge } from '../../shared/organizationBranding'
 import { getLocale, type SurveyLocale } from '../../../i18n/survey'
 
 interface RenderSurveyHeaderParams {
     organizationName: string
     organizationSlug: string
+    organizationLogo?: string
 }
 
 const LANG_LABELS: Record<SurveyLocale, string> = {
@@ -12,8 +13,8 @@ const LANG_LABELS: Record<SurveyLocale, string> = {
     fr: 'FR',
 }
 
-export function renderSurveyHeader({ organizationName, organizationSlug }: RenderSurveyHeaderParams): string {
-    const { badge, displayName } = getOrganizationBranding(organizationName, organizationSlug)
+export function renderSurveyHeader({ organizationName, organizationSlug, organizationLogo }: RenderSurveyHeaderParams): string {
+    const { badge, displayName, logoUrl } = getOrganizationBranding(organizationName, organizationSlug, organizationLogo)
     const currentLang = getLocale()
     const langOptions = (['nl', 'en', 'fr'] as SurveyLocale[])
         .map((locale) => {
@@ -41,7 +42,7 @@ export function renderSurveyHeader({ organizationName, organizationSlug }: Rende
                     <div class="lang-menu hidden" role="menu">${langOptions}</div>
                 </div>
                 <div class="survey-topbar-brand">
-                    <div class="survey-topbar-logo-badge">${badge}</div>
+                    ${renderOrganizationBadge(badge, logoUrl)}
                     <div class="survey-topbar-name max-[340px]:hidden">${displayName}</div>
                 </div>
             </div>

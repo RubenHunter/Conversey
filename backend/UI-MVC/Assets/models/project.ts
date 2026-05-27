@@ -34,6 +34,7 @@ export interface Project {
     slug: string
     organizationSlug: string
     organizationName?: string
+    organizationLogo?: string
     title: string
     description: string
     imageUrl: string

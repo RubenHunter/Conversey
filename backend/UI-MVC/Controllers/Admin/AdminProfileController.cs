@@ -1,4 +1,6 @@
 using Conversey.BL.Administration;
+using Conversey.BL.Domain.Administration;
+using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,7 +14,9 @@ namespace Conversey.UI_MVC.Controllers.Admin;
 public class AdminProfileController(
     UserManager<IdentityUser> userManager,
     SignInManager<IdentityUser> signInManager,
-    IAdminManager adminManager)
+    IAdminManager adminManager,
+    AdminContext adminContext,
+    IWorkspaceManager workspaceManager)
     : Controller
 {
     [HttpGet("/admin/profile")]
@@ -30,6 +34,12 @@ public class AdminProfileController(
             Email = user.Email ?? string.Empty,
             PhoneNumber = user.PhoneNumber
         };
+
+        if (adminContext.CurrentAdmin is WorkspaceAdmin workspaceAdmin && workspaceAdmin.Workspace is not null)
+        {
+            model.WorkspaceName = workspaceAdmin.Workspace.Name;
+            model.WorkspaceLogo = workspaceAdmin.Workspace.ImageUrl;
+        }
 
         return View(model);
     }
@@ -83,6 +93,26 @@ public class AdminProfileController(
                     ModelState.AddModelError(nameof(model.PhoneNumber), error.Description);
                 }
             }
+        }
+
+        // Workspace admin: save workspace name and logo
+        if (adminContext.CurrentAdmin is WorkspaceAdmin workspaceAdmin && workspaceAdmin.Workspace is not null)
+        {
+            var workspace = workspaceAdmin.Workspace;
+
+            if (!string.IsNullOrWhiteSpace(model.WorkspaceName) &&
+                !string.Equals(workspace.Name, model.WorkspaceName, StringComparison.Ordinal))
+            {
+                workspace.Name = model.WorkspaceName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.WorkspaceLogo) &&
+                !string.Equals(workspace.ImageUrl, model.WorkspaceLogo, StringComparison.Ordinal))
+            {
+                workspace.ImageUrl = model.WorkspaceLogo;
+            }
+
+            workspaceManager.EditWorkspace(workspace);
         }
 
         if (!ModelState.IsValid)
@@ -167,5 +197,30 @@ public class AdminProfileController(
 
         await signInManager.RefreshSignInAsync(user);
         return Ok(new { message = "Password updated." });
+    }
+
+    [HttpPost("/admin/profile/workspace/upload-logo")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadWorkspaceLogo(IFormFile imageFile)
+    {
+        if (adminContext.CurrentAdmin is not WorkspaceAdmin)
+        {
+            return Forbid();
+        }
+
+        if (imageFile == null || imageFile.Length == 0)
+        {
+            return BadRequest(new { error = "Please select an image file." });
+        }
+
+        if (string.IsNullOrWhiteSpace(imageFile.ContentType) ||
+            !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { error = "Only image files are allowed." });
+        }
+
+        await using var stream = imageFile.OpenReadStream();
+        var imageUrl = await workspaceManager.UploadWorkspaceImage(stream, imageFile.FileName, imageFile.ContentType);
+        return Json(new { imageUrl });
     }
 }
