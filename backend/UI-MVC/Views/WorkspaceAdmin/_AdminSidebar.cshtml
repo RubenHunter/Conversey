@@ -45,9 +45,11 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10"></path></svg>
                 </span>
                 <span class="flex-1 text-left">Projects</span>
-                <svg class="sidebar-chevron w-3.5 h-3.5 text-secondary shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="sidebar-chevron w-3.5 h-3.5 text-secondary shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </button>
-            <div class="sidebar-section-content hidden ml-5 mt-1 space-y-0.5" data-sidebar-content="projects">
+            <div class="sidebar-section-content grid transition-[grid-template-rows] duration-300 ease-in-out grid-rows-[0fr] ml-5 mt-1" data-sidebar-content="projects">
+                <div class="overflow-hidden">
+                    <div class="space-y-0.5 pt-1">
                 <a href="/admin/projects" class="sidebar-link sidebar-sublink flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-text/50 hover:text-primary hover:bg-primary/5 transition-all" data-sidebar-page="/admin/projects">
                     <span class="w-3 h-3 shrink-0 flex items-center justify-center">+</span>
                     View all
@@ -59,6 +61,8 @@
                         @project.Name
                     </a>
                 }
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -93,9 +97,11 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 </span>
                 <span class="flex-1 text-left">Analytics</span>
-                <svg class="sidebar-chevron w-3.5 h-3.5 text-secondary shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="sidebar-chevron w-3.5 h-3.5 text-secondary shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </button>
-            <div class="sidebar-section-content hidden ml-5 mt-1 space-y-0.5" data-sidebar-content="analytics">
+            <div class="sidebar-section-content grid transition-[grid-template-rows] duration-300 ease-in-out grid-rows-[0fr] ml-5 mt-1" data-sidebar-content="analytics">
+                <div class="overflow-hidden">
+                    <div class="space-y-0.5 pt-1">
                 <a href="/admin/workspace/analytics" class="sidebar-link sidebar-sublink flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-text/50 hover:text-primary hover:bg-primary/5 transition-all" data-sidebar-page="/admin/workspace/analytics">
                     <svg class="w-3 h-3 shrink-0 text-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     Overview
@@ -108,6 +114,8 @@
                     <svg class="w-3 h-3 shrink-0 text-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     Answers
                 </a>
+                    </div>
+                </div>
             </div>
         </div>
 

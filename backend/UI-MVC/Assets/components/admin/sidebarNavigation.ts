@@ -34,11 +34,11 @@ class SidebarNavigation {
             const setOpen = (open: boolean) => {
                 toggle.setAttribute('aria-expanded', String(open));
                 if (open) {
-                    content.classList.remove('hidden');
-                    if (chevron) chevron.style.transform = 'rotate(180deg)';
+                    content.classList.replace('grid-rows-[0fr]', 'grid-rows-[1fr]');
+                    if (chevron) chevron.classList.add('rotate-180');
                 } else {
-                    content.classList.add('hidden');
-                    if (chevron) chevron.style.transform = '';
+                    content.classList.replace('grid-rows-[1fr]', 'grid-rows-[0fr]');
+                    if (chevron) chevron.classList.remove('rotate-180');
                 }
                 state[section] = open;
                 this.saveState(state);
