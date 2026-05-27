@@ -18,9 +18,9 @@ public class OpenAiSpeechManager : ISpeechManager
 
     private static readonly Dictionary<Language, string> VoiceMap = new()
     {
-        { Language.en, "nova" },
-        { Language.nl, "nova" },
-        { Language.fr, "nova" },
+        { Language.En, "nova" },
+        { Language.Nl, "nova" },
+        { Language.Fr, "nova" },
     };
 
     public OpenAiSpeechManager(

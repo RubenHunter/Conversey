@@ -1949,7 +1949,7 @@ public static class DataSeeder
         context.ModerationKeywords.AddRange(keywords);
     }
 
-    private static void SeedAiDefaultProvider(ConverseyDbContext context, DateTime now, IConfiguration? configuration)
+    private static void SeedAiDefaultProvider(ConverseyDbContext context, DateTime now, IConfiguration configuration)
     {
         if (context.AiProviderConfigs.Any())
         {
@@ -2010,8 +2010,8 @@ public static class DataSeeder
             var inputTokens = rnd.Next(200, 4000);
             var outputTokens = modelType == "Moderation" ? rnd.Next(50, 200) : rnd.Next(100, 1500);
             var cost = modelType == "Moderation"
-                ? (decimal)(inputTokens * 0.00000015m + outputTokens * 0.00000015m)
-                : (decimal)(inputTokens * 0.000002m + outputTokens * 0.000006m);
+                ? inputTokens * 0.00000015m + outputTokens * 0.00000015m
+                : inputTokens * 0.000002m + outputTokens * 0.000006m;
 
             logs.Add(new AiAuditLog
             {

@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Common;
 
-namespace Conversey.BL.Ai.DTOs;
+namespace Conversey.BL.Ai.Dto;
 
-public record ExtractKeyPhrasesRequest(
+public record GenerateTextFromBubblesRequest(
     [Required] string Transcript,
+    [Required, MinLength(1)] IReadOnlyList<string> Bubbles,
     Language Language,
-    [Range(1, 10)] int MaxPhrases = 2,
-    IReadOnlyList<string> ExistingPhrases = null,
     IReadOnlyList<string> RejectedPhrases = null);

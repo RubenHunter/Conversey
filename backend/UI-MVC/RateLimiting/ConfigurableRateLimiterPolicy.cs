@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Conversey.BL.Ai;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.RateLimiting;

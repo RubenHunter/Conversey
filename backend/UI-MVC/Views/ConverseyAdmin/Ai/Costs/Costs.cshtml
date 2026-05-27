@@ -1,12 +1,11 @@
 @using Conversey.UI_MVC.Models
-@using Conversey.BL.Domain.Administration
 @using System.Text.Json
 @model Conversey.UI_MVC.Models.AiAdmin.AiCostsViewModel
 @inject AdminContext AdminContext
 @{
     ViewData["Title"] = "AI Costs & Audit";
     ViewData["WorkspaceName"] = "Conversey Platform";
-    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
     {
         ("Dashboard", AdminContext.GetDashboardUrl(), false),
         ("AI Settings", "/admin/ai", false),

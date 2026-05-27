@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 
@@ -19,10 +18,10 @@ public class AiCostLimit
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Slug? WorkspaceId { get; set; }
-    public Workspace? Workspace { get; set; }
+    public Workspace Workspace { get; set; }
 
     public Slug? ProjectId { get; set; }
-    public Project? Project { get; set; }
+    public Project Project { get; set; }
 
     public bool IsWorkspaceLimit => WorkspaceId.HasValue && !ProjectId.HasValue;
 }

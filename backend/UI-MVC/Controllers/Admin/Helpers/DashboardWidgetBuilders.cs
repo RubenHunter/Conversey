@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Analytics.Dto;
 using Conversey.BL.Domain.Administration;
 using Conversey.UI_MVC.Models.Admin;
 

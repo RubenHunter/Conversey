@@ -1,6 +1,5 @@
 using Conversey.BL.Ai;
 using Conversey.BL.Analytics;
-using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Security;

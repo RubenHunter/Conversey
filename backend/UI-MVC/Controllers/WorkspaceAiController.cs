@@ -69,7 +69,7 @@ public class WorkspaceAiController : Controller
         };
 
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", null, true)
@@ -137,7 +137,7 @@ public class WorkspaceAiController : Controller
         };
 
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
@@ -149,7 +149,7 @@ public class WorkspaceAiController : Controller
 
     [HttpGet]
     [Route("admin/{workspaceSlug}/ai/prompts")]
-    public async Task<IActionResult> Prompts(string workspaceSlug, [FromQuery] string? search, [FromQuery] string? projectId)
+    public async Task<IActionResult> Prompts(string workspaceSlug, [FromQuery] string search, [FromQuery] string projectId)
     {
         var workspace = GetWorkspace(workspaceSlug);
         if (workspace == null) return NotFound();
@@ -198,7 +198,7 @@ public class WorkspaceAiController : Controller
         };
 
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
@@ -210,7 +210,7 @@ public class WorkspaceAiController : Controller
 
     [HttpGet]
     [Route("admin/{workspaceSlug}/ai/prompts/{id:int}/edit")]
-    public async Task<IActionResult> EditPrompt(string workspaceSlug, int id, [FromQuery] string? projectId)
+    public async Task<IActionResult> EditPrompt(string workspaceSlug, int id, [FromQuery] string projectId)
     {
         var workspace = GetWorkspace(workspaceSlug);
         if (workspace == null) return NotFound();
@@ -230,7 +230,7 @@ public class WorkspaceAiController : Controller
         };
 
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
@@ -243,7 +243,7 @@ public class WorkspaceAiController : Controller
 
     [HttpPost]
     [Route("admin/{workspaceSlug}/ai/prompts/{id:int}")]
-    public async Task<IActionResult> SavePrompt(string workspaceSlug, int id, string UserPromptTemplate, string Description, [FromQuery] string? projectId)
+    public async Task<IActionResult> SavePrompt(string workspaceSlug, int id, string userPromptTemplate, string description, [FromQuery] string projectId)
     {
         var workspace = GetWorkspace(workspaceSlug);
         if (workspace == null) return NotFound();
@@ -251,8 +251,8 @@ public class WorkspaceAiController : Controller
         var existing = await _aiAdminManager.GetPromptByIdAsync(id);
         if (existing == null) return NotFound();
 
-        existing.UserPromptTemplate = UserPromptTemplate;
-        existing.Description = Description;
+        existing.UserPromptTemplate = userPromptTemplate;
+        existing.Description = description;
 
         await _aiAdminManager.SavePromptAsync(existing);
 
@@ -265,7 +265,7 @@ public class WorkspaceAiController : Controller
 
     [HttpPost]
     [Route("admin/{workspaceSlug}/ai/prompts/{id:int}/reset")]
-    public async Task<IActionResult> ResetPrompt(string workspaceSlug, int id, [FromQuery] string? projectId)
+    public async Task<IActionResult> ResetPrompt(string workspaceSlug, int id, [FromQuery] string projectId)
     {
         var workspace = GetWorkspace(workspaceSlug);
         if (workspace == null) return NotFound();
@@ -328,7 +328,7 @@ public class WorkspaceAiController : Controller
         };
 
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
@@ -418,7 +418,7 @@ public class WorkspaceAiController : Controller
 
         var keywords = await _aiAdminManager.GetModerationKeywordsForWorkspaceAsync(workspaceSlug);
         ViewData["WorkspaceName"] = workspace.Name;
-        ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+        ViewData["Breadcrumbs"] = new (string Label, string Url, bool IsCurrent)[]
         {
             ("Dashboard", $"/admin/{workspaceSlug}", false),
             ("AI Settings", $"/admin/{workspaceSlug}/ai", false),

@@ -152,7 +152,7 @@ public sealed class AiAdminManager : IAiAdminManager
 
         string activeProvider;
         string configSource;
-        AiProviderConfig dbConfig = null;
+        AiProviderConfig dbConfig;
 
         try
         {
@@ -298,12 +298,12 @@ public sealed class AiAdminManager : IAiAdminManager
     }
 
     public Task<IReadOnlyCollection<AiAuditLog>> GetCostsFilteredAsync(
-        string? workspaceId = null,
-        string? projectId = null,
-        string? modelName = null,
-        string? modelType = null,
-        string? providerName = null,
-        string? promptName = null,
+        string workspaceId = null,
+        string projectId = null,
+        string modelName = null,
+        string modelType = null,
+        string providerName = null,
+        string promptName = null,
         DateTime? dateFrom = null,
         DateTime? dateTo = null)
     {
@@ -311,7 +311,7 @@ public sealed class AiAdminManager : IAiAdminManager
             workspaceId, projectId, modelName, modelType, providerName, promptName, dateFrom, dateTo);
     }
 
-    public async Task<AiCostsTimelineSummary> GetCostsTimelineAsync(int days = 30, string? workspaceId = null, string? projectId = null)
+    public async Task<AiCostsTimelineSummary> GetCostsTimelineAsync(int days = 30, string workspaceId = null, string projectId = null)
     {
         var logs = await _auditRepository.GetAiCostsFilteredAsync(
             workspaceId: workspaceId,
@@ -512,7 +512,7 @@ public sealed class AiAdminManager : IAiAdminManager
         using var hc = httpClient;
 
         var modelCount = 0;
-            string? listError = null;
+            string listError = null;
 
             try
             {
@@ -650,9 +650,9 @@ public sealed class AiAdminManager : IAiAdminManager
 
         try
         {
-            var alternative = await _aiManager.GenerateAlternativeAsync("test", null);
+            var alternative = await _aiManager.GenerateAlternativeAsync("test");
             probe.Ok = true;
-            probe.ResponsePreview = (alternative ?? "").Length > 80 ? alternative[..80] + "..." : alternative;
+            probe.ResponsePreview = (alternative ?? "").Length > 80 ? alternative![..80] + "..." : alternative;
         }
         catch (Exception ex)
         {
@@ -709,12 +709,12 @@ public sealed class AiAdminManager : IAiAdminManager
         return Task.CompletedTask;
     }
 
-    public Task<AiCostLimit?> GetWorkspaceCostLimitAsync(string workspaceId)
+    public Task<AiCostLimit> GetWorkspaceCostLimitAsync(string workspaceId)
     {
         return _costLimitRepository.GetWorkspaceLimitAsync(workspaceId);
     }
 
-    public Task<AiCostLimit?> GetProjectCostLimitAsync(string projectId)
+    public Task<AiCostLimit> GetProjectCostLimitAsync(string projectId)
     {
         return _costLimitRepository.GetProjectLimitAsync(projectId);
     }

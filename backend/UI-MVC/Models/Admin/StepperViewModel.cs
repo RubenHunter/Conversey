@@ -10,7 +10,7 @@ public class StepperViewModel
     public string ProjectListUrl { get; set; } = string.Empty;
     public bool IsCreatePage { get; set; }
     public bool IsCopyFlow { get; set; }
-    public List<StepItem> Steps { get; set; } = [];
+    public IList<StepItem> Steps { get; set; } = [];
 }
 
 public class StepItem

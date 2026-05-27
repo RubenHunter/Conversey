@@ -1,4 +1,4 @@
-using Conversey.BL.Ai.DTOs;
+using Conversey.BL.Ai.Dto;
 using Conversey.BL.Domain.Ideation;
 
 using Conversey.BL.Domain.Common;

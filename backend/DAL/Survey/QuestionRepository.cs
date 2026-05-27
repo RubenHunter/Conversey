@@ -15,24 +15,11 @@ public class QuestionRepository : IQuestionRepository
         _dbContext = dbContext;
     }
 
-    public Project ReadProjectBySlugWithWorkspaceAndQuestions(Slug projectSlug)
-    {
-        return _dbContext.Projects
-            .Include(project => project.Workspace)
-            .Include(project => project.Questions)
-            .SingleOrDefault(project => project.Id == projectSlug);
-    }
-
     public Question ReadQuestionByIdWithProject(int questionId)
     {
         return _dbContext.Questions
             .Include(q => q.Project)
             .SingleOrDefault(q => q.Id == questionId);
-    }
-
-    public IReadOnlyCollection<Question> ReadAllQuestions()
-    {
-        return _dbContext.Questions.ToList().AsReadOnly();
     }
 
     public IReadOnlyCollection<Question> ReadQuestionsByProjectIdWithChoices(Slug projectSlug)
@@ -128,21 +115,9 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.SaveChanges();
     }
 
-    public Answer ReadAnswerById(int answerId)
-    {
-        return _dbContext.Answers
-            .SingleOrDefault(a => a.Id == answerId);
-    }
-
     public void CreateAnswer(Answer answer)
     {
         _dbContext.Answers.Add(answer);
-        _dbContext.SaveChanges();
-    }
-
-    public void UpdateAnswer(Answer answer)
-    {
-        _dbContext.Answers.Update(answer);
         _dbContext.SaveChanges();
     }
 
@@ -155,13 +130,6 @@ public class QuestionRepository : IQuestionRepository
         _dbContext.Answers.Remove(answer);
         _dbContext.SaveChanges();
         return true;
-    }
-
-    public Youth ReadYouthByTokenWithProject(Guid youthToken)
-    {
-        return _dbContext.Youths
-            .Include(youth => youth.Project)
-            .SingleOrDefault(youth => youth.Id == youthToken);
     }
 
     public Youth CreateYouth(Guid youthToken, Slug projectSlug)

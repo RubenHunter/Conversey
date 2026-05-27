@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Conversey.BL.Ai;
-using Conversey.BL.Ai.DTOs;
+using Conversey.BL.Ai.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UI_MVC.Controllers.Api;

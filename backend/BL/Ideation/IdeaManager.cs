@@ -686,7 +686,7 @@ public class IdeaManager: IIdeaManager
             $"[IdeaDiscovery] source={source}; candidates={candidateCount}; ranked={rankedCount}; picked={pickedCount}; {scope}");
     }
 
-    private async Task<ModerationDecision> EvaluateIdeaModerationAsync(string content, string? workspaceId = null, string? projectId = null)
+    private async Task<ModerationDecision> EvaluateIdeaModerationAsync(string content, string workspaceId = null, string projectId = null)
     {
         Console.WriteLine($"[IdeaManager] Sending content to moderation: \"{content}\"");
         ModerationDecision fallbackDecision = new ModerationDecision { IsAllowed = true };

@@ -12,14 +12,7 @@ public interface IQuestionManager
         Guid youthId,
         IEnumerable<(int QuestionId, int? SelectedOptionId, string OpenTextValue)> answers);
 
-    IEnumerable<Question> GetAllQuestions();
 
     Question AddQuestion(Question question);
     void RemoveQuestionsForProject(Slug workspaceId, Slug projectId);
-
-    Answer GetAnswerById(int answerId);
-
-    Answer AddAnswer(Answer answer);
-    Answer ChangeAnswer(Answer answer);
-    void RemoveAnswer(int answerId);
 }

@@ -188,23 +188,6 @@ public class AdminRepository : IAdminRepository
             .AsReadOnly();
     }
 
-    public async Task<ConverseyAdmin> ReadConverseyAdminById(Guid id)
-    {
-        var converseyAdmin = await _dbContext.ConverseyAdmins
-            .FirstOrDefaultAsync(cau => cau.Id == id.ToString());
-            
-        if (converseyAdmin == null) throw new KeyNotFoundException($"Conversey Admin with ID {id} not found.");
-        
-        return new ConverseyAdmin
-        {
-            Id = Guid.Parse(converseyAdmin.Id),
-            Email = converseyAdmin.Email,
-            Username = converseyAdmin.UserName ?? converseyAdmin.Email ?? string.Empty,
-            PhoneNumber = converseyAdmin.PhoneNumber,
-            FirstLogin = converseyAdmin.FirstLogin,
-        };
-    }
-
     public async Task CreateConverseyAdmin(ConverseyAdmin converseyAdmin, string tempPassword)
     {
         var converseyAdminUser = new ConverseyAdminUser

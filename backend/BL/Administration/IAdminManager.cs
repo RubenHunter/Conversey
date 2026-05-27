@@ -13,7 +13,6 @@ public interface IAdminManager
     Task EditWorkspaceAdmin(WorkspaceAdmin workspaceAdmin);
     Task RemoveWorkspaceAdmin(Guid workspaceAdminId);
 
-    Task<ConverseyAdmin> GetConverseyAdminById(Guid id);
     IEnumerable<ConverseyAdmin> GetAllConverseyAdmins();
     Task<(ConverseyAdmin Admin, string OneTimePassword)> AddConverseyAdmin(string email, string username, string phoneNumber);
     Task SetConverseyAdminFirstLogin(Guid converseyAdminId, bool isFirstLogin);

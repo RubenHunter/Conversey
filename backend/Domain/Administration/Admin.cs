@@ -21,10 +21,7 @@ public abstract class Admin
     public bool FirstLogin { get; init; } = false;
 }
 
-public class ConverseyAdmin : Admin
-{
-
-}
+public class ConverseyAdmin : Admin;
 
 public class WorkspaceAdmin : Admin
 {

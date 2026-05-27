@@ -1,6 +1,3 @@
-using Conversey.BL.Domain.Administration;
-using Conversey.BL.Domain.Common;
-
 namespace Conversey.UI_MVC.Models.Admin;
 
 /// <summary>
@@ -27,12 +24,12 @@ public class DashboardViewModel
     /// <summary>
     /// The name of the workspace (for Workspace Admin dashboards).
     /// </summary>
-    public string? WorkspaceName { get; set; }
+    public string WorkspaceName { get; set; }
 
     /// <summary>
     /// The ID of the workspace (for Workspace Admin dashboards).
     /// </summary>
-    public string? WorkspaceId { get; set; }
+    public string WorkspaceId { get; set; }
 
     /// <summary>
     /// Top navigation cards (role-dependent).
@@ -42,22 +39,22 @@ public class DashboardViewModel
     /// <summary>
     /// Left widget: Comparison widget (workspace/project counts).
     /// </summary>
-    public ComparisonWidgetViewModel? ComparisonWidget { get; set; }
+    public ComparisonWidgetViewModel ComparisonWidget { get; set; }
 
     /// <summary>
     /// Center widget: Quick links (grouped link-list container).
     /// </summary>
-    public QuickLinksWidgetViewModel? QuickLinksWidget { get; set; }
+    public QuickLinksWidgetViewModel QuickLinksWidget { get; set; }
 
     /// <summary>
     /// Right widget: Engagement metrics (circular gauge + progress bars).
     /// </summary>
-    public EngagementWidgetViewModel? EngagementWidget { get; set; }
+    public EngagementWidgetViewModel EngagementWidget { get; set; }
 
     /// <summary>
     /// Full-width chart: Usage trend with period tabs.
     /// </summary>
-    public ChartWidgetViewModel? UsageTrendChart { get; set; }
+    public ChartWidgetViewModel UsageTrendChart { get; set; }
 
     /// <summary>
     /// Pre-serialized JSON for the usage trend chart (reused by TypeScript).
@@ -196,12 +193,12 @@ public class ComparisonItemViewModel
     /// <summary>
     /// The URL to navigate to when clicking this item's circle.
     /// </summary>
-    public string? NavigateUrl { get; set; }
+    public string NavigateUrl { get; set; }
 
     /// <summary>
     /// Optional icon for the legend.
     /// </summary>
-    public string? LegendIcon { get; set; }
+    public string LegendIcon { get; set; }
 }
 
 /// <summary>
@@ -212,7 +209,7 @@ public class QuickLinksWidgetViewModel
     /// <summary>
     /// Optional header title (e.g., "Links").
     /// </summary>
-    public string? Title { get; set; }
+    public string Title { get; set; }
 
     /// <summary>
     /// The list of quick link items.

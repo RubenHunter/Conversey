@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Ai\helpers\" />
+      <Folder Include="Ai\Util\" />
       <Folder Include="Ai\services\" />
     </ItemGroup>
 

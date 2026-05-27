@@ -85,13 +85,6 @@ public class AdminManager : IAdminManager
             throw new WorkspaceAdminNotFoundException(workspaceAdminId);
         }
     }
-    
-    public async Task<ConverseyAdmin> GetConverseyAdminById(Guid id)
-    {
-        var admin = await _adminRepository.ReadConverseyAdminById(id);
-        if (admin == null) throw new ConverseyAdminNotFoundException(id);
-        return admin;
-    }
 
     public IEnumerable<ConverseyAdmin> GetAllConverseyAdmins()
     {
