@@ -123,6 +123,7 @@ class ProjectDraftManager {
         this.clearDraftIfNeeded();
         this.seedCopyDraft();
         this.hydrateActiveStep();
+        this.seedEditDraft();
         this.bindExitDraftModal();
         this.bindStep1ImageDropzone(container);
         this.bindStep1ThemePicker(container);
@@ -586,6 +587,21 @@ class ProjectDraftManager {
         } catch {
             return;
         }
+    }
+
+    private seedEditDraft(): void {
+        if (this.isCreatePage) return;
+        if (this.readMeta()) return;
+
+        for (const [, manager] of this.stepManagers) {
+            manager.persist();
+        }
+
+        for (const [, manager] of this.stepManagers) {
+            manager.markSynced();
+        }
+
+        this.saveMeta();
     }
 
     private clearDraftIfNeeded(): void {
