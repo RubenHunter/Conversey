@@ -12,7 +12,7 @@ type AnswerComponent = Draggable & {
 
 function createAnswerComponent(answer: Answer): AnswerComponent {
     const component = createDraggableComponent(
-        htmlToElement(`<article class="bg-red-600"></article>`)
+        htmlToElement(`<article class="question-answer-item"></article>`)
     ) as AnswerComponent;
     
     component.answer = answer;
@@ -35,7 +35,7 @@ function createAnswerComponent(answer: Answer): AnswerComponent {
     }
 
     function edit() {
-        const input = htmlToElement<HTMLInputElement>(`<input type="text" class="input" value="${answer.text}"/>`);
+        const input = htmlToElement<HTMLInputElement>(`<input type="text" value="${answer.text}"/>`);
         input.addEventListener('change', () => setText(input.value));
         component.replaceChildren(input);
         input.focus();

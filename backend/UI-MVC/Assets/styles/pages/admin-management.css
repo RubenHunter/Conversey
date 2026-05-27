@@ -46,4 +46,118 @@
   .workspace-accordion[data-state="open"] .workspace-accordion-chevron {
     @apply rotate-180;
   }
+
+  .question-builder {
+    @apply space-y-6;
+  }
+
+  .question-builder-header {
+    @apply flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm;
+  }
+
+  .question-builder-title {
+    @apply text-xl font-semibold text-zinc-900;
+  }
+
+  .question-builder-actions {
+    @apply ml-auto flex flex-wrap items-center gap-2;
+  }
+
+  .question-card {
+    @apply flex items-start gap-4 rounded-2xl border border-zinc-200 bg-white px-4 py-4 shadow-sm transition hover:border-zinc-300;
+  }
+
+  .question-card-handle {
+    @apply mt-1 text-zinc-400;
+  }
+
+  .question-card-type-icon {
+    @apply h-8 w-8 text-[color:var(--color-primary)];
+  }
+
+  .question-card-body {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .question-card-title {
+    @apply text-base font-semibold text-zinc-900;
+  }
+
+  .question-card-meta {
+    @apply flex flex-wrap items-center gap-2 text-xs font-medium text-zinc-500;
+  }
+
+
+  .question-card-pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs font-medium text-zinc-600;
+  }
+
+  .question-card-required {
+    @apply border-transparent bg-[color:var(--color-secondary)]/20 text-[color:var(--color-text)];
+  }
+
+  .question-card-menu {
+    @apply flex shrink-0 items-center gap-1;
+  }
+
+  .question-card-action {
+    @apply rounded-lg p-2 text-[color:var(--color-primary)] transition hover:bg-[color:var(--color-primary)]/10;
+  }
+
+  .question-card-action-danger {
+    @apply text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent)]/10;
+  }
+
+
+  .question-modal {
+    @apply w-full rounded-3xl border border-zinc-200 bg-white shadow-2xl;
+  }
+
+  .question-modal-header {
+    @apply border-b border-zinc-200 px-6 py-4;
+  }
+
+  .question-modal-title {
+    @apply text-lg font-semibold text-zinc-900;
+  }
+
+  .question-modal-subtitle {
+    @apply text-sm text-zinc-500;
+  }
+
+  .question-modal-body {
+    @apply space-y-5 px-6 py-5;
+  }
+
+  .question-modal-footer {
+    @apply flex flex-wrap justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4;
+  }
+
+  .question-modal-input {
+    @apply mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-[color:var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)]/30;
+  }
+
+  .question-modal-select {
+    @apply mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[color:var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-primary)]/30;
+  }
+
+  .question-modal-checkbox {
+    @apply ml-2 h-4 w-4 rounded border-zinc-300 text-[color:var(--color-primary)] focus:ring-[color:var(--color-primary)]/30;
+  }
+
+  .question-modal-btn {
+    @apply rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100;
+  }
+
+  .question-modal-btn-primary {
+    @apply border-transparent bg-[color:var(--color-primary)] text-white hover:bg-[color:var(--color-primary)]/90;
+  }
+
+  .question-answer-item {
+    @apply flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm;
+  }
+
+  .question-answer-item input {
+    @apply w-full border-none bg-transparent p-0 text-sm text-zinc-800 focus:outline-none;
+  }
 }

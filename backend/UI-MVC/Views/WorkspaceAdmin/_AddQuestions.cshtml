@@ -1,11 +1,11 @@
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 <form id="create-project-step2-form">
-    <section id="question-root">
-        <header class="flex flex-wrap items-center gap-2">
-            <h2 class="text-2xl font-semibold grow">Questions</h2>
+    <section id="question-root" class="question-builder">
+        <header class="question-builder-header">
+            <h2 class="question-builder-title grow">Questions</h2>
 
-            <menu class="flex gap-2">
+            <menu class="question-builder-actions">
                 <li>
                     <button type="button" class="btn" id="create-question-button">
                         <img src="~/Assets/add.svg" alt="add-icon" class="icon"/>
@@ -28,7 +28,7 @@
                 </li>
 
                 <li>
-                    <input type="checkbox">
+                    <input type="checkbox" class="question-modal-checkbox">
                 </li>
             </menu>
         </header>

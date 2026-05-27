@@ -10,44 +10,47 @@ export {createSetQuestionTypeComponent};
 
 type SetQuestionTypeComponent = HTMLFormElement;
 
-function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Question): SetQuestionTypeComponent {
+function createSetQuestionTypeComponent(
+    modal: PagedModalComponent,
+    question: Question,
+    onSave?: (updatedQuestion: Question) => void
+): SetQuestionTypeComponent {
 
     const options:string = Object.values(QuestionType)
         .map(t => `<option value="${t}">${t}</option>`)
         .join();
 
     const component = htmlToElement<SetQuestionTypeComponent>(`
-    <form method="dialog" class="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-    
-            <header class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Add a Question</h2>
-                <p class="text-sm text-gray-500">Create a new question for your form</p>
+    <form method="dialog" class="question-modal">
+            <header class="question-modal-header">
+                <h2 class="question-modal-title">Add a Question</h2>
+                <p class="question-modal-subtitle">Create a new question for your form</p>
             </header>
-            <main class="p-6 space-y-5">
-                <label class="block text-sm font-medium text-gray-700">
+            <main class="question-modal-body">
+                <label class="block text-sm font-medium text-zinc-700">
                     Question
-                    <input name="question-text" type="text" required class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-smfocus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+                    <input name="question-text" type="text" required class="question-modal-input"/>
                 </label>
             
-                <label class="block text-sm font-medium text-gray-700">
+                <label class="block text-sm font-medium text-zinc-700">
                     Type
-                    <select name="question-type" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <select name="question-type" class="question-modal-select">
                         ${options}
                     </select>
                 </label>
                 
-                <label class="block text-sm font-medium text-gray-700">
+                <label class="flex items-center text-sm font-medium text-zinc-700">
                     Required
-                    <input name="question-required" type="checkbox">
+                    <input name="question-required" type="checkbox" class="question-modal-checkbox">
                 </label>
             </main>
-            <footer class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <footer class="question-modal-footer">
 
-                <button type="button" command="close" commandfor="dialog" class="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100" name="cancel">
+                <button type="button" command="close" commandfor="dialog" class="question-modal-btn" name="cancel">
                     Cancel
                 </button>
     
-                <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-blue-700focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="question-modal-btn question-modal-btn-primary">
                     Next
                 </button>
     
@@ -62,9 +65,10 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
     
     selectElement.value = question.type;
     questionInput.value = question.text;
+    requiredCheckbox.checked = question.required;
     
     selectElement.addEventListener('change', setType);
-    cancelButton.addEventListener('cancel', cancel);
+    cancelButton.addEventListener('click', cancel);
     component.addEventListener('submit', submit);
     requiredCheckbox.addEventListener('change', changeRequired);
 
@@ -80,14 +84,18 @@ function createSetQuestionTypeComponent(modal: PagedModalComponent, question: Qu
         switch (question.type) {
             case QuestionType.MultipleChoice:
             case QuestionType.SingleChoice:
-                modal.setPage(createAddAnswersComponent(modal, question as FixedQuestion))
+                modal.setPage(createAddAnswersComponent(modal, question as FixedQuestion, onSave))
                 break;
             case QuestionType.Open:
-                rootQuestionList.addElement(createQuestionComponent(question));
+                if (onSave) {
+                    onSave(question);
+                } else {
+                    rootQuestionList.addElement(createQuestionComponent(question));
+                }
                 modal.destroy();
                 break;
             case QuestionType.Scale:
-                modal.setPage(createSetRangeAnswerComponent(modal, question as RangeQuestion))
+                modal.setPage(createSetRangeAnswerComponent(modal, question as RangeQuestion, onSave))
                 break;
         }
     }

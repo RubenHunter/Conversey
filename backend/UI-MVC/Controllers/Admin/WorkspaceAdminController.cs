@@ -38,8 +38,8 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             Status = p.Status
         }).ToList();
 
-        var participation = analyticsManager.GetParticipationStats(workspaceContext.CurrentWorkspace.Id, null);
-        var platformStats = analyticsManager.GetPlatformStats(workspaceContext.CurrentWorkspace.Id).FirstOrDefault();
+        var participation = analyticsManager.GetParticipationStats(currentWorkspace.Id, null);
+        var platformStats = analyticsManager.GetPlatformStats(currentWorkspace.Id).FirstOrDefault();
 
         var vm = new ProjectsPageViewModel
         {
@@ -117,7 +117,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             var project = projectManager.SaveProject(
-                workspaceContext.CurrentWorkspace.Id,
+                currentWorkspace.Id,
                 projectStep1.Name,
                 projectStep1.Description,
                 projectStep1.StartDate,
@@ -181,14 +181,14 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
     {
         try
         {
-            var project       = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id);
-            var participation = analyticsManager.GetParticipationStats(workspaceContext.CurrentWorkspace.Id, id);
+            var project       = projectManager.GetProjectById(currentWorkspace.Id, id);
+            var participation = analyticsManager.GetParticipationStats(currentWorkspace.Id, id);
             var vm = new ProjectDetailsViewModel
             {
                 Project          = project,
-                Questions        = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, id),
+                Questions        = questionManager.GetQuestions(currentWorkspace.Id, id),
                 ParticipantCount = participation.TotalYouth,
-                IdeaCount        = analyticsManager.GetIdeaStats(workspaceContext.CurrentWorkspace.Id, id, null).Count,
+                IdeaCount        = analyticsManager.GetIdeaStats(currentWorkspace.Id, id, null).Count,
             };
             return View(vm);
         }
@@ -244,7 +244,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
 
             if (!ModelState.IsValid)
             {
-                return View(await CreateFormVmAsync(projectStep1, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+                return View(await CreateFormVmAsync(projectStep1, projectManager.GetProjectById(currentWorkspace.Id, id)));
             }
 
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
@@ -281,7 +281,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             ModelStateHelper.ApplyValidationException(ModelState, ex, "CreateStep1ViewModel");
         }
 
-        return View(await CreateFormVmAsync(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, id)));
+        return View(await CreateFormVmAsync(projectViewModel.CreateStep1ViewModel, projectManager.GetProjectById(currentWorkspace.Id, id)));
     }
 
     [HttpPost("/admin/projects/draft")]
@@ -384,9 +384,9 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
 
         if (dtos == null || dtos.Count == 0) return;
 
-        questionManager.RemoveQuestionsForProject(workspaceContext.CurrentWorkspace.Id, projectId);
+        questionManager.RemoveQuestionsForProject(currentWorkspace.Id, projectId);
 
-        var project = projectManager.GetProjectById(workspaceContext.CurrentWorkspace.Id, projectId);
+        var project = projectManager.GetProjectById(currentWorkspace.Id, projectId);
 
         foreach (var dto in dtos)
         {
@@ -494,7 +494,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             {
                 projectManager.AddTopic(
                     projectId,
-                    workspaceContext.CurrentWorkspace.Id,
+                    currentWorkspace.Id,
                     topic.TopicName,
                     topic.TopicContext
                 );
@@ -510,7 +510,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
         var step2 = new CreateStep2SurveyViewModel();
         if (dataSource != null)
         {
-            var existingQuestions = questionManager.GetQuestions(workspaceContext.CurrentWorkspace.Id, dataSource.Id);
+            var existingQuestions = questionManager.GetQuestions(currentWorkspace.Id, dataSource.Id);
             if (existingQuestions.Any())
                 step2.QuestionsJson = SerializeQuestionsToJson(existingQuestions);
         }

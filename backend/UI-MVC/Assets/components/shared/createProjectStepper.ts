@@ -71,6 +71,8 @@ class ProjectDraftManager {
     private readonly step4NudgingDisplay: HTMLElement | null;
     private readonly step4PromptsJson: HTMLInputElement | null;
     private readonly step4Overrides: Map<string, string> = new Map();
+    private readonly step5SaveDraftLink: HTMLButtonElement | null;
+    private readonly step5SurveyLink: HTMLAnchorElement | null;
 
     private currentStep = 1;
     private saveDraftFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -106,6 +108,8 @@ class ProjectDraftManager {
         this.step4NudgingStrength = container.querySelector('#step4NudgingStrength');
         this.step4NudgingDisplay = container.querySelector('#step4NudgingDisplay');
         this.step4PromptsJson = container.querySelector('#step4PromptsJson');
+        this.step5SaveDraftLink = container.querySelector('#step5SaveDraftLink');
+        this.step5SurveyLink = container.querySelector('#step5SurveyLink');
 
         this.discoverForms(container);
         this.migrateOldDraft();
@@ -123,6 +127,8 @@ class ProjectDraftManager {
         this.bindStep4NudgingSlider();
         this.bindStep4AdvancedToggle();
         this.bindStep4PromptModal(container);
+        this.bindPreviewModeToggle(container);
+        this.bindStep5LaunchLinks();
 
         // Native beforeunload removed. Custom _DraftExitModal handles exit confirmation.
     }
@@ -173,6 +179,26 @@ class ProjectDraftManager {
                 this.saveMeta();
             });
         }
+
+        const step1Form = this.stepManagers.get(1)?.form;
+        const interactionFormSelect = step1Form?.querySelector<HTMLSelectElement>('select[name="CreateStep1ViewModel.InteractionForm"]');
+        interactionFormSelect?.addEventListener('change', () => {
+            const previewToggle = document.getElementById('preview-mode-toggle');
+            if (previewToggle) {
+                if (interactionFormSelect.value === 'UserDefined' || interactionFormSelect.value === '2') {
+                    previewToggle.classList.remove('hidden');
+                    const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
+                    previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {
+                        const isActive = btn.dataset.previewMode === currentMode;
+                        btn.classList.toggle('bg-text/10', isActive);
+                        btn.classList.toggle('text-text', isActive);
+                        btn.classList.toggle('text-text/40', !isActive);
+                    });
+                } else {
+                    previewToggle.classList.add('hidden');
+                }
+            }
+        });
     }
 
     private bindSaveDraftButton(): void {
@@ -387,6 +413,7 @@ class ProjectDraftManager {
             if (data?.slug && this.step1Slug) {
                 this.step1Slug.value = data.slug;
                 this.saveMeta();
+                this.updateStep5SurveyLink(data.slug);
             }
 
             for (const [, manager] of this.stepManagers) {
@@ -915,6 +942,26 @@ class ProjectDraftManager {
         });
 
         this.refreshStep4OverridesFromJson();
+        this.updateStep5SurveyLink(this.step1Slug?.value ?? '');
+
+        // Sync preview mode toggle visibility
+        const previewToggle = document.getElementById('preview-mode-toggle');
+        if (previewToggle) {
+            const step1Form = this.stepManagers.get(1)?.form;
+            const select = step1Form?.querySelector<HTMLSelectElement>('select[name="CreateStep1ViewModel.InteractionForm"]');
+            if (select && (select.value === 'UserDefined' || select.value === '2')) {
+                previewToggle.classList.remove('hidden');
+                const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
+                previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {
+                    const isActive = btn.dataset.previewMode === currentMode;
+                    btn.classList.toggle('bg-text/10', isActive);
+                    btn.classList.toggle('text-text', isActive);
+                    btn.classList.toggle('text-text/40', !isActive);
+                });
+            } else {
+                previewToggle.classList.add('hidden');
+            }
+        }
     }
 
     // ── Step 4: advanced settings toggle ───────────────────────────────────
@@ -1062,6 +1109,78 @@ class ProjectDraftManager {
                 });
             });
         });
+    }
+
+    // ── Preview mode toggle (UserDefined) ───────────────────────────────────
+
+    private bindPreviewModeToggle(_container: HTMLElement): void {
+        const toggle = document.getElementById('preview-mode-toggle')
+        const chatBtn = toggle?.querySelector<HTMLButtonElement>('[data-preview-mode="Chat"]')
+        const scrollBtn = toggle?.querySelector<HTMLButtonElement>('[data-preview-mode="Vertical_Scroll"]')
+        const prefixedKey = `${this.draftStoragePrefix}:preview-mode`
+
+        if (!toggle || !chatBtn || !scrollBtn) return
+
+        const highlightBtn = (mode: string) => {
+            const isChat = mode === 'Chat'
+            chatBtn.classList.toggle('bg-text/10', isChat)
+            chatBtn.classList.toggle('text-text', isChat)
+            chatBtn.classList.toggle('text-text/40', !isChat)
+            scrollBtn.classList.toggle('bg-text/10', !isChat)
+            scrollBtn.classList.toggle('text-text', !isChat)
+            scrollBtn.classList.toggle('text-text/40', isChat)
+        }
+
+        chatBtn.addEventListener('click', () => {
+            localStorage.setItem(prefixedKey, 'Chat')
+            highlightBtn('Chat')
+        })
+
+        scrollBtn.addEventListener('click', () => {
+            localStorage.setItem(prefixedKey, 'Vertical_Scroll')
+            highlightBtn('Vertical_Scroll')
+        })
+
+        // Init — read latest from localStorage
+        highlightBtn(localStorage.getItem(prefixedKey) ?? 'Chat')
+    }
+
+    private bindStep5LaunchLinks(): void {
+        if (!this.step5SaveDraftLink || !this.step5SurveyLink) return;
+
+        this.step5SaveDraftLink.addEventListener('click', async () => {
+            await this.ensureStep1ImageUploaded();
+            this.persistCurrentStep();
+            await this.saveDraftToServer();
+
+            const slug = this.step1Slug?.value ?? '';
+            if (slug) {
+                window.open(this.buildSurveyLink(slug), '_blank');
+            }
+        });
+
+        const slug = this.step1Slug?.value ?? '';
+        this.updateStep5SurveyLink(slug);
+    }
+
+    private updateStep5SurveyLink(slug: string): void {
+        if (!this.step5SurveyLink) return;
+
+        if (!slug) {
+            this.step5SurveyLink.href = '#';
+            this.step5SurveyLink.textContent = 'Survey link will appear after saving';
+            this.step5SurveyLink.classList.add('pointer-events-none', 'opacity-60');
+            return;
+        }
+
+        const link = this.buildSurveyLink(slug);
+        this.step5SurveyLink.href = link;
+        this.step5SurveyLink.textContent = link;
+        this.step5SurveyLink.classList.remove('pointer-events-none', 'opacity-60');
+    }
+
+    private buildSurveyLink(slug: string): string {
+        return `${window.location.origin}/${slug}`;
     }
 }
 
