@@ -30,18 +30,21 @@ export const ARROW_DOWN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="curr
   <polyline points="6 9 12 15 18 9"/>
 </svg>`
 
-export function workspaceAvatarHTML(workspaceBadge: string): string {
+export function workspaceAvatarHTML(workspaceBadge: string, logoUrl?: string): string {
+    if (logoUrl) {
+        return `<img src="${logoUrl}" alt="" class="chat-avatar-img" />`
+    }
     return `<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <circle cx="18" cy="18" r="17" fill="var(--color-primary)"/>
       <text x="18" y="18" text-anchor="middle" dy="0.35em" fill="white" font-size="${workspaceBadge.length > 2 ? '10' : '13'}" font-weight="800" font-family="system-ui, -apple-system, sans-serif">${workspaceBadge}</text>
     </svg>`
 }
 
-export function avatarHTML(workspaceBadge: string, inIdeasPhase: boolean): string {
+export function avatarHTML(workspaceBadge: string, inIdeasPhase: boolean, logoUrl?: string): string {
     if (inIdeasPhase) {
         return `${AI_AVATAR}<span class="chat-avatar-badge">AI</span>`
     }
-    return workspaceAvatarHTML(workspaceBadge)
+    return workspaceAvatarHTML(workspaceBadge, logoUrl)
 }
 
 export function getIdeationModalsHtml(t: SurveyStrings): string {

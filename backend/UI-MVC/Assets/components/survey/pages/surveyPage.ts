@@ -58,7 +58,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     const questions = await getQuestions(params.organizationSlug, params.projectSlug)
 
     const organizationName = project.organizationName?.trim() || project.organizationSlug
-    const headerHTML = renderSurveyHeader({ organizationName, organizationSlug: project.organizationSlug })
+    const headerHTML = renderSurveyHeader({ organizationName, organizationSlug: project.organizationSlug, organizationLogo: project.organizationLogo })
 
     let currentQuestionIndex = -1 // Start at -1 to indicate we're at landing page section, not at any question yet
     let scrollNav: ScrollNav | null = null

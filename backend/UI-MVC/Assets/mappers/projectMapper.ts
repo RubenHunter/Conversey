@@ -119,6 +119,7 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         slug,
         organizationSlug,
         organizationName: pickString(dto.organizationName, dto.OrganizationName),
+        organizationLogo: pickString(dto.organizationLogo, dto.OrganizationLogo),
         title: name,
         description: pickString(dto.description, dto.Description) ?? '',
         imageUrl: pickString(dto.imageUrl, dto.ImageUrl) ?? '',

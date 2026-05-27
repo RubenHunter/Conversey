@@ -82,7 +82,8 @@ export async function renderChatSurveyPage(
     const questions = await getQuestions(params.organizationSlug, params.projectSlug)
     const orgName = project.organizationName?.trim() || project.organizationSlug
     const workspaceBadge = getOrganizationBadge(orgName, project.organizationSlug)
-    const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug })
+    const workspaceLogo = project.organizationLogo
+    const headerHTML = renderSurveyHeader({ organizationName: orgName, organizationSlug: project.organizationSlug, organizationLogo: workspaceLogo })
 
     let inIdeasPhase = false
     let activeViewForBrainstorm: ActiveView | null = null
@@ -302,7 +303,7 @@ export async function renderChatSurveyPage(
         row.className = 'chat-row chat-row--ai'
         row.innerHTML = `
             <div class="chat-avatar">
-                ${avatarHTML(workspaceBadge, inIdeasPhase)}
+                ${avatarHTML(workspaceBadge, inIdeasPhase, workspaceLogo)}
             </div>
             <div class="chat-bubble-group">
                 <div class="chat-bubble chat-bubble--ai chat-bubble--typing">
@@ -388,7 +389,7 @@ export async function renderChatSurveyPage(
 
         const avatarDiv = document.createElement('div')
         avatarDiv.className = 'chat-avatar'
-        avatarDiv.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+        avatarDiv.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase, workspaceLogo)
 
         row.appendChild(avatarDiv)
         row.appendChild(group)
@@ -972,7 +973,7 @@ export async function renderChatSurveyPage(
         titleRow.className = 'chat-row chat-row--ai'
         const titleAvatar = document.createElement('div')
         titleAvatar.className = 'chat-avatar'
-        titleAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+        titleAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase, workspaceLogo)
         const titleBubbleGroup = document.createElement('div')
         titleBubbleGroup.className = 'chat-bubble-group'
         const titleBubble = document.createElement('div')
@@ -989,7 +990,7 @@ export async function renderChatSurveyPage(
             descRow.className = 'chat-row chat-row--ai'
             const descAvatar = document.createElement('div')
             descAvatar.className = 'chat-avatar'
-            descAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            descAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase, workspaceLogo)
             const descBubbleGroup = document.createElement('div')
             descBubbleGroup.className = 'chat-bubble-group'
             const descBubble = document.createElement('div')
@@ -1012,7 +1013,7 @@ export async function renderChatSurveyPage(
             qRow.className = 'chat-row chat-row--ai'
             const qAvatar = document.createElement('div')
             qAvatar.className = 'chat-avatar'
-            qAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase)
+            qAvatar.innerHTML = avatarHTML(workspaceBadge, inIdeasPhase, workspaceLogo)
             const qBubbleGroup = document.createElement('div')
             qBubbleGroup.className = 'chat-bubble-group'
             const qBubble = document.createElement('div')
