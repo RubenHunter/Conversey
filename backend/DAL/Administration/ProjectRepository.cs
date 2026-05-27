@@ -92,6 +92,22 @@ public class ProjectRepository : IProjectRepository
         _dbContext.Projects.RemoveRange(projects);
     }
 
+    public IReadOnlyCollection<Youth> ReadYouthsWithRealEmailsByWorkspaceId(Slug workspaceId, Slug? projectId = null)
+    {
+        var query = _dbContext.Youths
+            .Include(y => y.Project)
+            .Include(y => y.Ideas).ThenInclude(i => i.Topic)
+            .Where(y => !string.IsNullOrEmpty(y.Email)
+                        && !y.Email.EndsWith("@local.invalid"))
+            .Where(y => EF.Property<Slug>(y.Project!, "WorkspaceId") == workspaceId);
+
+        if (projectId != null)
+        {
+            query = query.Where(y => EF.Property<Slug>(y, "ProjectId") == projectId.Value);
+        }
+
+        return query.ToList().AsReadOnly();
+    }
 }
 
 #region ProjectConfig

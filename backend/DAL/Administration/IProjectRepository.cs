@@ -19,4 +19,5 @@ public interface IProjectRepository
     void DeleteProject(Slug projectId, Slug workspaceId);
     void DeleteAllProjectsFromWorkspaceId(Slug workspaceId);
 
+    IReadOnlyCollection<Youth> ReadYouthsWithRealEmailsByWorkspaceId(Slug workspaceId, Slug? projectId = null);
 }
