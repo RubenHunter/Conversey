@@ -1021,9 +1021,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         submitBtn.disabled = true
         submitBtn.textContent = 'Checking...'
 
-        void firstIdeaContactDialog.open().then((choice) => {
-            persistContactEmailIfGranted(choice)
-        })
+        const choice = await firstIdeaContactDialog.open()
+        persistContactEmailIfGranted(choice)
 
         try {
             await submitHandler.submit(body, activeView)

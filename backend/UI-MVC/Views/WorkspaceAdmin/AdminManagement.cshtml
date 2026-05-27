@@ -51,6 +51,9 @@
                 Header = "Actions",
                 Template = u =>
                 {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
                     var edit = new TagBuilder("button")
                     {
                         Attributes =
@@ -66,7 +69,26 @@
                     edit.AddCssClass("font-semibold text-primary transition hover:text-primary/80");
                     edit.InnerHtml.Append("Edit");
 
-                    return edit;
+                    var divider = new TagBuilder("p");
+                    divider.InnerHtml.Append("|");
+
+                    var contact = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-contact-email"] = u.Email ?? string.Empty,
+                            ["title"] = "Send email"
+                        }
+                    };
+                    contact.AddCssClass("contact-admin-btn font-semibold text-emerald-600 transition hover:text-emerald-800");
+                    contact.InnerHtml.Append("Contact");
+
+                    container.InnerHtml.AppendHtml(edit);
+                    container.InnerHtml.AppendHtml(divider);
+                    container.InnerHtml.AppendHtml(contact);
+
+                    return container;
                 }
             }
         ]
@@ -115,6 +137,7 @@
 
     var oneTimePassword = TempData["OneTimePassword"] as string;
     var oneTimePasswordAdminEmail = TempData["OneTimePasswordAdminEmail"] as string;
+    var emailSent = TempData["EmailSent"] as bool? == true;
     var showOneTimePassword = !string.IsNullOrWhiteSpace(oneTimePassword) && !string.IsNullOrWhiteSpace(oneTimePasswordAdminEmail);
 }
 
@@ -157,6 +180,12 @@
                 <p class="mt-1 text-sm text-text/60">Share this password with the new admin. It will only be shown once.</p>
             </div>
             <div class="space-y-4">
+                @if (emailSent)
+                {
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-emerald-700">An email with login instructions has been sent to @oneTimePasswordAdminEmail.</p>
+                    </div>
+                }
                 <div>
                     <p class="text-xs uppercase tracking-widest text-text/50">Account</p>
                     <p class="mt-1 text-sm font-semibold text-text">@oneTimePasswordAdminEmail</p>
@@ -188,6 +217,8 @@
         </div>
     </div>
 }
+
+@await Html.PartialAsync("~/Views/Shared/_ContactEmailModal.cshtml")
 
 @section Scripts {
     <script type="module" vite-src="~/components/shared/workspaceAdminManagementModals.ts"></script>

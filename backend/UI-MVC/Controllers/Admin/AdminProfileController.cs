@@ -117,18 +117,43 @@ public class AdminProfileController(
             });
         }
 
-        var changePasswordResult = await userManager.ChangePasswordAsync(
-            user,
-            model.CurrentPassword,
-            model.NewPassword);
-
-        if (!changePasswordResult.Succeeded)
+        if (!string.IsNullOrWhiteSpace(model.CurrentPassword))
         {
-            return BadRequest(new
+            var changePasswordResult = await userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword);
+
+            if (!changePasswordResult.Succeeded)
             {
-                message = "Password change failed.",
-                errors = changePasswordResult.Errors.Select(error => error.Description).ToArray()
-            });
+                return BadRequest(new
+                {
+                    message = "Password change failed.",
+                    errors = changePasswordResult.Errors.Select(error => error.Description).ToArray()
+                });
+            }
+        }
+        else
+        {
+            var removeResult = await userManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = "Failed to remove current password.",
+                    errors = removeResult.Errors.Select(error => error.Description).ToArray()
+                });
+            }
+
+            var addResult = await userManager.AddPasswordAsync(user, model.NewPassword);
+            if (!addResult.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = "Password change failed.",
+                    errors = addResult.Errors.Select(error => error.Description).ToArray()
+                });
+            }
         }
 
         if (user is WorkspaceAdminUser workspaceAdmin)

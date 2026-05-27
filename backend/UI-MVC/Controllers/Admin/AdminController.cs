@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Conversey.BL.Administration;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Services;
 using Conversey.UI_MVC.Models.Admin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +12,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace Conversey.UI_MVC.Controllers.Admin;
 
 [Authorize(Policy = ConverseyAdminPolicy.Name)]
-public class AdminController(IAdminManager adminManager, IWorkspaceManager workspaceManager) : Controller
+public class AdminController(IAdminManager adminManager, IWorkspaceManager workspaceManager, IEmailService emailService) : Controller
 {
     
     [HttpGet("/admin/workspaces/admins/new")]
@@ -38,11 +39,38 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
             TempData["OneTimePasswordAdminEmail"] = admin.Email;
             TempData["OneTimePasswordWorkspaceId"] = workspaceSlug.Text;
 
+            var requestHost = Request.Host.Value;
+            var loginUrl = $"{Request.Scheme}://{workspaceSlug.Text}.{requestHost}/login";
+            var emailBody = $@"Welcome to Conversey!
+
+You have been added as a workspace admin for the workspace '{workspaceSlug.Text}'.
+
+Login: {loginUrl}
+Email: {admin.Email}
+Temporary password: {oneTimePassword}
+
+You will be asked to change your password on first login.
+
+This is an automated message. Please do not reply.";
+
+            var emailSent = false;
+            try
+            {
+                await emailService.SendEmailAsync(admin.Email, $"Your Conversey workspace admin account for {workspaceSlug.Text}", emailBody);
+                emailSent = true;
+            }
+            catch
+            {
+                // Email sending failure should not block admin creation
+            }
+
+            TempData["EmailSent"] = emailSent;
+
             var redirectUrl = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceSlug });
 
             if (IsAjaxRequest())
             {
-                return Ok(new { redirectUrl });
+                return Ok(new { redirectUrl, emailSent });
             }
 
             return RedirectToAction("WorkspaceDetails", "ConverseyAdmin", new { id = workspaceSlug });
@@ -50,6 +78,10 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         catch (ValidationException ex)
         {
             ModelStateHelper.ApplyValidationException(ModelState, ex, "FormItem");
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("FormItem.Username", ex.Message);
         }
 
         if (IsAjaxRequest())
@@ -173,11 +205,37 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
             TempData["OneTimePassword"] = oneTimePassword;
             TempData["OneTimePasswordAdminEmail"] = admin.Email;
 
+            var loginUrl = $"{Request.Scheme}://{Request.Host.Value}/login";
+            var emailBody = $@"Welcome to Conversey!
+
+You have been added as a platform admin for Conversey.
+
+Login: {loginUrl}
+Email: {admin.Email}
+Temporary password: {oneTimePassword}
+
+You will be asked to change your password on first login.
+
+This is an automated message. Please do not reply.";
+
+            var emailSent = false;
+            try
+            {
+                await emailService.SendEmailAsync(admin.Email, "Your Conversey platform admin account", emailBody);
+                emailSent = true;
+            }
+            catch
+            {
+                // Email sending failure should not block admin creation
+            }
+
+            TempData["EmailSent"] = emailSent;
+
             var redirectUrl = Url.Action("AdminManagement", "ConverseyAdmin");
 
             if (IsAjaxRequest())
             {
-                return Ok(new { redirectUrl });
+                return Ok(new { redirectUrl, emailSent });
             }
 
             return RedirectToAction("AdminManagement", "ConverseyAdmin");
@@ -185,6 +243,10 @@ public class AdminController(IAdminManager adminManager, IWorkspaceManager works
         catch (ValidationException ex)
         {
             ModelStateHelper.ApplyValidationException(ModelState, ex);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("FormItem.Username", ex.Message);
         }
 
         if (IsAjaxRequest())

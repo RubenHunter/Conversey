@@ -183,6 +183,13 @@
                                         <div class="flex items-center gap-2 mb-3">
                                             <span class="text-xs font-semibold text-primary uppercase tracking-wider" data-i18n="Full Idea Content">Full Idea Content</span>
                                             <span class="text-[10px] text-secondary">#@idea.Id &mdash; @idea.TopicName &mdash; @idea.Status</span>
+                                            @if (idea.YouthId.HasValue && !string.IsNullOrWhiteSpace(idea.YouthEmail))
+                                            {
+                                                <button type="button" class="ml-auto rounded-xl bg-primary/10 text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary hover:text-white transition-all contact-youth-btn" data-youth-id="@idea.YouthId.Value" data-youth-email="@idea.YouthEmail" data-idea-id="@idea.Id" data-idea-content="@System.Net.WebUtility.HtmlEncode(idea.Content)" onclick="event.stopPropagation()">
+                                                    <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                                    Contact
+                                                </button>
+                                            }
                                         </div>
                                         <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">@idea.Content</p>
                                         @if (idea.Status == "Rejected" && !string.IsNullOrWhiteSpace(idea.RejectionReason))
@@ -263,6 +270,8 @@
     </main>
 </div>
 
+@await Html.PartialAsync("~/Views/Shared/_ContactEmailModal.cshtml")
+
 <script type="module" vite-src="~/components/analytics/listPage.ts"></script>
 <style>
 th[data-sort-dir="asc"]::after,
@@ -313,6 +322,16 @@ th[data-sort-dir="desc"]::after { content: '\2193'; }
                     }
                 }
             }).finally(function() { btn.disabled = false; });
+        });
+    });
+
+    document.querySelectorAll('.contact-youth-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var youthId = btn.getAttribute('data-youth-id');
+            var youthEmail = btn.getAttribute('data-youth-email');
+            var ideaContent = btn.getAttribute('data-idea-content');
+            var ideas = ideaContent ? [{ Content: ideaContent }] : [];
+            openContactModal(youthId, youthEmail, ideas, 0);
         });
     });
 })();

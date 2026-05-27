@@ -392,8 +392,15 @@ class WorkspaceModalForms {
             });
 
             if (response.ok) {
-                const payload = await response.json().catch(() => null) as { redirectUrl?: string } | null;
-                window.location.href = payload?.redirectUrl ?? window.location.href;
+                const payload = await response.json().catch(() => null) as { redirectUrl?: string; emailSent?: boolean } | null;
+                if (payload?.emailSent && summary) {
+                    summary.textContent = "Email with login instructions sent successfully.";
+                    summary.classList.remove("hidden");
+                    summary.classList.add("text-emerald-600", "bg-emerald-50", "rounded-xl", "px-3", "py-2");
+                }
+                setTimeout(() => {
+                    window.location.href = payload?.redirectUrl ?? window.location.href;
+                }, payload?.emailSent ? 1500 : 0);
                 return;
             }
 
