@@ -2,6 +2,7 @@ using System.Text;
 using Conversey.BL.Analytics;
 using Conversey.BL.Analytics.Dto;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Services;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +15,12 @@ namespace Conversey.UI_MVC.Controllers.Api;
 public class AnalyticsApiController : ControllerBase
 {
     private readonly IAnalyticsManager _analyticsManager;
+    private readonly IContactManager _contactManager;
 
-    public AnalyticsApiController(IAnalyticsManager analyticsManager)
+    public AnalyticsApiController(IAnalyticsManager analyticsManager, IContactManager contactManager)
     {
         _analyticsManager = analyticsManager;
+        _contactManager = contactManager;
     }
 
     private static Slug MakeSlug(string value) => new() { Text = value };
@@ -349,6 +352,12 @@ public class AnalyticsApiController : ControllerBase
                     category);
                 filenamePrefix += "_ideas";
                 break;
+            case "contacts-only":
+                csv = ExportContactsCsv(MakeSlug(workspaceId),
+                    projectId != null ? MakeSlug(projectId) : null,
+                    parsedYouthId);
+                filenamePrefix += "_contacts";
+                break;
             default:
                 csv = _analyticsManager.ExportCombinedCsv(
                     MakeSlug(workspaceId),
@@ -379,5 +388,25 @@ public class AnalyticsApiController : ControllerBase
         Slug? pSlug = string.IsNullOrWhiteSpace(projectId) ? null : MakeSlugOrNull(projectId);
         var trend = _analyticsManager.GetUsageTrend(wsSlug, pSlug, from, to);
         return Ok(trend);
+    }
+
+    private string ExportContactsCsv(Slug workspaceId, Slug? projectId, Guid? youthId)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Email,Project,IdeaCount,Ideas");
+        var contacts = _contactManager.GetContactsByWorkspaceId(workspaceId, projectId, youthId);
+        foreach (var c in contacts)
+        {
+            var ideas = string.Join(" | ", c.Ideas.Select(i =>
+                $"[{i.SubmissionDate:yyyy-MM-dd}] {i.TopicName}: {EscapeCsv(i.Content)}"));
+            sb.AppendLine($"\"{EscapeCsv(c.Email)}\",\"{EscapeCsv(c.ProjectName)}\",{c.Ideas.Count()},\"{ideas}\"");
+        }
+        return sb.ToString();
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        return value.Replace("\"", "\"\"");
     }
 }

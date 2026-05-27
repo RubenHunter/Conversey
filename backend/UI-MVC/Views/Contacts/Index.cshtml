@@ -11,7 +11,7 @@
     };
 }
 
-<div class="min-h-screen bg-background font-sans text-text" data-workspace-name="@WorkspaceContext.CurrentWorkspace.Name">
+<div class="min-h-screen bg-background font-sans text-text" data-workspace-name="@WorkspaceContext.CurrentWorkspace.Name" data-workspace-slug="@WorkspaceContext.CurrentWorkspace.Id.Text">
     @await Html.PartialAsync("_AdminHeader")
     @Html.AntiForgeryToken()
 
@@ -54,6 +54,18 @@
                     }
                 </select>
                 <button type="submit" class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors" data-i18n="Filter">Filter</button>
+                <div class="relative inline-block">
+                    <button type="button" id="export-csv-btn"
+                            class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm font-semibold hover:bg-secondary/5 transition-colors flex items-center gap-2" data-i18n="Export CSV">
+                        Export CSV
+                    </button>
+                    <div id="export-csv-menu" class="hidden absolute right-0 mt-1 w-64 bg-white rounded-xl border border-secondary/10 shadow-lg z-50 py-1">
+                        <a href="#" id="export-all-contacts"
+                           class="block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download all contacts">Download all contacts</a>
+                        <a href="#" id="export-filtered-contacts"
+                           class="block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download with active filters">Download with active filters</a>
+                    </div>
+                </div>
                 @if (!string.IsNullOrWhiteSpace(Model.SelectedProjectId) || !string.IsNullOrWhiteSpace(Model.SelectedYouthId))
                 {
                     <a asp-action="Index" class="text-sm text-text/60 hover:text-text" data-i18n="Clear filter">Clear filter</a>
@@ -118,6 +130,42 @@
                     openContactModal(btn.dataset.youthId, btn.dataset.email, ideas, null);
                 });
             });
+
+            const exportBtn = document.getElementById('export-csv-btn');
+            const exportMenu = document.getElementById('export-csv-menu');
+            if (exportBtn && exportMenu) {
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    exportMenu.classList.toggle('hidden');
+                });
+                document.addEventListener('click', () => exportMenu.classList.add('hidden'));
+                exportMenu.addEventListener('click', (e) => e.stopPropagation());
+
+                function downloadCsv(withFilters) {
+                    const wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') ||
+                        window.location.hostname.split('.')[0];
+                    const params = new URLSearchParams();
+                    params.set('workspaceId', wsSlug);
+                    params.set('type', 'contacts-only');
+                    if (withFilters) {
+                        const projectId = document.getElementById('projectFilter')?.value;
+                        const youthId = document.getElementById('youthFilter')?.value;
+                        if (projectId) params.set('projectId', projectId);
+                        if (youthId) params.set('youthId', youthId);
+                    }
+                    window.location.href = '/api/admin/analytics/export?' + params.toString();
+                    exportMenu.classList.add('hidden');
+                }
+
+                document.getElementById('export-all-contacts')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadCsv(false);
+                });
+                document.getElementById('export-filtered-contacts')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadCsv(true);
+                });
+            }
         });
     </script>
 }
