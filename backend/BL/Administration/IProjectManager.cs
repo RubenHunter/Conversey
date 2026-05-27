@@ -5,7 +5,6 @@ namespace Conversey.BL.Administration;
 
 public interface IProjectManager
 {
-    Project GetProject(Workspace workspace, Slug projectId);
     Project GetProjectById(Slug workspaceId, Slug projectId);
     Topic GetTopic(Project project, int topicId);
     Youth GetYouth(Project project, Guid youthId);
@@ -13,9 +12,6 @@ public interface IProjectManager
     Youth AddYouth(Guid token, string email, Slug projectId);
     
     IEnumerable<Project> GetAllProjectsFromWorkspaceId(Slug workspaceId);
-
-    Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3);
 
     Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
         DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, int? minAge, int? maxAge,

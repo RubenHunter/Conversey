@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Analytics.Dto;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 

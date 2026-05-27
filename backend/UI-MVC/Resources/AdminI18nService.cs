@@ -79,7 +79,7 @@ public class AdminI18nService : IAdminI18nService
         }
     }
 
-    private static Dictionary<string, string>? LoadJson(IWebHostEnvironment env, string language)
+    private static Dictionary<string, string> LoadJson(IWebHostEnvironment env, string language)
     {
         var path = Path.Combine(env.ContentRootPath, "Resources", $"admin-{language}.json");
         if (!File.Exists(path))

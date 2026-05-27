@@ -13,8 +13,8 @@ public class AdminTableViewModel<T>
     public string TableBodyId { get; init; } = string.Empty;
     public string EmptyState { get; init; } = "No items yet.";
     
-    public IReadOnlyList<AdminTableColumn<T>> Columns { get; init; } = [];
-    public IReadOnlyList<T> Items { get; init; } = [];
+    public ICollection<AdminTableColumn<T>> Columns { get; init; } = [];
+    public ICollection<T> Items { get; init; } = [];
     public Func<dynamic, string> RowId { get; init; }
 }
 

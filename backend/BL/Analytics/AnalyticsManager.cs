@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Conversey.BL.Ai;
-using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Analytics.Dto;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
@@ -24,7 +24,7 @@ public class AnalyticsManager : IAnalyticsManager
         _promptRepository = promptRepository;
     }
 
-    public async Task<AnalyticsDashboardDto> GetDashboardAsync(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public async Task<AnalyticsDashboardDto> GetDashboardAsync(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         return new AnalyticsDashboardDto
         {
@@ -39,7 +39,7 @@ public class AnalyticsManager : IAnalyticsManager
         };
     }
 
-    public List<ChoiceQuestionStatDto> GetChoiceQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<ChoiceQuestionStatDto> GetChoiceQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var stats = _repo.GetChoiceQuestionStats(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -61,7 +61,7 @@ public class AnalyticsManager : IAnalyticsManager
             .ToList();
     }
 
-    public List<ScaleQuestionStatDto> GetScaleQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<ScaleQuestionStatDto> GetScaleQuestionStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var stats = _repo.GetScaleQuestionStats(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -77,7 +77,7 @@ public class AnalyticsManager : IAnalyticsManager
         }).ToList();
     }
 
-    public List<OpenAnswerDto> GetOpenAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<OpenAnswerDto> GetOpenAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var answers = _repo.GetOpenAnswers(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -92,7 +92,7 @@ public class AnalyticsManager : IAnalyticsManager
         }).ToList();
     }
 
-    public List<AnswerListItemDto> GetAllAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<AnswerListItemDto> GetAllAnswers(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var items = _repo.GetAllAnswerItems(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -128,7 +128,7 @@ public class AnalyticsManager : IAnalyticsManager
         return singleItems.Concat(multiGroups).ToList();
     }
 
-    public List<IdeaStatDto> GetIdeaStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<IdeaStatDto> GetIdeaStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var ideas = _repo.GetIdeaStats(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -148,28 +148,28 @@ public class AnalyticsManager : IAnalyticsManager
         }).ToList();
     }
 
-    public List<IdeaCountDto> GetIdeasByTopic(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<IdeaCountDto> GetIdeasByTopic(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var stats = _repo.GetIdeaCountByTopic(workspaceId, projectId, ToRepoFilters(filters));
 
         return stats.Select(s => new IdeaCountDto { Label = s.TopicName, Count = s.Count }).ToList();
     }
 
-    public List<IdeaCountDto> GetIdeasByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<IdeaCountDto> GetIdeasByStatus(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var stats = _repo.GetIdeaCountByStatus(workspaceId, projectId, ToRepoFilters(filters));
 
         return stats.Select(s => new IdeaCountDto { Label = s.Status, Count = s.Count }).ToList();
     }
 
-    public List<IdeaCountDto> GetIdeasByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public List<IdeaCountDto> GetIdeasByCategory(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var stats = _repo.GetIdeaCountByCategory(workspaceId, projectId, ToRepoFilters(filters));
 
         return stats.Select(s => new IdeaCountDto { Label = s.Category, Count = s.Count }).ToList();
     }
 
-    public ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
+    public ParticipationStatsDto GetParticipationStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters = null)
     {
         var stats = _repo.GetParticipationStats(workspaceId, projectId, ToRepoFilters(filters));
 
@@ -201,7 +201,7 @@ public class AnalyticsManager : IAnalyticsManager
         }).ToList();
     }
 
-    public async Task<AiSummaryResponseDto> GenerateIdeaSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AnalyticsFilterRequest? filters)
+    public async Task<AiSummaryResponseDto> GenerateIdeaSummaryAsync(Slug workspaceId, Slug? projectId, AiSummaryRequestDto request, AnalyticsFilterRequest filters)
     {
         const int maxIdeas = 50;
         var ideas = _repo.GetIdeaContentsForSummary(workspaceId, projectId, maxIdeas, ToRepoFilters(filters));
@@ -239,7 +239,7 @@ public class AnalyticsManager : IAnalyticsManager
         return ParseSummaryJson(rawResponse);
     }
 
-    public async Task<AiSummaryResponseDto?> GetCachedSummaryAsync(Slug workspaceId, Slug? projectId)
+    public async Task<AiSummaryResponseDto> GetCachedSummaryAsync(Slug workspaceId, Slug? projectId)
     {
         var saved = await _repo.GetSavedSummaryAsync(workspaceId, projectId);
         if (saved == null) return null;
@@ -285,7 +285,7 @@ public class AnalyticsManager : IAnalyticsManager
         catch { return new List<string>(); }
     }
 
-    public string ExportQuantitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters)
+    public string ExportQuantitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters)
     {
         var sb = new StringBuilder();
 
@@ -307,7 +307,7 @@ public class AnalyticsManager : IAnalyticsManager
         return sb.ToString();
     }
 
-    public string ExportAnswersOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? questionType = null)
+    public string ExportAnswersOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters, Guid? youthId = null, string questionType = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Type,Project,Question,Content,Youth");
@@ -322,7 +322,7 @@ public class AnalyticsManager : IAnalyticsManager
         return sb.ToString();
     }
 
-    public string ExportIdeasOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null)
+    public string ExportIdeasOnlyCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters, Guid? youthId = null, string category = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Type,Topic,Status,Content,Summary,Categories,Youth,Date");
@@ -338,7 +338,7 @@ public class AnalyticsManager : IAnalyticsManager
         return sb.ToString();
     }
 
-    public string ExportQualitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null, string? questionType = null)
+    public string ExportQualitativeCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters, Guid? youthId = null, string category = null, string questionType = null)
     {
         var sb = new StringBuilder();
         sb.Append(ExportAnswersOnlyCsv(workspaceId, projectId, filters, youthId, questionType));
@@ -347,7 +347,7 @@ public class AnalyticsManager : IAnalyticsManager
         return sb.ToString();
     }
 
-    public string ExportCombinedCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters, Guid? youthId = null, string? category = null, string? questionType = null)
+    public string ExportCombinedCsv(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters, Guid? youthId = null, string category = null, string questionType = null)
     {
         var sb = new StringBuilder();
         sb.Append(ExportQuantitativeCsv(workspaceId, projectId, filters));
@@ -356,7 +356,7 @@ public class AnalyticsManager : IAnalyticsManager
         return sb.ToString();
     }
 
-    private static AnalyticsFilterParams? ToRepoFilters(AnalyticsFilterRequest? request)
+    private static AnalyticsFilterParams ToRepoFilters(AnalyticsFilterRequest request)
     {
         if (request == null) return null;
 
@@ -379,12 +379,17 @@ public class AnalyticsManager : IAnalyticsManager
             if (prompt != null)
             {
                 if (!string.IsNullOrWhiteSpace(prompt.SystemPrompt) && promptName.Contains("System"))
-                    return AiPromptDefaults.BuildIdeaSummarySystemPrompt().Contains("{{") ? PromptRenderer.Render(prompt.SystemPrompt, variables) : prompt.SystemPrompt;
+                    return AiPromptDefaults.BuildIdeaSummarySystemPrompt().Contains("{{")
+                        ? PromptRenderer.Render(prompt.SystemPrompt, variables)
+                        : prompt.SystemPrompt;
                 if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate) && promptName.Contains("User"))
                     return PromptRenderer.Render(prompt.UserPromptTemplate, variables);
             }
         }
-        catch { }
+        catch
+        {
+            return defaultValue;
+        }
 
         return defaultValue;
     }
@@ -443,7 +448,7 @@ public class AnalyticsManager : IAnalyticsManager
         return new List<string>();
     }
 
-    private static string EscapeCsv(string? value)
+    private static string EscapeCsv(string value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         return value.Replace("\"", "\"\"");
@@ -516,7 +521,7 @@ public class AnalyticsManager : IAnalyticsManager
         }).ToList();
     }
 
-    public async Task<bool> SetModerationStatusAsync(string type, int id, string status, string? reason = null)
+    public async Task<bool> SetModerationStatusAsync(string type, int id, string status, string reason = null)
     {
         return await _repo.SetModerationStatusAsync(type, id, status, reason);
     }
@@ -531,7 +536,7 @@ public class AnalyticsManager : IAnalyticsManager
         return _repo.GetTopicsForWorkspace(workspaceId);
     }
 
-    public IReadOnlyList<IdeaCountDto> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
+    public IReadOnlyList<IdeaCountDto> GetToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters = null)
     {
         return _repo.GetToxicityStats(workspaceId, projectId, ToRepoFilters(filters))
             .Select(t => new IdeaCountDto { Label = t.Label, Count = t.Count })
@@ -539,7 +544,7 @@ public class AnalyticsManager : IAnalyticsManager
             .AsReadOnly();
     }
 
-    public IReadOnlyList<IdeaCountDto> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
+    public IReadOnlyList<IdeaCountDto> GetResponseToxicityStats(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters = null)
     {
         return _repo.GetResponseToxicityStats(workspaceId, projectId, ToRepoFilters(filters))
             .Select(t => new IdeaCountDto { Label = t.Label, Count = t.Count })
@@ -547,12 +552,12 @@ public class AnalyticsManager : IAnalyticsManager
             .AsReadOnly();
     }
 
-    public int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
+    public int GetDistinctFlaggedIdeaCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters = null)
     {
         return _repo.GetDistinctFlaggedIdeaCount(workspaceId, projectId, ToRepoFilters(filters));
     }
 
-    public int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest? filters = null)
+    public int GetDistinctFlaggedResponseCount(Slug workspaceId, Slug? projectId, AnalyticsFilterRequest filters = null)
     {
         return _repo.GetDistinctFlaggedResponseCount(workspaceId, projectId, ToRepoFilters(filters));
     }

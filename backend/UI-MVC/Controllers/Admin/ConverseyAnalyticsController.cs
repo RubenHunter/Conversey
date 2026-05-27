@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Conversey.BL.Analytics;
-using Conversey.BL.Analytics.DTOs;
+using Conversey.BL.Analytics.Dto;
 using Conversey.BL.Domain.Common;
 using Conversey.UI_MVC.Models.Analytics;
 using Conversey.UI_MVC.Security;

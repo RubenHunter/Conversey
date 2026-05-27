@@ -6,6 +6,6 @@ public abstract record ResponseSubmissionResponse
 {
     public sealed record Approved(Conversey.BL.Domain.Ideation.IdeaResponse IdeaResponse) : ResponseSubmissionResponse;
 
-    public sealed record Pending(Conversey.BL.Domain.Ideation.IdeaResponse IdeaResponse, ModerationDecision decision) : ResponseSubmissionResponse;
+    public sealed record Pending(Conversey.BL.Domain.Ideation.IdeaResponse IdeaResponse, ModerationDecision Decision) : ResponseSubmissionResponse;
 }
 

@@ -3,7 +3,7 @@ import {
     createQuestionPlaceholderComponent,
     QuestionComponent
 } from "../components/admin/addquestion/question.ts";
-import {createSectionComponent, SectionComponent} from "../components/admin/addquestion/section.ts";
+import {SectionComponent} from "../components/admin/addquestion/section.ts";
 import {createPagedModalComponent} from "../components/pagedModal.ts";
 import {createSetQuestionTypeComponent} from "../components/admin/addquestion/createquestion/setQuestionType.ts";
 import {createModalComponent} from "../components/modal.ts";

@@ -24,7 +24,6 @@ public interface IIdeaManager
     Task<SubmissionResponse> SubmitIdeaAsync(Slug workspaceId, Slug projectId, int topicId, Guid youthId, string ideaContent, bool qualityNudgeBypassed = false);
     Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(Slug workspaceId, Slug projectId, int topicId, string ideaContent, IEnumerable<IdeaNudgeTurn> conversation);
     Idea GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId);
-    Idea GetIdea(Topic topic, int ideaId);
     Idea GetIdeaByIdWithProjectAndResponses(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     IEnumerable<Idea> GetIdeasFromProjectByYouthId(Slug workspaceId, Slug projectId, Guid youthId);
     IEnumerable<Idea> GetIdeasByProjectIdAndTopicId(Slug workspaceId, Slug projectId, int topicId);
@@ -34,7 +33,6 @@ public interface IIdeaManager
 
     
     Task<ResponseSubmissionResponse> AddResponseAsync(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, string responseText);
-    IdeaResponse GetResponse(Idea ideaId, int responseId);
     IEnumerable<IdeaResponse> GetApprovedResponsesByYouth(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId);
     IdeaResponse ChangeResponse(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, int responseId, ModerationStatus newStatus, string responseText);
 
@@ -42,7 +40,6 @@ public interface IIdeaManager
     IEnumerable<IdeaReaction> GetIdeaReactionsByIdeaId(Slug workspaceId, Slug projectId, int topicId, int ideaId);
     void RemoveIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, Guid youthId, int reactionId);
 
-    ResponseReaction GetResponseReaction(IdeaResponse response, int reactionId);
     ResponseReaction AddResponseReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, Guid youthId, string emoji);
     IEnumerable<ResponseReaction> GetResponseReactionsByResponseId(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId);
     void RemoveResponseReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, int responseId, Guid youthId, int reactionId);

@@ -10,10 +10,10 @@ public class SavedAiSummary
     public int Id { get; set; }
 
     public Slug? WorkspaceId { get; set; }
-    public Workspace? Workspace { get; set; }
+    public Workspace Workspace { get; set; }
 
     public Slug? ProjectId { get; set; }
-    public Project? Project { get; set; }
+    public Project Project { get; set; }
 
     [MaxLength(200)]
     public string Focus { get; set; } = string.Empty;

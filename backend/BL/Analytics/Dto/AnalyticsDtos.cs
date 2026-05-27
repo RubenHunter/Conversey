@@ -1,11 +1,11 @@
-namespace Conversey.BL.Analytics.DTOs;
+namespace Conversey.BL.Analytics.Dto;
 
 public class AnalyticsFilterRequest
 {
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
     public int? TopicId { get; set; }
-    public string? Status { get; set; }
+    public string Status { get; set; }
 }
 
 public class ChoiceQuestionStatDto
@@ -41,7 +41,7 @@ public class OpenAnswerDto
     public string QuestionType { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
     public Guid? YouthId { get; set; }
-    public string? YouthEmail { get; set; }
+    public string YouthEmail { get; set; }
 }
 
 public class AnswerListItemDto
@@ -62,12 +62,12 @@ public class IdeaStatDto
     public string Summary { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime SubmissionDate { get; set; }
-    public string? TopicName { get; set; }
+    public string TopicName { get; set; }
     public string[] SemanticCategories { get; set; } = Array.Empty<string>();
     public Guid? YouthId { get; set; }
-    public string? YouthEmail { get; set; }
+    public string YouthEmail { get; set; }
     public bool MarkedForReview { get; set; }
-    public string? RejectionReason { get; set; }
+    public string RejectionReason { get; set; }
 }
 
 public class IdeaCountDto
@@ -110,8 +110,8 @@ public class AiSummaryResponseDto
 
 public class AiSummaryRequestDto
 {
-    public string? Focus { get; set; }
-    public string? Language { get; set; }
+    public string Focus { get; set; }
+    public string Language { get; set; }
 }
 
 public class MarkForReviewRequest
@@ -125,7 +125,7 @@ public class ModerateRequest
     public string Type { get; set; } = string.Empty;
     public int Id { get; set; }
     public string Action { get; set; } = string.Empty;
-    public string? Reason { get; set; }
+    public string Reason { get; set; }
 }
 
 public class AnalyticsDashboardDto
@@ -174,19 +174,19 @@ public class ModerationQueueItemDto
     public int Id { get; set; }
     public string Content { get; set; } = string.Empty;
     public DateTime SubmissionDate { get; set; }
-    public string? TopicName { get; set; }
-    public string? ProjectName { get; set; }
-    public string? ProjectSlug { get; set; }
+    public string TopicName { get; set; }
+    public string ProjectName { get; set; }
+    public string ProjectSlug { get; set; }
     public int? TopicId { get; set; }
     public int? ParentIdeaId { get; set; }
-    public string? ParentIdeaContent { get; set; }
+    public string ParentIdeaContent { get; set; }
     public Guid? YouthId { get; set; }
-    public string? YouthEmail { get; set; }
+    public string YouthEmail { get; set; }
     public bool FlagSexual { get; set; }
     public bool FlagHate { get; set; }
     public bool FlagViolence { get; set; }
     public bool FlagDangerous { get; set; }
     public bool FlagSelfHarm { get; set; }
     public bool FlagPii { get; set; }
-    public string? RejectionReason { get; set; }
+    public string RejectionReason { get; set; }
 }

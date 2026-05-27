@@ -1,3 +1,5 @@
+import {toCanvas} from "qrcode";
+
 class ProjectArchiveModal {
     private modal = document.getElementById('archiveModal');
     private nameEl = document.getElementById('archiveItemName');
@@ -213,11 +215,10 @@ class ProjectArchiveModal {
             this.shareQrSection?.classList.add('hidden');
         }
     }
-
+    
     private async generateQr(url: string) {
-        const QRCode = (await import('qrcode')).default;
         if (!this.shareQrCanvas) return;
-        QRCode.toCanvas(this.shareQrCanvas, url, { width: 180, margin: 2 }, (error) => {
+        toCanvas(this.shareQrCanvas, url, { width: 180, margin: 2 }, (error) => {
             if (!error) this.qrGenerated = true;
         });
     }

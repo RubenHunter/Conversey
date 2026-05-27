@@ -81,11 +81,6 @@ public class QuestionManager: IQuestionManager
         }
     }
 
-    public IEnumerable<Question> GetAllQuestions()
-    {
-        return _questionRepository.ReadAllQuestions();
-    }
-
     public Question AddQuestion(Question question)
     {
         Validate(question);
@@ -99,31 +94,11 @@ public class QuestionManager: IQuestionManager
         _questionRepository.DeleteAllQuestionsForProject(projectId);
     }
 
-    public Answer GetAnswerById(int answerId)
-    {
-        return _questionRepository.ReadAnswerById(answerId) ?? throw new AnswerNotFoundException(answerId.ToString());
-    }
-
-    public Answer AddAnswer(Answer answer)
+    private Answer AddAnswer(Answer answer)
     {
         Validate(answer);
         _questionRepository.CreateAnswer(answer);
         return answer;
-    }
-
-    public Answer ChangeAnswer(Answer answer)
-    {
-        Validate(answer);
-        _questionRepository.UpdateAnswer(answer);
-        return answer;
-    }
-
-    public void RemoveAnswer(int answerId)
-    {
-        if (!_questionRepository.DeleteAnswer(answerId))
-        {
-            throw new AnswerNotFoundException(answerId.ToString());
-        }
     }
 
     private void SubmitScaleAnswer(

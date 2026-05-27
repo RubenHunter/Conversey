@@ -1,6 +1,5 @@
 using Conversey.BL.Administration;
 using Conversey.BL.Analytics;
-using Conversey.BL.Analytics.DTOs;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Common;
 using Conversey.UI_MVC.Controllers.Admin.Helpers;

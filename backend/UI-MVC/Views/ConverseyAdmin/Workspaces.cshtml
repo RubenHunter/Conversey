@@ -1,11 +1,9 @@
 @using Conversey.BL.Domain.Administration
 @using Conversey.UI_MVC.Models
 @using Conversey.UI_MVC.Models.Admin
-@using Conversey.UI_MVC.Resources
 @model IEnumerable<Conversey.BL.Domain.Administration.Workspace>
 @inject AdminContext AdminContext
 @Html.AntiForgeryToken()
-@inject IAdminI18nService I18n
 
 @{
     ViewData["Title"] = "Workspaces";

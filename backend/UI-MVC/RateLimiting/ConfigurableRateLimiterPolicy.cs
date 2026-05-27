@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Conversey.BL.Ai;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.RateLimiting;
@@ -48,8 +47,8 @@ public abstract class ConfigurableRateLimiterPolicy : IRateLimiterPolicy<string>
 
     private static string GetUserKey(HttpContext httpContext)
     {
-        var userId = httpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? httpContext.User?.Identity?.Name;
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? httpContext.User.Identity?.Name;
 
         if (!string.IsNullOrWhiteSpace(userId))
         {

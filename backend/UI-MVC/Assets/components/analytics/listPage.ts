@@ -22,6 +22,7 @@ interface PageElements {
 
 const CONFIGS: Record<string, PageElements> = {
     idea: {
+        type: 'idea',
         tableId: 'ideas-table',
         rowSelector: 'tr.idea-row',
         expandRowSelector: '.idea-expand-row',
@@ -43,6 +44,7 @@ const CONFIGS: Record<string, PageElements> = {
         type: 'idea',
     },
     answer: {
+        type: 'answer',
         tableId: 'answers-table',
         rowSelector: 'tr.answer-row',
         expandRowSelector: '.answer-expand-row',
@@ -281,7 +283,7 @@ function initPagination(el: PageElements): void {
 
         pageNumsEl!.querySelectorAll('.' + el.pageNumClass).forEach((btn) => {
             btn.addEventListener('click', function () {
-                currentPage = parseInt((this as HTMLElement).getAttribute('data-page') || '1');
+                currentPage = parseInt(btn.getAttribute('data-page') || '1');
                 renderPage();
             });
         });

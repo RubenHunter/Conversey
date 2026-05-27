@@ -15,7 +15,7 @@ public class AdminProfileViewModel
 
     [Phone]
     [Display(Name = "Phone number")]
-    public string? PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; }
 
     [Display(Name = "Workspace name")]
     [MaxLength(49)]

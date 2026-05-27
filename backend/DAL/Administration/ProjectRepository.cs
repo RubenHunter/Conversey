@@ -88,12 +88,6 @@ public class ProjectRepository : IProjectRepository
         _dbContext.SaveChanges();
     }
 
-    public void DeleteAllProjectsFromWorkspaceId(Slug workspaceId)
-    {
-        var projects = ReadAllProjectsFromWorkspaceId(workspaceId);
-        _dbContext.Projects.RemoveRange(projects);
-    }
-
     public void CreateTopic(Topic topic)
     {
         _dbContext.Topics.Add(topic);

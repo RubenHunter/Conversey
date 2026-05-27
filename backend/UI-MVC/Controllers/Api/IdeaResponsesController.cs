@@ -58,7 +58,7 @@ public class IdeaResponsesController : ControllerBase
             return Ok(submission switch
             {
                 ResponseSubmissionResponse.Approved approved => new ResponseSubmissionResponseDto.Approved(ResponseDto.From(approved.IdeaResponse)),
-                ResponseSubmissionResponse.Pending pending => new ResponseSubmissionResponseDto.Pending(ResponseDto.From(pending.IdeaResponse), pending.decision),
+                ResponseSubmissionResponse.Pending pending => new ResponseSubmissionResponseDto.Pending(ResponseDto.From(pending.IdeaResponse), pending.Decision),
                 _ => throw new InvalidOperationException("Unknown response submission type")
             });
         }

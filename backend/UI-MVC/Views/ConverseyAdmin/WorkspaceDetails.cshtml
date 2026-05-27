@@ -1,17 +1,10 @@
 @using Conversey.BL.Domain.Administration
-@using Conversey.DAL
 @using Conversey.UI_MVC.Models.Admin
-@using Microsoft.AspNetCore.Identity
-@using Microsoft.AspNetCore.Mvc.ViewFeatures
-@using Conversey.UI_MVC.Resources
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.AdminWorkspaceDetailsViewModel
 @Html.AntiForgeryToken()
-@inject IAdminI18nService I18n
 
 @using Conversey.UI_MVC.Models
-@using Conversey.UI_MVC.Resources
 @inject AdminContext AdminContext
-@inject IAdminI18nService AdminI18n
 @{
     ViewData["Title"] = "Workspace Details";
     ViewData["WorkspaceName"] = Model.Workspace?.Name ?? "Workspace";

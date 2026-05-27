@@ -5,7 +5,7 @@ namespace Conversey.UI_MVC.Models.Admin;
 public class ChangePasswordInputModel
 {
     [DataType(DataType.Password)]
-    public string? CurrentPassword { get; set; }
+    public string CurrentPassword { get; set; }
 
     [Required]
     [StringLength(100, MinimumLength = 6,

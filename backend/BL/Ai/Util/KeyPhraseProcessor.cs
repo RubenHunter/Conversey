@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Conversey.BL.Ai.DTOs;
+using Conversey.BL.Ai.Dto;
 
 namespace Conversey.BL.Ai;
 

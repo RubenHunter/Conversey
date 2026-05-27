@@ -1,4 +1,4 @@
-namespace Conversey.BL.Ai.DTOs;
+namespace Conversey.BL.Ai.Dto;
 
 public enum PhraseRejectionReason
 {
