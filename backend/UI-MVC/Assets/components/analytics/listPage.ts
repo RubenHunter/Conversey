@@ -17,6 +17,7 @@ interface PageElements {
     pageNumClass: string;
     exportType: string;
     renderPageFn: string;
+    type: string;
 }
 
 const CONFIGS: Record<string, PageElements> = {
@@ -39,6 +40,7 @@ const CONFIGS: Record<string, PageElements> = {
         pageNumClass: 'ideas-page-num',
         exportType: 'ideas-only',
         renderPageFn: '_ideasRenderPage',
+        type: 'idea',
     },
     answer: {
         tableId: 'answers-table',
@@ -59,6 +61,7 @@ const CONFIGS: Record<string, PageElements> = {
         pageNumClass: 'answers-page-num',
         exportType: 'answers-only',
         renderPageFn: '_answersRenderPage',
+        type: 'answer',
     },
 };
 

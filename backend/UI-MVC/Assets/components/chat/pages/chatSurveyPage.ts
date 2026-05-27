@@ -1819,89 +1819,86 @@ export async function renderChatSurveyPage(
                  required: q.required,
              })
 
-             // For open text questions, show as clickable editable bubble
              if (q.type === QuestionType.Open) {
                  // For open text questions, show as clickable editable bubble(s)
-                 if (q.type === QuestionType.Open) {
-                     const questionId = questions[i].id!
-                     const drafts = openTextDraftsByQuestionId.get(questionId)
-                     const answer = components[i].getAnswer()
+                 const questionId = questions[i].id!
+                 const drafts = openTextDraftsByQuestionId.get(questionId)
+                 const answer = components[i].getAnswer()
 
-                     if (drafts && drafts.length > 0) {
-                         drafts.forEach((message) => {
-                             const row = document.createElement('div')
-                             row.className = 'chat-row chat-row--user'
-                             const bubble = document.createElement('div')
-                             bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                             bubble.textContent = message
-                             bubble.addEventListener('click', createEditHandler(i, bubble))
-                             row.appendChild(bubble)
-                             messagesEl.appendChild(row)
-                         })
-                     } else {
-                         const displayText = formatAnswerForDisplay(q, answer)
+                 if (drafts && drafts.length > 0) {
+                     drafts.forEach((message) => {
                          const row = document.createElement('div')
                          row.className = 'chat-row chat-row--user'
                          const bubble = document.createElement('div')
                          bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                         bubble.textContent = displayText || '\u200B'
+                         bubble.textContent = message
                          bubble.addEventListener('click', createEditHandler(i, bubble))
                          row.appendChild(bubble)
                          messagesEl.appendChild(row)
-                     }
-
-                     // Show confirmed checkmark row for open text
-                     const confirmRow = document.createElement('div')
-                     confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                     confirmRow.setAttribute('data-confirm-for', String(i))
-                     confirmRow.innerHTML = `
-                     <div class="chat-confirm-line"></div>
-                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
-                     <div class="chat-confirm-line"></div>`
-                     messagesEl.appendChild(confirmRow)
+                     })
                  } else {
-                     // For other question types, show the actual question component with answer pre-selected
-                     const block = document.createElement('div')
-                     block.className = 'chat-question-block'
-                     block.setAttribute('data-question-index', String(i))
+                     const displayText = formatAnswerForDisplay(q, answer)
+                     const row = document.createElement('div')
+                     row.className = 'chat-row chat-row--user'
+                     const bubble = document.createElement('div')
+                     bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                     bubble.textContent = displayText || '\u200B'
+                     bubble.addEventListener('click', createEditHandler(i, bubble))
+                     row.appendChild(bubble)
+                     messagesEl.appendChild(row)
+                 }
 
-                     const answerRegion = document.createElement('div')
-                     answerRegion.className = 'chat-answer-region'
+                 // Show confirmed checkmark row for open text
+                 const confirmRow = document.createElement('div')
+                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                 confirmRow.setAttribute('data-confirm-for', String(i))
+                 confirmRow.innerHTML = `
+                 <div class="chat-confirm-line"></div>
+                 <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                 <div class="chat-confirm-line"></div>`
+                 messagesEl.appendChild(confirmRow)
+             } else {
+                 // For other question types, show the actual question component with answer pre-selected
+                 const block = document.createElement('div')
+                 block.className = 'chat-question-block'
+                 block.setAttribute('data-question-index', String(i))
 
-                     const el = components[i].getElement()
-                     el.classList.add('chat-question-component')
-                     answerRegion.appendChild(el)
+                 const answerRegion = document.createElement('div')
+                 answerRegion.className = 'chat-answer-region'
 
-                     const confirmRow = document.createElement('div')
-                     confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                     confirmRow.setAttribute('data-confirm-for', String(i))
-                     confirmRow.innerHTML = `
-                     <div class="chat-confirm-line"></div>
-                     <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
-                     <div class="chat-confirm-line"></div>`
+                 const el = components[i].getElement()
+                 el.classList.add('chat-question-component')
+                 answerRegion.appendChild(el)
 
-                     block.appendChild(answerRegion)
-                     block.appendChild(confirmRow)
-                     messagesEl.appendChild(block)
+                 const confirmRow = document.createElement('div')
+                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                 confirmRow.setAttribute('data-confirm-for', String(i))
+                 confirmRow.innerHTML = `
+                 <div class="chat-confirm-line"></div>
+                 <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
+                 <div class="chat-confirm-line"></div>`
 
-                     // Re-apply answer after DOM append so range slider positions correctly
-                     const saved = savedProgress!.answersByQuestionId.get(q.id!)
-                     if (saved !== undefined && saved !== null) {
-                         components[i].setAnswer(saved)
-                     }
+                 block.appendChild(answerRegion)
+                 block.appendChild(confirmRow)
+                 messagesEl.appendChild(block)
+
+                 // Re-apply answer after DOM append so range slider positions correctly
+                 const saved = savedProgress!.answersByQuestionId.get(q.id!)
+                 if (saved !== undefined && saved !== null) {
+                     components[i].setAnswer(saved)
                  }
              }
 
              scrollToBottom()
+         }
 
-             // Show resume message then continue
-             await appendAiBubble(t.resuming)
+         // Show resume message then continue (outside the replay loop)
+         await appendAiBubble(t.resuming)
 
-             if (resumeAt < questions.length) {
-                 await revealQuestion(resumeAt)
-             } else {
-                 await showSubmitSection()
-             }
+         if (resumeAt < questions.length) {
+             await revealQuestion(resumeAt)
+         } else {
+             await showSubmitSection()
          }
     } else {
         if (savedProgress) {
