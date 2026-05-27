@@ -12,9 +12,14 @@ public class ContactManager : IContactManager
         _projectRepository = projectRepository;
     }
 
-    public IEnumerable<ContactEntry> GetContactsByWorkspaceId(Slug workspaceId, Slug? projectId = null)
+    public IEnumerable<ContactEntry> GetContactsByWorkspaceId(Slug workspaceId, Slug? projectId = null, Guid? youthId = null)
     {
         var youths = _projectRepository.ReadYouthsWithRealEmailsByWorkspaceId(workspaceId, projectId);
+
+        if (youthId.HasValue)
+        {
+            youths = youths.Where(y => y.Id == youthId.Value).ToList().AsReadOnly();
+        }
 
         return youths.Select(y => new ContactEntry
         {

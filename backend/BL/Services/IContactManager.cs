@@ -5,7 +5,7 @@ namespace Conversey.BL.Services;
 
 public interface IContactManager
 {
-    IEnumerable<ContactEntry> GetContactsByWorkspaceId(Slug workspaceId, Slug? projectId = null);
+    IEnumerable<ContactEntry> GetContactsByWorkspaceId(Slug workspaceId, Slug? projectId = null, Guid? youthId = null);
 }
 
 public class ContactEntry
@@ -28,7 +28,7 @@ public class ContactIdea
 
 public class SendContactEmailRequest
 {
-    public Guid YouthId { get; set; }
+    public Guid? YouthId { get; set; }
     public string ToEmail { get; set; }
     public string Subject { get; set; }
     public string Body { get; set; }

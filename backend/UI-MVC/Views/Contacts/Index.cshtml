@@ -25,7 +25,7 @@
         </div>
 
         <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 mb-8">
-            <form method="get" asp-action="Index" class="flex items-center gap-4">
+            <form method="get" asp-action="Index" class="flex items-center gap-4 flex-wrap">
                 <label for="projectFilter" class="text-sm font-semibold text-text/80" data-i18n="Filter by project:">Filter by project:</label>
                 <select id="projectFilter" name="projectId" class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 min-w-64">
                     <option value="" data-i18n="All projects">All projects</option>
@@ -41,8 +41,23 @@
                         }
                     }
                 </select>
+                <label for="youthFilter" class="text-sm font-semibold text-text/80" data-i18n="Filter by youth:">Filter by youth:</label>
+                <select id="youthFilter" name="youthId" class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 min-w-64">
+                    <option value="" data-i18n="All youth">All youth</option>
+                    @foreach (var youth in Model.YouthFilters)
+                    {
+                        @if (Model.SelectedYouthId == youth.YouthId.ToString())
+                        {
+                            <option value="@youth.YouthId" selected>@youth.Email</option>
+                        }
+                        else
+                        {
+                            <option value="@youth.YouthId">@youth.Email</option>
+                        }
+                    }
+                </select>
                 <button type="submit" class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors" data-i18n="Filter">Filter</button>
-                @if (!string.IsNullOrWhiteSpace(Model.SelectedProjectId))
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedProjectId) || !string.IsNullOrWhiteSpace(Model.SelectedYouthId))
                 {
                     <a asp-action="Index" class="text-sm text-text/60 hover:text-text" data-i18n="Clear filter">Clear filter</a>
                 }
@@ -72,16 +87,15 @@
                             <td class="px-6 py-4 font-medium">@contact.Email</td>
                             <td class="px-6 py-4 text-text/60">@contact.ProjectName</td>
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                                <a href="/admin/workspace/analytics/ideas?youthId=@contact.YouthId@(Model.SelectedProjectId != null ? "&projectId=" + Model.SelectedProjectId : "")" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
                                     @contact.Ideas.Count() @(contact.Ideas.Count() != 1 ? I18n["ideas"] : I18n["idea"])
-                                </span>
+                                </a>
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <button type="button"
                                         class="contact-btn rounded-xl bg-primary/10 text-primary px-4 py-2 text-sm font-semibold hover:bg-primary hover:text-white transition-all"
                                         data-youth-id="@contact.YouthId"
                                         data-email="@contact.Email"
-                                        data-project="@contact.ProjectName"
                                         data-ideas="@System.Text.Json.JsonSerializer.Serialize(contact.Ideas)">
                                     <span data-i18n="Contact">Contact</span>
                                 </button>
@@ -94,222 +108,18 @@
     </main>
 </div>
 
-<div id="contactModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
-    <div class="w-full max-w-2xl rounded-2xl border border-secondary/10 bg-white shadow-xl max-h-[90vh] flex flex-col">
-        <div class="px-6 py-4 border-b border-secondary/10 flex items-center justify-between shrink-0">
-            <h3 class="text-lg font-bold text-text" data-i18n="Send Email">Send Email</h3>
-            <button id="closeContactModal" class="p-1 text-text/40 hover:text-text rounded-lg hover:bg-background transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-
-        <div class="p-6 space-y-4 overflow-y-auto">
-            <div>
-                <label class="block text-sm font-semibold text-text/80 mb-1" data-i18n="To">To</label>
-                <input id="contactToEmail" type="email" readonly class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text/60 cursor-not-allowed" />
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-text/80 mb-1" data-i18n="Select idea to reference">Select idea to reference</label>
-                <select id="contactIdeaSelect" class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25">
-                    <option value="" data-i18n="(no idea reference)">(no idea reference)</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-text/80 mb-1" data-i18n="Template">Template</label>
-                <select id="contactTemplateSelect" class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25">
-                    <option value="" data-i18n="Custom message">Custom message</option>
-                    <option value="liked" data-i18n="We liked your idea">We liked your idea</option>
-                    <option value="thanks" data-i18n="Thank you for your idea">Thank you for your idea</option>
-                    <option value="followup" data-i18n="Follow-up question about your idea">Follow-up question about your idea</option>
-                    <option value="selected" data-i18n="Your idea has been selected">Your idea has been selected</option>
-                    <option value="update" data-i18n="Update on your submitted idea">Update on your submitted idea</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-text/80 mb-1" data-i18n="Subject">Subject</label>
-                <input id="contactSubject" type="text" class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" data-i18n-placeholder="Email subject..." />
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-text/80 mb-1" data-i18n="Message">Message</label>
-                <textarea id="contactBody" rows="8" class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-3 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 resize-y" data-i18n-placeholder="Write your message..."></textarea>
-            </div>
-
-            <div id="contactError" class="hidden text-sm font-medium text-accent bg-accent/5 rounded-xl px-4 py-2"></div>
-            <div id="contactSuccess" class="hidden text-sm font-medium text-emerald-600 bg-emerald-50 rounded-xl px-4 py-2" data-i18n="Email sent successfully!">Email sent successfully!</div>
-        </div>
-
-        <div class="px-6 py-4 border-t border-secondary/10 flex justify-end gap-3 shrink-0">
-            <button id="cancelContactBtn" class="rounded-xl border border-secondary/20 px-4 py-2 text-sm font-semibold text-text/70 hover:bg-background transition-colors" data-i18n="Cancel">Cancel</button>
-            <button id="sendContactBtn" class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <span id="sendContactBtnText" data-i18n="Send Email">Send Email</span>
-                <span id="sendContactBtnSpinner" style="display:none" data-i18n="Sending...">Sending...</span>
-            </button>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_ContactEmailModal")
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const t = (key, fallback) => {
-                const dict = window.__AdminI18n?.strings;
-                if (dict && dict[key] !== undefined) return dict[key];
-                return fallback ?? key;
-            };
-
             const workspaceName = document.querySelector('[data-workspace-name]')?.dataset.workspaceName || 'Conversey Team';
-
-            const modal = document.getElementById('contactModal');
-            const closeBtn = document.getElementById('closeContactModal');
-            const cancelBtn = document.getElementById('cancelContactBtn');
-            const sendBtn = document.getElementById('sendContactBtn');
-            const sendBtnText = document.getElementById('sendContactBtnText');
-            const sendBtnSpinner = document.getElementById('sendContactBtnSpinner');
-            const toEmail = document.getElementById('contactToEmail');
-            const ideaSelect = document.getElementById('contactIdeaSelect');
-            const templateSelect = document.getElementById('contactTemplateSelect');
-            const subject = document.getElementById('contactSubject');
-            const body = document.getElementById('contactBody');
-            const error = document.getElementById('contactError');
-            const success = document.getElementById('contactSuccess');
-
-            let currentYouthId = null;
-            let currentEmail = null;
-            let currentIdeas = [];
-
-            const templatePatterns = {
-                liked: {
-                    subject: t('We liked your idea'),
-                    body: (idea, ws) => `${t('Hello,')}\n\n${t('We really liked your idea about:')}\n"${idea}"\n\n${t('We would like to discuss it further with you.')}\n\n${t('Best regards,')}\n${ws}`
-                },
-                thanks: {
-                    subject: t('Thank you for your idea'),
-                    body: (idea, ws) => `${t('Hello,')}\n\n${t('Thank you for sharing your idea about:')}\n"${idea}"\n\n${t('We appreciate your contribution and will review it carefully.')}\n\n${t('Best regards,')}\n${ws}`
-                },
-                followup: {
-                    subject: t('Follow-up question about your idea'),
-                    body: (idea, ws) => `${t('Hello,')}\n\n${t('We have a question regarding your idea:')}\n"${idea}"\n\n${t('Could you tell us more about it?')}\n\n${t('Best regards,')}\n${ws}`
-                },
-                selected: {
-                    subject: t('Your idea has been selected'),
-                    body: (idea, ws) => `${t('Hello,')}\n\n${t('Great news! Your idea about:')}\n"${idea}"\n\n${t('has been selected for further discussion. We will be in touch with next steps.')}\n\n${t('Best regards,')}\n${ws}`
-                },
-                update: {
-                    subject: t('Update on your submitted idea'),
-                    body: (idea, ws) => `${t('Hello,')}\n\n${t('We wanted to give you an update on your idea:')}\n"${idea}"\n\n${t('It is currently under review by our team.')}\n\n${t('Best regards,')}\n${ws}`
-                }
-            };
-
-            function openModal(youthId, email, projectName, ideasJson) {
-                currentYouthId = youthId;
-                currentEmail = email;
-                currentIdeas = typeof ideasJson === 'string' ? JSON.parse(ideasJson) : ideasJson;
-                toEmail.value = email;
-                ideaSelect.innerHTML = `<option value="">${t('(no idea reference)')}</option>`;
-                currentIdeas.forEach((idea, i) => {
-                    const text = idea.Content || '';
-                    const truncated = text.length > 80 ? text.substring(0, 80) + '...' : text;
-                    ideaSelect.innerHTML += `<option value="${i}">${truncated}</option>`;
-                });
-                templateSelect.value = '';
-                subject.value = '';
-                body.value = '';
-                error.classList.add('hidden');
-                success.classList.add('hidden');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
-
-            function closeModal() {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
 
             document.querySelectorAll('.contact-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    openModal(
-                        btn.dataset.youthId,
-                        btn.dataset.email,
-                        btn.dataset.project,
-                        btn.dataset.ideas
-                    );
+                    const ideas = typeof btn.dataset.ideas === 'string' ? JSON.parse(btn.dataset.ideas) : btn.dataset.ideas;
+                    openContactModal(btn.dataset.youthId, btn.dataset.email, ideas, null);
                 });
-            });
-
-            closeBtn.addEventListener('click', closeModal);
-            cancelBtn.addEventListener('click', closeModal);
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) closeModal();
-            });
-
-            templateSelect.addEventListener('change', () => {
-                const selectedIdeaIdx = ideaSelect.value;
-                let ideaText = '';
-                if (selectedIdeaIdx !== '' && currentIdeas[selectedIdeaIdx]) {
-                    ideaText = currentIdeas[selectedIdeaIdx].Content || '';
-                }
-
-                const pattern = templatePatterns[templateSelect.value];
-                if (pattern) {
-                    subject.value = pattern.subject;
-                    body.value = pattern.body(ideaText, workspaceName);
-                }
-            });
-
-            ideaSelect.addEventListener('change', () => {
-                if (templateSelect.value) {
-                    templateSelect.dispatchEvent(new Event('change'));
-                }
-            });
-
-            sendBtn.addEventListener('click', async () => {
-                if (!subject.value.trim() || !body.value.trim()) {
-                    error.textContent = t('Subject and message are required.', 'Subject and message are required.');
-                    error.classList.remove('hidden');
-                    return;
-                }
-
-                error.classList.add('hidden');
-                success.classList.add('hidden');
-                sendBtn.disabled = true;
-                sendBtnText.style.display = 'none';
-                sendBtnSpinner.style.display = 'inline';
-
-                try {
-                    const resp = await fetch('/admin/contacts/send', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                        },
-                        body: JSON.stringify({
-                            youthId: currentYouthId,
-                            toEmail: currentEmail,
-                            subject: subject.value.trim(),
-                            body: body.value.trim()
-                        })
-                    });
-
-                    if (resp.ok) {
-                        success.classList.remove('hidden');
-                        setTimeout(closeModal, 2000);
-                    } else {
-                        const data = await resp.json();
-                        error.textContent = data.error || t('Failed to send email.', 'Failed to send email.');
-                        error.classList.remove('hidden');
-                    }
-                } catch (e) {
-                    error.textContent = t('Network error. Please try again.', 'Network error. Please try again.');
-                    error.classList.remove('hidden');
-                } finally {
-                    sendBtn.disabled = false;
-                    sendBtnText.style.display = '';
-                    sendBtnSpinner.style.display = 'none';
-                }
             });
         });
     </script>
