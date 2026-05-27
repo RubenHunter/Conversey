@@ -99,9 +99,11 @@
 
 @if (AdminContext.CurrentAdmin is ConverseyAdmin)
 {
-    @await Html.PartialAsync("_AdminSidebarConversey")
+    @await Html.PartialAsync("~/Views/ConverseyAdmin/_AdminSidebar.cshtml")
 }
 else if (AdminContext.CurrentAdmin is WorkspaceAdmin)
 {
-    @await Html.PartialAsync("_AdminSidebarWorkspace")
+    @await Html.PartialAsync("~/Views/WorkspaceAdmin/_AdminSidebar.cshtml")
 }
+
+<script type="module" vite-src="~/components/admin/sidebarNavigation.ts"></script>

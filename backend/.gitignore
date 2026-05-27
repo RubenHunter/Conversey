@@ -491,3 +491,5 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 UI-MVC/dp-keys/
+google-cloud-sdk
+google-cloud-sdk/*

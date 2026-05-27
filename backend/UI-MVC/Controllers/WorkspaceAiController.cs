@@ -75,7 +75,7 @@ public class WorkspaceAiController : Controller
             ("AI Settings", null, true)
         };
 
-        return View(model);
+        return View("~/Views/WorkspaceAdmin/Ai/Dashboard.cshtml", model);
     }
 
     [HttpGet]
@@ -144,7 +144,7 @@ public class WorkspaceAiController : Controller
             ("Costs & Audit", null, true)
         };
 
-        return View("Costs/Costs", model);
+        return View("~/Views/WorkspaceAdmin/Ai/Costs/Costs.cshtml", model);
     }
 
     [HttpGet]
@@ -205,7 +205,7 @@ public class WorkspaceAiController : Controller
             ("Prompts", null, true)
         };
 
-        return View("Prompts/Prompts", model);
+        return View("~/Views/WorkspaceAdmin/Ai/Prompts/Prompts.cshtml", model);
     }
 
     [HttpGet]
@@ -238,7 +238,7 @@ public class WorkspaceAiController : Controller
             (prompt.Name, null, true)
         };
 
-        return View("Prompts/EditPrompt", model);
+        return View("~/Views/WorkspaceAdmin/Ai/Prompts/EditPrompt.cshtml", model);
     }
 
     [HttpPost]
@@ -335,7 +335,7 @@ public class WorkspaceAiController : Controller
             ("Cost Limits", null, true)
         };
 
-        return View("Limits/Limits", model);
+        return View("~/Views/WorkspaceAdmin/Ai/Limits/Limits.cshtml", model);
     }
 
     [HttpPost]
@@ -358,8 +358,8 @@ public class WorkspaceAiController : Controller
         }
 
         limit.LimitAmount = form.LimitAmount;
-        limit.PeriodStart = form.PeriodStart;
-        limit.PeriodEnd = form.PeriodEnd;
+        limit.PeriodStart = DateTime.SpecifyKind(form.PeriodStart, DateTimeKind.Utc);
+        limit.PeriodEnd = DateTime.SpecifyKind(form.PeriodEnd, DateTimeKind.Utc);
         limit.IsActive = form.IsActive;
         limit.WorkspaceId = workspace.Id;
         limit.ProjectId = null;
@@ -388,8 +388,8 @@ public class WorkspaceAiController : Controller
         }
 
         limit.LimitAmount = form.LimitAmount;
-        limit.PeriodStart = form.PeriodStart;
-        limit.PeriodEnd = form.PeriodEnd;
+        limit.PeriodStart = DateTime.SpecifyKind(form.PeriodStart, DateTimeKind.Utc);
+        limit.PeriodEnd = DateTime.SpecifyKind(form.PeriodEnd, DateTimeKind.Utc);
         limit.IsActive = form.IsActive;
         limit.WorkspaceId = workspace.Id;
         limit.ProjectId = Slug.FromName(projectId);
@@ -434,7 +434,7 @@ public class WorkspaceAiController : Controller
                 CreatedAt = k.CreatedAt.ToString("yyyy-MM-dd")
             }).ToList()
         };
-        return View("Keywords/Keywords", model);
+        return View("~/Views/WorkspaceAdmin/Ai/Keywords/Keywords.cshtml", model);
     }
 
     [HttpPost]

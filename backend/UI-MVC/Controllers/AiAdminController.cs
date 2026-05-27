@@ -56,7 +56,7 @@ public class AiAdminController : Controller
             HealthCheck = new AiHealthCheckResult { IsHealthy = true, Detail = "Checking..." }
         };
 
-        return View(model);
+        return View("~/Views/ConverseyAdmin/Ai/Index.cshtml", model);
     }
 
     [HttpGet]
@@ -112,7 +112,7 @@ public class AiAdminController : Controller
             Filter = filter ?? new AiCostsFilterViewModel()
         };
 
-        return View("Costs/Costs", model);
+        return View("~/Views/ConverseyAdmin/Ai/Costs/Costs.cshtml", model);
     }
 
     [HttpGet]
@@ -121,7 +121,7 @@ public class AiAdminController : Controller
     {
         if (setup == true)
         {
-            return View("Providers/Setup");
+            return View("~/Views/ConverseyAdmin/Ai/Providers/Setup.cshtml");
         }
 
         var providers = await _aiAdminManager.GetAllProviderConfigsAsync();
@@ -133,14 +133,14 @@ public class AiAdminController : Controller
             HealthCheck = healthCheck
         };
 
-        return View("Providers/Providers", model);
+        return View("~/Views/ConverseyAdmin/Ai/Providers/Providers.cshtml", model);
     }
 
     [HttpGet]
     [Route("admin/ai/providers/new")]
     public IActionResult CreateProvider()
     {
-        return View("Providers/EditProvider", new AiProviderFormViewModel());
+        return View("~/Views/ConverseyAdmin/Ai/Providers/EditProvider.cshtml", new AiProviderFormViewModel());
     }
 
     [HttpGet]
@@ -166,14 +166,14 @@ public class AiAdminController : Controller
             ApiKeyExpiresAt = config.ApiKeyExpiresAt
         };
 
-        return View("Providers/EditProvider", model);
+        return View("~/Views/ConverseyAdmin/Ai/Providers/EditProvider.cshtml", model);
     }
 
     [HttpPost]
     [Route("admin/ai/providers/{id:int?}")]
     public async Task<IActionResult> SaveProvider(int? id, AiProviderFormViewModel form)
     {
-        if (!ModelState.IsValid) return View("Providers/EditProvider", form);
+        if (!ModelState.IsValid) return View("~/Views/ConverseyAdmin/Ai/Providers/EditProvider.cshtml", form);
 
         var config = id.HasValue && id.Value > 0
             ? await _aiAdminManager.GetProviderConfigByIdAsync(id.Value)
@@ -252,7 +252,7 @@ public class AiAdminController : Controller
             AvailableModels = availableModels,
             FetchError = fetchError
         };
-        return View("Providers/ConfigureModels", model);
+        return View("~/Views/ConverseyAdmin/Ai/Providers/ConfigureModels.cshtml", model);
     }
 
     [HttpPost]
@@ -381,7 +381,7 @@ public class AiAdminController : Controller
             DefaultDescriptions = defaultDescriptions
         };
 
-        return View("Prompts/Prompts", model);
+        return View("~/Views/ConverseyAdmin/Ai/Prompts/Prompts.cshtml", model);
     }
 
     [HttpGet]
@@ -400,7 +400,7 @@ public class AiAdminController : Controller
             HasDefault = defaultPrompt != null
         };
 
-        return View("Prompts/EditPrompt", model);
+        return View("~/Views/ConverseyAdmin/Ai/Prompts/EditPrompt.cshtml", model);
     }
 
     [HttpPost]
@@ -453,7 +453,7 @@ public class AiAdminController : Controller
                 CreatedAt = k.CreatedAt.ToString("yyyy-MM-dd")
             }).ToList()
         };
-        return View("Keywords/Keywords", model);
+        return View("~/Views/ConverseyAdmin/Ai/Keywords/Keywords.cshtml", model);
     }
 
     [HttpPost]
@@ -487,7 +487,7 @@ public class AiAdminController : Controller
         var pricing = await _pricingService.GetAllPricingAsync();
         var eurRate = await _pricingService.GetEurExchangeRateAsync();
         ViewBag.EurRate = eurRate;
-        return View("Pricing/Pricing", pricing);
+        return View("~/Views/ConverseyAdmin/Ai/Pricing/Pricing.cshtml", pricing);
     }
 
     [HttpPost]
@@ -503,7 +503,7 @@ public class AiAdminController : Controller
     public async Task<IActionResult> RateLimits()
     {
         var configs = await _aiAdminManager.GetAllRateLimitConfigsAsync();
-        return View("RateLimits/RateLimits", configs);
+        return View("~/Views/ConverseyAdmin/Ai/RateLimits/RateLimits.cshtml", configs);
     }
 
     [HttpGet]
@@ -513,7 +513,7 @@ public class AiAdminController : Controller
         var config = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
         if (config == null) return NotFound();
 
-        return View("RateLimits/EditRateLimit", config);
+        return View("~/Views/ConverseyAdmin/Ai/RateLimits/EditRateLimit.cshtml", config);
     }
 
     [HttpPost]
@@ -521,7 +521,7 @@ public class AiAdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditRateLimit(int id, RateLimitConfig form)
     {
-        if (!ModelState.IsValid) return View("RateLimits/EditRateLimit", form);
+        if (!ModelState.IsValid) return View("~/Views/ConverseyAdmin/Ai/RateLimits/EditRateLimit.cshtml", form);
 
         var existing = await _aiAdminManager.GetRateLimitConfigByIdAsync(id);
         if (existing == null) return NotFound();

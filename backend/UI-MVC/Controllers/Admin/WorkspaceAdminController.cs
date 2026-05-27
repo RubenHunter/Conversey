@@ -11,14 +11,16 @@ using Conversey.BL.Domain.Survey;
 using Conversey.BL.Survey;
 using Conversey.UI_MVC.Models;
 using Conversey.UI_MVC.Models.Admin;
+using Conversey.UI_MVC.Models.AdminManagement;
 using Conversey.UI_MVC.Models.WorkspaceAdmin;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager) : Controller
+public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager, IAdminManager adminManager) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
@@ -667,6 +669,102 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
     public IActionResult Preview(string prefix)
     {
         return View("Preview", prefix);
+    }
+
+    [HttpGet("/admin/workspace/admins")]
+    public IActionResult Admins()
+    {
+        var workspace = workspaceContext.CurrentWorkspace;
+        var admins = adminManager.GetAllWorkspaceAdminsByWorkspaceIdWithWorkspace(workspace.Id);
+        var model = new WorkspaceAdminManagementViewModel
+        {
+            Admins = admins.ToList(),
+            WorkspaceName = workspace.Name,
+            WorkspaceId = workspace.Id.Text
+        };
+        return View("~/Views/WorkspaceAdmin/AdminManagement.cshtml", model);
+    }
+
+    [HttpPost("/admin/workspace/admins/create")]
+    public async Task<IActionResult> CreateWorkspaceAdmin(
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
+    {
+        var workspace = workspaceContext.CurrentWorkspace;
+        try
+        {
+            var (admin, oneTimePassword) = await adminManager.AddWorkspaceAdmin(email, username, phoneNumber, workspace.Id);
+            TempData["OneTimePassword"] = oneTimePassword;
+            TempData["OneTimePasswordAdminEmail"] = admin.Email;
+
+            if (IsAjax())
+                return Ok(new { redirectUrl = Url.Action("Admins") });
+            return RedirectToAction("Admins");
+        }
+        catch (ValidationException ex)
+        {
+            ModelStateHelper.ApplyValidationException(ModelState, ex, "FormItem");
+        }
+
+        if (IsAjax())
+            return BadRequest(new { errors = ToErrorMap(ModelState) });
+        return RedirectToAction("Admins");
+    }
+
+    [HttpPost("/admin/workspace/admins/edit/{id}")]
+    public async Task<IActionResult> EditWorkspaceAdmin(
+        Guid id,
+        [FromForm(Name = "FormItem.Email")] string email,
+        [FromForm(Name = "FormItem.Username")] string username,
+        [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
+    {
+        var workspace = workspaceContext.CurrentWorkspace;
+        var workspaceAdmin = new WorkspaceAdmin
+        {
+            Id = id,
+            Email = email,
+            Username = username,
+            PhoneNumber = phoneNumber,
+            Workspace = workspace
+        };
+
+        try
+        {
+            await adminManager.EditWorkspaceAdmin(workspaceAdmin);
+            if (IsAjax())
+                return Ok(new { redirectUrl = Url.Action("Admins") });
+            return RedirectToAction("Admins");
+        }
+        catch (NotFoundException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+        }
+        catch (ValidationException ex)
+        {
+            ModelStateHelper.ApplyValidationException(ModelState, ex);
+        }
+
+        if (IsAjax())
+            return BadRequest(new { errors = ToErrorMap(ModelState) });
+        return RedirectToAction("Admins");
+    }
+
+    private bool IsAjax()
+    {
+        return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Dictionary<string, string[]> ToErrorMap(ModelStateDictionary modelState)
+    {
+        return modelState
+            .Where(e => e.Value != null && e.Value.Errors.Count > 0)
+            .ToDictionary(
+                e => e.Key,
+                e => e.Value!.Errors
+                    .Select(err => err.ErrorMessage)
+                    .Where(m => !string.IsNullOrWhiteSpace(m))
+                    .ToArray());
     }
 
     private bool ProjectExistsAsNonDraft(CreateProjectIntroAndPresentationViewModel projectStep1)

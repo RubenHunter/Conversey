@@ -22,7 +22,18 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold" data-i18n="Survey Answers">Survey Answers</h1>
-                <p class="text-secondary text-sm mt-1">@Model.OpenAnswers.Count answers shown</p>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="text-secondary text-sm" id="answers-pagination-info">@Model.OpenAnswers.Count answers</span>
+                    <label class="flex items-center gap-1.5 text-sm text-secondary">
+                        <span class="text-xs">Show:</span>
+                        <select id="answers-page-size" class="rounded border border-secondary/20 px-2 py-1 text-xs bg-background">
+                            <option value="25">25</option>
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="-1">All</option>
+                        </select>
+                    </label>
+                </div>
             </div>
             <a href="/admin/workspace/analytics" class="text-sm text-primary hover:underline" data-i18n="← Back to Analytics">&larr; Back to Analytics</a>
         </div>
@@ -96,12 +107,12 @@
                     <thead>
                         <tr class="border-b border-secondary/10 text-left bg-secondary/5">
                             <th class="py-3 px-4 font-semibold w-8"></th>
-                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id" data-i18n="ID">ID <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="project" data-i18n="Project">Project <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="type" data-i18n="Type">Type <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="question" data-i18n="Question">Question <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="answer" data-i18n="Answer">Answer <span class="sort-arrow text-[10px]"></span></th>
-                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth" data-i18n="Youth">Youth <span class="sort-arrow text-[10px]"></span></th>
+                            <th class="py-3 px-4 font-semibold w-12 cursor-pointer hover:bg-secondary/10 select-none" data-sort="id" data-i18n="ID">ID </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="project" data-i18n="Project">Project </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="type" data-i18n="Type">Type </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="question" data-i18n="Question">Question </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="answer" data-i18n="Answer">Answer </th>
+                            <th class="py-3 px-4 font-semibold cursor-pointer hover:bg-secondary/10 select-none" data-sort="youth" data-i18n="Youth">Youth</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,96 +160,25 @@
                 </table>
             </div>
         </div>
+
+        <div id="answers-pagination" class="flex items-center justify-between mt-4" style="display:none">
+            <button id="answers-prev" class="px-3 py-1.5 rounded border border-secondary/20 text-sm hover:bg-secondary/5 disabled:opacity-30" disabled>Prev</button>
+            <span id="answers-page-nums" class="flex items-center gap-1 text-sm"></span>
+            <button id="answers-next" class="px-3 py-1.5 rounded border border-secondary/20 text-sm hover:bg-secondary/5 disabled:opacity-30">Next</button>
+        </div>
     </main>
 </div>
 
-<script>
-document.querySelectorAll('.answer-row').forEach(function(row) {
-    row.addEventListener('click', function() {
-        var answerId = row.getAttribute('data-answer-id');
-        var expandRow = document.querySelector('.answer-expand-row[data-answer-id="' + answerId + '"]');
-        var chevron = row.querySelector('.chevron');
-        if (expandRow) {
-            var isExpanded = !expandRow.classList.contains('hidden');
-            expandRow.classList.toggle('hidden');
-            if (chevron) {
-                if (isExpanded) chevron.classList.remove('rotate-90');
-                else chevron.classList.add('rotate-90');
-            }
-        }
-    });
-});
-
-(function() {
-    var exportBtn = document.getElementById('export-dropdown-btn-answers');
-    var exportMenu = document.getElementById('export-dropdown-menu-answers');
-    if (exportBtn && exportMenu) {
-        exportBtn.addEventListener('click', function(e) { e.stopPropagation(); exportMenu.classList.toggle('hidden'); });
-        document.addEventListener('click', function() { exportMenu.classList.add('hidden'); });
-        exportMenu.addEventListener('click', function(e) { e.stopPropagation(); });
-    }
-
-    document.querySelectorAll('.export-answers-link').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var filterAware = link.dataset.exportFiltered === 'true';
-            var wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') || window.location.hostname.split('.')[0];
-            var params = new URLSearchParams();
-            params.set('workspaceId', wsSlug);
-            params.set('type', 'answers-only');
-            if (filterAware) {
-                var formEl = document.getElementById('answers-filter-form');
-                if (formEl) {
-                    var fd = new FormData(formEl);
-                    for (var pair of fd.entries()) {
-                        if (pair[1] && typeof pair[1] === 'string' && pair[0] !== '') params.set(pair[0], pair[1]);
-                    }
-                }
-            }
-            window.location.href = '/api/admin/analytics/export?' + params.toString();
-            exportMenu.classList.add('hidden');
-        });
-    });
-})();
-
-(function() {
-    var table = document.getElementById('answers-table');
-    if (!table) return;
-    var headers = table.querySelectorAll('th[data-sort]');
-    var currentSort = { col: null, asc: true };
-
-    headers.forEach(function(th) {
-        th.addEventListener('click', function() {
-            var col = th.getAttribute('data-sort');
-            var asc = currentSort.col === col ? !currentSort.asc : true;
-            currentSort = { col: col, asc: asc };
-
-            headers.forEach(function(h) {
-                var arrow = h.querySelector('.sort-arrow');
-                if (arrow) arrow.textContent = '';
-            });
-            var arrow = th.querySelector('.sort-arrow');
-            if (arrow) arrow.textContent = asc ? ' ▲' : ' ▼';
-
-            var tbody = table.querySelector('tbody');
-            var rows = Array.from(tbody.querySelectorAll('tr.answer-row'));
-            rows.sort(function(a, b) {
-                var aVal = (a.querySelector('[data-col="' + col + '"]')?.textContent || '').trim().toLowerCase();
-                var bVal = (b.querySelector('[data-col="' + col + '"]')?.textContent || '').trim().toLowerCase();
-                if (col === 'id') { aVal = aVal.replace('#',''); bVal = bVal.replace('#',''); return asc ? parseInt(aVal) - parseInt(bVal) : parseInt(bVal) - parseInt(aVal); }
-                return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-            });
-
-            var expandRows = tbody.querySelectorAll('tr.answer-expand-row');
-            var expandMap = {};
-            expandRows.forEach(function(r) { expandMap[r.getAttribute('data-answer-id')] = r; });
-
-            rows.forEach(function(row) {
-                tbody.appendChild(row);
-                var expandRow = expandMap[row.getAttribute('data-answer-id')];
-                if (expandRow) tbody.appendChild(expandRow);
-            });
-        });
-    });
-})();
-</script>
+<script type="module" vite-src="~/components/analytics/listPage.ts"></script>
+<style>
+th[data-sort-dir="asc"]::after,
+th[data-sort-dir="desc"]::after {
+    display: inline-block;
+    width: 0.75rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+th[data-sort-dir="asc"]::after  { content: '\2191'; }
+th[data-sort-dir="desc"]::after { content: '\2193'; }
+</style>
