@@ -52,9 +52,9 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
     if (rawType === undefined) return undefined
 
     if (typeof rawType === 'number') {
-        if (rawType === 0) return InteractionType.Chat
-        if (rawType === 1) return InteractionType.VerticalScroll
-        if (rawType === 2) return InteractionType.UserDefined
+        if (rawType === 0) return InteractionType.UserDefined
+        if (rawType === 1) return InteractionType.Chat
+        if (rawType === 2) return InteractionType.VerticalScroll
         return undefined
     }
 

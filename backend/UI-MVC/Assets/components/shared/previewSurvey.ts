@@ -53,9 +53,9 @@ interface ProjectPreviewData {
 // ── Map C# InteractionType enum values to TS expected values ──
 
 function mapInteractionType(csharpValue: string): string {
-    if (csharpValue === 'VerticalScroll' || csharpValue === '1') return 'Vertical_Scroll'
-    if (csharpValue === 'Chat' || csharpValue === '0') return 'Chat'
-    if (csharpValue === 'UserDefined' || csharpValue === '2') return 'UserDefined'
+    if (csharpValue === 'UserDefined' || csharpValue === '0') return 'UserDefined'
+    if (csharpValue === 'Chat' || csharpValue === '1') return 'Chat'
+    if (csharpValue === 'VerticalScroll' || csharpValue === '2') return 'Vertical_Scroll'
     return 'Vertical_Scroll'
 }
 
@@ -77,7 +77,7 @@ function readDraftData(draftPrefix: string): ProjectPreviewData | null {
             accent: fields[STEP1_FIELDS.themeAccent] ?? '#cd6f88',
             preset: fields[STEP1_FIELDS.themePreset] ?? 'default',
             font: fields[STEP1_FIELDS.themeFont] ?? 'Helvetica',
-            interactionType: fields[STEP1_FIELDS.interactionForm] ?? 'VerticalScroll',
+            interactionType: fields[STEP1_FIELDS.interactionForm] ?? 'UserDefined',
         }
     } catch {
         return null
@@ -734,7 +734,7 @@ function init(): void {
 
         data = newData
         if (data) {
-            isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '2'
+            isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '0'
             if (isUserDefined) {
                 currentMode = resolveUserDefinedMode()
             } else {
@@ -747,7 +747,7 @@ function init(): void {
     }
 
     if (data) {
-        isUserDefined = data.interactionType === 'UserDefined'
+        isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '0'
         if (isUserDefined) {
             currentMode = resolveUserDefinedMode()
         } else {

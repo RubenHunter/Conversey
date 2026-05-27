@@ -20,7 +20,7 @@ public class CreateProjectIntroAndPresentationViewModel
 
     public IFormFile ImageFile { get; set; }
 
-    public InteractionType InteractionForm { get; set; } = InteractionType.Chat;
+    public InteractionType InteractionForm { get; set; } = InteractionType.UserDefined;
 
     [Range(1, 5)]
     public int NudgingStrength { get; set; } = 3;

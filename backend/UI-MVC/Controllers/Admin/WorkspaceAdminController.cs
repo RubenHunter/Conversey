@@ -674,7 +674,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
     [HttpGet("/admin/workspace/admins")]
     public IActionResult Admins()
     {
-        var workspace = workspaceContext.CurrentWorkspace;
+        var workspace = currentWorkspace;
         var admins = adminManager.GetAllWorkspaceAdminsByWorkspaceIdWithWorkspace(workspace.Id);
         var model = new WorkspaceAdminManagementViewModel
         {
@@ -691,7 +691,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
         [FromForm(Name = "FormItem.Username")] string username,
         [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
     {
-        var workspace = workspaceContext.CurrentWorkspace;
+        var workspace = currentWorkspace;
         try
         {
             var (admin, oneTimePassword) = await adminManager.AddWorkspaceAdmin(email, username, phoneNumber, workspace.Id);
@@ -719,7 +719,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
         [FromForm(Name = "FormItem.Username")] string username,
         [FromForm(Name = "FormItem.PhoneNumber")] string phoneNumber)
     {
-        var workspace = workspaceContext.CurrentWorkspace;
+        var workspace = currentWorkspace;
         var workspaceAdmin = new WorkspaceAdmin
         {
             Id = id,

@@ -199,7 +199,7 @@ class ProjectDraftManager {
         interactionFormSelect?.addEventListener('change', () => {
             const previewToggle = document.getElementById('preview-mode-toggle');
             if (previewToggle) {
-                if (interactionFormSelect.value === 'UserDefined' || interactionFormSelect.value === '2') {
+                if (interactionFormSelect.value === 'UserDefined' || interactionFormSelect.value === '0') {
                     previewToggle.classList.remove('hidden');
                     const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
                     previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {
@@ -964,7 +964,7 @@ class ProjectDraftManager {
         if (previewToggle) {
             const step1Form = this.stepManagers.get(1)?.form;
             const select = step1Form?.querySelector<HTMLSelectElement>('select[name="CreateStep1ViewModel.InteractionForm"]');
-            if (select && (select.value === 'UserDefined' || select.value === '2')) {
+            if (select && (select.value === 'UserDefined' || select.value === '0')) {
                 previewToggle.classList.remove('hidden');
                 const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
                 previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {

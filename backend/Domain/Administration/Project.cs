@@ -55,7 +55,7 @@ public enum Status
 
 public enum InteractionType
 {
+    UserDefined,
     Chat,
-    VerticalScroll,
-    UserDefined
+    VerticalScroll
 }
