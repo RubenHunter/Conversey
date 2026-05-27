@@ -23,4 +23,5 @@ public interface IProjectRepository
 
     void CreateTheme(ProjectTheme theme);
     void UpdateTheme(ProjectTheme theme);
+    IReadOnlyCollection<Youth> ReadYouthsWithRealEmailsByWorkspaceId(Slug workspaceId, Slug? projectId = null);
 }
