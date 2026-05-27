@@ -23,17 +23,30 @@ public class ContactsController : Controller
     }
 
     [HttpGet("/admin/contacts")]
-    public IActionResult Index([FromQuery] string? projectId)
+    public IActionResult Index([FromQuery] string? projectId, [FromQuery] string? youthId)
     {
         var workspaceId = _workspaceContext.CurrentWorkspace!.Id;
         Slug? projectFilter = string.IsNullOrWhiteSpace(projectId) ? null : new Slug { Text = projectId };
+        Guid? youthFilter = Guid.TryParse(youthId, out var yid) ? yid : null;
 
-        var contacts = _contactManager.GetContactsByWorkspaceId(workspaceId, projectFilter);
+        var allContacts = _contactManager.GetContactsByWorkspaceId(workspaceId, projectFilter);
+
+        var youthFilters = allContacts
+            .GroupBy(c => c.YouthId)
+            .Select(g => new YouthFilterOption { YouthId = g.Key, Email = g.First().Email })
+            .OrderBy(y => y.Email)
+            .ToList();
+
+        var filteredContacts = youthFilter.HasValue
+            ? allContacts.Where(c => c.YouthId == youthFilter.Value)
+            : allContacts;
 
         return View(new ContactsViewModel
         {
-            Contacts = contacts,
-            SelectedProjectId = projectId
+            Contacts = filteredContacts,
+            SelectedProjectId = projectId,
+            SelectedYouthId = youthId,
+            YouthFilters = youthFilters
         });
     }
 

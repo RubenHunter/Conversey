@@ -6,6 +6,7 @@ using Conversey.BL.Analytics;
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
+using Conversey.BL.Services;
 using Conversey.BL.Survey;
 using Conversey.BL.Domain.Survey;
 using Conversey.BL.Survey;
@@ -20,11 +21,12 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Conversey.UI_MVC.Controllers.Admin;
 [Authorize(Policy = WorkspaceAdminPolicy.Name)]
-public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager, IAdminManager adminManager) : Controller
+public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManager projectManager, IQuestionManager questionManager, IAiAdminManager aiAdminManager, IAnalyticsManager analyticsManager, IAdminManager adminManager, IEmailService emailService) : Controller
 {
     [HttpGet("/admin/workspace")]
     public IActionResult Index()
     {
+        TempData.Keep("ForcePasswordChange");
         return Redirect("/admin");
     }
 
@@ -714,8 +716,34 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             TempData["OneTimePassword"] = oneTimePassword;
             TempData["OneTimePasswordAdminEmail"] = admin.Email;
 
+            var loginUrl = $"{Request.Scheme}://{workspace.Id.Text}.{Request.Host}/login";
+            var emailBody = $@"Welcome to Conversey!
+
+You have been added as a workspace admin for the workspace '{workspace.Id.Text}'.
+
+Login: {loginUrl}
+Email: {admin.Email}
+Temporary password: {oneTimePassword}
+
+You will be asked to change your password on first login.
+
+This is an automated message. Please do not reply.";
+
+            var emailSent = false;
+            try
+            {
+                await emailService.SendEmailAsync(admin.Email, $"Your Conversey workspace admin account for {workspace.Id.Text}", emailBody);
+                emailSent = true;
+            }
+            catch
+            {
+                // Email sending failure should not block admin creation
+            }
+
+            TempData["EmailSent"] = emailSent;
+
             if (IsAjax())
-                return Ok(new { redirectUrl = Url.Action("Admins") });
+                return Ok(new { redirectUrl = Url.Action("Admins"), emailSent });
             return RedirectToAction("Admins");
         }
         catch (ValidationException ex)
