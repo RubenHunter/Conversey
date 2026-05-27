@@ -48,8 +48,8 @@ public abstract class ConfigurableRateLimiterPolicy : IRateLimiterPolicy<string>
 
     private static string GetUserKey(HttpContext httpContext)
     {
-        var userId = httpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? httpContext.User?.Identity?.Name;
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? httpContext.User.Identity?.Name;
 
         if (!string.IsNullOrWhiteSpace(userId))
         {

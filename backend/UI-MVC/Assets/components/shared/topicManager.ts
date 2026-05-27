@@ -25,7 +25,7 @@ class TopicManager {
 
     constructor() {
         const form = document.getElementById('create-project-step3-form') as HTMLFormElement | null;
-        if (!form) return;
+        if (!form) throw new Error("Can't find a form element.");
 
         this.form = form;
         const stepper = document.getElementById('dynamic-stepper');

@@ -113,30 +113,30 @@ function createQuestionComponent(question: Question): QuestionComponent {
         const editableQuestion: Question = structuredClone(question);
         modal.setPage(createSetQuestionTypeComponent(modal, editableQuestion, (updatedQuestion) => {
             component.question = updatedQuestion;
-            updateComponentContent(component, updatedQuestion);
+            updateComponentContent(updatedQuestion);
         }));
         modal.show();
     }
-}
 
-function updateComponentContent(component: QuestionComponent, question: Question): void {
-    const title = component.querySelector('.question-card-title');
-    if (title) {
-        title.textContent = question.text;
-    }
+    function updateComponentContent(question: Question): void {
+        const title = component.querySelector('.question-card-title');
+        if (title) {
+            title.textContent = question.text;
+        }
 
 
-    const meta = component.querySelector('.question-card-meta');
-    if (meta) {
-        meta.innerHTML = `
+        const meta = component.querySelector('.question-card-meta');
+        if (meta) {
+            meta.innerHTML = `
             <span class="question-card-pill">${question.type}</span>
             ${question.required ? '<span class="question-card-pill question-card-required">Required</span>' : ''}
         `;
-    }
+        }
 
-    const icon = component.querySelector('.question-card-type-icon') as HTMLImageElement | null;
-    if (icon) {
-        icon.src = getQuestionIconSrc(question.type);
+        const icon = component.querySelector('.question-card-type-icon') as HTMLImageElement | null;
+        if (icon) {
+            icon.src = getQuestionIconSrc(question.type);
+        }
     }
 }
 
