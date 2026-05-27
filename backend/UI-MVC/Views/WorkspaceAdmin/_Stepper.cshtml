@@ -134,6 +134,12 @@
         Save as draft
     </button>
     <button type="button"
+            id="backFabBtn"
+            class="hidden rounded-full bg-background/90 backdrop-blur border border-text/15 px-5 py-3 text-sm font-semibold text-text shadow-lg hover:bg-background transition-colors"
+            onclick="document.getElementById('prevBtn')?.click()">
+        &lt; Back
+    </button>
+    <button type="button"
             class="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity"
             onclick="document.getElementById('nextBtn')?.click()"
             data-i18n="Next &gt;">

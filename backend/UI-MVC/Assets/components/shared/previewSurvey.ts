@@ -360,7 +360,11 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
                         </div>
                     </div>
                 </div>
-                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-messages" id="chat-messages">
+                    <div style="display:flex;align-items:center;justify-content:center;padding:3rem 0">
+                        <span style="display:inline-block;width:18px;height:18px;border:2px solid #ddd;border-top-color:var(--color-primary,#6c5ce7);border-radius:50%;animation:preview-spin 0.6s linear infinite"></span>
+                    </div>
+                </div>
             </div>
             <div class="chat-input-wrap">
                 <div class="chat-input-bar">
@@ -379,9 +383,9 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
     const chatInput = container.querySelector<HTMLTextAreaElement>('#chat-input')! as HTMLTextAreaElement
     const sendBtn = container.querySelector<HTMLButtonElement>('#chat-send-btn')!
     const headerController = createSurveyHeaderController({ root: container })
+    messagesEl.innerHTML = ''  // Clear inline loading spinner
 
     let answeredCount = 0
-    let activeOpenIndex: number | null = null
     let openSendHandler: (() => void) | null = null
 
     const scrollToBottom = () => {
@@ -422,7 +426,6 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
     }
 
     function deactivateInput(): void {
-        activeOpenIndex = null
         openSendHandler = null
         chatInput.disabled = true
         chatInput.value = ''
@@ -431,9 +434,8 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
         sendBtn.disabled = true
     }
 
-    function activateOpenTextInput(index: number, onSend: (text: string) => void): void {
+    function activateOpenTextInput(_index: number, onSend: (text: string) => void): void {
         deactivateInput()
-        activeOpenIndex = index
         chatInput.disabled = false
         chatInput.value = ''
         chatInput.style.height = 'auto'
@@ -470,7 +472,6 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
 
         if (q.type === QuestionType.Open) {
             activateOpenTextInput(index, (text) => {
-                appendUserBubble(text)
                 deactivateInput()
                 confirmQuestion(index, text)
             })
@@ -546,7 +547,31 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
 
     headerController.updateProgress(0, questions.length || 1)
 
-    // Hero bubble
+    // Determine how far we are in history, before rendering intro
+    const history = loadHistory()
+    let resumeAtIndex = 0
+
+    // Compute resume point from history without rendering
+    for (let i = 0; i < questions.length; i++) {
+        const entry = history.entries[i]
+        if (!entry) break
+        if (entry.signature !== questionSignature(questions[i])) break
+        resumeAtIndex = i + 1
+    }
+
+    // Clean history entries beyond question list and invalid beyond resume point
+    if (history.entries.length > questions.length) {
+        history.entries.length = questions.length
+    }
+    for (let i = resumeAtIndex; i < history.entries.length; i++) {
+        history.entries[i] = null
+    }
+    saveHistory(history)
+
+    const hasHistory = resumeAtIndex > 0
+
+    // ── Intro: hero + description ──
+
     if (data.imageUrl || data.title) {
         let content = ''
         if (data.imageUrl) {
@@ -568,12 +593,12 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
             </div>`
         messagesEl.appendChild(heroRow)
         scrollToBottom()
-        await wait(500)
+        if (!hasHistory) await wait(500)
     }
 
     if (data.description) {
         appendAiBubbleText(data.description)
-        await wait(800)
+        if (!hasHistory) await wait(800)
     }
 
     if (questions.length === 0) {
@@ -582,29 +607,26 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
         return
     }
 
-    // ── Replay previously answered questions with full UI state ──
-    const history = loadHistory()
-    let resumeAtIndex = 0
+    // ── Replay previously answered questions ──
 
-    function replayAnswered(index: number, entry: ChatHistoryEntry): void {
-        const q = questions[index]
-        const num = index + 1
+    for (let i = 0; i < resumeAtIndex; i++) {
+        const entry = history.entries[i]!
+        const q = questions[i]
+        const num = i + 1
         appendAiBubbleText(`${num}. ${q.text}`, 'chat-bubble--question-title')
 
         if (q.type === QuestionType.Open) {
-            // Show user answer bubble
             const text = typeof entry.answer === 'string' ? entry.answer : ''
             if (text) appendUserBubble(text)
         } else {
-            // Non-open: restore component with answer, locked, confirmed
             const block = document.createElement('div')
             block.className = 'chat-question-block'
-            block.setAttribute('data-question-index', String(index))
+            block.setAttribute('data-question-index', String(i))
 
             const answerRegion = document.createElement('div')
             answerRegion.className = 'chat-answer-region'
 
-            const component = createQuestionComponent(q, index)
+            const component = createQuestionComponent(q, i)
             component.setAnswer(entry.answer)
             component.lock()
             const el = component.getElement()
@@ -622,39 +644,16 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
             block.appendChild(confirmRow)
             messagesEl.appendChild(block)
 
-            // Show user answer bubble
             const display = answerDisplayText(q, entry.answer)
             if (display) appendUserBubble(display)
         }
-
-        resumeAtIndex = index + 1
-        answeredCount = index + 1
     }
 
-    for (let i = 0; i < questions.length; i++) {
-        const entry = history.entries[i]
-        if (!entry) break
-        const currentSig = questionSignature(questions[i])
-        if (entry.signature !== currentSig) break
-        replayAnswered(i, entry)
-    }
-
-    // Trim history entries beyond current question list
-    if (history.entries.length > questions.length) {
-        history.entries.length = questions.length
-        saveHistory(history)
-    }
-    // Invalidate entries where signature changed (already handled by break above)
-    // Clean entries beyond resume point
-    for (let i = resumeAtIndex; i < history.entries.length; i++) {
-        history.entries[i] = null
-    }
-    saveHistory(history)
-
+    answeredCount = resumeAtIndex
     updateProgress()
 
-    // Reveal next unanswered question
-    await wait(600)
+    if (!hasHistory) await wait(600)
+
     if (resumeAtIndex < questions.length) {
         await revealQuestion(resumeAtIndex)
     } else {
@@ -667,6 +666,14 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
 function init(): void {
     const root = document.getElementById('preview-root')
     if (!root) return
+
+    // Inject spinner keyframe if not already present
+    if (!document.getElementById('preview-spinner-style')) {
+        const style = document.createElement('style')
+        style.id = 'preview-spinner-style'
+        style.textContent = '@keyframes preview-spin{to{transform:rotate(360deg)}}'
+        document.head.appendChild(style)
+    }
 
     draftPrefix = root.dataset.draftPrefix || ''
     if (!draftPrefix) {
@@ -689,7 +696,9 @@ function init(): void {
         try {
             currentMode = mode ?? currentMode
 
-            root!.innerHTML = ''
+            root!.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:200px">
+                <span style="display:inline-block;width:20px;height:20px;border:2px solid #ccc;border-top-color:var(--color-primary,#6c5ce7);border-radius:50%;animation:preview-spin 0.6s linear infinite"></span>
+            </div>`
             root!.style.position = 'relative'
 
             applyTheme({

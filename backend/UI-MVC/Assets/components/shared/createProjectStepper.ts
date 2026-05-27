@@ -73,6 +73,7 @@ class ProjectDraftManager {
     private readonly step4Overrides: Map<string, string> = new Map();
     private readonly step5SaveDraftLink: HTMLButtonElement | null;
     private readonly step5SurveyLink: HTMLAnchorElement | null;
+    private readonly step5PublishBtn: HTMLButtonElement | null;
 
     private currentStep = 1;
     private saveDraftFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
@@ -110,6 +111,7 @@ class ProjectDraftManager {
         this.step4PromptsJson = container.querySelector('#step4PromptsJson');
         this.step5SaveDraftLink = container.querySelector('#step5SaveDraftLink');
         this.step5SurveyLink = container.querySelector('#step5SurveyLink');
+        this.step5PublishBtn = container.querySelector('#step5PublishBtn');
 
         this.discoverForms(container);
         this.migrateOldDraft();
@@ -129,6 +131,7 @@ class ProjectDraftManager {
         this.bindStep4PromptModal(container);
         this.bindPreviewModeToggle(container);
         this.bindStep5LaunchLinks();
+        this.bindBackFab();
 
         // Native beforeunload removed. Custom _DraftExitModal handles exit confirmation.
     }
@@ -139,6 +142,7 @@ class ProjectDraftManager {
             onStepChange: (step: number) => {
                 this.currentStep = step;
                 this.saveMeta();
+                this.updateBackFab(step);
             },
             canAdvance: (currentStep: number) => this.handleCanAdvance(currentStep),
             onComplete: () => this.handleComplete(),
@@ -149,6 +153,16 @@ class ProjectDraftManager {
                 if (step === 4) this.refreshStep4UI();
                 this.saveMeta();
             },
+            onStepClick: async (targetStep: number, currentStep: number) => {
+                if (targetStep < currentStep) {
+                    this.navigateToStep(targetStep);
+                    return;
+                }
+
+                const canAdvance = await this.handleCanAdvance(currentStep);
+                if (canAdvance === false) return;
+                this.navigateToStep(targetStep);
+            }
         };
     }
 
@@ -277,6 +291,7 @@ class ProjectDraftManager {
         this.currentStep = meta.currentStep;
         this.stepManagers.get(meta.currentStep)?.hydrate();
         if (meta.currentStep === 1) this.refreshStep1UI();
+        this.updateBackFab(meta.currentStep);
     }
 
     private async ensureStep1ImageUploaded(): Promise<boolean> {
@@ -964,6 +979,21 @@ class ProjectDraftManager {
         }
     }
 
+    private bindBackFab(): void {
+        const backFab = document.getElementById('backFabBtn');
+        if (!backFab) return;
+        backFab.addEventListener('click', () => {
+            document.getElementById('prevBtn')?.click();
+        });
+        this.updateBackFab(this.currentStep);
+    }
+
+    private updateBackFab(step: number): void {
+        const backFab = document.getElementById('backFabBtn');
+        if (!backFab) return;
+        backFab.classList.toggle('hidden', step <= 1);
+    }
+
     // ── Step 4: advanced settings toggle ───────────────────────────────────
 
     private bindStep4AdvancedToggle(): void {
@@ -1159,6 +1189,14 @@ class ProjectDraftManager {
             }
         });
 
+        this.step5PublishBtn?.addEventListener('click', async () => {
+            await this.handleComplete();
+            const slug = this.step1Slug?.value ?? '';
+            if (slug) {
+                window.open(this.buildSurveyLink(slug), '_blank');
+            }
+        });
+
         const slug = this.step1Slug?.value ?? '';
         this.updateStep5SurveyLink(slug);
     }
@@ -1181,6 +1219,12 @@ class ProjectDraftManager {
 
     private buildSurveyLink(slug: string): string {
         return `${window.location.origin}/${slug}`;
+    }
+
+    private navigateToStep(step: number): void {
+        const stepper = document.getElementById('dynamic-stepper');
+        if (!stepper) return;
+        stepper.dispatchEvent(new CustomEvent('stepper:force-step', { detail: { step } }));
     }
 }
 

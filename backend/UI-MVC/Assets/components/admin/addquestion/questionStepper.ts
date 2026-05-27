@@ -19,7 +19,6 @@ function syncToForm(): void {
 
     const questions = getListQuestions(rootQuestionList);
     field.value = JSON.stringify(questions);
-    console.log(field.value);
     form.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
@@ -27,7 +26,7 @@ let observer: MutationObserver | null = null;
 
 function connectObserver(): void {
     observer = new MutationObserver(syncToForm);
-    observer.observe(rootQuestionList, { childList: true });
+    observer.observe(rootQuestionList, { childList: true, subtree: true, characterData: true });
 }
 
 function hydrateFromForm(): void {

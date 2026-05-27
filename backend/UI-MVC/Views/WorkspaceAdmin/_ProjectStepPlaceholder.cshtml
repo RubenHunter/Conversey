@@ -6,10 +6,9 @@
         <div class="flex items-start justify-between gap-6">
             <div class="space-y-3">
                 <p class="text-xs font-semibold uppercase tracking-[0.4em] text-text/50">Ready to publish</p>
-                <h2 class="text-3xl font-semibold text-text">Final step: review & launch</h2>
+                <h2 class="text-3xl font-semibold text-text">Final step: publish the survey</h2>
                 <p class="text-sm text-text/60 max-w-xl">
-                    When you finish this step, your survey becomes active and available for participants.
-                    Admins can still access it if it remains a draft in the database.
+                    Publishing makes the survey available to participants right away. Drafts remain accessible to admins.
                 </p>
             </div>
             <div class="hidden sm:flex flex-col items-end gap-2">
@@ -24,7 +23,7 @@
                 <ul class="mt-4 space-y-3 text-sm text-text/70">
                     <li class="flex items-start gap-3">
                         <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
-                        Survey status switches to <span class="font-semibold text-text">Active</span> after final submit.
+                        Survey status switches to active after final submit.
                     </li>
                     <li class="flex items-start gap-3">
                         <span class="mt-1 h-2 w-2 rounded-full bg-secondary"></span>
@@ -39,22 +38,25 @@
 
             <div class="rounded-2xl border border-text/10 bg-white p-6">
                 <p class="text-sm font-semibold text-text">Survey link</p>
-                <p class="mt-2 text-xs text-text/50">Save draft to generate a link you can test or share.</p>
+                <p class="mt-2 text-xs text-text/50">Save a draft to generate a link you can test or share.</p>
                 <div class="mt-4 flex flex-col gap-3">
                     <button type="button" id="step5SaveDraftLink" class="w-full rounded-xl border border-text/15 px-4 py-3 text-sm font-semibold text-text hover:bg-text/5 transition">
                         Save draft & open link
                     </button>
-                    <a id="step5SurveyLink" href="#" class="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white opacity-60 pointer-events-none">
+                    <button type="button" id="step5PublishBtn" class="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition">
+                        Publish survey & open link
+                    </button>
+                    <a id="step5SurveyLink" href="#" class="inline-flex w-full items-center justify-center rounded-xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary opacity-60 pointer-events-none">
                         Survey link will appear after saving
                     </a>
-                    <p class="text-xs text-text/50">Link visible to admins when draft exists.</p>
+                    <p class="text-xs text-text/50">Link visible to admins when a draft exists.</p>
                 </div>
             </div>
         </div>
 
         <div class="rounded-2xl border border-text/10 bg-background/70 p-5 text-sm text-text/70">
-            <p class="font-semibold text-text">Launch tip</p>
-            <p class="mt-2">If you need more edits later, you can archive the project and re-open the survey from the admin dashboard.</p>
+            <p class="font-semibold text-text">Editing rules</p>
+            <p class="mt-2">Only drafts can be edited. Archived and active projects are immutable, but you can use Copy on the projects page to duplicate a project with all stepper data.</p>
         </div>
     </div>
 </section>
