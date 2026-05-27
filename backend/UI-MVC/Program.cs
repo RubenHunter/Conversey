@@ -7,6 +7,7 @@ using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
+using Conversey.BL.Services;
 using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
@@ -80,6 +81,8 @@ builder.Services.AddScoped<IAdminManager, AdminManager>();
 builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
 builder.Services.AddScoped<IAiPricingService, AiPricingService>();
 builder.Services.AddScoped<IAnalyticsManager, AnalyticsManager>();
+builder.Services.AddScoped<IContactManager, ContactManager>();
+builder.Services.AddScoped<IEmailService, GmailEmailService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
     options.UseNpgsql(
