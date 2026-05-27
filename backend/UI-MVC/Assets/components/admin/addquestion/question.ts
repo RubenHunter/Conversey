@@ -13,6 +13,7 @@ type QuestionComponent = Draggable & {
 };
 
 function createQuestionComponent(question: Question): QuestionComponent {
+    const isReadOnly = document.getElementById('dynamic-stepper')?.dataset.isReadonly === 'true';
     const deleteButton = htmlToElement<HTMLButtonElement>(
         `<button type="button" class="question-card-action question-card-action-danger" aria-label="Delete question">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="icon">
@@ -21,6 +22,7 @@ function createQuestionComponent(question: Question): QuestionComponent {
                 </svg>
             </button>`
     );
+    if (isReadOnly) deleteButton.disabled = true;
     deleteButton.addEventListener('click', destroy);
 
     const editButton = htmlToElement<HTMLButtonElement>(
@@ -30,6 +32,7 @@ function createQuestionComponent(question: Question): QuestionComponent {
                 </svg>
             </button>`
     );
+    if (isReadOnly) editButton.disabled = true;
 
     const selectButton = htmlToElement<HTMLInputElement>(
         `<input type="checkbox" aria-label="Select a question" />`

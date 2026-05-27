@@ -12,7 +12,7 @@
     ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace.Name;
     ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
     {
-        ("Dashboard", "/admin/workspace", false),
+        ("Dashboard", "/admin", false),
         (I18n["Projects"], null, true)
     };
 }
@@ -143,7 +143,7 @@
                         <button title="Notifications" class="p-2 text-text/40 hover:text-accent hover:bg-accent/5 rounded-lg transition-all">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         </button>
-                        <button title="Share" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                        <button title="Share" class="p-2 text-text/40 hover:text-primary hover:bg-primary/5 rounded-lg transition-all relative z-20" data-share-id="@project.Id" data-share-name="@project.Title" data-share-status="@project.Status">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                         </button>
                     </div>
@@ -176,7 +176,7 @@
 @await Html.PartialAsync("_DeleteModal")
 
 <div id="archiveModal"
-     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50">
 
     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
 
@@ -206,7 +206,7 @@
 </div>
 
 <div id="copyModal"
-     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50">
 
     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
 
@@ -235,7 +235,7 @@
 </div>
 
 <div id="recoverDraftModal"
-     class="fixed inset-0 hidden items-center justify-center bg-black/50">
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50">
 
     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
 
@@ -258,6 +258,67 @@
                     type="button"
                     class="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90">
                 Recover
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="shareModal"
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50">
+
+    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+
+        <h2 class="text-lg font-semibold text-gray-900">
+            Share project
+        </h2>
+
+        <h3 id="shareItemName" class="mt-1 text-base font-medium text-text"></h3>
+
+        <div class="mt-3 flex items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-text/50">Status</span>
+            <span id="shareStatusBadge" class="text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full border"></span>
+        </div>
+
+        <div id="shareAccessInfo" class="mt-3 p-3 rounded-lg bg-gray-50 text-sm text-gray-700">
+        </div>
+
+        <div class="mt-4 flex items-center gap-2">
+            <input id="shareUrlInput" type="text" readonly
+                   class="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 font-mono" />
+            <button id="copyShareUrl"
+                    type="button"
+                    class="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90 shrink-0">
+                Copy
+            </button>
+        </div>
+
+        <div id="shareQrSection" class="mt-3 hidden">
+            <button id="toggleQrBtn" type="button" class="flex items-center gap-2 text-sm text-text/60 hover:text-primary transition-colors w-full">
+                <svg id="qrArrow" class="w-4 h-4 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>QR Code</span>
+            </button>
+            <div id="shareQrContainer" class="grid transition-[grid-template-rows] duration-300 ease-in-out grid-rows-[0fr] mt-3">
+                <div class="overflow-hidden">
+                    <div class="flex flex-col items-center gap-3">
+                        <canvas id="shareQrCanvas" class="rounded-lg border border-gray-200"></canvas>
+                        <button id="downloadQrBtn" type="button" class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <button id="cancelShare"
+                    type="button"
+                    class="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                Close
             </button>
         </div>
     </div>

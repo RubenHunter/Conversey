@@ -45,6 +45,7 @@ class ProjectDraftManager {
     private readonly projectListUrl: string;
     private readonly isCreatePage: boolean;
     private readonly isCopyFlow: boolean;
+    private readonly isReadOnly: boolean;
 
     private readonly stepManagers = new Map<number, StepDraftManager>();
 
@@ -86,6 +87,7 @@ class ProjectDraftManager {
         this.projectListUrl = container.dataset.projectListUrl || '/admin/projects';
         this.isCreatePage = container.dataset.isCreatePage === 'true';
         this.isCopyFlow = container.dataset.isCopyFlow === 'true';
+        this.isReadOnly = container.dataset.isReadonly === 'true';
 
         this.step1ImageFile = container.querySelector('#step1ImageFile');
         this.step1ImageUrl = container.querySelector('#step1ImageUrl');
@@ -132,6 +134,7 @@ class ProjectDraftManager {
         this.bindPreviewModeToggle(container);
         this.bindStep5LaunchLinks();
         this.bindBackFab();
+        this.applyReadOnlyMode();
 
         // Native beforeunload removed. Custom _DraftExitModal handles exit confirmation.
     }
@@ -151,6 +154,8 @@ class ProjectDraftManager {
                 this.stepManagers.get(step)?.hydrate();
                 if (step === 1) this.refreshStep1UI();
                 if (step === 4) this.refreshStep4UI();
+                if (this.isReadOnly && step === 2) this.disableReadOnlyQuestionActions();
+                if (this.isReadOnly && step === 3) this.disableReadOnlyTopicActions();
                 this.saveMeta();
             },
             onStepClick: async (targetStep: number, currentStep: number) => {
@@ -183,7 +188,8 @@ class ProjectDraftManager {
     }
 
     private bindFormListeners(): void {
-        for (const [, manager] of this.stepManagers) {
+        for (const [step, manager] of this.stepManagers) {
+            if (this.isReadOnly && step !== 2) continue;
             manager.form.addEventListener('input', () => {
                 manager.persist();
                 this.saveMeta();
@@ -194,6 +200,7 @@ class ProjectDraftManager {
             });
         }
 
+        if (this.isReadOnly) return;
         const step1Form = this.stepManagers.get(1)?.form;
         const interactionFormSelect = step1Form?.querySelector<HTMLSelectElement>('select[name="CreateStep1ViewModel.InteractionForm"]');
         interactionFormSelect?.addEventListener('change', () => {
@@ -201,7 +208,7 @@ class ProjectDraftManager {
             if (previewToggle) {
                 if (interactionFormSelect.value === 'UserDefined' || interactionFormSelect.value === '0') {
                     previewToggle.classList.remove('hidden');
-                    const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
+                    const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Vertical_Scroll';
                     previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {
                         const isActive = btn.dataset.previewMode === currentMode;
                         btn.classList.toggle('bg-text/10', isActive);
@@ -216,6 +223,7 @@ class ProjectDraftManager {
     }
 
     private bindSaveDraftButton(): void {
+        if (this.isReadOnly) return;
         this.saveDraftBtn?.addEventListener('click', async () => {
             await this.ensureStep1ImageUploaded();
             this.persistCurrentStep();
@@ -224,6 +232,7 @@ class ProjectDraftManager {
     }
 
     private bindNameWarning(): void {
+        if (this.isReadOnly) return;
         const step1Form = this.stepManagers.get(1)?.form;
         step1Form?.addEventListener('input', (event) => {
             const target = event.target as HTMLElement | null;
@@ -234,6 +243,7 @@ class ProjectDraftManager {
     }
 
     private async handleCanAdvance(currentStep: number): Promise<boolean> {
+        if (this.isReadOnly) return true;
         const manager = this.stepManagers.get(currentStep);
         if (!manager) return true;
 
@@ -243,6 +253,7 @@ class ProjectDraftManager {
     }
 
     private async handleComplete(): Promise<void> {
+        if (this.isReadOnly) return;
         const step1Manager = this.stepManagers.get(1);
         if (!step1Manager) return;
 
@@ -389,6 +400,7 @@ class ProjectDraftManager {
     }
 
     private async saveDraftToServer(): Promise<void> {
+        if (this.isReadOnly) return;
         const step1Manager = this.stepManagers.get(1);
         if (!step1Manager || !this.draftSaveUrl) return;
 
@@ -443,6 +455,7 @@ class ProjectDraftManager {
     }
 
     private bindExitDraftModal(): void {
+        if (this.isReadOnly) return;
         const modal = document.getElementById('draftExitModal');
         if (!modal) return;
 
@@ -714,6 +727,13 @@ class ProjectDraftManager {
     // ── Step 1: image dropzone ──────────────────────────────────────────────
 
     private bindStep1ImageDropzone(container: HTMLElement): void {
+        if (this.isReadOnly) {
+            const dropzone = container.querySelector<HTMLElement>('#step1ImageDropzone');
+            const uploadBtn = container.querySelector<HTMLButtonElement>('#step1ImageUploadBtn');
+            if (dropzone) dropzone.style.pointerEvents = 'none';
+            if (uploadBtn) uploadBtn.disabled = true;
+            return;
+        }
         const dropzone = container.querySelector<HTMLElement>('#step1ImageDropzone');
         const uploadBtn = container.querySelector<HTMLButtonElement>('#step1ImageUploadBtn');
         const preview = container.querySelector<HTMLImageElement>('#step1ImagePreview');
@@ -752,6 +772,7 @@ class ProjectDraftManager {
     // ── Step 1: theme picker ────────────────────────────────────────────────
 
     private bindStep1ThemePicker(container: HTMLElement): void {
+        if (this.isReadOnly) return;
         const modal = container.querySelector<HTMLElement>('#step1ThemePickerModal');
         const pickerPrimary = container.querySelector<HTMLInputElement>('#step1PickerPrimary');
         const pickerPrimaryHex = container.querySelector<HTMLInputElement>('#step1PickerPrimaryHex');
@@ -860,6 +881,7 @@ class ProjectDraftManager {
     // ── Step 4: nudging slider ──────────────────────────────────────────────
 
     private bindStep4NudgingSlider(): void {
+        if (this.isReadOnly) return;
         this.step4NudgingStrength?.addEventListener('input', () => {
             if (this.step4NudgingDisplay && this.step4NudgingStrength) {
                 this.step4NudgingDisplay.textContent = this.step4NudgingStrength.value;
@@ -877,6 +899,7 @@ class ProjectDraftManager {
     // ── Step 1: age sliders ─────────────────────────────────────────────────
 
     private bindStep1AgeSliders(): void {
+        if (this.isReadOnly) return;
         const update = (input: HTMLInputElement | null, display: HTMLElement | null) => {
             if (input && display) display.textContent = input.value;
         };
@@ -966,7 +989,7 @@ class ProjectDraftManager {
             const select = step1Form?.querySelector<HTMLSelectElement>('select[name="CreateStep1ViewModel.InteractionForm"]');
             if (select && (select.value === 'UserDefined' || select.value === '0')) {
                 previewToggle.classList.remove('hidden');
-                const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Chat';
+                const currentMode = localStorage.getItem(`${this.draftStoragePrefix}:preview-mode`) ?? 'Vertical_Scroll';
                 previewToggle.querySelectorAll<HTMLButtonElement>('[data-preview-mode]').forEach(btn => {
                     const isActive = btn.dataset.previewMode === currentMode;
                     btn.classList.toggle('bg-text/10', isActive);
@@ -1036,6 +1059,9 @@ class ProjectDraftManager {
             if (titleEl) titleEl.textContent = name;
             if (descEl) descEl.textContent = description;
             textarea.value = this.step4Overrides.get(name) ?? globalTemplate;
+            textarea.readOnly = this.isReadOnly;
+            if (applyBtn) applyBtn.toggleAttribute('disabled', this.isReadOnly);
+            if (resetBtn) resetBtn.toggleAttribute('disabled', this.isReadOnly);
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(() => textarea.focus(), 50);
@@ -1057,6 +1083,7 @@ class ProjectDraftManager {
         });
 
         applyBtn?.addEventListener('click', () => {
+            if (this.isReadOnly) return;
             if (!activePromptName) return;
             const val = textarea.value;
             if (val.trim()) {
@@ -1125,6 +1152,7 @@ class ProjectDraftManager {
     // ── Step 1: font picker ─────────────────────────────────────────────────
 
     private bindStep1FontPicker(container: HTMLElement): void {
+        if (this.isReadOnly) return;
         container.querySelectorAll<HTMLButtonElement>('.font-option').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const font = btn.dataset.font ?? '';
@@ -1172,10 +1200,15 @@ class ProjectDraftManager {
         })
 
         // Init — read latest from localStorage
-        highlightBtn(localStorage.getItem(prefixedKey) ?? 'Chat')
+        const initialMode = localStorage.getItem(prefixedKey) ?? 'Vertical_Scroll'
+        if (!localStorage.getItem(prefixedKey)) {
+            localStorage.setItem(prefixedKey, initialMode)
+        }
+        highlightBtn(initialMode)
     }
 
     private bindStep5LaunchLinks(): void {
+        if (this.isReadOnly) return;
         if (!this.step5SaveDraftLink || !this.step5SurveyLink) return;
 
         this.step5SaveDraftLink.addEventListener('click', async () => {
@@ -1219,6 +1252,72 @@ class ProjectDraftManager {
 
     private buildSurveyLink(slug: string): string {
         return `${window.location.origin}/${slug}`;
+    }
+
+    private applyReadOnlyMode(): void {
+        if (!this.isReadOnly) return;
+
+        for (const [, manager] of this.stepManagers) {
+            const elements = manager.form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLButtonElement>('input, textarea, select, button');
+            elements.forEach((el) => {
+                if (el instanceof HTMLInputElement && el.type === 'hidden') return;
+                if (el instanceof HTMLInputElement && el.type === 'file') {
+                    el.disabled = true;
+                    return;
+                }
+                if (el instanceof HTMLButtonElement && el.id === 'step4AdvancedToggle') return;
+                el.disabled = true;
+            });
+        }
+
+        this.disableReadOnlyQuestionActions();
+        this.disableReadOnlyTopicActions();
+
+        const draftExitModal = document.getElementById('draftExitModal');
+        if (draftExitModal) draftExitModal.remove();
+
+        const step5SaveDraftLink = document.getElementById('step5SaveDraftLink') as HTMLButtonElement | null;
+        if (step5SaveDraftLink) step5SaveDraftLink.disabled = true;
+        const step5PublishBtn = document.getElementById('step5PublishBtn') as HTMLButtonElement | null;
+        if (step5PublishBtn) step5PublishBtn.disabled = true;
+
+        const saveDraftBtn = document.getElementById('saveDraftBtn') as HTMLButtonElement | null;
+        if (saveDraftBtn) saveDraftBtn.disabled = true;
+        const saveDraftFab = document.querySelector<HTMLButtonElement>('button[onclick*="saveDraftBtn"]');
+        if (saveDraftFab) saveDraftFab.disabled = true;
+
+        const nextBtn = document.getElementById('nextBtn') as HTMLButtonElement | null;
+        if (nextBtn) nextBtn.disabled = false;
+    }
+
+    private disableReadOnlyQuestionActions(): void {
+        document.querySelectorAll<HTMLButtonElement>('.question-card-action').forEach((btn) => {
+            btn.disabled = true;
+        });
+        document.querySelectorAll<HTMLInputElement>('.question-card-menu input[type="checkbox"]').forEach((el) => {
+            el.disabled = true;
+        });
+        const createQuestionBtn = document.getElementById('create-question-button') as HTMLButtonElement | null;
+        if (createQuestionBtn) createQuestionBtn.disabled = true;
+        const createSectionBtn = document.getElementById('create-section-button') as HTMLButtonElement | null;
+        if (createSectionBtn) createSectionBtn.disabled = true;
+        const deleteBtn = document.getElementById('delete-button') as HTMLButtonElement | null;
+        if (deleteBtn) deleteBtn.disabled = true;
+        const selectAllCheckbox = document.querySelector<HTMLInputElement>('.question-modal-checkbox');
+        if (selectAllCheckbox) selectAllCheckbox.disabled = true;
+    }
+
+    private disableReadOnlyTopicActions(): void {
+        document.querySelectorAll<HTMLElement>('[data-modal-key="add-topic"]').forEach((el) => {
+            if (el instanceof HTMLButtonElement) el.disabled = true;
+            if (el instanceof HTMLAnchorElement) {
+                el.setAttribute('aria-disabled', 'true');
+                el.classList.add('pointer-events-none', 'opacity-50');
+            }
+        });
+        document.querySelectorAll<HTMLButtonElement>('#topicsTableBody button').forEach((btn) => {
+            btn.disabled = true;
+        });
     }
 
     private navigateToStep(step: number): void {

@@ -5,6 +5,7 @@ import { renderSurveyHeader, createSurveyHeaderController } from '../survey/comp
 import { applyTheme } from '../../utils/theme'
 import { generateQuestionHeader } from '../survey/utils/surveyUtils'
 import { getSurveyStrings } from '../../i18n/survey'
+import { CHECKMARK_SVG } from '../chat/utils/chatTemplates'
 import { QuestionType } from '../../models/question'
 import type { FixedQuestion, OpenQuestion, RangeQuestion, Question } from '../../models/question'
 import type { QuestionComponent, QuestionAnswer } from '../survey/components/singleChoiceQuestion'
@@ -68,8 +69,9 @@ function readDraftData(draftPrefix: string): ProjectPreviewData | null {
     try {
         const parsed = JSON.parse(raw)
         const fields: Record<string, string> = parsed.fields ?? {}
+        const titleValue = (fields[STEP1_FIELDS.name] ?? '').trim()
         return {
-            title: fields[STEP1_FIELDS.name] ?? 'Untitled Project',
+            title: titleValue.length > 0 ? titleValue : 'Insert Title',
             description: fields[STEP1_FIELDS.description] ?? '',
             imageUrl: fields[STEP1_FIELDS.imageUrl] ?? '',
             primary: fields[STEP1_FIELDS.themePrimary] ?? '#6c5ce7',
@@ -495,7 +497,7 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
         confirmRow.className = 'chat-confirm-row'
         confirmRow.innerHTML = `
             <div class="chat-confirm-line"></div>
-            <button class="chat-confirm-btn" type="button">Confirm</button>
+            <button class="chat-confirm-btn" type="button" aria-label="Confirm answer">${CHECKMARK_SVG}</button>
             <div class="chat-confirm-line"></div>`
         confirmRow.querySelector<HTMLButtonElement>('.chat-confirm-btn')!.addEventListener('click', () => {
             const answer = component.getAnswer()
@@ -535,6 +537,8 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
 
     function showSubmitSection(): void {
         deactivateInput()
+        const inputWrap = container.querySelector<HTMLElement>('.chat-input-wrap')
+        if (inputWrap) inputWrap.style.display = 'none'
         appendAiBubbleText('All questions answered.', undefined)
         const submitRow = document.createElement('div')
         submitRow.className = 'survey-action-bar survey-ready'
@@ -637,7 +641,7 @@ async function renderChatPreview(container: HTMLElement, data: ProjectPreviewDat
             confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
             confirmRow.innerHTML = `
                 <div class="chat-confirm-line"></div>
-                <button class="chat-confirm-btn" type="button" disabled>Confirmed</button>
+                <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
                 <div class="chat-confirm-line"></div>`
 
             block.appendChild(answerRegion)
@@ -732,7 +736,7 @@ function init(): void {
         const changed = force || JSON.stringify(newData) !== JSON.stringify(data)
         if (!changed) return
 
-        data = newData
+        data = newData ?? data
         if (data) {
             isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '0'
             if (isUserDefined) {
@@ -741,22 +745,31 @@ function init(): void {
                 currentMode = mapInteractionType(data.interactionType)
             }
             render()
-        } else {
-            root.innerHTML = '<p style="padding:2rem;color:#999;">No draft data found. Fill in step 1 fields to see preview.</p>'
         }
     }
 
-    if (data) {
-        isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '0'
-        if (isUserDefined) {
-            currentMode = resolveUserDefinedMode()
-        } else {
-            currentMode = mapInteractionType(data.interactionType)
+    if (!data) {
+        const titleInput = document.querySelector<HTMLInputElement>('input[name="CreateStep1ViewModel.Name"]')
+        data = {
+            title: titleInput?.value.trim() || 'Insert Title',
+            description: '',
+            imageUrl: '',
+            primary: '#6c5ce7',
+            secondary: '#db99c8',
+            accent: '#cd6f88',
+            preset: 'default',
+            font: 'Helvetica',
+            interactionType: 'UserDefined',
         }
-        render()
-    } else {
-        root.innerHTML = '<p style="padding:2rem;color:#999;">No draft data found. Fill in step 1 fields to see preview.</p>'
     }
+
+    isUserDefined = data.interactionType === 'UserDefined' || data.interactionType === '0'
+    if (isUserDefined) {
+        currentMode = resolveUserDefinedMode()
+    } else {
+        currentMode = mapInteractionType(data.interactionType)
+    }
+    render()
 
     window.addEventListener('message', (e) => {
         if (e.origin !== window.location.origin) return

@@ -21,12 +21,15 @@ class TopicManager {
     private topics: TopicEntry[] = [];
     private editingIndex: number | null = null;
     private nextTempId = 1;
+    private readonly isReadOnly: boolean;
 
     constructor() {
         const form = document.getElementById('create-project-step3-form') as HTMLFormElement | null;
         if (!form) return;
 
         this.form = form;
+        const stepper = document.getElementById('dynamic-stepper');
+        this.isReadOnly = stepper?.dataset.isReadonly === 'true';
         this.hiddenField = form.querySelector<HTMLInputElement>('input[name="CreateStep3ViewModel.TopicsJson"]')!;
         this.tableBody = document.getElementById('topicsTableBody')!;
         this.modal = document.getElementById('addTopicModal')!;
@@ -55,6 +58,7 @@ class TopicManager {
     }
 
     private bindModal(): void {
+        if (this.isReadOnly) return;
         document.querySelectorAll<HTMLElement>('[data-modal-key="add-topic"]').forEach((el) => {
             el.addEventListener('click', (event) => {
                 event.preventDefault();
@@ -69,6 +73,7 @@ class TopicManager {
     }
 
     private bindSaveButton(): void {
+        if (this.isReadOnly) return;
         this.saveBtn.addEventListener('click', () => {
             if (!this.topicNameInput.reportValidity()) return;
 
@@ -100,10 +105,12 @@ class TopicManager {
     }
 
     private handleEdit(index: number): void {
+        if (this.isReadOnly) return;
         this.openModal(index);
     }
 
     private handleDelete(index: number): void {
+        if (this.isReadOnly) return;
         this.topics.splice(index, 1);
         this.refreshTable();
         this.syncToForm();
@@ -178,6 +185,7 @@ class TopicManager {
         editBtn.type = 'button';
         editBtn.className = 'font-semibold text-primary transition hover:text-primary/80';
         editBtn.textContent = 'Edit';
+        if (this.isReadOnly) editBtn.disabled = true;
         editBtn.addEventListener('click', () => this.handleEdit(index));
 
         const divider = document.createElement('span');
@@ -188,6 +196,7 @@ class TopicManager {
         deleteBtn.type = 'button';
         deleteBtn.className = 'font-semibold text-accent transition hover:text-accent/80';
         deleteBtn.textContent = 'Delete';
+        if (this.isReadOnly) deleteBtn.disabled = true;
         deleteBtn.addEventListener('click', () => this.handleDelete(index));
 
         actionsCell.appendChild(editBtn);
@@ -207,6 +216,7 @@ class TopicManager {
     }
 
     private openModal(editIndex: number | null): void {
+        if (this.isReadOnly) return;
         this.editingIndex = editIndex;
 
         if (editIndex !== null) {

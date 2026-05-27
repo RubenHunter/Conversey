@@ -1,6 +1,11 @@
+@using Conversey.BL.Domain.Administration
 @using Conversey.UI_MVC.Resources
 @inject IAdminI18nService I18n
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+@{
+    var isReadOnly = !Model.StepperViewModel.IsCreatePage && Model.AdminFormViewModel.FormItem.Status != Status.Draft;
+}
 
 <div id="dynamic-stepper" class="w-full max-w-7xl mx-auto p-6 bg-background text-text" 
      data-total-steps="@Model.StepperViewModel.Steps.Count" 
@@ -10,7 +15,8 @@
      data-draft-save-url="@Model.StepperViewModel.DraftSaveUrl"
      data-project-list-url="@Model.StepperViewModel.ProjectListUrl"
      data-is-create-page="@Model.StepperViewModel.IsCreatePage.ToString().ToLowerInvariant()"
-     data-is-copy-flow="@Model.StepperViewModel.IsCopyFlow.ToString().ToLowerInvariant()">
+     data-is-copy-flow="@Model.StepperViewModel.IsCopyFlow.ToString().ToLowerInvariant()"
+     data-is-readonly="@isReadOnly.ToString().ToLowerInvariant()">
     
     <div class="flex flex-col gap-10">
         <div class="w-full">

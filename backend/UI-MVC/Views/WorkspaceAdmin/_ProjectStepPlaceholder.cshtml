@@ -1,15 +1,27 @@
+@using Conversey.BL.Domain.Administration
 @model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+@{
+    var status = Model.StepperViewModel.IsCreatePage ? Status.Draft : Model.AdminFormViewModel.FormItem.Status;
+    var isActive = status == Status.Active;
+    var isArchived = status == Status.Archived;
+    var isDraft = status == Status.Draft;
+}
 
 <section class="relative overflow-hidden rounded-3xl border border-text/10 bg-white p-8 shadow-[0_30px_80px_-60px_rgba(5,3,10,0.6)]">
     <div class="absolute inset-0 bg-gradient-to-br from-background via-white to-secondary/10"></div>
     <div class="relative flex flex-col gap-8">
         <div class="flex items-start justify-between gap-6">
             <div class="space-y-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.4em] text-text/50">Ready to publish</p>
-                <h2 class="text-3xl font-semibold text-text">Final step: publish the survey</h2>
-                <p class="text-sm text-text/60 max-w-xl">
-                    Publishing makes the survey available to participants right away. Drafts remain accessible to admins.
-                </p>
+                <p class="text-xs font-semibold uppercase tracking-[0.4em] text-text/50">@((isActive || isArchived) ? "Project summary" : "Ready to publish")</p>
+                <h2 class="text-3xl font-semibold text-text">
+                    @(isActive ? "Project is live" : isArchived ? "Project archived" : "Final step: publish the survey")
+                </h2>
+                    <p class="text-sm text-text/60 max-w-xl">
+                        @(isActive ? "Changes are locked while the survey is active." :
+                          isArchived ? "Archived projects stay read-only. Results remain available for review." :
+                          "Publishing makes the survey available to participants right away. Drafts remain accessible to admins.")
+                    </p>
             </div>
             <div class="hidden sm:flex flex-col items-end gap-2">
                 <div class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Step 5</div>
@@ -17,42 +29,100 @@
             </div>
         </div>
 
-        <div class="grid gap-6 md:grid-cols-2">
-            <div class="rounded-2xl border border-text/10 bg-background/70 p-6">
-                <p class="text-sm font-semibold text-text">What happens next</p>
-                <ul class="mt-4 space-y-3 text-sm text-text/70">
-                    <li class="flex items-start gap-3">
-                        <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
-                        Survey status switches to active after final submit.
-                    </li>
-                    <li class="flex items-start gap-3">
-                        <span class="mt-1 h-2 w-2 rounded-full bg-secondary"></span>
-                        Shareable link opens participant view instantly.
-                    </li>
-                    <li class="flex items-start gap-3">
-                        <span class="mt-1 h-2 w-2 rounded-full bg-accent"></span>
-                        Draft preview remains available to admins before launch.
-                    </li>
-                </ul>
-            </div>
+            <div class="grid gap-6 md:grid-cols-2">
+                <div class="rounded-2xl border border-text/10 bg-background/70 p-6">
+                    <p class="text-sm font-semibold text-text">@((isActive || isArchived) ? "Project status" : "What happens next")</p>
+                    <ul class="mt-4 space-y-3 text-sm text-text/70">
+                        @if (isDraft)
+                        {
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                                Survey status switches to active after final submit.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-secondary"></span>
+                                Shareable link opens participant view instantly.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-accent"></span>
+                                Draft preview remains available to admins before launch.
+                            </li>
+                        }
+                        @if (isActive)
+                        {
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                                Project is live. Edits are locked to protect active data.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-secondary"></span>
+                                View live analytics at <a class="font-semibold text-primary hover:underline" href="/admin/workspace/analytics?projectId=@Model.AdminFormViewModel.FormItem.Id.Text">Analytics</a>.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-accent"></span>
+                                Use Copy on the projects page to spin up a new draft.
+                            </li>
+                        }
+                        @if (isArchived)
+                        {
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-primary"></span>
+                                Project is archived. Content stays read-only.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-secondary"></span>
+                                Results remain accessible for review and export.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-accent"></span>
+                                Use Copy on the projects page to create a new draft.
+                            </li>
+                        }
+                    </ul>
+                </div>
 
-            <div class="rounded-2xl border border-text/10 bg-white p-6">
-                <p class="text-sm font-semibold text-text">Survey link</p>
-                <p class="mt-2 text-xs text-text/50">Save a draft to generate a link you can test or share.</p>
-                <div class="mt-4 flex flex-col gap-3">
-                    <button type="button" id="step5SaveDraftLink" class="w-full rounded-xl border border-text/15 px-4 py-3 text-sm font-semibold text-text hover:bg-text/5 transition">
-                        Save draft & open link
-                    </button>
-                    <button type="button" id="step5PublishBtn" class="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition">
-                        Publish survey & open link
-                    </button>
-                    <a id="step5SurveyLink" href="#" class="inline-flex w-full items-center justify-center rounded-xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary opacity-60 pointer-events-none">
-                        Survey link will appear after saving
-                    </a>
-                    <p class="text-xs text-text/50">Link visible to admins when a draft exists.</p>
+                <div class="rounded-2xl border border-text/10 bg-white p-6">
+                    <p class="text-sm font-semibold text-text">@((isActive || isArchived) ? "Project highlights" : "Survey link")</p>
+                    @if (isDraft)
+                    {
+                        <p class="mt-2 text-xs text-text/50">Save a draft to generate a link you can test or share.</p>
+                        <div class="mt-4 flex flex-col gap-3">
+                            <button type="button" id="step5SaveDraftLink" class="w-full rounded-xl border border-text/15 px-4 py-3 text-sm font-semibold text-text hover:bg-text/5 transition">
+                                Save draft & open link
+                            </button>
+                            <button type="button" id="step5PublishBtn" class="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:opacity-90 transition">
+                                Publish survey & open link
+                            </button>
+                            <a id="step5SurveyLink" href="#" class="inline-flex w-full items-center justify-center rounded-xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary opacity-60 pointer-events-none">
+                                Survey link will appear after saving
+                            </a>
+                            <p class="text-xs text-text/50">Link visible to admins when a draft exists.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mt-2 text-xs text-text/50">Snapshot of how the project is performing.</p>
+                        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div class="rounded-xl border border-text/10 bg-background/70 p-3">
+                                <p class="text-xs text-text/45">Participants</p>
+                                <p class="text-2xl font-semibold text-text">@Model.ParticipantCount</p>
+                            </div>
+                            <div class="rounded-xl border border-text/10 bg-background/70 p-3">
+                                <p class="text-xs text-text/45">Ideas</p>
+                                <p class="text-2xl font-semibold text-text">@Model.IdeaCount</p>
+                            </div>
+                            <div class="rounded-xl border border-text/10 bg-background/70 p-3">
+                                <p class="text-xs text-text/45">Questions</p>
+                                <p class="text-2xl font-semibold text-text">@Model.QuestionCount</p>
+                            </div>
+                            <div class="rounded-xl border border-text/10 bg-background/70 p-3">
+                                <p class="text-xs text-text/45">Topics</p>
+                                <p class="text-2xl font-semibold text-text">@Model.TopicCount</p>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
-        </div>
 
         <div class="rounded-2xl border border-text/10 bg-background/70 p-5 text-sm text-text/70">
             <p class="font-semibold text-text">Editing rules</p>

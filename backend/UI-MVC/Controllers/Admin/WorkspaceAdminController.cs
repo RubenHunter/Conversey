@@ -510,16 +510,20 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
         var dataSource = project ?? copyFromProject;
 
         var step2 = new CreateStep2SurveyViewModel();
+        var questionCount = 0;
         if (dataSource != null)
         {
             var existingQuestions = questionManager.GetQuestions(currentWorkspace.Id, dataSource.Id);
+            questionCount = existingQuestions.Count();
             if (existingQuestions.Any())
                 step2.QuestionsJson = SerializeQuestionsToJson(existingQuestions);
         }
 
         var step3 = new CreateStep3IdeationViewModel();
+        var topicCount = 0;
         if (dataSource?.Topic != null && dataSource.Topic.Any())
         {
+            topicCount = dataSource.Topic.Count();
             var topicRows = dataSource.Topic.Select(t => new TopicRowViewModel
             {
                 TopicName = t.Name,
@@ -544,6 +548,14 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
                 var overrideDtos = existingOverrides.Select(o => new { promptName = o.PromptName, userPromptTemplate = o.UserPromptTemplate });
                 step4.PromptsJson = JsonSerializer.Serialize(overrideDtos, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             }
+        }
+
+        var participantCount = 0;
+        var ideaCount = 0;
+        if (dataSource != null)
+        {
+            participantCount = analyticsManager.GetParticipationStats(currentWorkspace.Id, dataSource.Id).TotalYouth;
+            ideaCount = analyticsManager.GetIdeaStats(currentWorkspace.Id, dataSource.Id, null).Count;
         }
 
         return new ProjectViewModel
@@ -571,6 +583,10 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             CreateStep3ViewModel = step3,
             CreateStep4ViewModel = step4,
             Step4Prompts = step4Prompts,
+            ParticipantCount = participantCount,
+            IdeaCount = ideaCount,
+            QuestionCount = questionCount,
+            TopicCount = topicCount,
             StepperViewModel = new StepperViewModel
             {
                 Title = project == null ? "Creating a Project" : "Editing a Project",

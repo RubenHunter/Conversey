@@ -13,4 +13,8 @@ public class ProjectViewModel
     public CreateStep3IdeationViewModel CreateStep3ViewModel { get; set; } = new();
     public CreateStep4AiConfigViewModel CreateStep4ViewModel { get; set; } = new();
     public IReadOnlyList<AiPrompt> Step4Prompts { get; set; } = Array.Empty<AiPrompt>();
+    public int ParticipantCount { get; set; }
+    public int IdeaCount { get; set; }
+    public int QuestionCount { get; set; }
+    public int TopicCount { get; set; }
 }
