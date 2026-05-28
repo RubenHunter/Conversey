@@ -30,6 +30,8 @@ using Microsoft.Extensions.FileProviders;
 using System.Text.Json.Serialization;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
+
 
 var builder = WebApplication.CreateBuilder(args);
 // const string viteDevCorsPolicy = "ViteDevCors";
@@ -306,7 +308,16 @@ TypeDescriptor.AddAttributes(
     new TypeConverterAttribute(typeof(SlugTypeConverter))
 );
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Clear known networks and proxies to trust all forwarded headers (common for cloud platforms behind a VPC)
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
 InitializeDatabase(resetDatabaseOnStart);
@@ -323,7 +334,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// UseForwardedHeaders must be placed before other middleware like UseStaticFiles or UseRouting
+app.UseForwardedHeaders();
+
 app.UseStaticFiles(new StaticFileOptions
+
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
     RequestPath = "/Assets"
