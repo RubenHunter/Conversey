@@ -380,8 +380,9 @@ if (!app.Environment.IsDevelopment())
     });
 }
 
-app.UseStaticFiles(new StaticFileOptions
+app.UseStaticFiles(); // Serve files from wwwroot (Vite build output)
 
+app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
     RequestPath = "/Assets"
