@@ -388,20 +388,23 @@ void InitializeDatabase(bool drop)
     {
         var services = scope.ServiceProvider;
         var dbCtx = services.GetRequiredService<ConverseyDbContext>();
+        var config = services.GetRequiredService<IConfiguration>();
+        
         // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
-        // Then seed Identity and Roles
-        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        
         if (created)
         {
-            var config = services.GetRequiredService<IConfiguration>();
             DataSeeder.Seed(dbCtx, config);
-            SeedIdentity(userManager, roleManager, dbCtx);
-
-            var pricingService = services.GetRequiredService<IAiPricingService>();
-            pricingService.RefreshPricingAsync().GetAwaiter().GetResult();
         }
+
+        // Then seed Identity and Roles (idempotent)
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        SeedIdentity(userManager, roleManager, dbCtx);
+
+        var pricingService = services.GetRequiredService<IAiPricingService>();
+        pricingService.RefreshPricingAsync().GetAwaiter().GetResult();
     }
 }
 
