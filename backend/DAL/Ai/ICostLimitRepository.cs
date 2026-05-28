@@ -1,3 +1,4 @@
+#nullable enable
 using Conversey.BL.Domain.Ai;
 
 namespace Conversey.DAL.Subplatform.Ai;
