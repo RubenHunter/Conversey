@@ -21,10 +21,14 @@ validate-code:
 build-backend:
   stage: build
   image: google/cloud-sdk:latest
+  id_tokens:
+    WORKLOAD_IDENTITY_TOKEN:
+      aud: https://gitlab.com
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
+    - echo ${WORKLOAD_IDENTITY_TOKEN} > .gitlab-oidc-token
+    - gcloud iam workload-identity-pools create-cred-config ${WIF_PROVIDER} --service-account=${GCP_SERVICE_ACCOUNT} --output-file=.gcp-credentials.json --credential-source-file=.gitlab-oidc-token
+    - gcloud auth login --cred-file=.gcp-credentials.json
     - gcloud config set project $GCP_PROJECT_ID
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
@@ -36,10 +40,14 @@ build-backend:
 security-scan:
   stage: security
   image: google/cloud-sdk:latest
+  id_tokens:
+    WORKLOAD_IDENTITY_TOKEN:
+      aud: https://gitlab.com
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
+    - echo ${WORKLOAD_IDENTITY_TOKEN} > .gitlab-oidc-token
+    - gcloud iam workload-identity-pools create-cred-config ${WIF_PROVIDER} --service-account=${GCP_SERVICE_ACCOUNT} --output-file=.gcp-credentials.json --credential-source-file=.gitlab-oidc-token
+    - gcloud auth login --cred-file=.gcp-credentials.json
     - curl -L -o trivy.deb https://github.com/aquasecurity/trivy/releases/download/v0.70.0/trivy_0.70.0_Linux-64bit.deb
     - dpkg -i trivy.deb
   script:
@@ -54,10 +62,14 @@ security-scan:
 generate-sbom:
   stage: security
   image: google/cloud-sdk:latest
+  id_tokens:
+    WORKLOAD_IDENTITY_TOKEN:
+      aud: https://gitlab.com
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
+    - echo ${WORKLOAD_IDENTITY_TOKEN} > .gitlab-oidc-token
+    - gcloud iam workload-identity-pools create-cred-config ${WIF_PROVIDER} --service-account=${GCP_SERVICE_ACCOUNT} --output-file=.gcp-credentials.json --credential-source-file=.gitlab-oidc-token
+    - gcloud auth login --cred-file=.gcp-credentials.json
     - apt-get update && apt-get install -y curl
     - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
   script:
@@ -89,10 +101,14 @@ sign-image:
 deploy-to-cloud:
   stage: deploy
   image: google/cloud-sdk:latest
+  id_tokens:
+    WORKLOAD_IDENTITY_TOKEN:
+      aud: https://gitlab.com
   before_script:
-    - echo "$GCP_SERVICE_KEY" > gcp-key.json
-    - gcloud auth activate-service-account --key-file=gcp-key.json
     - export GCP_PROJECT_ID=$(echo $GCP_PROJECT_ID | tr -d '\r\n')
+    - echo ${WORKLOAD_IDENTITY_TOKEN} > .gitlab-oidc-token
+    - gcloud iam workload-identity-pools create-cred-config ${WIF_PROVIDER} --service-account=${GCP_SERVICE_ACCOUNT} --output-file=.gcp-credentials.json --credential-source-file=.gitlab-oidc-token
+    - gcloud auth login --cred-file=.gcp-credentials.json
     - gcloud config set project $GCP_PROJECT_ID
   script:
     - echo "🔄 Rolling update van de Managed Instance Group..."
