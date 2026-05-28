@@ -477,6 +477,13 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
 
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "WorkspaceAdmin", hogeschoolNovaWorkspace);
     EnsureSeedUser(userManager, "admin@stad.linden.be", "WorkspaceAdmin", stadLindenWorkspace);
+    
+    // Final check for stad-linden specifically to fix discriminator if it's stale (IDuser vs WSAdminUser)
+    // We do this via raw SQL since EF Core doesn't allow changing type of tracked entity easily, 
+    // and we want to avoid DeleteAsync due to FK constraints.
+    dbCtx.Database.ExecuteSqlRaw(
+        "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'stad-linden' " +
+        "WHERE \"Email\" = 'admin@stad.linden.be' AND \"Discriminator\" != 'WorkspaceAdminUser'");
 }
 
 void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string role, Workspace workspace = null)
