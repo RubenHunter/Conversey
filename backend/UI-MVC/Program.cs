@@ -398,7 +398,11 @@ if (app.Environment.IsDevelopment())
     app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
+
+app.MapGet("/health", () => Results.Ok("Healthy"));
+
 app.Run();
+
 
 void InitializeDatabase(bool drop)
 {
