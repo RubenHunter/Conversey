@@ -9,14 +9,16 @@ using Conversey.DAL.Analytics;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.DAL;
 
-public class ConverseyDbContext : IdentityDbContext
+public class ConverseyDbContext : IdentityDbContext, IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<ConverseyAdminUser> ConverseyAdmins { get; set; }
     public DbSet<WorkspaceAdminUser> WorkspaceAdmins { get; set; }

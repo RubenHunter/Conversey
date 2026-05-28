@@ -101,6 +101,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<ConverseyDbContext>()
+    .SetApplicationName("Conversey");
+
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
