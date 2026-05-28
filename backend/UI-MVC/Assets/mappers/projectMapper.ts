@@ -1,5 +1,5 @@
-import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto } from '../api/dtos/projectDto'
-import { InteractionType, ProjectStatus, type Project, type ProjectTopic } from '../models/project'
+import type { ApiProjectDto, ApiInteractionTypeDto, ApiProjectStatusDto, ApiTopicDto, ApiProjectThemeDto } from '../api/dtos/projectDto'
+import { InteractionType, ProjectStatus, type Project, type ProjectTopic, type ProjectTheme } from '../models/project'
 
 function pickString(...values: Array<string | undefined>): string | undefined {
     return values.find((value) => typeof value === 'string' && value.length > 0)
@@ -52,9 +52,9 @@ function mapInteractionType(rawType: ApiInteractionTypeDto | undefined): Project
     if (rawType === undefined) return undefined
 
     if (typeof rawType === 'number') {
-        if (rawType === 0) return InteractionType.Chat
-        if (rawType === 1) return InteractionType.VerticalScroll
-        if (rawType === 2) return InteractionType.UserDefined
+        if (rawType === 0) return InteractionType.UserDefined
+        if (rawType === 1) return InteractionType.Chat
+        if (rawType === 2) return InteractionType.VerticalScroll
         return undefined
     }
 
@@ -92,6 +92,16 @@ function mapTopics(topicDtos: ApiTopicDto[] | undefined): ProjectTopic[] | undef
     return topics.length > 0 ? topics : undefined
 }
 
+function mapTheme(dto: ApiProjectThemeDto | undefined): ProjectTheme {
+    return {
+        primary: pickString(dto?.primary, dto?.Primary) ?? '#6c5ce7',
+        secondary: pickString(dto?.secondary, dto?.Secondary) ?? '#db99c8',
+        accent: pickString(dto?.accent, dto?.Accent) ?? '#cd6f88',
+        preset: pickString(dto?.preset, dto?.Preset) ?? 'default',
+        font: pickString(dto?.font, dto?.Font) ?? 'Helvetica',
+    }
+}
+
 function mapNudgingStrength(rawValue: number | undefined): number {
     if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) return 3
     return Math.min(5, Math.max(1, Math.trunc(rawValue)))
@@ -109,6 +119,7 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         slug,
         organizationSlug,
         organizationName: pickString(dto.organizationName, dto.OrganizationName),
+        organizationLogo: pickString(dto.organizationLogo, dto.OrganizationLogo),
         title: name,
         description: pickString(dto.description, dto.Description) ?? '',
         imageUrl: pickString(dto.imageUrl, dto.ImageUrl) ?? '',
@@ -119,5 +130,6 @@ export function mapApiProjectToProject(dto: ApiProjectDto, organizationSlugHint:
         nudgingStrength: mapNudgingStrength(dto.nudgingStrength ?? dto.NudgingStrength),
         topic: mapTopic(dto.topic ?? dto.Topic) ?? topics?.[0],
         topics,
+        theme: mapTheme(dto.theme ?? dto.Theme),
     }
 }

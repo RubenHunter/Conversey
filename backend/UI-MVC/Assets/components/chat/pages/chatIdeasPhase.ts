@@ -24,7 +24,7 @@ import {Idea, IdeaAuthorType} from '../../../models/idea'
 import {ActiveView, DiscoveryMode} from '../../ideas/types'
 import type { DiscoveryFeed } from '../../ideas/types'
 import {getSurveyStrings} from '../../../i18n/survey'
-import {esc, wait} from '../utils/chatHelpers.ts'
+import {bindChatIdeasDesktopLayout, esc, wait} from '../utils/chatHelpers.ts'
 import {getVisibleIdeas, type DiscoveryOptions} from '../../ideas/utils/discoveryApi'
 import {initIdeasContext, type IdeasInitResult} from '../../ideas/utils/ideasInit'
 
@@ -131,6 +131,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         <div class="ideas-list flex-1 min-h-0 overflow-y-auto py-[var(--spacing-sm)] px-[var(--spacing-md)] flex flex-col gap-[var(--spacing-xs)] overscroll-contain snap-none" id="chat-ideas-list" aria-live="polite"></div>`
 
     chatShell.classList.add('chat-shell--ideas')
+    const cleanupDesktopLayout = bindChatIdeasDesktopLayout(chatShell)
     chatShell.insertBefore(topicSelectorEl, scrollAreaEl)
     chatShell.insertBefore(ideasArea, scrollAreaEl)
 
@@ -448,6 +449,7 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
         'app:before-navigate',
         () => {
             listController?.cleanup()
+            cleanupDesktopLayout()
             document.removeEventListener('click', closeMenusOnOutsideClick)
         },
         { once: true },
@@ -556,5 +558,4 @@ export async function initiateChatIdeationPhase(options: ChatIdeationOptions): P
     const topicPrompt = firstTopic.prompt?.trim()
     await appendAiBubble(topicPrompt || t.thoughtsOnTopic.replace('{topicTitle}', firstTopic.title))
 }
-
 

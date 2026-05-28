@@ -1,0 +1,171 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Models.Contacts
+@inject WorkspaceContext WorkspaceContext
+@inject Conversey.UI_MVC.Resources.IAdminI18nService I18n
+@model ContactsViewModel
+@{
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace!.Name;
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Contacts"], null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text" data-workspace-name="@WorkspaceContext.CurrentWorkspace.Name" data-workspace-slug="@WorkspaceContext.CurrentWorkspace.Id.Text">
+    @await Html.PartialAsync("_AdminHeader")
+    @Html.AntiForgeryToken()
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Contacts">Contacts</h1>
+            <p class="mt-2 text-sm text-text/60" data-i18n="People who left their email to be contacted. Filter by project and send individual emails.">People who left their email to be contacted. Filter by project and send individual emails.</p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6 mb-8">
+            <form method="get" asp-action="Index" class="flex items-center gap-4 flex-wrap">
+                <label for="projectFilter" class="text-sm font-semibold text-text/80" data-i18n="Filter by project:">Filter by project:</label>
+                <select id="projectFilter" name="projectId" class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 min-w-64">
+                    <option value="" data-i18n="All projects">All projects</option>
+                    @foreach (var group in Model.Contacts.GroupBy(c => c.ProjectId.Text).Select(g => g.First()))
+                    {
+                        @if (Model.SelectedProjectId == group.ProjectId.Text)
+                        {
+                            <option value="@group.ProjectId.Text" selected>@group.ProjectName</option>
+                        }
+                        else
+                        {
+                            <option value="@group.ProjectId.Text">@group.ProjectName</option>
+                        }
+                    }
+                </select>
+                <label for="youthFilter" class="text-sm font-semibold text-text/80" data-i18n="Filter by youth:">Filter by youth:</label>
+                <select id="youthFilter" name="youthId" class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 min-w-64">
+                    <option value="" data-i18n="All youth">All youth</option>
+                    @foreach (var youth in Model.YouthFilters)
+                    {
+                        @if (Model.SelectedYouthId == youth.YouthId.ToString())
+                        {
+                            <option value="@youth.YouthId" selected>@youth.Email</option>
+                        }
+                        else
+                        {
+                            <option value="@youth.YouthId">@youth.Email</option>
+                        }
+                    }
+                </select>
+                <button type="submit" class="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors" data-i18n="Filter">Filter</button>
+                <div class="relative inline-block">
+                    <button type="button" id="export-csv-btn"
+                            class="rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm font-semibold hover:bg-secondary/5 transition-colors flex items-center gap-2" data-i18n="Export CSV">
+                        Export CSV
+                    </button>
+                    <div id="export-csv-menu" class="hidden absolute right-0 mt-1 w-64 bg-white rounded-xl border border-secondary/10 shadow-lg z-50 py-1">
+                        <a href="#" id="export-all-contacts"
+                           class="block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download all contacts">Download all contacts</a>
+                        <a href="#" id="export-filtered-contacts"
+                           class="block px-4 py-2 text-sm hover:bg-secondary/5 transition-colors text-text" data-i18n="Download with active filters">Download with active filters</a>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.SelectedProjectId) || !string.IsNullOrWhiteSpace(Model.SelectedYouthId))
+                {
+                    <a asp-action="Index" class="text-sm text-text/60 hover:text-text" data-i18n="Clear filter">Clear filter</a>
+                }
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-secondary/10 bg-background/40">
+                        <th class="text-left px-6 py-3 font-semibold text-text/70" data-i18n="Email">Email</th>
+                        <th class="text-left px-6 py-3 font-semibold text-text/70" data-i18n="Project">Project</th>
+                        <th class="text-left px-6 py-3 font-semibold text-text/70" data-i18n="Ideas">Ideas</th>
+                        <th class="text-right px-6 py-3 font-semibold text-text/70" data-i18n="Actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Contacts.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center text-text/50" data-i18n="No contacts with emails found in this workspace.">No contacts with emails found in this workspace.</td>
+                        </tr>
+                    }
+                    @foreach (var contact in Model.Contacts)
+                    {
+                        <tr class="border-b border-secondary/5 hover:bg-background/20 transition-colors">
+                            <td class="px-6 py-4 font-medium">@contact.Email</td>
+                            <td class="px-6 py-4 text-text/60">@contact.ProjectName</td>
+                            <td class="px-6 py-4">
+                                <a href="/admin/workspace/analytics/ideas?youthId=@contact.YouthId@(Model.SelectedProjectId != null ? "&projectId=" + Model.SelectedProjectId : "")" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
+                                    @contact.Ideas.Count() @(contact.Ideas.Count() != 1 ? I18n["ideas"] : I18n["idea"])
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button type="button"
+                                        class="contact-btn rounded-xl bg-primary/10 text-primary px-4 py-2 text-sm font-semibold hover:bg-primary hover:text-white transition-all"
+                                        data-youth-id="@contact.YouthId"
+                                        data-email="@contact.Email"
+                                        data-ideas="@System.Text.Json.JsonSerializer.Serialize(contact.Ideas)">
+                                    <span data-i18n="Contact">Contact</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+@await Html.PartialAsync("_ContactEmailModal")
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const workspaceName = document.querySelector('[data-workspace-name]')?.dataset.workspaceName || 'Conversey Team';
+
+            document.querySelectorAll('.contact-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ideas = typeof btn.dataset.ideas === 'string' ? JSON.parse(btn.dataset.ideas) : btn.dataset.ideas;
+                    openContactModal(btn.dataset.youthId, btn.dataset.email, ideas, null);
+                });
+            });
+
+            const exportBtn = document.getElementById('export-csv-btn');
+            const exportMenu = document.getElementById('export-csv-menu');
+            if (exportBtn && exportMenu) {
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    exportMenu.classList.toggle('hidden');
+                });
+                document.addEventListener('click', () => exportMenu.classList.add('hidden'));
+                exportMenu.addEventListener('click', (e) => e.stopPropagation());
+
+                function downloadCsv(withFilters) {
+                    const wsSlug = document.querySelector('[data-workspace-slug]')?.getAttribute('data-workspace-slug') ||
+                        window.location.hostname.split('.')[0];
+                    const params = new URLSearchParams();
+                    params.set('workspaceId', wsSlug);
+                    params.set('type', 'contacts-only');
+                    if (withFilters) {
+                        const projectId = document.getElementById('projectFilter')?.value;
+                        const youthId = document.getElementById('youthFilter')?.value;
+                        if (projectId) params.set('projectId', projectId);
+                        if (youthId) params.set('youthId', youthId);
+                    }
+                    window.location.href = '/api/admin/analytics/export?' + params.toString();
+                    exportMenu.classList.add('hidden');
+                }
+
+                document.getElementById('export-all-contacts')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadCsv(false);
+                });
+                document.getElementById('export-filtered-contacts')?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    downloadCsv(true);
+                });
+            }
+        });
+    </script>
+}

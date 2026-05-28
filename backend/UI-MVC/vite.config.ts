@@ -3,31 +3,36 @@ import fs from 'fs';
 import path from 'path';
 import tailwindcss from "@tailwindcss/vite";
 
-export default defineConfig(async () => {
-    const getFiles = (dir: string): string[] => {
-        const subdirs = fs.readdirSync(dir);
-        const files = subdirs.map((subdir) => {
-            const res = path.resolve(dir, subdir);
-            return fs.statSync(res).isDirectory() ? getFiles(res) : res;
-        });
-        return Array.prototype.concat(...files);
-    };
 
-    const allFiles = getFiles('./Assets');
-    const inputEntries = allFiles
-        .filter(file => 
-            file.endsWith('main.ts') || 
-            file.endsWith('Page.ts') ||
-            file.endsWith('adminDeleteModal.ts')
-        )
+export default defineConfig(async () => {
+    // Entry points: files directly in Assets/ plus files referenced in views via vite-src
+    const files = fs.readdirSync('./Assets');
+    const inputEntries = files
+        .filter(file => file.endsWith('.ts') )
         .reduce((acc, file) => {
-            const relativePath = path.relative('./Assets', file);
-            const entryName = relativePath.replace(/\\/g, '/');
-            acc[entryName] = path.join('./Assets', relativePath);
+            const fileName = path.parse(file).name;
+            acc[fileName] = path.join('./Assets', file);
             return acc;
         }, {} as Record<string, string>);
+    
+    // Add entry points from view files (vite-src attributes)
+    // These are referenced in _Layout.cshtml and other views
+    const additionalEntries = {
+        'components_adminDeleteModal': './Assets/components/shared/adminDeleteModal.ts',
+        'components_completedPage': './Assets/components/shared/completedPage.ts',
+        'components_ideas_ideasPage': './Assets/components/ideas/pages/ideasPage.ts',
+        'components_survey_surveyPage': './Assets/components/survey/pages/surveyPage.ts',
+        'components_projectsPage': './Assets/components/shared/projectsPage.ts',
+        'components_questionStepper': './Assets/components/admin/addquestion/questionStepper.ts',
+        'components_topicManager': './Assets/components/shared/topicManager.ts',
+        'components_limitsPage': './Assets/components/aiWorkspace/limitsPage.ts',
+        'components_listPage': './Assets/components/analytics/listPage.ts',
+        'components_shared_previewSurvey': './Assets/components/shared/previewSurvey.ts',
+    };
+    
+    Object.assign(inputEntries, additionalEntries);
 
-    return {
+    const config: UserConfig = {
         appType: 'custom',
         root: 'Assets',
         publicDir: 'public',
@@ -42,6 +47,23 @@ export default defineConfig(async () => {
             rollupOptions: {
                 input: inputEntries
             },
+        },
+        server: {
+            strictPort: true,
+            // host: true,
+            // cors: {
+            //     origin: [
+            //         'http://localhost:4180',
+            //         'https://localhost:7093',
+            //         'http://hogeschool-nova.localhost:4180',
+            //         'https://hogeschool-nova.localhost:7093'
+            //     ],
+            //     credentials: true
+            // }
+        },
+        optimizeDeps: {
+            include: []
         }
-    };
+    }
+    return config;
 });

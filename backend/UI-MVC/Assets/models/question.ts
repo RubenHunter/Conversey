@@ -1,26 +1,38 @@
-export const QuestionType = {
-    SingleChoice: 'SINGLE_CHOICE',
-    MultipleChoice: 'MULTIPLE_CHOICE',
-    OpenText: 'OPEN_TEXT',
-    Scale: 'SCALE',
-} as const
+export type {Question, FixedQuestion, RangeQuestion, OpenQuestion, Answer};
+export {QuestionType}
 
-export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType]
 
-export interface AnswerOption {
-    id: number
-    questionId: number
-    text: string
+enum QuestionType {
+    Open = 'Open',
+    MultipleChoice = 'MultipleChoice',
+    SingleChoice = 'SingleChoice',
+    Scale = 'Scale',
 }
 
-export interface Question {
-    id: number
-    projectId: number
-    text: string
-    type: QuestionType
-    isRequired: boolean
-    hint?: string
-    order?: number
-    backendType?: string
-    options?: AnswerOption[]
+type Question = {
+    id?: number;
+    type: QuestionType;
+    text: string;
+    required: boolean;
+    hint?: string;
+};
+
+type FixedQuestion = Question & {
+    type: QuestionType.MultipleChoice | QuestionType.SingleChoice;
+    possibleAnswers: Answer[];
+};
+
+type RangeQuestion = Question & {
+    type: QuestionType.Scale;
+    min: number;
+    max: number;
+};
+
+type OpenQuestion = Question & {
+    type: QuestionType.Open;
+};
+
+type Answer = {
+    id?: number;
+    text: string;
 }

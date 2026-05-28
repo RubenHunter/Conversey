@@ -1,14 +1,14 @@
-import type { Question } from '../../../models/question'
 import type { QuestionComponent } from './singleChoiceQuestion'
-import { generateQuestionHeader } from '../utils/surveyUtils'
+import { generateQuestionHeader, initQuestionSpeakerForWrapper } from '../utils/surveyUtils'
+import {RangeQuestion} from "../../../models/question.ts";
 
-export function renderScaleQuestion(question: Question, index: number): QuestionComponent {
+export function renderScaleQuestion(question: RangeQuestion, index: number): QuestionComponent {
     let scaleValue: number | null = null
     let answerCallback: (() => void) | null = null
     let isLocked = false
 
-    const lower: number = (question as any).lowerBound ?? 1
-    const upper: number = (question as any).upperBound ?? 10
+    const lower: number = question.min ?? 1
+    const upper: number = question.max ?? 10
     const totalSteps = upper - lower + 1
 
     const wrapper = document.createElement('div')
@@ -33,7 +33,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
                         value="${Math.round((lower + upper) / 2)}"
                     />
                 </div>
-                <div class="scale-ticks" id="scale-ticks-${question.id}"></div>
+                <div class="scale-ticks max-[600px]:hidden" id="scale-ticks-${question.id}"></div>
             </div>
             <input
                 id="scale-num-${question.id}"
@@ -48,6 +48,8 @@ export function renderScaleQuestion(question: Question, index: number): Question
             Please select a value to continue.
         </p>
     `
+
+    initQuestionSpeakerForWrapper(wrapper)
 
     const rangeInput = wrapper.querySelector<HTMLInputElement>(`#scale-${question.id}`)!
     const numInput = wrapper.querySelector<HTMLInputElement>(`#scale-num-${question.id}`)!
@@ -230,7 +232,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
     requestAnimationFrame(() => {
         buildTicks()
         applyBubblePos()
-        selectorEl.style.opacity = '0'
+        if (scaleValue === null) selectorEl.style.opacity = '0'
     })
 
     function applyScaleValue(val: number | null): void {
@@ -251,7 +253,7 @@ export function renderScaleQuestion(question: Question, index: number): Question
     return {
         getAnswer: () => scaleValue,
         validate: () => {
-            if (question.isRequired && scaleValue === null) {
+            if (question.required && scaleValue === null) {
                 wrapper.querySelector(`#error-${question.id}`)?.classList.add('show')
                 return false
             }

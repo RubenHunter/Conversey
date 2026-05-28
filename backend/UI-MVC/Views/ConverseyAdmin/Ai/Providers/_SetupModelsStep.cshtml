@@ -1,0 +1,74 @@
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-text mb-2" data-i18n="Select models">Select models</h2>
+        <div id="modelsStatus" class="text-xs text-text/50 mb-4" data-i18n="Loading models from provider...">Loading models from provider...</div>
+
+        <div class="space-y-5">
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupCompletionsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Completions Model">Completions Model</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Completions Model" data-info-content-key="The model used for text generation tasks.">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                </div>
+                <select id="setupCompletionsModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="" data-i18n="Loading models...">Loading models...</option>
+                </select>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupModerationModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Moderation Model">Moderation Model</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Moderation Model" data-info-content-key="The model used for content moderation.">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                </div>
+                <select id="setupModerationModel" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <option value="" data-i18n="Loading models...">Loading models...</option>
+                </select>
+            </div>
+
+            <div id="speechModelsSection" class="border-t border-secondary/10 pt-5 mt-2 hidden">
+                <p class="text-[10px] text-secondary/60 uppercase tracking-wider font-bold mb-3" data-i18n="Speech Models (optional)">Speech Models (optional)</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <label for="setupSttModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="STT Model">STT Model (speech-to-text)</label>
+                            <span class="info-trigger cursor-pointer" data-info-title-key="STT Model" data-info-content-key="Model for transcribing speech to text. Must be set to use non-Mistral speech providers. Defaults: Mistral=voxtral-mini-latest, OpenAI=whisper-1.">
+                                <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                        </div>
+                        <input id="setupSttModel" type="text" placeholder="whisper-1" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <label for="setupTtsModel" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="TTS Model">TTS Model (text-to-speech)</label>
+                            <span class="info-trigger cursor-pointer" data-info-title-key="TTS Model" data-info-content-key="Model for synthesizing text into speech audio. Defaults: Mistral=voxtral-mini-tts-latest, OpenAI=tts-1.">
+                                <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                        </div>
+                        <input id="setupTtsModel" type="text" placeholder="tts-1" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm font-mono text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label for="setupTemperature" class="block text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Temperature">Temperature</label>
+                    <span class="info-trigger cursor-pointer" data-info-title-key="Temperature" data-info-content-key="Controls randomness: 0 = deterministic, 2 = creative.">
+                        <svg class="w-3.5 h-3.5 text-text/30 hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+                </div>
+                <input id="setupTemperature" type="number" min="0" max="2" step="0.1" value="0.2" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+        </div>
+    </div>
+
+    <div id="infoTipPanel" class="info-tip hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 border-l border-secondary/10 overflow-y-auto">
+        <div class="p-5">
+            <div class="flex items-start justify-between mb-3">
+                <h3 id="infoTipTitle" class="font-semibold text-sm"></h3>
+                <button type="button" id="infoTipClose" class="text-text/40 hover:text-text" aria-label="Close" data-i18n="Close"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <div id="infoTipContent" class="text-xs text-text/60 leading-relaxed"></div>
+        </div>
+    </div>
+</div>
+

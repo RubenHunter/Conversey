@@ -1,33 +1,9 @@
-# .NET Core
-bin/
-obj/
-*.user
-*.userosscache
-*.sln.docstates
+# Vibe Documentation
+# README.md is used for Vibe coding assistance and must NEVER be committed to git
+/README.md
 
-# IDEs
-.vs/
-.vscode/
-.idea/
-*.swp
-*.swo
+# Claude configuration
+.claude/
 
-# OS
-Thumbs.db
-.DS_Store
-
-# Sensitive Data
-*.json
-!appsettings.json
-!appsettings.Development.json
-!appsettings.Production.json
-*.p12
-*.pem
-*.key
-.env
-
-# Temporary files
-*.log
-*.txt
-output/
-temp/
+# Docs folder (generated documentation)
+/docs/

@@ -1,0 +1,68 @@
+@using Microsoft.AspNetCore.Html
+@using Conversey.UI_MVC.Models.Admin
+@using Conversey.UI_MVC.Models.WorkspaceAdmin
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+@{
+    var topicsTableModel = new AdminTableViewModel<TopicRowViewModel>
+    {
+        SectionTitle = "Topics",
+        TableDescription = "Define topics for the ideation phase.",
+        CreateUrl = "#",
+        CreateButtonLabel = "Add Topic",
+        CreateButtonModalKey = "add-topic",
+        TableBodyId = "topicsTableBody",
+        EmptyState = "No topics defined yet.",
+        Items = [],
+        Columns =
+        [
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Topic Name",
+                Template = t => new HtmlString(Html.Encode(t.TopicName)),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Context",
+                Template = t => new HtmlString(Html.Encode(t.TopicContext)),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Max Loads",
+                Template = t => new HtmlString(t.MaxBroadSelectionLoads.ToString()),
+            },
+            new AdminTableColumn<TopicRowViewModel>
+            {
+                Header = "Actions",
+                Template = _ => HtmlString.Empty,
+            },
+        ],
+    };
+}
+
+<form id="create-project-step3-form" class="space-y-6">
+    <section class="step-panel">
+        <div class="step-panel-bg"></div>
+        <div class="step-panel-content">
+            <div class="step-panel-header">
+                <div class="space-y-3">
+                    <p class="step-panel-kicker">Ideation</p>
+                    <h2 class="step-panel-title">Step 3: Shape the topics</h2>
+                    <p class="step-panel-subtitle">Define the topics that guide your ideation phase and give participants direction.</p>
+                </div>
+                <div class="hidden sm:flex flex-col items-end gap-2">
+                    <div class="step-panel-badge">Step 3</div>
+                    <div class="step-panel-badge-subtitle">Ideas framework</div>
+                </div>
+            </div>
+
+            @await Html.PartialAsync("_AdminTableWithCreate", topicsTableModel)
+
+            <input type="hidden" asp-for="CreateStep3ViewModel.TopicsJson" />
+        </div>
+    </section>
+</form>
+
+@await Html.PartialAsync("_TopicCreateModal")
+
+<script type="module" vite-src="~/components/shared/topicManager.ts"></script>

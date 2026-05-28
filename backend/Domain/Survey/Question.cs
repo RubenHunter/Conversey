@@ -7,7 +7,6 @@ namespace Conversey.BL.Domain.Survey;
 
 public abstract class Question
 {
-    [Required]
     public int Id { get; set; }
 
     [Required]
@@ -22,24 +21,32 @@ public abstract class Question
     public Project Project { get; set; }
 }
 
-public abstract class Question<TAnswer> : Question
-    where TAnswer : Answer
+public abstract class ChoiceQuestion : Question
 {
-    public IEnumerable<TAnswer> AnswerSubmissions { get; set; }
+    public IEnumerable<Choice> PossibleChoices { get; set; }
 }
 
-public class ChoiceQuestion<TChoice> : Question<Answer<TChoice>>
-where TChoice : Choice<TChoice>
+public class SingleChoiceQuestion : ChoiceQuestion
 {
-    public IList<TChoice> PossibleChoices { get; set; }
+    public IEnumerable<SingleChoiceAnswer> AnsweredAnswers { get; set; }
 }
 
-public class OpenQuestion : Question<Answer<string>>;
+public class MultipleChoiceQuestion : ChoiceQuestion
+{
+    public IEnumerable<MultipleChoiceAnswer> AnsweredAnswers { get; set; }
+}
 
-public class ScaleQuestion : Question<Answer<int>>
+public class OpenQuestion : Question
+{
+    public IEnumerable<Answer<string>> AnsweredAnswers { get; set; }
+}
+
+public class ScaleQuestion : Question
 {
     [Required]
     public int LowerBound { get; set; }
     [Required]
     public int UpperBound { get; set; }
+    
+    public IEnumerable<Answer<int>> AnsweredAnswers { get; set; }
 }

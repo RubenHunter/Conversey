@@ -19,16 +19,9 @@ public class WorkspaceRepository : IWorkspaceRepository
         return _context.Workspaces.ToList().AsReadOnly();
     }
 
-    public Workspace ReadWorkspaceBySlug(Slug slug)
-    {
-        return _context.Workspaces.SingleOrDefault(w => w.Id == slug);
-    }
-
     public Workspace ReadWorkspaceById(Slug id)
     {
-        return _context.Workspaces
-            .Include(w => w.Projects)
-            .SingleOrDefault(w => w.Id == id);
+        return _context.Workspaces.Include(w => w.Projects).SingleOrDefault(w => w.Id == id);
     }
 
 
@@ -69,6 +62,9 @@ public class WorkspaceConfig: IEntityTypeConfiguration<Workspace>
                 slug => slug.Text,
                 str => new Slug { Text = str }
             );
+
+        builder.Property(w => w.Logo)
+            .HasMaxLength(2048);
         #endregion
 
 

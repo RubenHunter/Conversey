@@ -1,29 +1,39 @@
-﻿using Conversey.BL.Domain.Common;
+﻿using Conversey.BL.Ai;
+using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
-using Conversey.BL.Ai;
 using Conversey.BL.Ideation;
 using Conversey.UI_MVC.Models.Dto;
+using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Conversey.UI_MVC.Controllers.Api;
 
 [ApiController]
 [Route("api/workspaces/{workspaceId}/projects/{projectId}/topics/{topicId:int}/ideas")]
+[EnableRateLimiting("AiFixedPolicy")]
 public class IdeasController : ControllerBase
 {
     private readonly IIdeaManager _manager;
+    private readonly IProjectAccessService _projectAccessService;
 
-    public IdeasController(IIdeaManager manager)
+    public IdeasController(IIdeaManager manager, IProjectAccessService projectAccessService)
     {
         _manager = manager;
+        _projectAccessService = projectAccessService;
     }
 
     [HttpPost]
-    public ActionResult<SubmissionResponseDto> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
+    public async Task<ActionResult<SubmissionResponseDto>> Submit(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaDto idea)
     {
         try
         {
-            SubmissionResponse response = _manager.SubmitIdea(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
+            SubmissionResponse response = await _manager.SubmitIdeaAsync(workspaceId, projectId, topicId, idea.YouthId, idea.Content, idea.QualityNudgeBypassed);
             return Ok(response switch
             {
                 SubmissionResponse.Approved approved => new SubmissionResponseDto.Approved(IdeaDto.From(approved.Idea)),
@@ -38,11 +48,16 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost("nudge")]
-    public ActionResult<IdeaNudgeResponseDto> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
+    public async Task<ActionResult<IdeaNudgeResponseDto>> AssessNudging(Slug workspaceId, Slug projectId, int topicId, [FromBody] IdeaNudgeRequestDto request)
     {
         try
         {
-            var decision = _manager.AssessIdeaNudge(
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
+            var decision = await _manager.AssessIdeaNudgeAsync(
                 workspaceId,
                 projectId,
                 topicId,
@@ -66,10 +81,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<IdeaDto>> GetAllIdeasOfTopic(Slug workspaceId, Slug projectId, int topicId)
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> GetAllIdeasOfTopic(Slug workspaceId, Slug projectId, int topicId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             IEnumerable<Idea> ideas = _manager.GetIdeasByProjectIdAndTopicId(workspaceId, projectId, topicId);
             IEnumerable<IdeaDto> dtos = ideas
                 .Select(IdeaDto.From)
@@ -85,7 +105,7 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("discover")]
-    public ActionResult<IEnumerable<IdeaDto>> DiscoverIdeas(
+    public async Task<ActionResult<IEnumerable<IdeaDto>>> DiscoverIdeas(
         Slug workspaceId,
         Slug projectId,
         int topicId,
@@ -101,7 +121,12 @@ public class IdeasController : ControllerBase
 
         try
         {
-            var ideas = _manager.GetIdeaDiscoverySuggestions(
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
+            var ideas = await _manager.GetIdeaDiscoverySuggestionsAsync(
                 workspaceId,
                 projectId,
                 topicId,
@@ -118,10 +143,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("{ideaId:int}")]
-    public ActionResult<IdeaDto> GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
+    public async Task<ActionResult<IdeaDto>> GetIdeaById(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var idea = _manager.GetIdeaById(workspaceId, projectId, topicId, ideaId);
 
             return Ok(IdeaDto.From(idea));
@@ -133,10 +163,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("{ideaId:int}/thread")]
-    public ActionResult<IdeaThreadDto> GetIdeaThread(Slug workspaceId, Slug projectId, int topicId, int ideaId)
+    public async Task<ActionResult<IdeaThreadDto>> GetIdeaThread(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var idea = _manager.GetIdeaByIdWithProjectAndResponses(workspaceId, projectId, topicId, ideaId);
 
             return Ok(IdeaThreadDto.From(idea));
@@ -148,10 +183,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpGet("{ideaId:int}/reactions")]
-    public ActionResult<IEnumerable<ReactionDto>> GetIdeaReactionSummary(Slug workspaceId, Slug projectId, int topicId, int ideaId)
+    public async Task<ActionResult<IEnumerable<ReactionDto>>> GetIdeaReactionSummary(Slug workspaceId, Slug projectId, int topicId, int ideaId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var reactions = _manager.GetIdeaReactionsByIdeaId(workspaceId, projectId, topicId, ideaId)
                 .GroupBy(r => r.Emoji)
                 .Select(g => new ReactionDto { Emoji = g.Key, Count = g.Count() })
@@ -166,10 +206,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPost("{ideaId:int}/reactions")]
-    public ActionResult<CreatedReactionDto> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
+    public async Task<ActionResult<CreatedReactionDto>> AddIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] CreateResponseReactionRequestDto request)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             var addedReaction = _manager.AddIdeaReaction(workspaceId, projectId, topicId, ideaId, request.YouthId, request.Emoji);
             return Ok(new CreatedReactionDto
             {
@@ -184,10 +229,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpDelete("{ideaId:int}/reactions/{reactionId:int}")]
-    public ActionResult RemoveIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] Guid youthId, int reactionId)
+    public async Task<ActionResult> RemoveIdeaReaction(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromQuery] Guid youthId, int reactionId)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             _manager.RemoveIdeaReaction(workspaceId, projectId, topicId, ideaId, youthId, reactionId);
             return NoContent();
         }
@@ -198,10 +248,15 @@ public class IdeasController : ControllerBase
     }
 
     [HttpPut("{ideaId:int}")]
-    public ActionResult<IdeaDto> UpdateAfterSafetyReview(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] UpdateIdeaAfterSafetyReviewDto request)
+    public async Task<ActionResult<IdeaDto>> UpdateAfterSafetyReview(Slug workspaceId, Slug projectId, int topicId, int ideaId, [FromBody] UpdateIdeaAfterSafetyReviewDto request)
     {
         try
         {
+            if (!await IsActiveProjectOrAdmin(workspaceId, projectId))
+            {
+                return NotFound();
+            }
+
             ModerationStatus newStatus = request.MarkForReview ? ModerationStatus.Pending : ModerationStatus.Approved;
             var updated = _manager.ChangeIdea(workspaceId, projectId, topicId, ideaId, newStatus, request.Content);
             
@@ -211,5 +266,10 @@ public class IdeasController : ControllerBase
         {
             return NotFound(e.Message);
         }
+    }
+
+    private async Task<bool> IsActiveProjectOrAdmin(Slug workspaceId, Slug projectId)
+    {
+        return await _projectAccessService.IsActiveProjectOrAdminAsync(workspaceId, projectId, User);
     }
 }

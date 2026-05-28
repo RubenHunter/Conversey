@@ -1,7 +1,59 @@
-@model Conversey.UI_MVC.Models.Admin.AdminFormViewModel<Conversey.BL.Domain.Administration.Project>
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@inject AdminContext AdminContext
+@inject IAdminI18nService I18n
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
 
 @{
-    ViewData["Title"] = "Create Project";
+    ViewData["Title"] = I18n["Create Project"];
+    ViewData["WorkspaceName"] = AdminContext.GetWorkspace()?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        (I18n["Projects"], "/admin/projects", false),
+        (I18n["Create"], null, true)
+    };
 }
 
-@await Html.PartialAsync("_ProjectForm", Model)
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+    
+    <main class="w-full">
+        @await Html.PartialAsync("_Stepper", Model)
+    </main>
+</div>
+
+@await Html.PartialAsync("_DraftExitModal")
+
+@if (Model.StepperViewModel.IsCopyFlow)
+{
+    <div id="copyDraftPayload" data-payload='@System.Text.Json.JsonSerializer.Serialize(new {
+        currentStep = 1,
+        name = Model.CreateStep1ViewModel.Name,
+        description = Model.CreateStep1ViewModel.Description,
+        interactionForm = Model.CreateStep1ViewModel.InteractionForm.ToString(),
+        startDate = Model.CreateStep1ViewModel.StartDate.ToString("yyyy-MM-dd"),
+        endDate = Model.CreateStep1ViewModel.EndDate.ToString("yyyy-MM-dd"),
+        imageUrl = Model.CreateStep1ViewModel.ImageUrl,
+        imageUploadSignature = "",
+        nudgingStrength = Model.CreateStep1ViewModel.NudgingStrength.ToString(),
+        slug = "",
+        draftSynced = false,
+        themePrimary = Model.CreateStep1ViewModel.ThemePrimary,
+        themeSecondary = Model.CreateStep1ViewModel.ThemeSecondary,
+        themeAccent = Model.CreateStep1ViewModel.ThemeAccent,
+        themePreset = Model.CreateStep1ViewModel.ThemePreset,
+        themeFont = Model.CreateStep1ViewModel.ThemeFont,
+        minAge = Model.CreateStep1ViewModel.MinAge.HasValue ? Model.CreateStep1ViewModel.MinAge.Value.ToString() : "0",
+        maxAge = Model.CreateStep1ViewModel.MaxAge.HasValue ? Model.CreateStep1ViewModel.MaxAge.Value.ToString() : "150",
+        questionsJson = Model.CreateStep2ViewModel.QuestionsJson ?? "[]",
+        topicsJson = Model.CreateStep3ViewModel.TopicsJson ?? "[]",
+        promptsJson = Model.CreateStep4ViewModel.PromptsJson ?? "[]"
+    })'></div>
+}
+
+@section Scripts
+{
+    <script type="module" vite-src="~/modules/addQuestionPage.ts"></script>
+}
+    

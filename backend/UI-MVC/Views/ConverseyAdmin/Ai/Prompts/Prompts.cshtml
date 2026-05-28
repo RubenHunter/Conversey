@@ -1,0 +1,88 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@using Conversey.BL.Domain.Ai
+@model Conversey.UI_MVC.Models.AiAdmin.AiPromptsViewModel
+@inject AdminContext AdminContext
+@{
+    string GetDescription(AiPrompt prompt)
+    {
+        if (!string.IsNullOrWhiteSpace(prompt.Description))
+            return prompt.Description;
+        if (Model.DefaultDescriptions.TryGetValue(prompt.Name, out var desc) && !string.IsNullOrWhiteSpace(desc))
+            return desc;
+        return "No description";
+    }
+
+    ViewData["Title"] = "AI Prompts";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("AI Settings", "/admin/ai", false),
+        ("Prompts", null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Prompts">Prompts</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="Manage system and user prompt templates. Changes take effect immediately.">Manage system and user prompt templates. Changes take effect immediately.</p>
+            </div>
+            <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span data-i18n="Back to Dashboard">Back to Dashboard</span>
+            </a>
+        </div>
+
+        <div class="mb-6">
+            <div class="relative max-w-md">
+                <input type="text" id="promptSearch" placeholder="Search prompts..." data-i18n-placeholder="Search prompts..." value="@Model.SearchQuery"
+                       class="w-full pl-10 pr-4 py-2 bg-white border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-sm text-sm" />
+                <span class="absolute left-3 top-2.5 text-secondary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            @foreach (var prompt in Model.Prompts)
+            {
+                <div class="prompt-item bg-white rounded-xl border border-secondary/10 shadow-sm hover:shadow-md transition-shadow" data-name="@(prompt.Name?.ToLowerInvariant() ?? "")" data-desc="@(GetDescription(prompt).ToLowerInvariant())">
+                    <div class="flex items-start justify-between px-6 py-4 border-b border-secondary/10">
+                        <div>
+                            <h2 class="text-sm font-semibold text-text">@prompt.Name</h2>
+                            <p class="mt-1 text-xs text-text/50">@GetDescription(prompt)</p>
+                        </div>
+                        <a href="@Url.Action("EditPrompt", new { id = prompt.Id })" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium flex-shrink-0" data-i18n="Edit">Edit</a>
+                    </div>
+                    <div class="px-6 py-4">
+                        @if (!string.IsNullOrWhiteSpace(prompt.SystemPrompt))
+                        {
+                            <div class="mb-3">
+                                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="System Prompt">System Prompt</h3>
+                                <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@prompt.SystemPrompt</pre>
+                            </div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
+                        {
+                            <div>
+                                <h3 class="text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="User Prompt Template">User Prompt Template</h3>
+                                <pre class="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 text-xs font-mono text-text/70">@prompt.UserPromptTemplate</pre>
+                            </div>
+                        }
+                        @if (string.IsNullOrWhiteSpace(prompt.SystemPrompt) && string.IsNullOrWhiteSpace(prompt.UserPromptTemplate))
+                        {
+                            <span class="text-xs text-text/40" data-i18n="No custom prompt configured. Default hardcoded prompt is used.">No custom prompt configured. Default hardcoded prompt is used.</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+<script type="module" vite-src="~/components/aiAdmin/promptsPage.ts"></script>

@@ -1,15 +1,40 @@
-using Microsoft.Extensions.AI;
+using Conversey.BL.Ai.Dto;
+using Conversey.BL.Domain.Ideation;
+
+using Conversey.BL.Domain.Common;
 
 namespace Conversey.BL.Ai;
 
-public interface IAiManager : IChatClient
+public interface IAiManager
 {
-    Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null);
-    Task<ModerationDecision> ModerateContent(string content);
-    Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request);
-    Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit);
-    Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(
+    Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null, string? workspaceId = null, string? projectId = null);
+    Task<ModerationDecision> ModerateContentAsync(string content, string? workspaceId = null, string? projectId = null);
+    Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null);
+    Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit, string? workspaceId = null, string? projectId = null);
+    Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(
         IReadOnlyList<string> ideas,
         IReadOnlyList<string> existingCategories,
-        int maxCategoriesPerIdea);
+        int maxCategoriesPerIdea,
+        string? workspaceId = null,
+        string? projectId = null);
+
+    Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+        string transcript,
+        Language language,
+        int maxPhrases,
+        IReadOnlyList<string> existingPhrases = null,
+        IReadOnlyList<string> rejectedPhrases = null);
+
+    Task<string> GenerateTextFromBubbles(
+        string transcript,
+        IReadOnlyList<string> bubbles,
+        Language language,
+        IReadOnlyList<string> rejectedPhrases = null);
+
+    Task<string> CompletePlainTextAsync(
+        string systemPrompt,
+        string userPrompt,
+        string? workspaceId = null,
+        string? projectId = null,
+        string? displayPromptName = null);
 }

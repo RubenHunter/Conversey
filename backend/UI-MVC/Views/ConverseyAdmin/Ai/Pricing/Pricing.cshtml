@@ -1,0 +1,102 @@
+@using Conversey.BL.Domain.Ai
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
+@model IReadOnlyList<AiModelPricing>
+@inject AdminContext AdminContext
+@{
+    ViewData["Title"] = "Model Pricing";
+    ViewData["WorkspaceName"] = "Conversey Platform";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", AdminContext.GetDashboardUrl(), false),
+        ("AI Settings", "/admin/ai", false),
+        ("Model Pricing", null, true)
+    };
+    var eurRate = ViewBag.EurRate as decimal? ?? 0.92m;
+    var providers = Model.Select(p => p.ProviderName).Distinct().OrderBy(p => p).ToList();
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Model Pricing">Model Pricing</h1>
+                <p class="mt-1 text-sm text-text/60"><span data-i18n="Cost per million tokens in USD.">Cost per million tokens in USD.</span> <span data-i18n="EUR rate:">EUR rate:</span> 1 USD = @eurRate.ToString("F4") EUR.</p>
+                <p class="mt-1 text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200 inline-block">
+                    <span data-i18n="These are cost ESTIMATIONS based on publicly available model pricing databases. Actual costs may vary.">These are cost ESTIMATIONS based on publicly available model pricing databases. Actual costs may vary.</span>
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <form asp-action="RefreshPricing" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Refresh from OpenRouter">Refresh from OpenRouter</button>
+                </form>
+                <a href="@Url.Action("Index")" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <span data-i18n="Back to AI Settings">Back to AI Settings</span>
+                </a>
+            </div>    
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm mb-6">
+            <div class="px-6 py-4 border-b border-secondary/10 flex flex-wrap items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Provider">Provider</label>
+                    <select id="providerFilter" class="rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="" data-i18n="All">All</option>
+                        @foreach (var p in providers)
+                        {
+                            <option value="@p">@p</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Sort by">Sort by</label>
+                    <select id="sortBy" class="rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="model-asc" data-i18n="Model name A-Z">Model name A-Z</option>
+                        <option value="model-desc" data-i18n="Model name Z-A">Model name Z-A</option>
+                        <option value="input-asc" data-i18n="Input price up">Input price up</option>
+                        <option value="input-desc" data-i18n="Input price down">Input price down</option>
+                        <option value="output-asc" data-i18n="Output price up">Output price up</option>
+                        <option value="output-desc" data-i18n="Output price down">Output price down</option>
+                        <option value="total-asc" data-i18n="Total price up">Total price up</option>
+                        <option value="total-desc" data-i18n="Total price down">Total price down</option>
+                    </select>
+                </div>
+                <span id="rowCount" class="text-xs text-text/50 ml-auto"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-[800px] divide-y divide-secondary/10 text-xs">
+                    <thead class="bg-background/50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Model">Model</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Provider">Provider</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Input /1M tok">Input /1M tok</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Output /1M tok">Output /1M tok</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Total /1M tok">Total /1M tok</th>
+                            <th class="px-3 py-2 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Updated">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pricingBody" class="divide-y divide-secondary/10">
+                        @foreach (var p in Model)
+                        {
+                            <tr class="pricing-row hover:bg-background/30" data-provider="@p.ProviderName" data-model="@p.ModelName" data-input="@p.InputPricePerMillionTokens" data-output="@p.OutputPricePerMillionTokens">
+                                <td class="whitespace-nowrap px-3 py-2 font-mono text-xs text-text">@p.ModelName</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-xs text-text/60">@p.ProviderName</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@p.InputPricePerMillionTokens.ToString("F2")</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@p.OutputPricePerMillionTokens.ToString("F2")</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right font-mono text-xs text-text">$@((p.InputPricePerMillionTokens + p.OutputPricePerMillionTokens).ToString("F2"))</td>
+                                <td class="whitespace-nowrap px-3 py-2 text-right text-xs text-text/50">@p.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script type="module" vite-src="~/components/aiAdmin/pricingPage.ts"></script>
+

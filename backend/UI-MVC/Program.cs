@@ -1,129 +1,60 @@
-#nullable enable
 using System.ComponentModel;
-
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using Conversey.BL.Administration;
 using Conversey.BL.Ai;
+using Conversey.BL.Analytics;
+using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Ideation;
+using Conversey.BL.Services;
 using Conversey.BL.Survey;
 using Conversey.DAL;
 using Conversey.DAL.Administration;
+using Conversey.DAL.Analytics;
 using Conversey.DAL.Ideation;
 using Conversey.DAL.Subplatform.Ai;
 using Conversey.DAL.Survey;
-using Microsoft.AspNetCore.HttpOverrides;
 using Conversey.UI_MVC.Middleware;
 using Conversey.UI_MVC.Models;
+using Conversey.UI_MVC.RateLimiting;
+using Conversey.BL.Ai.Speech;
+using Conversey.UI_MVC.Resources;
 using Conversey.UI_MVC.Security;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using System.Text.Json.Serialization;
 using Vite.AspNetCore;
 using Microsoft.AspNetCore.Identity;
-using Google.Cloud.Logging.Console;
 
-// FORCEER WEBROOT VOOR PRODUCTIE (DOCKER-VRIENDELIJK)
-string webRoot = "wwwroot";
-if (!Directory.Exists(webRoot))
-{
-    // Fallback naar de absolute map als relatieve wwwroot niet gevonden wordt
-    webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-}
-
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    Args = args,
-    WebRootPath = webRoot
-});
-
-Console.WriteLine($"--- ACTIVE WEBROOT: {builder.Environment.WebRootPath} ---");
-
-// Configure Google Cloud Logging in Production
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Logging.AddGoogleCloudConsole();
-}
+var builder = WebApplication.CreateBuilder(args);
+// const string viteDevCorsPolicy = "ViteDevCors";
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
-
-// Persist Data Protection keys so antiforgery tokens survive server restarts and work across multiple instances
-// This fixes HTTP 400/500 errors in load-balanced cloud environments
-builder.Services.AddDataProtection()
-    .PersistKeysToDbContext<ConverseyDbContext>()
-    .SetApplicationName("Conversey");
-
-// Ensure antiforgery cookies work across subdomains
-builder.Services.AddAntiforgery(options =>
-{
-    options.Cookie.Name = "conversey-af";
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-});
-
-// Configure Forwarded Headers for Google Cloud Load Balancer
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
-
-builder.Services.AddViteServices(options => {
-    options.Server.AutoRun = false;
-});
-
-// TOTAL RECOVERY MANIFEST LOADER (Nuclear Search)
-var viteManifest = new Dictionary<string, string>();
-string? manifestPath = null;
-
-try 
-{
-    // Scrol door alle JSON bestanden om de boosdoener te vinden
-    var jsonFiles = Directory.GetFiles("/app", "*.json", SearchOption.AllDirectories);
-    foreach (var file in jsonFiles)
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
     {
-        Console.WriteLine($"JSON FOUND: {file}");
-        if (file.EndsWith("manifest.json"))
-        {
-            manifestPath = file;
-            break;
-        }
-    }
-} catch { }
-
-if (manifestPath != null)
-{
-    try 
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+builder.Services.AddRazorPages()
+    .AddRazorPagesOptions(options =>
     {
-        var json = File.ReadAllText(manifestPath);
-        using var doc = System.Text.Json.JsonDocument.Parse(json);
-        foreach (var property in doc.RootElement.EnumerateObject())
-        {
-            if (property.Value.TryGetProperty("file", out var fileProp))
-            {
-                viteManifest[property.Name] = fileProp.GetString() ?? "";
-            }
-            if (property.Value.TryGetProperty("css", out var cssArray) && cssArray.ValueKind == System.Text.Json.JsonValueKind.Array && cssArray.GetArrayLength() > 0)
-            {
-                // Create a synthetic key for the CSS file based on the TS filename
-                var cssKey = property.Name.Replace(".ts", ".css");
-                viteManifest[cssKey] = cssArray[0].GetString() ?? "";
-            }
-        }
-        Console.WriteLine($"--- SUCCESS: MANIFEST LOADED FROM {manifestPath} ---");
-    } catch { }
-}
-else 
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "/login");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/Logout", "/logout");
+        options.Conventions.AddAreaPageRoute("Identity", "/Account/AccessDenied", "/access-denied");
+    });
+
+builder.Services.AddViteServices(options =>
 {
-    Console.WriteLine("--- CRITICAL: NO manifest.json FOUND ANYWHERE IN /app ---");
-}
-builder.Services.AddSingleton(viteManifest);
+	options.Server.Port = 4173;
+    options.Server.AutoRun = true;
+    options.Server.PackageManager = "pnpm";
+});
 
 // Add repositories
 builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
@@ -131,35 +62,41 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IPromptRepository, PromptRepository>();
+builder.Services.AddScoped<IProjectPromptRepository, ProjectPromptRepository>();
+builder.Services.AddScoped<IProviderConfigRepository, ProviderConfigRepository>();
+builder.Services.AddScoped<IRateLimitConfigRepository, RateLimitConfigRepository>();
+builder.Services.AddScoped<IModerationKeywordRepository, ModerationKeywordRepository>();
+builder.Services.AddScoped<ICostLimitRepository, CostLimitRepository>();
+builder.Services.AddScoped<IModelPricingRepository, ModelPricingRepository>();
+builder.Services.AddScoped<ICloudStorageRepository, CloudStorageRepository>();
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
 
 // Add managers
 builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
 builder.Services.AddScoped<IProjectManager, ProjectManager>();
 builder.Services.AddScoped<IIdeaManager, IdeaManager>();
 builder.Services.AddScoped<IQuestionManager, QuestionManager>();
-builder.Services.AddScoped<IProjectManager, ProjectManager>();
-builder.Services.AddScoped<IWorkspaceManager, WorkspaceManager>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-builder.Services.AddScoped<IWorkspaceRepository, WorkspaceRepository>();
-builder.Services.AddScoped<IIdeaRepository, IdeaRepository>();
-builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
-
-// Configure Database
-var connectionString = builder.Configuration.GetConnectionString("Default") 
-                      ?? builder.Configuration.GetConnectionString("DefaultConnection")
-                      ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass";
+builder.Services.AddScoped<IAdminManager, AdminManager>();
+builder.Services.AddScoped<IAiAdminManager, AiAdminManager>();
+builder.Services.AddScoped<IAiPricingService, AiPricingService>();
+builder.Services.AddScoped<IAnalyticsManager, AnalyticsManager>();
+builder.Services.AddScoped<IContactManager, ContactManager>();
+builder.Services.AddScoped<IEmailService, GmailEmailService>();
 
 builder.Services.AddDbContext<ConverseyDbContext>(options =>
-    options.UseNpgsql(connectionString)
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Default")
+        ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
-// Add health checks for Docker
-builder.Services.AddHealthChecks();
-
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequiredLength = 6;
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ ";
+    options.User.RequireUniqueEmail = true;
 })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ConverseyDbContext>();
@@ -171,16 +108,43 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/logout";
 });
 
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
+
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(WorkspaceAdminPolicy.Name, policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireRole("Admin");
-        policy.AddRequirements(new WorkspaceAdminRequirement());
-    });
+        {
+            policy.AddRequirements(new WorkspaceAdminRequirement());
+        });
+
+        options.AddPolicy(ConverseyAdminPolicy.Name, policy =>
+        {
+            policy.AddRequirements(new ConverseyAdminRequirement());
+        });
+
+        options.AddPolicy(AdminPolicy.Name, policy =>
+        {
+            policy.AddRequirements(new AdminRequirement());
+        });
 });
+
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(viteDevCorsPolicy, policy =>
+//     {
+//         policy.WithOrigins(
+//                 "http://localhost:4173",
+//                 "https://localhost:4173",
+//                 "http://localhost:4180",
+//                 "https://localhost:7093")
+//             .AllowAnyHeader()
+//             .AllowAnyMethod()
+//             .AllowCredentials();
+//     });
+// });
+
 
 builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
 {
@@ -195,17 +159,32 @@ builder.Services.AddHttpClient("MistralAPI", (sp, client) =>
     }
 });
 
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+});
+
 builder.Services.AddScoped<IAiManager>(provider =>
 {
     var config = provider.GetRequiredService<IConfiguration>();
-    var providerName = (config["AI:Provider"] ?? "Noop").Trim();
+    var appsettingsProviderName = (config["AI:Provider"] ?? "Noop").Trim();
 
-    if (providerName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var activeDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled);
+
+    IAiManager inner;
+    if (activeDbConfig != null)
     {
-        return new NoopAiManager();
+        inner = BuildAiManagerFromDbConfig(provider, activeDbConfig);
     }
-
-    if (providerName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    else if (appsettingsProviderName.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        inner = new NoopAiManager(keywordRepo);
+    }
+    else if (appsettingsProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
     {
         var apiKey = config["AI:Mistral:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -213,24 +192,114 @@ builder.Services.AddScoped<IAiManager>(provider =>
             throw new InvalidOperationException("AI provider is set to Mistral but AI:Mistral:ApiKey is missing.");
         }
 
-        var aiConfig = new AiManagerConfig
-        {
-            ApiKey = apiKey,
-            CompletionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
-            ModerationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest"
-        };
+        var completionsModel = config["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest";
+        var moderationModel = config["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest";
 
-        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        return new MistralAiManager(httpClientFactory.CreateClient("MistralAPI"), aiConfig);
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var mistralProvider = new MistralAiProvider(factory.CreateClient("MistralAPI"));
+        var promptRepo = provider.GetRequiredService<IPromptRepository>();
+        var projectPromptRepo = provider.GetRequiredService<IProjectPromptRepository>();
+        var auditRepo = provider.GetRequiredService<IAuditRepository>();
+        var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+        var pricingService = provider.GetRequiredService<IAiPricingService>();
+
+        inner = new AiManager(mistralProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel);
+    }
+    else
+    {
+        throw new NotSupportedException($"AI provider '{appsettingsProviderName}' is not supported.");
     }
 
-    throw new NotSupportedException($"AI provider '{providerName}' is not supported.");
+    var costLimitRepo = provider.GetRequiredService<ICostLimitRepository>();
+    var auditRepoWrap = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepoWrap = provider.GetRequiredService<IModerationKeywordRepository>();
+    return new CostLimitEnforcingAiManager(inner, costLimitRepo, auditRepoWrap, keywordRepoWrap);
+});
+
+builder.Services.AddSingleton<IVoiceManager, MistralVoiceManager>();
+builder.Services.AddScoped<ISpeechManager>(provider =>
+{
+    var config = provider.GetRequiredService<IConfiguration>();
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+    var providerConfigRepo = provider.GetRequiredService<IProviderConfigRepository>();
+    var dbConfigs = Task.Run(() => providerConfigRepo.GetAllConfigsAsync()).GetAwaiter().GetResult();
+    var speechDbConfig = dbConfigs.FirstOrDefault(c => c.IsEnabled && !string.IsNullOrWhiteSpace(c.SttModel));
+
+    if (speechDbConfig != null)
+    {
+        return BuildSpeechManagerFromDbConfig(provider, speechDbConfig);
+    }
+
+    var speechProvider = (config["AI:Speech:Provider"] ?? config["AI:Provider"] ?? "Noop").Trim();
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (speechProvider.Equals("Noop", StringComparison.OrdinalIgnoreCase))
+    {
+        return new NoopSpeechManager(logFactory.CreateLogger<NoopSpeechManager>());
+    }
+
+    if (speechProvider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase) ||
+        speechProvider.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        var openAiKey = config["AI:OpenAI:ApiKey"];
+        if (string.IsNullOrWhiteSpace(openAiKey))
+        {
+            throw new InvalidOperationException("AI:Speech:Provider is set to OpenAI but AI:OpenAI:ApiKey is missing.");
+        }
+
+        var sttModel = config["AI:OpenAI:SttModel"] ?? "whisper-1";
+        var ttsModel = config["AI:OpenAI:TtsModel"] ?? "tts-1";
+        var httpClient = factory.CreateClient("OpenAI");
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAiKey);
+        return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
+    }
+
+    return new MistralSpeechManager(
+        factory.CreateClient("MistralAPI"),
+        provider.GetRequiredService<IVoiceManager>(),
+        logFactory.CreateLogger<MistralSpeechManager>());
 });
 
 builder.Services.AddScoped<WorkspaceContext>();
 builder.Services.AddTransient(p => p.GetRequiredService<WorkspaceContext>().CurrentWorkspace);
+builder.Services.AddScoped<AdminContext>();
+builder.Services.AddScoped<AdminContextMiddleware>();
+builder.Services.AddTransient(p => p.GetRequiredService<AdminContext>().CurrentAdmin);
 builder.Services.AddScoped<WorkspaceMiddleware>();
+builder.Services.AddScoped<IAdminAccessService, AdminAccessService>();
 builder.Services.AddScoped<IAuthorizationHandler, WorkspaceAdminHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, ConverseyAdminHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminHandler>();
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AdminI18nService>();
+builder.Services.AddSingleton<IAdminI18nService>(p => p.GetRequiredService<AdminI18nService>());
+
+builder.Services.AddSingleton<RateLimitConfigCache>();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { "en-US", "nl-BE", "fr-BE" };
+    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.SupportedUICultures = supportedCultures.Select(c => new System.Globalization.CultureInfo(c)).ToList();
+    options.RequestCultureProviders.Insert(0, new CookieRequestCultureProvider
+    {
+        CookieName = ".Conversey.Admin.Culture",
+        Options = options
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy<string, AiUserRateLimiterPolicy>("AiFixedPolicy");
+    options.AddPolicy<string, AiAdminRateLimiterPolicy>("AiAdminPolicy");
+});
+
 
 TypeDescriptor.AddAttributes(
     typeof(Slug),
@@ -239,44 +308,61 @@ TypeDescriptor.AddAttributes(
 
 var app = builder.Build();
 
-app.UseForwardedHeaders();
+var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
+InitializeDatabase(resetDatabaseOnStart);
 
-InitializeDatabase(builder.Configuration.GetValue<bool>("Database:ResetOnStart"));
+var rateLimitCache = app.Services.GetRequiredService<RateLimitConfigCache>();
+await rateLimitCache.InitializeAsync();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseStaticFiles(); 
-
+app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Assets")),
+    RequestPath = "/Assets"
+});
 app.UseMiddleware<WorkspaceMiddleware>();
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+    appBuilder.UseRequestLocalization();
+});
 app.UseRouting();
+
+app.UseRateLimiter();
+
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseCors(viteDevCorsPolicy);
+// }
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AdminContextMiddleware>();
 
 app.MapRazorPages();
-app.MapHealthChecks("/health");
+
+app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Project}/{action=Landing}/{id?}")
+    .WithStaticAssets();
 
-Console.WriteLine("--- SERVER STARTED SUCCESSFULLY ---");
+// Serve the SPA shell for non-file URLs so browser refresh on client routes keeps working.
+//app.MapFallbackToController("Index", "Home");
 
 if (app.Environment.IsDevelopment())
 {
     app.UseWebSockets();
     app.UseViteDevelopmentServer(useMiddleware: false);
 }
-
-app.MapGet("/api/admin/nuke-db-and-reseed", (string code) => {
-    if (code != "conversey123") return "Unauthorized";
-    InitializeDatabase(true);
-    return "Database has been nuked and reseeded with the new English translations!";
-});
 
 app.Run();
 
@@ -289,81 +375,193 @@ void InitializeDatabase(bool drop)
         // Create database schema first (including Identity tables)
         var created = dbCtx.CreateDatabase(drop);
         // Then seed Identity and Roles
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        SeedIdentity(userManager, roleManager);
         if (created)
         {
-            DataSeeder.Seed(dbCtx);
+            var config = services.GetRequiredService<IConfiguration>();
+            DataSeeder.Seed(dbCtx, config);
+            SeedIdentity(userManager, roleManager, dbCtx);
+
+            var pricingService = services.GetRequiredService<IAiPricingService>();
+            pricingService.RefreshPricingAsync().GetAwaiter().GetResult();
         }
     }
 }
 
-void SeedIdentity(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, ConverseyDbContext dbCtx)
 {
     // Create roles if they don't exist
     if (!roleManager.RoleExistsAsync("User").Result)
     {
         roleManager.CreateAsync(new IdentityRole("User")).Wait();
     }
-    if (!roleManager.RoleExistsAsync("Admin").Result)
+    if (!roleManager.RoleExistsAsync("WorkspaceAdmin").Result)
     {
-        roleManager.CreateAsync(new IdentityRole("Admin")).Wait();
+        roleManager.CreateAsync(new IdentityRole("WorkspaceAdmin")).Wait();
+    }
+    if (!roleManager.RoleExistsAsync("ConverseyAdmin").Result)
+    {
+        roleManager.CreateAsync(new IdentityRole("ConverseyAdmin")).Wait();
     }
 
-    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "hogeschool-nova");
-    EnsureSeedUser(userManager, "admin@stad.linden.be", "stad-linden");
+    // Seed ConverseyAdmin
+    EnsureSeedUser(userManager, "admin@conversey.be", "ConverseyAdmin");
+
+    // Seed WorkspaceAdmins
+    var hogeschoolNovaWorkspace = dbCtx.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("hogeschool-nova"));
+    var stadLindenWorkspace = dbCtx.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("stad-linden"));
+
+    if (hogeschoolNovaWorkspace == null)
+    {
+        hogeschoolNovaWorkspace = new Workspace
+        {
+            Id = Slug.FromName("hogeschool-nova"),
+            Name = "Hogeschool Nova"
+        };
+        dbCtx.Workspaces.Add(hogeschoolNovaWorkspace);
+        dbCtx.SaveChanges();
+    }
+
+    if (stadLindenWorkspace == null)
+    {
+        stadLindenWorkspace = new Workspace
+        {
+            Id = Slug.FromName("stad-linden"),
+            Name = "Stad Linden"
+        };
+        dbCtx.Workspaces.Add(stadLindenWorkspace);
+        dbCtx.SaveChanges();
+    }
+
+    EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "WorkspaceAdmin", hogeschoolNovaWorkspace);
+    EnsureSeedUser(userManager, "admin@stad.linden.be", "WorkspaceAdmin", stadLindenWorkspace);
 }
 
-void EnsureSeedUser(UserManager<ApplicationUser> userManager, string email, string workspaceId)
+void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string role, Workspace workspace = null)
 {
-    var normalizedWorkspaceId = Slug.FromName(workspaceId);
     var user = userManager.FindByEmailAsync(email).Result;
     if (user == null)
     {
-        user = new ApplicationUser
+        if (role == "ConverseyAdmin")
         {
-            Email = email,
-            UserName = email,
-            EmailConfirmed = true,
-            WorkspaceId = normalizedWorkspaceId
-        };
+            user = new ConverseyAdminUser
+            {
+                Email = email,
+                UserName = email,
+                EmailConfirmed = true
+            };
+        }
+        else if (role == "WorkspaceAdmin")
+        {
+            user = new WorkspaceAdminUser
+            {
+                Email = email,
+                UserName = email,
+                EmailConfirmed = true,
+                Workspace = workspace
+            };
+        }
+        else
+        {
+            return;
+        }
+
         userManager.CreateAsync(user, "Test123!").Wait();
+    }
+
+    if (!userManager.IsInRoleAsync(user, role).Result)
+    {
+        userManager.AddToRoleAsync(user, role).Wait();
+    }
+}
+
+static AiManager BuildAiManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    if (string.IsNullOrWhiteSpace(config.BaseUrl))
+    {
+        throw new InvalidOperationException($"AI provider '{config.ProviderName}' is enabled but has no BaseUrl configured.");
+    }
+
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    IAiProvider aiProvider;
+
+    if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+
+        aiProvider = new AzureOpenAiProvider(httpClient, config.CompletionsModel, config.ApiVersion);
+    }
+    else if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
+
+        aiProvider = new MistralAiProvider(httpClient);
     }
     else
     {
-        var changed = false;
-        if (user.UserName != email)
+        if (!string.IsNullOrWhiteSpace(config.ApiKey))
         {
-            user.UserName = email;
-            changed = true;
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
         }
 
-        if (!user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-            changed = true;
-        }
-        
-        if (user.WorkspaceId != normalizedWorkspaceId)
-        {
-            user.WorkspaceId = normalizedWorkspaceId;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            userManager.UpdateAsync(user).Wait();
-        }
-
-        if (!userManager.HasPasswordAsync(user).Result)
-        {
-            userManager.AddPasswordAsync(user, "Test123!").Wait();
-        }
+        aiProvider = new OpenAiCompatibleProvider(httpClient, config.ProviderName);
     }
 
-    if (!userManager.IsInRoleAsync(user, "Admin").Result)
+    var promptRepo = provider.GetRequiredService<IPromptRepository>();
+    var projectPromptRepo = provider.GetRequiredService<IProjectPromptRepository>();
+    var auditRepo = provider.GetRequiredService<IAuditRepository>();
+    var keywordRepo = provider.GetRequiredService<IModerationKeywordRepository>();
+    var pricingService = provider.GetRequiredService<IAiPricingService>();
+    var completionsModel = string.IsNullOrWhiteSpace(config.CompletionsModel) ? "mistral-small-latest" : config.CompletionsModel;
+    var moderationModel = config.ModerationModel;
+
+    return new AiManager(aiProvider, promptRepo, projectPromptRepo, auditRepo, keywordRepo, pricingService, completionsModel, moderationModel, config.Temperature);
+}
+
+static ISpeechManager BuildSpeechManagerFromDbConfig(IServiceProvider provider, AiProviderConfig config)
+{
+    var factory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient();
+    httpClient.BaseAddress = new Uri(config.BaseUrl.TrimEnd('/') + '/');
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+    if (!string.IsNullOrWhiteSpace(config.ApiKey))
     {
-        userManager.AddToRoleAsync(user, "Admin").Wait();
+        if (config.ProviderName.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+        {
+            httpClient.DefaultRequestHeaders.Add("api-key", config.ApiKey);
+        }
+        else
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
+        }
     }
+
+    var sttModel = string.IsNullOrWhiteSpace(config.SttModel) ? "whisper-1" : config.SttModel;
+    var ttsModel = string.IsNullOrWhiteSpace(config.TtsModel) ? "tts-1" : config.TtsModel;
+
+    var logFactory = provider.GetRequiredService<ILoggerFactory>();
+
+    if (config.ProviderName.Equals("Mistral", StringComparison.OrdinalIgnoreCase))
+    {
+        return new MistralSpeechManager(
+            httpClient,
+            provider.GetRequiredService<IVoiceManager>(),
+            logFactory.CreateLogger<MistralSpeechManager>(),
+            sttModel,
+            ttsModel);
+    }
+
+    return new OpenAiSpeechManager(httpClient, logFactory.CreateLogger<OpenAiSpeechManager>(), sttModel, ttsModel);
 }

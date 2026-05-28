@@ -1,13 +1,15 @@
 using Conversey.BL.Domain.Administration;
+using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
+using Microsoft.Extensions.Configuration;
 
 namespace Conversey.DAL;
 
 public static class DataSeeder
 {
-    public static void Seed(ConverseyDbContext context)
+    public static void Seed(ConverseyDbContext context, IConfiguration configuration = null)
     {
         context.CreateDatabase(false);
 
@@ -34,7 +36,9 @@ public static class DataSeeder
             EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
             NudgingStrength = 3,
             InteractionForm = InteractionType.UserDefined,
-            Workspace = hogeschool
+            Workspace = hogeschool,
+            MinAge = 18,
+            MaxAge = 26
         };
         mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
 
@@ -90,15 +94,22 @@ public static class DataSeeder
         };
 
         context.Youths.AddRange(students);
+        // Survey-only youth (no ideas) — for realistic conversion rates
+        var surveyOnlyStudents1 = new List<Youth>
+        {
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444420"), Email = "karim@student.nova.be", Project = mentaalWelzijnActieplan },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444421"), Email = null, Project = mentaalWelzijnActieplan },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444422"), Email = "dirk@student.nova.be", Project = mentaalWelzijnActieplan }
+        };
+        context.Youths.AddRange(surveyOnlyStudents1);
 
-        var mentaalSupportQuestion = new ChoiceQuestion<SingleChoice>
+        var mentaalSupportQuestion = new SingleChoiceQuestion
         {
             Text = "Hoe beoordeel je de toegankelijkheid van mentale ondersteuning op de campus?",
             Required = true,
             Project = mentaalWelzijnActieplan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var mentaalSupportChoices = new List<SingleChoice>
+        var mentaalSupportChoices = new List<Choice>
         {
             new() { Text = "Helemaal onvoldoende", Question = mentaalSupportQuestion },
             new() { Text = "Eerder onvoldoende", Question = mentaalSupportQuestion },
@@ -117,14 +128,13 @@ public static class DataSeeder
             Project = mentaalWelzijnActieplan
         };
 
-        var mentaalFlexQuestion = new ChoiceQuestion<SingleChoice>
+        var mentaalFlexQuestion = new SingleChoiceQuestion
         {
             Text = "Zou je gebruik maken van flexibele inhaalmomenten bij overbelasting?",
             Required = true,
             Project = mentaalWelzijnActieplan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var mentaalFlexChoices = new List<SingleChoice>
+        var mentaalFlexChoices = new List<Choice>
         {
             new() { Text = "Ja, zeker", Question = mentaalFlexQuestion },
             new() { Text = "Misschien, afhankelijk van het vak", Question = mentaalFlexQuestion },
@@ -142,28 +152,67 @@ public static class DataSeeder
         var mentaalQuestions = new List<Question>
         {
             mentaalSupportQuestion,
-            mentaalStressScaleQuestion,
             mentaalFlexQuestion,
-            mentaalOpenQuestion
         };
         context.Questions.AddRange(mentaalQuestions);
 
         var mentaalAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[0], Value = mentaalSupportChoices[2] },
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[0], Value = mentaalSupportChoices[2] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[0], Value = 7 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[0], Value = mentaalFlexChoices[0] },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[0], Value = mentaalFlexChoices[0] },
             new Answer<string> { Question = mentaalOpenQuestion, Youth = students[0], Value = "Een wekelijkse deadlinevrije avond per opleiding zou direct stress verlagen." },
 
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[3], Value = mentaalSupportChoices[1] },
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[3], Value = mentaalSupportChoices[1] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[3], Value = 8 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[3], Value = mentaalFlexChoices[1] },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[3], Value = mentaalFlexChoices[1] },
             new Answer<string> { Question = mentaalOpenQuestion, Youth = students[3], Value = "Maak begeleiding zichtbaarder in één centrale welzijnspagina." },
 
-            new Answer<SingleChoice> { Question = mentaalSupportQuestion, Youth = students[6], Value = mentaalSupportChoices[3] },
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[6], Value = mentaalSupportChoices[3] },
             new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[6], Value = 6 },
-            new Answer<SingleChoice> { Question = mentaalFlexQuestion, Youth = students[6], Value = mentaalFlexChoices[0] },
-            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[6], Value = "Bied meer stille ruimtes met korte ontspanningsoefeningen in piekweken." }
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[6], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[6], Value = "Bied meer stille ruimtes met korte ontspanningsoefeningen in piekweken." },
+            
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[1], Value = mentaalSupportChoices[1] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[1], Value = 9 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[1], Value = mentaalFlexChoices[2] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[1], Value = "Peer-coaching tussen studenten van verschillende jaren werkt beter dan een anonieme psycholoog." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[2], Value = mentaalSupportChoices[4] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[2], Value = 5 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[2], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[2], Value = "Zet in op vroegtijdige signalering: docenten moeten getraind worden om stresssignalen te herkennen." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[4], Value = mentaalSupportChoices[0] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[4], Value = 10 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[4], Value = mentaalFlexChoices[1] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[4], Value = "Examenspreiding over het hele semester in plaats van alles in twee weken." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[5], Value = mentaalSupportChoices[3] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[5], Value = 7 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[5], Value = mentaalFlexChoices[2] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[5], Value = "Een buddy-systeem waarbij elke eerstejaars gekoppeld wordt aan een ouderejaars voor mentale steun." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = students[7], Value = mentaalSupportChoices[2] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = students[7], Value = 8 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = students[7], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = students[7], Value = "Creëer een online portaal waar studenten anoniem mentale gezondheidsvragen kunnen stellen." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = surveyOnlyStudents1[0], Value = mentaalSupportChoices[3] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = surveyOnlyStudents1[0], Value = 4 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = surveyOnlyStudents1[0], Value = mentaalFlexChoices[0] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = surveyOnlyStudents1[0], Value = "Meer begeleiding bij studiekeuze en loopbaanoriëntatie vermindert stress." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = surveyOnlyStudents1[1], Value = mentaalSupportChoices[1] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = surveyOnlyStudents1[1], Value = 3 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = surveyOnlyStudents1[1], Value = mentaalFlexChoices[1] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = surveyOnlyStudents1[1], Value = "Mindfulness-sessies integreren in het lesrooster zou helpen." },
+
+            new SingleChoiceAnswer { Question = mentaalSupportQuestion, Youth = surveyOnlyStudents1[2], Value = mentaalSupportChoices[2] },
+            new Answer<int> { Question = mentaalStressScaleQuestion, Youth = surveyOnlyStudents1[2], Value = 6 },
+            new SingleChoiceAnswer { Question = mentaalFlexQuestion, Youth = surveyOnlyStudents1[2], Value = mentaalFlexChoices[2] },
+            new Answer<string> { Question = mentaalOpenQuestion, Youth = surveyOnlyStudents1[2], Value = "Betere sportfaciliteiten op campus helpen stress te verminderen." }
+        
         };
         context.Answers.AddRange(mentaalAnswers);
 
@@ -442,6 +491,42 @@ public static class DataSeeder
             new()
             {
                 Idea = ideas[3],
+                Text = "Ik haat jullie allemaal, dit is de stomste school ooit. Niemand luistert hier.",
+                CreatedAt = now.AddDays(-8).AddHours(1),
+                Youth = students[1],
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { HateAndDiscrimination = true, ViolenceAndThreats = true }
+            },
+            new()
+            {
+                Idea = ideas[4],
+                Text = "Hou gewoon je bek, niemand zit te wachten op nog meer saaie workshops over mentale gezondheid.",
+                CreatedAt = now.AddDays(-7).AddHours(9),
+                Youth = students[4],
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { HateAndDiscrimination = true }
+            },
+            new()
+            {
+                Idea = ideas[5],
+                Text = "Als ik jou was zou ik mezelf iets aandoen, echt waar. Niemand vindt je aardig.",
+                CreatedAt = now.AddDays(-6).AddHours(3),
+                Youth = students[7],
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { SelfHarm = true, HateAndDiscrimination = true }
+            },
+            new()
+            {
+                Idea = ideas[6],
+                Text = "Stuur me je nummer dan stuur ik je wat leuks 😉 0471 123 456",
+                CreatedAt = now.AddDays(-5).AddHours(7),
+                Youth = students[2],
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { Pii = true, Sexual = true }
+            },
+            new()
+            {
+                Idea = ideas[3],
                 Text = "Die stille ruimtes zouden tijdens blok echt waardevol zijn. Misschien ook korte stretch-momenten tonen op scherm.",
                 CreatedAt = now.AddDays(-8).AddHours(5),
                 Youth = students[2],
@@ -518,6 +603,196 @@ public static class DataSeeder
         context.ResponseReactions.AddRange(reactions);
         }
 
+        // ---------------------------------------------------------
+        // Case 1b: Hogeschool Nova / Digitale Campus Ervaring
+        // ---------------------------------------------------------
+        var digitaleCampusProject = new Project
+        {
+            Name = "Digitale Campus Ervaring 2026",
+            Description = "Studenten denken mee over de digitale leeromgeving: van online colleges tot hybride werkvormen en digitale samenwerking.",
+            ImageUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80",
+            Status = Status.Active,
+            StartDate = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2026, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            NudgingStrength = 2,
+            InteractionForm = InteractionType.Chat,
+            Workspace = hogeschool,
+            MinAge = 22,
+            MaxAge = 30
+        };
+        digitaleCampusProject.Id = Slug.FromName(digitaleCampusProject.Name);
+
+        context.Projects.Add(digitaleCampusProject);
+
+        var dcTopics = new List<Topic>
+        {
+            new() { Name = "Online leerplatforms", Context = "Hoe kunnen we Canvas en andere platforms beter laten aansluiten op studentbehoeften?", Project = digitaleCampusProject },
+            new() { Name = "Hybride werkvormen", Context = "Welke mix van online en fysiek onderwijs werkt het beste voor jouw leerstijl?", Project = digitaleCampusProject }
+        };
+
+        context.Topics.AddRange(dcTopics);
+
+        var dcStudents = new List<Youth>
+        {
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444410"), Email = "lisa@student.nova.be", Project = digitaleCampusProject },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444411"), Email = "tom@student.nova.be", Project = digitaleCampusProject },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444412"), Email = "fatima@student.nova.be", Project = digitaleCampusProject },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444413"), Email = "jens@student.nova.be", Project = digitaleCampusProject }
+        };
+
+        context.Youths.AddRange(dcStudents);
+
+        var dcSurveyOnly = new List<Youth>
+        {
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444430"), Email = "emma@student.nova.be", Project = digitaleCampusProject },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444431"), Email = "thijs@student.nova.be", Project = digitaleCampusProject },
+            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444432"), Email = "nadia@student.nova.be", Project = digitaleCampusProject }
+        };
+        context.Youths.AddRange(dcSurveyOnly);
+
+        var dcPlatformQuestion = new SingleChoiceQuestion
+        {
+            Text = "Hoe tevreden ben je met de huidige digitale leeromgeving?",
+            Required = true,
+            Project = digitaleCampusProject,
+        };
+        var dcPlatformSingleChoicePossibleAnswers = new List<Choice>
+        {
+            new() { Text = "Zeer ontevreden" },
+            new() { Text = "Ontevreden" },
+            new() { Text = "Neutraal" },
+            new() { Text = "Tevreden" },
+            new() { Text = "Zeer tevreden" }
+        };
+        dcPlatformQuestion.PossibleChoices = dcPlatformSingleChoicePossibleAnswers;
+
+        var dcHybridQuestion = new ScaleQuestion
+        {
+            Text = "Hoe belangrijk vind je de mogelijkheid tot hybride onderwijs? (1 = totaal niet, 10 = extreem belangrijk)",
+            Required = true,
+            LowerBound = 1,
+            UpperBound = 10,
+            Project = digitaleCampusProject
+        };
+
+        var dcToolQuestion = new SingleChoiceQuestion
+        {
+            Text = "Welk digitaal hulpmiddel zou je het liefst zien op campus?",
+            Required = true,
+            Project = digitaleCampusProject,
+        };
+        var dcToolSingleChoicePossibleAnswers = new List<Choice>
+        {
+            new() { Text = "Interactieve schermen in leslokalen" },
+            new() { Text = "VR/AR leeromgevingen" },
+            new() { Text = "AI-gestuurde studie-assistent" },
+            new() { Text = "Betere opname- en streamingapparatuur" }
+        };
+        dcToolQuestion.PossibleChoices = dcToolSingleChoicePossibleAnswers;
+
+        var dcOpenQuestion = new OpenQuestion
+        {
+            Text = "Wat is jouw grootste frustratie met de huidige digitale tools op school?",
+            Required = false,
+            Project = digitaleCampusProject
+        };
+
+        var dcMultiChoiceQuestion = new MultipleChoiceQuestion
+        {
+            Text = "Welke extra ondersteuning zou jij willen van de digitale leeromgeving? (meerdere antwoorden mogelijk)",
+            Required = false,
+            Project = digitaleCampusProject,
+        };
+        var dcMultiChoicePossibleAnswers = new List<Choice>
+        {
+            new() { Text = "24/7 online tutoring" },
+            new() { Text = "Automatische ondertiteling bij opnames" },
+            new() { Text = "Persoonlijk studie-dashboard met voortgang" },
+            new() { Text = "Integratie met externe tools (Notion, Google Drive)" },
+            new() { Text = "Meertalige interface" }
+        };
+        dcMultiChoiceQuestion.PossibleChoices = dcMultiChoicePossibleAnswers;
+
+        context.Questions.Add(dcPlatformQuestion);
+        context.Questions.Add(dcHybridQuestion);
+        context.Questions.Add(dcToolQuestion);
+        context.Questions.Add(dcOpenQuestion);
+        context.Questions.Add(dcMultiChoiceQuestion);
+
+        context.SaveChanges();
+
+        var dcChoices = new List<Answer>
+        {
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcStudents[0], Value = dcPlatformSingleChoicePossibleAnswers[2] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcStudents[0], Value = 8 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcStudents[0], Value = dcToolSingleChoicePossibleAnswers[3] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcStudents[0], Value = "De constante notificaties van Canvas zijn overweldigend. Graag meer controle over wat ik wel en niet ontvang." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcStudents[1], Value = dcPlatformSingleChoicePossibleAnswers[1] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcStudents[1], Value = 9 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcStudents[1], Value = dcToolSingleChoicePossibleAnswers[2] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcStudents[1], Value = "Opnamekwaliteit van colleges is ondermaats. Slecht geluid en wazig beeld bij veel opgenomen lessen." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcStudents[2], Value = dcPlatformSingleChoicePossibleAnswers[3] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcStudents[2], Value = 6 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcStudents[2], Value = dcToolSingleChoicePossibleAnswers[1] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcStudents[2], Value = "Ik mis een centrale plek waar alle deadlines en taken van verschillende vakken samenkomen. Nu moet ik overal apart kijken." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcStudents[3], Value = dcPlatformSingleChoicePossibleAnswers[2] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcStudents[3], Value = 7 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcStudents[3], Value = dcToolSingleChoicePossibleAnswers[0] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcStudents[3], Value = "De wifi op campus is te traag voor grote bestanden. Vooral bij online toetsen is dit stressvol." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcSurveyOnly[0], Value = dcPlatformSingleChoicePossibleAnswers[4] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcSurveyOnly[0], Value = 9 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcSurveyOnly[0], Value = dcToolSingleChoicePossibleAnswers[2] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcSurveyOnly[0], Value = "Live ondertiteling bij colleges zou enorm helpen voor internationale studenten." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcSurveyOnly[1], Value = dcPlatformSingleChoicePossibleAnswers[1] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcSurveyOnly[1], Value = 5 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcSurveyOnly[1], Value = dcToolSingleChoicePossibleAnswers[3] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcSurveyOnly[1], Value = "Group project tools zijn slecht. Geen goede manier om samen aan documenten te werken op afstand." },
+
+            new SingleChoiceAnswer { Question = dcPlatformQuestion, Youth = dcSurveyOnly[2], Value = dcPlatformSingleChoicePossibleAnswers[3] },
+            new Answer<int> { Question = dcHybridQuestion, Youth = dcSurveyOnly[2], Value = 8 },
+            new SingleChoiceAnswer { Question = dcToolQuestion, Youth = dcSurveyOnly[2], Value = dcToolSingleChoicePossibleAnswers[0] },
+            new Answer<string> { Question = dcOpenQuestion, Youth = dcSurveyOnly[2], Value = "Meer stopcontacten en oplaadpunten in leslokalen. Batterijstress is een ding." },
+
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[0], Value = new List<Choice> { dcMultiChoicePossibleAnswers[0] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[0], Value = new List<Choice> { dcMultiChoicePossibleAnswers[2] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[1], Value = new List<Choice> { dcMultiChoicePossibleAnswers[1] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[1], Value = new List<Choice> { dcMultiChoicePossibleAnswers[3] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[0] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[1] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[4] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcStudents[3], Value = new List<Choice> { dcMultiChoicePossibleAnswers[2] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[0], Value = new List<Choice> { dcMultiChoicePossibleAnswers[0] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[0], Value = new List<Choice> { dcMultiChoicePossibleAnswers[1] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[0], Value = new List<Choice> { dcMultiChoicePossibleAnswers[3] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[1], Value = new List<Choice> { dcMultiChoicePossibleAnswers[2] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[1], Value = new List<Choice> { dcMultiChoicePossibleAnswers[4] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[0] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[2] } },
+            new MultipleChoiceAnswer { Question = dcMultiChoiceQuestion, Youth = dcSurveyOnly[2], Value = new List<Choice> { dcMultiChoicePossibleAnswers[3] } }
+        };
+
+        context.Answers.AddRange(dcChoices);
+        context.SaveChanges();
+
+        var dcIdeas = new List<Idea>
+        {
+            new() { Content = "Een app die alle roosters, deadlines en cijfers per vak in één overzicht toont. Geintegreerd met Canvas en Outlook.", Summary = "Gecentraliseerde studentenapp", SubmissionDate = now.AddDays(-20), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[0], Youth = dcStudents[0], SemanticCategories = new[] { "digital-tools", "ux" } },
+            new() { Content = "Verplichte opname van ALLE colleges, niet alleen hoorcolleges. Ook werkcolleges moeten beschikbaar zijn voor terugkijken.", Summary = "Verplichte college-opnames", SubmissionDate = now.AddDays(-18), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[0], Youth = dcStudents[1], SemanticCategories = new[] { "accessibility", "online-learning" } },
+            new() { Content = "Optionele online deelname aan alle lessen. Studenten kunnen kiezen: fysiek of via livestream. Dit helpt bij ziekte en reistijd.", Summary = "Optie hybride aanwezigheid", SubmissionDate = now.AddDays(-15), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[1], Youth = dcStudents[2], SemanticCategories = new[] { "hybrid", "flexibility" } },
+            new() { Content = "AI chatbot voor studentenvragen: 24/7 vragen stellen over roosters, deadlines, en veelgestelde vragen. Ontlast de docenten.", Summary = "AI chatbot support", SubmissionDate = now.AddDays(-14), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[0], Youth = dcStudents[3], SemanticCategories = new[] { "ai", "student-support" } },
+            new() { Content = "Deze school is kut en iedereen hier is dom.", Summary = "Toxische comment", SubmissionDate = now.AddDays(-10), Status = ModerationStatus.Rejected, Project = digitaleCampusProject, Topic = dcTopics[0], Youth = dcStudents[0], SemanticCategories = Array.Empty<string>(), ModerationInfo = new ModerationInfo { HateAndDiscrimination = true } },
+            new() { Content = "Verhoogde beveiliging moet gewoon echt, zoveel messen op school.", Summary = "Gewelddadige suggestie", SubmissionDate = now.AddDays(-8), Status = ModerationStatus.Rejected, Project = digitaleCampusProject, Topic = dcTopics[1], Youth = dcStudents[1], SemanticCategories = Array.Empty<string>(), ModerationInfo = new ModerationInfo { ViolenceAndThreats = true } },
+            new() { Content = "Online samenwerkingsruimtes per vakgroep waar studenten samen aan opdrachten kunnen werken met gedeelde whiteboards en documenten.", Summary = "Online samenwerkingsruimtes", SubmissionDate = now.AddDays(-12), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[1], Youth = dcStudents[2], SemanticCategories = new[] { "collaboration", "digital-tools" } },
+            new() { Content = "Een peer-review systeem waarbij studenten elkaars werk beoordelen met rubrics. Dit bespaart docententijd en leert studenten kritisch kijken.", Summary = "Peer-review platform", SubmissionDate = now.AddDays(-7), Status = ModerationStatus.Approved, Project = digitaleCampusProject, Topic = dcTopics[0], Youth = dcStudents[3], SemanticCategories = new[] { "assessment", "peer-learning" } }
+        };
+
+        context.Ideas.AddRange(dcIdeas);
+
         // =====================================================
         // Case 2: Stad Linden / Jong in een Groene Stad
         // =====================================================
@@ -539,7 +814,9 @@ public static class DataSeeder
             EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
             NudgingStrength = 4,
             InteractionForm = InteractionType.UserDefined,
-            Workspace = stadLinden
+            Workspace = stadLinden,
+            MinAge = 18,
+            MaxAge = 30
         };
         vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
 
@@ -595,15 +872,23 @@ public static class DataSeeder
         };
 
         context.Youths.AddRange(cityYouths);
-
-        var cityGreenPriorityQuestion = new ChoiceQuestion<SingleChoice>
+        
+        var citySurveyOnly = new List<Youth>
+        {
+            new() { Id = Guid.Parse("55555555-5555-5555-5555-555555555520"), Email = null, Project = vergroeningEnRecreatiePlan },
+            new() { Id = Guid.Parse("55555555-5555-5555-5555-555555555521"), Email = "femke@stadlinden.be", Project = vergroeningEnRecreatiePlan },
+            new() { Id = Guid.Parse("55555555-5555-5555-5555-555555555522"), Email = null, Project = vergroeningEnRecreatiePlan },
+            new() { Id = Guid.Parse("55555555-5555-5555-5555-555555555523"), Email = "lies@stadlinden.be", Project = vergroeningEnRecreatiePlan }
+        };
+        context.Youths.AddRange(citySurveyOnly);
+        
+        var cityGreenPriorityQuestion = new SingleChoiceQuestion
         {
             Text = "Welke prioriteit moet de stad eerst aanpakken?",
             Required = true,
             Project = vergroeningEnRecreatiePlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var cityGreenPriorityChoices = new List<SingleChoice>
+        var cityGreenPriorityChoices = new List<Choice>
         {
             new() { Text = "Meer bomen en schaduw", Question = cityGreenPriorityQuestion },
             new() { Text = "Veiligere fiets- en wandelroutes", Question = cityGreenPriorityQuestion },
@@ -621,14 +906,13 @@ public static class DataSeeder
             Project = vergroeningEnRecreatiePlan
         };
 
-        var cityParticipationQuestion = new ChoiceQuestion<SingleChoice>
+        var cityParticipationQuestion = new SingleChoiceQuestion
         {
             Text = "Op welke manier wil je het liefst betrokken worden bij stadsbeleid?",
             Required = true,
             Project = vergroeningEnRecreatiePlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var cityParticipationChoices = new List<SingleChoice>
+        var cityParticipationChoices = new List<Choice>
         {
             new() { Text = "Online bevragingen", Question = cityParticipationQuestion },
             new() { Text = "Kwartaalpanel met stadsbestuur", Question = cityParticipationQuestion },
@@ -647,28 +931,73 @@ public static class DataSeeder
         var cityQuestions = new List<Question>
         {
             cityGreenPriorityQuestion,
-            cityLeefbaarheidScaleQuestion,
             cityParticipationQuestion,
-            cityOpenQuestion
         };
         context.Questions.AddRange(cityQuestions);
 
         var citySurveyAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[0], Value = cityGreenPriorityChoices[0] },
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[0], Value = cityGreenPriorityChoices[0] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[0], Value = 5 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[0], Value = cityParticipationChoices[1] },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[0], Value = cityParticipationChoices[1] },
             new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[0], Value = "Het Stationsplein: daar is te weinig schaduw en bijna geen groene zitruimte." },
 
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[3], Value = cityGreenPriorityChoices[1] },
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[3], Value = cityGreenPriorityChoices[1] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[3], Value = 6 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[3], Value = cityParticipationChoices[2] },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[3], Value = cityParticipationChoices[2] },
             new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[3], Value = "Rond de campusroute: vooral voor veiligere, groene fietsverbindingen." },
 
-            new Answer<SingleChoice> { Question = cityGreenPriorityQuestion, Youth = cityYouths[6], Value = cityGreenPriorityChoices[2] },
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[6], Value = cityGreenPriorityChoices[2] },
             new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[6], Value = 4 },
-            new Answer<SingleChoice> { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
-            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[6], Value = "Een braakliggend terrein in Noordwijk, als tijdelijke pop-up groene ontmoetingsplek." }
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[6], Value = "Een braakliggend terrein in Noordwijk, als tijdelijke pop-up groene ontmoetingsplek." },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[6], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[6], Value = "Een braakliggend terrein in Noordwijk, als tijdelijke pop-up groene ontmoetingsplek." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[1], Value = cityGreenPriorityChoices[3] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[1], Value = 7 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[1], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[1], Value = "De oude spoorzone: ideaal voor een groen stadspark met skate- en chillplekken." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[2], Value = cityGreenPriorityChoices[0] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[2], Value = 3 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[2], Value = cityParticipationChoices[1] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[2], Value = "Buurtmoestuinen waar jongeren groenten leren kweken en verkopen op de markt." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[4], Value = cityGreenPriorityChoices[2] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[4], Value = 8 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[4], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[4], Value = "Meer openbare watertappunten en schaduwplekken bij sportvelden en basketbalveldjes." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[5], Value = cityGreenPriorityChoices[1] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[5], Value = 6 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[5], Value = cityParticipationChoices[2] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[5], Value = "Veiligere oversteekplaatsen rond scholen met groene middenbermen." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = cityYouths[7], Value = cityGreenPriorityChoices[0] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = cityYouths[7], Value = 5 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = cityYouths[7], Value = cityParticipationChoices[1] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = cityYouths[7], Value = "Zet leegstaande panden tijdelijk om in jongerenhuiskamers met groen dakterras." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = citySurveyOnly[0], Value = cityGreenPriorityChoices[1] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = citySurveyOnly[0], Value = 6 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = citySurveyOnly[0], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = citySurveyOnly[0], Value = "Meer zitbanken langs wandelroutes voor ouderen en minder mobiele mensen." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = citySurveyOnly[1], Value = cityGreenPriorityChoices[3] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = citySurveyOnly[1], Value = 4 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = citySurveyOnly[1], Value = cityParticipationChoices[1] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = citySurveyOnly[1], Value = "Een vast jongerenpanel dat de gemeente adviseert over groenprojecten." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = citySurveyOnly[2], Value = cityGreenPriorityChoices[0] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = citySurveyOnly[2], Value = 7 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = citySurveyOnly[2], Value = cityParticipationChoices[2] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = citySurveyOnly[2], Value = "Bomen planten langs alle hoofdfietsroutes voor schaduw en koelte." },
+
+            new SingleChoiceAnswer { Question = cityGreenPriorityQuestion, Youth = citySurveyOnly[3], Value = cityGreenPriorityChoices[2] },
+            new Answer<int> { Question = cityLeefbaarheidScaleQuestion, Youth = citySurveyOnly[3], Value = 5 },
+            new SingleChoiceAnswer { Question = cityParticipationQuestion, Youth = citySurveyOnly[3], Value = cityParticipationChoices[0] },
+            new Answer<string> { Question = cityOpenQuestion, Youth = citySurveyOnly[3], Value = "Wijkbudgetten voor jongeren zodat ze zelf groenprojecten kunnen starten." }
         };
         context.Answers.AddRange(citySurveyAnswers);
 
@@ -888,7 +1217,9 @@ public static class DataSeeder
             EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
             NudgingStrength = 3,
             InteractionForm = InteractionType.UserDefined,
-            Workspace = collegeNova
+            Workspace = collegeNova,
+            MinAge = 18,
+            MaxAge = 26
         };
         mentalWellbeingActionPlan.Id = Slug.FromName(mentalWellbeingActionPlan.Name);
 
@@ -944,15 +1275,22 @@ public static class DataSeeder
         };
 
         context.Youths.AddRange(collegeStudents);
-
-        var collegeSupportQuestion = new ChoiceQuestion<SingleChoice>
+        
+        var collegeSurveyOnly = new List<Youth>
+        {
+            new() { Id = Guid.Parse("66666666-6666-6666-6666-666666666620"), Email = null, Project = mentalWellbeingActionPlan },
+            new() { Id = Guid.Parse("66666666-6666-6666-6666-666666666621"), Email = null, Project = mentalWellbeingActionPlan },
+            new() { Id = Guid.Parse("66666666-6666-6666-6666-666666666622"), Email = "priya@student.collegenova.edu", Project = mentalWellbeingActionPlan }
+        };
+        context.Youths.AddRange(collegeSurveyOnly);
+        
+        var collegeSupportQuestion = new SingleChoiceQuestion
         {
             Text = "How do you rate the accessibility of mental support on campus?",
             Required = true,
             Project = mentalWellbeingActionPlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var collegeSupportChoices = new List<SingleChoice>
+        var collegeSupportChoices = new List<Choice>
         {
             new() { Text = "Completely insufficient", Question = collegeSupportQuestion },
             new() { Text = "Rather insufficient", Question = collegeSupportQuestion },
@@ -971,14 +1309,13 @@ public static class DataSeeder
             Project = mentalWellbeingActionPlan
         };
 
-        var collegeFlexQuestion = new ChoiceQuestion<SingleChoice>
+        var collegeFlexQuestion = new SingleChoiceQuestion
         {
             Text = "Would you use flexible catch-up moments when overloaded?",
             Required = true,
             Project = mentalWellbeingActionPlan,
-            PossibleChoices = new List<SingleChoice>()
         };
-        var collegeFlexChoices = new List<SingleChoice>
+        var collegeFlexChoices = new List<Choice>
         {
             new() { Text = "Yes, definitely", Question = collegeFlexQuestion },
             new() { Text = "Maybe, depending on the subject", Question = collegeFlexQuestion },
@@ -1004,20 +1341,61 @@ public static class DataSeeder
 
         var collegeAnswers = new List<Answer>
         {
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[0], Value = collegeSupportChoices[2] },
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[0], Value = collegeSupportChoices[2] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[0], Value = 7 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[0], Value = collegeFlexChoices[0] },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[0], Value = collegeFlexChoices[0] },
             new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[0], Value = "A weekly deadline-free evening per program would immediately reduce stress." },
 
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[3], Value = collegeSupportChoices[1] },
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[3], Value = collegeSupportChoices[1] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[3], Value = 8 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[3], Value = collegeFlexChoices[1] },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[3], Value = collegeFlexChoices[1] },
             new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[3], Value = "Make guidance more visible on one central well-being page." },
 
-            new Answer<SingleChoice> { Question = collegeSupportQuestion, Youth = collegeStudents[6], Value = collegeSupportChoices[3] },
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[6], Value = collegeSupportChoices[3] },
             new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[6], Value = 6 },
-            new Answer<SingleChoice> { Question = collegeFlexQuestion, Youth = collegeStudents[6], Value = collegeFlexChoices[0] },
-            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[6], Value = "Offer more quiet spaces with short relaxation exercises during peak weeks." }
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[6], Value = collegeFlexChoices[0] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[6], Value = "Offer more quiet spaces with short relaxation exercises during peak weeks." },
+            
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[1], Value = collegeSupportChoices[3] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[1], Value = 8 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[1], Value = collegeFlexChoices[1] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[1], Value = "Mandatory mental health check-ins with a counselor at least once per semester." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[2], Value = collegeSupportChoices[1] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[2], Value = 5 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[2], Value = collegeFlexChoices[2] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[2], Value = "Train professors to recognize burnout signs in students before exams." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[4], Value = collegeSupportChoices[2] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[4], Value = 7 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[4], Value = collegeFlexChoices[0] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[4], Value = "Spread exams across the entire semester instead of cramming everything into two weeks." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[5], Value = collegeSupportChoices[4] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[5], Value = 9 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[5], Value = collegeFlexChoices[1] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[5], Value = "Create a buddy system pairing first-year students with seniors for peer support." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeStudents[7], Value = collegeSupportChoices[0] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeStudents[7], Value = 4 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeStudents[7], Value = collegeFlexChoices[0] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeStudents[7], Value = "An anonymous portal for students to ask mental health questions without fear of judgment." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeSurveyOnly[0], Value = collegeSupportChoices[2] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeSurveyOnly[0], Value = 6 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeSurveyOnly[0], Value = collegeFlexChoices[1] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeSurveyOnly[0], Value = "Better career counseling would reduce long-term stress about job prospects." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeSurveyOnly[1], Value = collegeSupportChoices[3] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeSurveyOnly[1], Value = 3 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeSurveyOnly[1], Value = collegeFlexChoices[0] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeSurveyOnly[1], Value = "Integrate mindfulness sessions into the class schedule." },
+
+            new SingleChoiceAnswer { Question = collegeSupportQuestion, Youth = collegeSurveyOnly[2], Value = collegeSupportChoices[1] },
+            new Answer<int> { Question = collegeStressScaleQuestion, Youth = collegeSurveyOnly[2], Value = 7 },
+            new SingleChoiceAnswer { Question = collegeFlexQuestion, Youth = collegeSurveyOnly[2], Value = collegeFlexChoices[2] },
+            new Answer<string> { Question = collegeOpenQuestion, Youth = collegeSurveyOnly[2], Value = "Better sports facilities on campus help reduce stress levels significantly." }
+        
         };
         context.Answers.AddRange(collegeAnswers);
 
@@ -1371,6 +1749,293 @@ public static class DataSeeder
 
         context.ResponseReactions.AddRange(collegeReactions);
 
+        SeedAiPrompts(context, now);
+        SeedAiRateLimits(context, now);
+        SeedModerationKeywords(context, now);
+        SeedAiDefaultProvider(context, now, configuration);
+        SeedAiAuditLogs(context, now, hogeschool, mentaalWelzijnActieplan, stadLinden, vergroeningEnRecreatiePlan, collegeNova, mentalWellbeingActionPlan);
+
         context.SaveChanges();
+    }
+
+    private static void SeedAiPrompts(ConverseyDbContext context, DateTime now)
+    {
+        if (context.AiPrompts.Any())
+        {
+            return;
+        }
+
+        var prompts = new List<AiPrompt>
+        {
+            new()
+            {
+                Name = "ModerationGenerateAlternative",
+                SystemPrompt = "You rewrite unsafe user feedback into respectful, constructive feedback while preserving intent. Return only the rewritten text.",
+                UserPromptTemplate = "{{IdeaText}}",
+                Description = "System prompt for generating a respectful alternative when content is flagged by moderation.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ModerationPrompt",
+                SystemPrompt = "You are a strict content safety classifier for a youth platform. Your task is to flag ANY harmful, toxic, or unsafe content.\n\nAnalyze the text against these categories:\n- sexual: sexually explicit content, sexual harassment, or sexualized language\n- hate_and_discrimination: slurs, hate speech, racism, homophobia, transphobia, bigotry, or discrimination based on identity\n- violence_and_threats: threats of violence, encouragement of violence, or glorification of harm\n- dangerous_and_criminal_content: illegal activity, self-harm instructions, or dangerous pranks\n- self_harm: content promoting or encouraging self-harm or suicide\n- pii: personal identifiable information like phone numbers, addresses, or full names\n\nAlso mark hate_and_discrimination as true for: personal insults involving slurs, name-calling with protected characteristics, profanity-laced harassment, hostile derogatory language, or general offensive/crude language targeting others.\n\nCRITICAL: Be conservative. If you are unsure whether content violates a category, mark it as violating. False positives are safer than false negatives.\n\nReturn ONLY a JSON object with this exact schema:\n{\"flagged\":true,\"categories\":{\"sexual\":false,\"hate_and_discrimination\":true,\"violence_and_threats\":false,\"dangerous_and_criminal_content\":false,\"self_harm\":false,\"pii\":false}}\n\nNo markdown, no code blocks, no explanation — just the raw JSON.",
+                UserPromptTemplate = "",
+                Description = "Prompt-based content moderation fallback for providers without a dedicated moderation endpoint (non-Mistral). Sends content as user message, expects structured JSON response.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingSystem",
+                SystemPrompt = "You help youth improve the quality of their idea before publishing. Ask exactly one concrete follow-up question when the idea is too shallow, vague, or underspecified. If the idea is already acceptable for the configured nudging strength, approve it. Never invent multiple questions. Return strict JSON only with the shape {\"isApproved\":true} or {\"isApproved\":false,\"question\":\"...\"}. Nudging strength: {{NudgingModeDescription}}.",
+                UserPromptTemplate = "",
+                Description = "System prompt for the idea quality nudging assessment. NudgingModeDescription is injected based on the project's nudging strength setting.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaNudgingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Project title: {{ProjectTitle}}\nProject description: {{ProjectDescription}}\nTopic title: {{TopicTitle}}\nTopic prompt/question: {{TopicPrompt}}\n\nCurrent idea draft:\n{{IdeaText}}\n\nConversation so far:\n{{Conversation}}\n\nDecide whether the draft is ready. If not, ask one follow-up question that is specific to this idea and helps deepen it using the project and topic context.",
+                Description = "User prompt template for idea nudging. Contains the idea draft, project/topic context, and previous conversation turns.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingSystem",
+                SystemPrompt = "You compare youth ideas by meaning. Return only strict JSON with field rankedIndexes as an array of integer indexes. For similarity tasks, return clearly similar ideas. For difference tasks, return ideas with a noticeably different focus or approach; be inclusive rather than restrictive.",
+                UserPromptTemplate = "",
+                Description = "System prompt for ranking ideas by semantic similarity or difference.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaRankingUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Reference idea:\n{{ReferenceIdea}}\n\nCandidate ideas (use only these indexes):\n{{Candidates}}\n\nTask:\n- {{RelationGoal}}\n- Return up to {{Limit}} indexes, ordered from best to least fitting for this relation.\n- Do not invent indexes.\n- Return strict JSON only with this schema:\n{\"rankedIndexes\":[0,1,2]}",
+                Description = "User prompt template for ranking ideas. Contains reference idea, candidates with indexes, relation goal, and limit.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationSystem",
+                SystemPrompt = "You assign semantic categories to youth ideas. Return only strict JSON.",
+                UserPromptTemplate = "",
+                Description = "System prompt for assigning semantic category labels to ideas.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "IdeaCategorizationUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "Categorize each idea semantically. One idea may belong to multiple categories.\n\nThese are the existing categories already used in this topic. Reuse these exact labels whenever possible and only invent a new label if nothing fits:\n{{ExistingCategories}}\n\nIdeas:\n{{Ideas}}\n\nRules:\n- Use short, human-readable category names.\n- Max {{MaxCategoriesPerIdea}} categories per idea.\n- Prefer reusing an existing category label when it is semantically close enough.\n- Avoid near-duplicate labels when an existing category already covers the same meaning.\n- Do not invent idea indexes.\n- Avoid creating near-duplicate labels if an existing category already fits.\n- Return strict JSON only in this shape:\n{\"items\":[{\"index\":0,\"categories\":[\"Category A\",\"Category B\"]}]}",
+                Description = "User prompt template for idea categorization. Contains index-labeled ideas, existing category labels, and max categories per idea.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ExtractKeyPhrasesSystem",
+                SystemPrompt = "You are a professional note-taking assistant. You ALWAYS return valid JSON. Extract concise, meaningful key phrases from spoken language in {{Language}} as if taking meeting notes. Be precise, remove all fluff, focus on actionable content, and never include filler words or greetings.",
+                UserPromptTemplate = "",
+                Description = "System prompt for extracting key phrases from speech transcripts. Language variable injected at runtime.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "ExtractKeyPhrasesUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "",
+                Description = "User prompt template for key phrase extraction. Uses hardcoded fallback when empty.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "GenerateTextFromBubblesSystem",
+                SystemPrompt = "You rewrite text from the user's first-person perspective. Always use first-person pronouns matching the language (Dutch: ik/mijn/wij/onze, English: I/my/we/our, French: je/mon/nous/notre). Always respond in {{Language}}.",
+                UserPromptTemplate = "",
+                Description = "System prompt for generating first-person text from key phrase bubbles. Language variable injected at runtime.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "GenerateTextFromBubblesUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "",
+                Description = "User prompt template for text generation from bubbles. Uses hardcoded fallback when empty.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "AnalyticsIdeaSummarySystem",
+                SystemPrompt = "You are an insightful data analyst for a youth participation platform. Your task is to analyze a collection of youth-contributed ideas and produce a clear, structured summary.\n\nReturn ONLY a JSON object with this exact schema:\n{\"overview\":\"A 2-3 sentence overview of the main themes across all ideas.\",\"trends\":[\"trend 1\",\"trend 2\",\"trend 3\"],\"minorityViews\":[\"niche or less common perspective 1\",\"niche or less common perspective 2\"],\"notableQuotes\":[\"direct quote or close paraphrase 1\",\"direct quote or close paraphrase 2\"],\"suggestedActions\":[\"actionable recommendation 1\",\"actionable recommendation 2\"]}\n\nRules:\n- overview: concise, covers breadth of all ideas seen\n- trends: 2-4 recurring patterns or dominant themes\n- minorityViews: 1-3 ideas that stand out from the mainstream (unique, dissenting, or niche)\n- notableQuotes: 2-3 exact or near-exact quotes from the ideas that are particularly insightful\n- suggestedActions: 2-3 concrete recommendations based on what youth are saying\n- Write in {{Language}}.\n- If focus instruction provided, prioritize that angle while still covering general patterns.",
+                UserPromptTemplate = "",
+                Description = "System prompt for AI-generated summary of youth ideas in the analytics dashboard. Language variable injected at runtime.",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                Name = "AnalyticsIdeaSummaryUser",
+                SystemPrompt = "",
+                UserPromptTemplate = "",
+                Description = "User prompt template for AI-generated idea summaries. Uses hardcoded fallback when empty.",
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.AiPrompts.AddRange(prompts);
+    }
+
+    private static void SeedAiRateLimits(ConverseyDbContext context, DateTime now)
+    {
+        if (context.RateLimitConfigs.Any())
+        {
+            return;
+        }
+
+        var configs = new List<RateLimitConfig>
+        {
+            new()
+            {
+                PolicyName = "AiFixedPolicy",
+                PermitLimit = 30,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                PartitionType = "user",
+                CreatedAt = now,
+                UpdatedAt = now
+            },
+            new()
+            {
+                PolicyName = "AiAdminPolicy",
+                PermitLimit = 60,
+                WindowSeconds = 60,
+                QueueLimit = 0,
+                PartitionType = "user",
+                CreatedAt = now,
+                UpdatedAt = now
+            }
+        };
+
+        context.RateLimitConfigs.AddRange(configs);
+    }
+
+    private static void SeedModerationKeywords(ConverseyDbContext context, DateTime now)
+    {
+        if (context.ModerationKeywords.Any())
+        {
+            return;
+        }
+
+        var keywords = new List<ModerationKeyword>
+        {
+            new() { Keyword = "retarded", CreatedAt = now },
+            new() { Keyword = "moron", CreatedAt = now },
+            new() { Keyword = "dumbass", CreatedAt = now },
+            new() { Keyword = "dumb ass", CreatedAt = now },
+            new() { Keyword = "fucking", CreatedAt = now },
+            new() { Keyword = "faggot", CreatedAt = now },
+            new() { Keyword = "fag", CreatedAt = now },
+            new() { Keyword = "nigger", CreatedAt = now },
+            new() { Keyword = "nigga", CreatedAt = now },
+        };
+
+        context.ModerationKeywords.AddRange(keywords);
+    }
+
+    private static void SeedAiDefaultProvider(ConverseyDbContext context, DateTime now, IConfiguration configuration)
+    {
+        if (context.AiProviderConfigs.Any())
+        {
+            return;
+        }
+
+        var apiKey = configuration?["AI:Mistral:ApiKey"] ?? string.Empty;
+
+        context.AiProviderConfigs.Add(new AiProviderConfig
+        {
+            ProviderName = "Mistral",
+            BaseUrl = "https://api.mistral.ai/v1/",
+            ApiKey = apiKey,
+            CompletionsModel = configuration?["AI:Mistral:CompletionsModel"] ?? "mistral-small-latest",
+            ModerationModel = configuration?["AI:Mistral:ModerationModel"] ?? "mistral-moderation-latest",
+            ApiVersion = "",
+            Temperature = 0.2m,
+            IsEnabled = true,
+            IsDefault = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+    }
+
+    private static void SeedAiAuditLogs(ConverseyDbContext context, DateTime now,
+        Workspace hogeschool, Project mentaalWelzijnActieplan,
+        Workspace stadLinden, Project vergroeningEnRecreatiePlan,
+        Workspace collegeNova, Project mentalWellbeingActionPlan)
+    {
+        if (context.AiAuditLogs.Any())
+        {
+            return;
+        }
+
+        var rnd = new Random(42);
+        var models = new[] { "mistral-small-latest", "mistral-large-latest", "mistral-moderation-latest" };
+        var types = new[] { "Completions", "Moderation" };
+        var prompts = new[] { "IdeaNudgingSystem", "IdeaNudgingUser", "IdeaRankingSystem", "IdeaRankingUser", "IdeaCategorizationSystem", "IdeaCategorizationUser", "ModerationPrompt", "ModerationGenerateAlternative", "ExtractKeyPhrasesSystem", "ExtractKeyPhrasesUser", "GenerateTextFromBubblesSystem", "GenerateTextFromBubblesUser" };
+        var providers = new[] { "Mistral" };
+
+        var workspaces = new[] { hogeschool, stadLinden, collegeNova };
+        var projects = new[] { mentaalWelzijnActieplan, vergroeningEnRecreatiePlan, mentalWellbeingActionPlan };
+
+        var logs = new List<AiAuditLog>();
+
+        for (int i = 0; i < 150; i++)
+        {
+            var wsIndex = rnd.Next(0, workspaces.Length);
+            var workspace = workspaces[wsIndex];
+            var project = projects[wsIndex];
+
+            var daysAgo = rnd.Next(2, 60);
+            var startTime = now.AddDays(-daysAgo).AddHours(rnd.Next(0, 24)).AddMinutes(rnd.Next(0, 60));
+            var durationMs = rnd.Next(100, 5000);
+            var modelType = types[rnd.Next(0, types.Length)];
+            var modelName = modelType == "Moderation" ? "mistral-moderation-latest" : models[rnd.Next(0, 2)];
+            var promptName = prompts[rnd.Next(0, prompts.Length)];
+            var inputTokens = rnd.Next(200, 4000);
+            var outputTokens = modelType == "Moderation" ? rnd.Next(50, 200) : rnd.Next(100, 1500);
+            var cost = modelType == "Moderation"
+                ? inputTokens * 0.00000015m + outputTokens * 0.00000015m
+                : inputTokens * 0.000002m + outputTokens * 0.000006m;
+
+            logs.Add(new AiAuditLog
+            {
+                ModelName = modelName,
+                ModelType = modelType,
+                InputTokens = inputTokens,
+                OutputTokens = outputTokens,
+                Cost = Math.Round(cost, 6),
+                ProviderName = providers[rnd.Next(0, providers.Length)],
+                PromptName = promptName,
+                StartTime = startTime,
+                Duration = TimeSpan.FromMilliseconds(durationMs),
+                CreatedAt = startTime,
+                WorkspaceId = workspace.Id,
+                ProjectId = project.Id
+            });
+        }
+
+        context.AiAuditLogs.AddRange(logs.OrderByDescending(l => l.StartTime));
     }
 }

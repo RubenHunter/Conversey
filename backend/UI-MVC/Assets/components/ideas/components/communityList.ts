@@ -179,6 +179,28 @@ export function renderCommunityIdeasList({
             card.appendChild(body)
         }
 
+        // Add reactions summary + emoji button as click affordance at bottom of card
+        const totalReactions = idea.reactions.reduce((sum, r) => sum + r.count, 0)
+        const firstEmoji = idea.reactions.length > 0 ? idea.reactions[0].emoji : null
+        const reactionsRow = document.createElement('div')
+        reactionsRow.className = 'ideas-card-reactions'
+        if (totalReactions > 0 && firstEmoji) {
+            const emojiSpan = document.createElement('span')
+            emojiSpan.className = 'ideas-card-reactions-emoji'
+            emojiSpan.textContent = firstEmoji
+            const countSpan = document.createElement('span')
+            countSpan.className = 'ideas-card-reactions-count'
+            countSpan.textContent = String(totalReactions)
+            reactionsRow.append(emojiSpan, countSpan)
+        }
+        // Emoji add button (matching ideaPanel's +:) button)
+        const addReactionBtn = document.createElement('span')
+        addReactionBtn.className = 'ideas-card-reaction-add-btn'
+        addReactionBtn.textContent = '+ :)'
+        addReactionBtn.setAttribute('aria-label', 'Add reaction')
+        reactionsRow.appendChild(addReactionBtn)
+        card.appendChild(reactionsRow)
+
         // Keep stable index mapping for controller and click handlers.
         card.setAttribute('data-original-index', String(index))
         card.setAttribute('data-idea-index', String(index))

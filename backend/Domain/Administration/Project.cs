@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Drawing;
 using Conversey.BL.Domain.Common;
 using Conversey.BL.Domain.Ideation;
 using Conversey.BL.Domain.Survey;
@@ -21,6 +19,12 @@ public class Project
     [StringLength(2048)]
     public string ImageUrl { get; set; }
     public Status Status { get; set; }
+    
+    [Range(0, 150)]
+    public int? MinAge { get; set; }
+    
+    [Range(0, 150)]
+    public int? MaxAge { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public InteractionType InteractionForm { get; set; }
@@ -29,9 +33,9 @@ public class Project
     public int NudgingStrength { get; set; } = 3;
     
     public IEnumerable<Topic> Topic { get; set; }
-    [NotMapped]
-    public ProjectStyle Style { get; set; }
-    
+
+    public ProjectTheme Theme { get; set; }
+
     public IEnumerable<Question> Questions { get; set; }
 
     [Required]
@@ -49,16 +53,9 @@ public enum Status
     Archived
 }
 
-public struct ProjectStyle
-{
-    public Color[] Theme { get; set; }
-    public Image? Logo { get; set; }
-    // To-Do public Font Font { get; set; }
-}
-
 public enum InteractionType
 {
+    UserDefined,
     Chat,
-    VerticalScroll,
-    UserDefined
+    VerticalScroll
 }

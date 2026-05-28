@@ -1,0 +1,241 @@
+@using Conversey.BL.Domain.Administration
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+<form id="create-project-step1-form" method="post" asp-action="@Model.AdminFormViewModel.FormAction" enctype="multipart/form-data">
+
+    <section class="step-panel">
+        <div class="step-panel-bg"></div>
+        <div class="step-panel-content">
+            <div class="step-panel-header">
+                <div class="space-y-3">
+                    <p class="step-panel-kicker">Intro &amp; presentation</p>
+                    <h2 class="step-panel-title">Step 1: Set the foundation</h2>
+                    <p class="step-panel-subtitle">Set up the basic information about your project or survey. Make it visually appealing and align the experience with your audience.</p>
+                </div>
+                <div class="hidden sm:flex flex-col items-end gap-2">
+                    <div class="step-panel-badge">Step 1</div>
+                    <div class="step-panel-badge-subtitle">Basics &amp; theme</div>
+                </div>
+            </div>
+
+    @* Hidden fields — all picked up by StepDraftManager automatically *@
+    <input asp-for="CreateStep1ViewModel.Slug" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ImageUrl" id="step1ImageUrl" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ImageFile" id="step1ImageFile" type="file" accept="image/*" class="hidden" />
+    <input id="step1ImageUploadSignature" name="step1ImageUploadSignature" type="hidden" />
+<input asp-for="CreateStep1ViewModel.ThemePrimary" id="step1ThemePrimary" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ThemeSecondary" id="step1ThemeSecondary" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ThemeAccent" id="step1ThemeAccent" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ThemePreset" id="step1ThemePreset" type="hidden" />
+    <input asp-for="CreateStep1ViewModel.ThemeFont" id="step1ThemeFont" type="hidden" />
+
+            <div class="flex gap-5 items-start">
+
+        @* ── LEFT: image dropzone + upload + chat mode ── *@
+                <div class="w-52 shrink-0 flex flex-col gap-3">
+
+            <div id="step1ImageDropzone"
+                 class="relative aspect-[3/4] rounded-2xl border-2 border-dashed border-text/20 bg-text/[0.02] flex flex-col items-center justify-center cursor-pointer hover:border-text/40 transition-colors overflow-hidden select-none">
+                <img id="step1ImagePreview" src="" alt="Project image"
+                     class="absolute inset-0 w-full h-full object-cover hidden" />
+                <div id="step1ImagePlaceholder" class="flex flex-col items-center gap-2 text-text/35 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 18h16.5M21 12V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75V18" />
+                    </svg>
+                    <span class="text-sm font-semibold">Project Image</span>
+                </div>
+            </div>
+
+            <button type="button" id="step1ImageUploadBtn" class="btn w-full justify-center gap-1.5">
+                Upload an image
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+            </button>
+            <p id="step1ImageUploadStatus" class="text-xs text-text/60 text-center -mt-1"></p>
+            <p id="step1ImageUploadError" class="text-xs text-red-600 text-center -mt-1"></p>
+
+            <div class="flex items-center gap-2 mt-0.5">
+                <label asp-for="CreateStep1ViewModel.InteractionForm" class="text-sm font-semibold text-text shrink-0">Interaction</label>
+                <select asp-for="CreateStep1ViewModel.InteractionForm"
+                        asp-items="Html.GetEnumSelectList<InteractionType>()"
+                        class="flex-1 min-w-0 rounded-lg border border-text/20 bg-background px-2 py-1.5 text-sm">
+                </select>
+            </div>
+        </div>
+
+        @* ── CENTER + RIGHT: 2-column card grid ── *@
+                <div class="flex-1 grid grid-cols-2 gap-4 content-start">
+
+            @* Title + Age group + Status/Dates *@
+            <div class="rounded-xl border border-text/15 bg-background p-4 space-y-4">
+                <div>
+                    <label asp-for="CreateStep1ViewModel.Name" class="block text-sm font-semibold text-text mb-1">Title</label>
+                    <input asp-for="CreateStep1ViewModel.Name"
+                           class="w-full rounded-lg border border-text/20 bg-background px-3 py-2 text-sm focus:outline-none focus:border-text/50 transition-colors"
+                           required />
+                    <span asp-validation-for="CreateStep1ViewModel.Name" class="text-xs text-red-600 mt-0.5 block"></span>
+                    <p id="step1NameWarning" class="mt-1 text-xs text-amber-600"></p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-text mb-2">Age group</label>
+                    <div class="space-y-2.5">
+                        <div class="range-slider">
+                            <span class="text-xs text-text/55 w-7 shrink-0">Min</span>
+                            <input type="range" id="step1MinAge" name="CreateStep1ViewModel.MinAge"
+                                   min="0" max="150" step="1"
+                                   value="@(Model.CreateStep1ViewModel.MinAge ?? 0)"
+                                   class="flex-1" />
+                            <span id="step1MinAgeDisplay" class="range-slider-badge">@(Model.CreateStep1ViewModel.MinAge ?? 0)</span>
+                        </div>
+                        <div class="range-slider">
+                            <span class="text-xs text-text/55 w-7 shrink-0">Max</span>
+                            <input type="range" id="step1MaxAge" name="CreateStep1ViewModel.MaxAge"
+                                   min="0" max="150" step="1"
+                                   value="@(Model.CreateStep1ViewModel.MaxAge ?? 150)"
+                                   class="flex-1" />
+                            <span id="step1MaxAgeDisplay" class="range-slider-badge">@(Model.CreateStep1ViewModel.MaxAge ?? 150)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-text/10 grid grid-cols-2 gap-2">
+                    <div>
+                        <label asp-for="CreateStep1ViewModel.StartDate" class="block text-xs font-medium text-text/60 mb-1">Start</label>
+                        <input asp-for="CreateStep1ViewModel.StartDate" type="date"
+                               class="w-full rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs" />
+                    </div>
+                    <div>
+                        <label asp-for="CreateStep1ViewModel.EndDate" class="block text-xs font-medium text-text/60 mb-1">End</label>
+                        <input asp-for="CreateStep1ViewModel.EndDate" type="date"
+                               class="w-full rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs" />
+                    </div>
+                </div>
+            </div>
+
+            @* Description *@
+            <div class="rounded-xl border border-text/15 bg-background p-4 flex flex-col">
+                <label asp-for="CreateStep1ViewModel.Description" class="block text-sm font-semibold text-text mb-1">Introduction</label>
+                <textarea asp-for="CreateStep1ViewModel.Description" rows="10"
+                          class="flex-1 w-full rounded-lg border border-text/20 bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:border-text/50 transition-colors"></textarea>
+                <span asp-validation-for="CreateStep1ViewModel.Description" class="text-xs text-red-600 mt-0.5"></span>
+            </div>
+
+            @* Themes *@
+            <div class="rounded-xl border border-text/15 bg-background p-4 space-y-2.5">
+                <h3 class="text-sm font-semibold text-text">Themes</h3>
+
+                <div id="step1ThemeRows" class="space-y-0.5">
+                    @{
+                        var presets = new[]
+                        {
+                            new { Id = "default", Label = "Default", P = "#6c5ce7", S = "#db99c8", A = "#cd6f88" },
+                            new { Id = "ocean",   Label = "Ocean",   P = "#0ea5e9", S = "#06b6d4", A = "#0284c7" },
+                            new { Id = "forest",  Label = "Forest",  P = "#16a34a", S = "#4ade80", A = "#84cc16" },
+                            new { Id = "sunset",  Label = "Sunset",  P = "#ea580c", S = "#f59e0b", A = "#ef4444" },
+                        };
+                    }
+                    @foreach (var preset in presets)
+                    {
+                        <div class="theme-row flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
+                             data-preset="@preset.Id" data-primary="@preset.P" data-secondary="@preset.S" data-accent="@preset.A">
+                            <button type="button" class="theme-row-plus w-6 h-6 rounded-full border-2 border-text/25 flex items-center justify-center text-text/40 hover:border-text/60 shrink-0 transition-colors" aria-label="Customise @preset.Label">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:@preset.P"></div>
+                            <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:@preset.S"></div>
+                            <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:@preset.A"></div>
+                            <span class="ml-1 text-xs text-text/45">@preset.Label</span>
+                        </div>
+                    }
+
+                    @* Custom theme row — hidden until custom theme is applied *@
+                    <div class="theme-row hidden flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
+                         id="step1CustomThemeRow"
+                         data-preset="custom" data-primary="#6c5ce7" data-secondary="#db99c8" data-accent="#cd6f88">
+                        <button type="button" class="theme-row-plus w-6 h-6 rounded-full border-2 border-text/25 flex items-center justify-center text-text/40 hover:border-text/60 shrink-0 transition-colors" aria-label="Edit custom theme">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:#6c5ce7"></div>
+                        <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:#db99c8"></div>
+                        <div class="theme-dot w-5 h-5 rounded-full shadow-sm ring-1 ring-black/5" style="background:#cd6f88"></div>
+                        <span class="ml-1 text-xs text-text/45">Custom</span>
+                    </div>
+                </div>
+
+                <button type="button" id="step1CreateThemeBtn" class="btn w-full justify-center gap-1.5 text-xs mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Create theme
+                </button>
+            </div>
+
+            @* Font picker *@
+            <div class="rounded-xl border border-text/15 bg-background p-4 space-y-2">
+                <h3 class="text-sm font-semibold text-text">Font</h3>
+                <div class="space-y-1.5" id="step1FontOptions">
+                    @foreach (var font in new[] { "Helvetica", "Verdana", "Tahoma", "Georgia", "Times New Roman" })
+                    {
+                        <button type="button"
+                                class="font-option w-full text-left px-3 py-2 rounded-lg border border-text/15 text-sm transition-colors hover:border-text/35 hover:bg-text/5"
+                                data-font="@font" style="font-family: @font, sans-serif">
+                            @font
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+            </div>
+        </div>
+    </section>
+</form>
+
+@* Custom theme picker modal (inside stepper container, shown via JS) *@
+<div id="step1ThemePickerModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden items-center justify-center">
+    <div class="bg-background rounded-2xl shadow-2xl border border-text/10 p-6 w-full max-w-xs mx-4 space-y-4">
+        <h3 class="text-base font-bold text-text">Custom theme</h3>
+        <div class="space-y-3">
+            <div class="flex items-center gap-3">
+                <label class="text-sm text-text/60 w-20 shrink-0">Primary</label>
+                <div class="flex-1 flex items-center gap-2">
+                    <input type="color" id="step1PickerPrimary" value="#6c5ce7"
+                           class="h-8 w-10 rounded border border-text/20 cursor-pointer p-0.5 bg-transparent shrink-0" />
+                    <input type="text" id="step1PickerPrimaryHex" value="#6c5ce7" maxlength="7"
+                           class="flex-1 rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs font-mono uppercase" />
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="text-sm text-text/60 w-20 shrink-0">Secondary</label>
+                <div class="flex-1 flex items-center gap-2">
+                    <input type="color" id="step1PickerSecondary" value="#db99c8"
+                           class="h-8 w-10 rounded border border-text/20 cursor-pointer p-0.5 bg-transparent shrink-0" />
+                    <input type="text" id="step1PickerSecondaryHex" value="#db99c8" maxlength="7"
+                           class="flex-1 rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs font-mono uppercase" />
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="text-sm text-text/60 w-20 shrink-0">Accent</label>
+                <div class="flex-1 flex items-center gap-2">
+                    <input type="color" id="step1PickerAccent" value="#cd6f88"
+                           class="h-8 w-10 rounded border border-text/20 cursor-pointer p-0.5 bg-transparent shrink-0" />
+                    <input type="text" id="step1PickerAccentHex" value="#cd6f88" maxlength="7"
+                           class="flex-1 rounded-lg border border-text/20 bg-background px-2 py-1.5 text-xs font-mono uppercase" />
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2 pt-1">
+            <button type="button" id="step1PickerCancel" class="btn flex-1 justify-center">Cancel</button>
+            <button type="button" id="step1PickerApply"
+                    class="flex-1 rounded-lg bg-text text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
+                Apply
+            </button>
+        </div>
+    </div>
+</div>

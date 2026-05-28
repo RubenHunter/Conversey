@@ -12,10 +12,11 @@ using Conversey.DAL.Ideation;
 using Conversey.DAL.Survey;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
-using System.Runtime.CompilerServices;
 using Conversey.BL.Domain.Ai;
+using System.Runtime.CompilerServices;
+
+using Conversey.BL.Ai.DTOs;
 
 namespace Tests.IntegrationTests.Infrastructure;
 
@@ -48,13 +49,15 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IIdeaRepository, IdeaRepository>();
         services.AddScoped<IQuestionRepository, QuestionRepository>();
+        
+        var cloudStorageMock = new Moq.Mock<ICloudStorageRepository>();
+        services.AddScoped<ICloudStorageRepository>(_ => cloudStorageMock.Object);
 
         services.AddScoped<IWorkspaceManager, WorkspaceManager>();
         services.AddScoped<IProjectManager, ProjectManager>();
         services.AddScoped<IIdeaManager, IdeaManager>();
         services.AddScoped<IQuestionManager, QuestionManager>();
 
-        services.AddSingleton(new AiManagerConfig());
         services.AddSingleton(_aiConfig);
         services.AddScoped<IAiManager>(_ => new TestAiManager(_aiConfig));
 
@@ -194,22 +197,22 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
 
     private sealed class TestAiManager( TestAiManagerConfig config) : IAiManager
     {
-        public Task<string> GenerateAiAlternative(string prompt, ModerationDecision decision = null)
+        public Task<string> GenerateAlternativeAsync(string content, ModerationDecision decision = null, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(config.Alternative);
         }
 
-        public Task<ModerationDecision> ModerateContent(string content)
+        public Task<ModerationDecision> ModerateContentAsync(string content, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(new ModerationDecision { IsAllowed = config.IsAllowed, Suggestion = config.Alternative });
         }
 
-        public Task<IdeaNudgeDecision> AssessIdeaNudge(IdeaNudgeAssessmentRequest request)
+        public Task<IdeaNudgeDecision> AssessIdeaNudgeAsync(IdeaNudgeAssessmentRequest request, string? workspaceId = null, string? projectId = null)
         {
             return Task.FromResult(new IdeaNudgeDecision { IsApproved = true });
         }
 
-        public Task<IEnumerable<int>> RankIdeasByRelation(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit)
+        public Task<IEnumerable<int>> RankIdeasByRelationAsync(string referenceIdea, IReadOnlyList<string> candidateIdeas, bool preferDifferent, int limit, string? workspaceId = null, string? projectId = null)
         {
             if (candidateIdeas.Count == 0 || limit <= 0)
             {
@@ -222,10 +225,10 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
                 ordered = ordered.Reverse();
             }
 
-            return Task.FromResult(ordered.Take(limit));
+            return Task.FromResult<IEnumerable<int>>(ordered.Take(limit).ToList());
         }
 
-        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeas(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea)
+        public Task<IReadOnlyDictionary<int, IReadOnlyList<string>>> CategorizeIdeasAsync(IReadOnlyList<string> ideas, IReadOnlyList<string> existingCategories, int maxCategoriesPerIdea, string? workspaceId = null, string? projectId = null)
         {
             if (config.ThrowOnCategorize)
             {
@@ -277,34 +280,63 @@ public sealed class ManagerIntegrationTestFixture : IDisposable
             return Task.FromResult<IReadOnlyDictionary<int, IReadOnlyList<string>>>(result);
         }
 
-        public void Dispose()
-        {
-        }
-
-        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, "test")));
-        }
-
-        public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions options = null,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public object GetService(Type serviceType, object serviceKey = null)
-        {
-            return null;
-        }
-
         private static string NormalizeCategoryKey(string value)
         {
             return new string((value ?? string.Empty)
                 .ToLowerInvariant()
                 .Where(char.IsLetterOrDigit)
                 .ToArray());
+        }
+
+        public Task<ExtractKeyPhrasesResponse> ExtractKeyPhrases(
+            string transcript,
+            Language language,
+            int maxPhrases,
+            IReadOnlyList<string>? existingPhrases = null,
+            IReadOnlyList<string>? rejectedPhrases = null)
+        {
+            if (string.IsNullOrWhiteSpace(transcript) || maxPhrases <= 0)
+                return Task.FromResult(new ExtractKeyPhrasesResponse([]));
+
+            var rejected = rejectedPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
+            var existing = existingPhrases?.Select(p => p.Trim().ToLowerInvariant()).ToHashSet() ?? [];
+
+            var sentences = transcript
+                .Split(['.', '!', '?'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => s.Length > 0 && !rejected.Contains(s.ToLowerInvariant()) && !existing.Contains(s.ToLowerInvariant()))
+                .Take(maxPhrases)
+                .ToList()
+                .AsReadOnly();
+            return Task.FromResult(new ExtractKeyPhrasesResponse(sentences));
+        }
+
+        public Task<string> GenerateTextFromBubbles(
+            string transcript,
+            IReadOnlyList<string> bubbles,
+            Language language,
+            IReadOnlyList<string>? rejectedPhrases = null)
+        {
+            if (string.IsNullOrWhiteSpace(transcript) || bubbles == null || bubbles.Count == 0)
+                return Task.FromResult(string.Empty);
+            // Filter out rejected phrases
+            var filteredBubbles = bubbles.ToList();
+            if (rejectedPhrases != null)
+            {
+                var rejectedSet = new HashSet<string>(rejectedPhrases, StringComparer.OrdinalIgnoreCase);
+                filteredBubbles = filteredBubbles.Where(b => !rejectedSet.Contains(b)).ToList();
+            }
+            return Task.FromResult(transcript + " " + string.Join(", ", filteredBubbles));
+        }
+
+        public Task<string> CompletePlainTextAsync(
+            string systemPrompt,
+            string userPrompt,
+            string? workspaceId = null,
+            string? projectId = null,
+            string? displayPromptName = null)
+        {
+            return Task.FromResult("[Test] Plain text completion response.");
         }
     }
 

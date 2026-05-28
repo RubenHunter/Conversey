@@ -4,17 +4,17 @@ using Conversey.BL.Domain.Common;
 
 namespace Conversey.DAL;
 
-public class ConverseyAdminUser : IdentityUser
+public class ConverseyAdminUser : AdminUser
 {
     // Conversey-specific properties
 }
 
-public class WorkspaceAdminUser : IdentityUser
+public class WorkspaceAdminUser : AdminUser
 {
     public Workspace Workspace { get; set; }
 }
 
-public class ApplicationUser : IdentityUser
+public class AdminUser : IdentityUser
 {
-    public Slug WorkspaceId { get; set; }
+    public bool FirstLogin { get; set; } = false;
 }

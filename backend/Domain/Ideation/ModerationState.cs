@@ -48,7 +48,7 @@ public static class ModerationInfoSerializer
     
     private static bool ToBool(int v)
     {
-        return v != 0;
+        return (v & 1) != 0;
     }
 }
 

@@ -10,16 +10,13 @@ public class ProjectManager: IProjectManager
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IWorkspaceManager _workspaceManager;
+    private readonly ICloudStorageRepository _cloudStorageRepository;
 
-    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager)
+    public ProjectManager(IProjectRepository projectRepository, IWorkspaceManager workspaceManager, ICloudStorageRepository cloudStorageRepository)
     {
         _projectRepository = projectRepository;
         _workspaceManager = workspaceManager;
-    }
-
-    public Project GetProject(Workspace workspace, Slug projectId)
-    {
-        return GetProjectById(workspace.Id, projectId);
+        _cloudStorageRepository = cloudStorageRepository;
     }
 
     public Project GetProjectById(Slug workspaceId, Slug projectId)
@@ -49,7 +46,7 @@ public class ProjectManager: IProjectManager
         var existingYouth = _projectRepository.ReadYouthByIdAndProjectId(token, projectId);
         if (existingYouth != null)
         {
-            if (ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
+            if (YouthEmailHelper.ShouldReplaceEmail(existingYouth.Email, normalizedEmail))
             {
                 existingYouth.Email = normalizedEmail;
                 _projectRepository.UpdateYouth(existingYouth);
@@ -74,11 +71,32 @@ public class ProjectManager: IProjectManager
         return _projectRepository.ReadAllProjectsFromWorkspaceId(workspaceId);
     }
 
-    public Project AddProject(Slug workspaceId, string name, string description, Status status, DateTime startDate,
-        DateTime endDate, InteractionType interactionForm, int nudgingStrength = 3)
+    public Project AddProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl = "", int nudgingStrength = 3)
     {
+        return SaveProject(
+            workspaceId,
+            name,
+            description,
+            startDate,
+            endDate,
+            interactionForm,
+            imageUrl,
+            nudgingStrength,
+            null,
+            null,
+            Status.Active,
+            null
+        );
+    }
+
+    public Project SaveProject(Slug workspaceId, string name, string description, DateTime startDate,
+        DateTime endDate, InteractionType interactionForm, string imageUrl, int nudgingStrength, int? minAge, int? maxAge,
+        Status status, string slug, ProjectTheme theme = null)
+    {
+        var resolvedTheme = theme ?? ProjectTheme.Default;
         var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
-        
+
         if (string.IsNullOrWhiteSpace(name))
         {
             var results = new List<ValidationResult>
@@ -90,25 +108,85 @@ public class ProjectManager: IProjectManager
             ex.Data["ValidationResults"] = results;
             throw ex;
         }
-        
-        var project = new Project
+
+        var resolvedSlug = string.IsNullOrWhiteSpace(slug) ? Slug.FromName(name) : Slug.FromName(slug);
+        var existing = _projectRepository.ReadProjectByIdAndWorkspaceId(resolvedSlug, workspaceId);
+
+        if (nudgingStrength < 1 || nudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
+        if (existing == null)
         {
-            Id = Slug.FromName(name),
-            Name = name,
-            Description = description,
-            Status = status,
-            StartDate = startDate.ToUniversalTime(),
-            EndDate = endDate.ToUniversalTime(),
-            InteractionForm = interactionForm,
-            NudgingStrength = Math.Clamp(nudgingStrength, 1, 5),
+            var project = new Project
+            {
+                Id = resolvedSlug,
+                Name = name,
+                Description = description,
+                ImageUrl = imageUrl?.Trim() ?? string.Empty,
+                Status = status,
+                StartDate = startDate.ToUniversalTime(),
+                EndDate = endDate.ToUniversalTime(),
+                InteractionForm = interactionForm,
+                NudgingStrength = nudgingStrength,
+                MinAge = minAge,
+                MaxAge = maxAge,
+                Workspace = workspace
+            };
 
-            Workspace = workspace
-        };
-        
-        Validate(project);
+            Validate(project);
+            _projectRepository.CreateProject(project);
 
-        _projectRepository.CreateProject(project);
-        return project;
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = project.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+
+            return project;
+        }
+
+        existing.Name = name;
+        existing.Description = description;
+        existing.ImageUrl = imageUrl?.Trim() ?? string.Empty;
+        existing.Status = status;
+        existing.StartDate = startDate.ToUniversalTime();
+        existing.EndDate = endDate.ToUniversalTime();
+        existing.InteractionForm = interactionForm;
+        existing.NudgingStrength = Math.Clamp(nudgingStrength, 1, 5);
+        existing.MinAge = minAge;
+        existing.MaxAge = maxAge;
+        existing.Workspace = workspace;
+
+        Validate(existing);
+        _projectRepository.UpdateProject(existing);
+
+        if (existing.Theme == null)
+        {
+            _projectRepository.CreateTheme(new ProjectTheme
+            {
+                ProjectId = existing.Id,
+                Primary = resolvedTheme.Primary,
+                Secondary = resolvedTheme.Secondary,
+                Accent = resolvedTheme.Accent,
+                Preset = resolvedTheme.Preset,
+                Font = resolvedTheme.Font
+            });
+        }
+        else
+        {
+            existing.Theme.Primary = resolvedTheme.Primary;
+            existing.Theme.Secondary = resolvedTheme.Secondary;
+            existing.Theme.Accent = resolvedTheme.Accent;
+            existing.Theme.Preset = resolvedTheme.Preset;
+            existing.Theme.Font = resolvedTheme.Font;
+            _projectRepository.UpdateTheme(existing.Theme);
+        }
+
+        return existing;
     }
 
     public void EditProject(Project updatedProject)
@@ -119,13 +197,18 @@ public class ProjectManager: IProjectManager
         if (existing == null)
             throw new ProjectNotFoundException(updatedProject.Id);
 
+        if (updatedProject.NudgingStrength < 1 || updatedProject.NudgingStrength > 5)
+            throw new ValidationException("Nudging strength must be between 1 and 5.");
+
         existing.Name = updatedProject.Name;
         existing.Description = updatedProject.Description;
         existing.Status = updatedProject.Status;
         existing.StartDate = updatedProject.StartDate;
         existing.EndDate = updatedProject.EndDate;
         existing.InteractionForm = updatedProject.InteractionForm;
-        existing.NudgingStrength = Math.Clamp(updatedProject.NudgingStrength, 1, 5);
+        existing.NudgingStrength = updatedProject.NudgingStrength;
+        existing.MinAge = updatedProject.MinAge;
+        existing.MaxAge = updatedProject.MaxAge;
         existing.Workspace = updatedProject.Workspace;
         
         
@@ -136,22 +219,31 @@ public class ProjectManager: IProjectManager
     {
         _projectRepository.DeleteProject(projectId, workspaceId);
     }
+    
 
-    private static bool ShouldReplaceEmail(string currentEmail, string newEmail)
+    public async Task<string> UploadProjectImage(Stream stream, string fileName, string contentType)
     {
-        if (IsPlaceholderEmail(newEmail)) return false;
-
-        var normalizedCurrent = currentEmail?.Trim() ?? string.Empty;
-        if (normalizedCurrent.Length == 0) return true;
-
-        return normalizedCurrent.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase) ||
-               !string.Equals(normalizedCurrent, newEmail, StringComparison.OrdinalIgnoreCase);
+        return await _cloudStorageRepository.UploadFileAsync(stream, fileName, contentType);
     }
 
-    private static bool IsPlaceholderEmail(string email)
+    public void AddTopic(Slug projectId, Slug workspaceId , string name, string context)
     {
-        var normalized = email?.Trim() ?? string.Empty;
-        return normalized.Length == 0 || normalized.EndsWith("@local.invalid", StringComparison.OrdinalIgnoreCase);
+        var workspace = _workspaceManager.GetWorkspaceById(workspaceId);
+        if (workspace == null)
+            throw new WorkspaceNotFoundException(workspaceId);
+        var project = _projectRepository.ReadProjectByIdAndWorkspaceId(projectId, workspaceId);
+        if (project == null)
+            throw new ProjectNotFoundException(projectId);
+
+        var topic = new Topic
+        {
+            Name = name,
+            Context = context,
+            Project = project
+        };
+        
+        Validate(project);
+        _projectRepository.CreateTopic(topic);
     }
 
 

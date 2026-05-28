@@ -1,24 +1,51 @@
+﻿@using System.Text.Json
+@inject Conversey.UI_MVC.Resources.IAdminI18nService AdminI18n
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <link rel="icon" type="image/x-icon" href="/images/Conversey_logo.png" />
+    <link rel="icon" type="image/x-icon" href="/Assets/Conversey_logo.png" />
 
-    @inject Dictionary<string, string> Manifest
-    @{
-        var cssFile = Manifest.GetValueOrDefault("main.css", "main.css");
-        var jsFile = Manifest.GetValueOrDefault("main.ts", "main.ts");
-    }
-    <link rel="stylesheet" href="/@cssFile" />
-    <script type="module" src="/@jsFile"></script>
+    <script type="module" vite-src="~/main.ts"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    
+    <script type="module" vite-src="~/components/shared/createProjectStepper.ts"></script>
+
+    <script type="module" vite-src="~/components/shared/adminDeleteModal.ts"></script>
+    <script type="module" vite-src="~/components/shared/langDropdown.ts"></script>
+    <script type="module" vite-src="~/components/shared/adminI18nBindings.ts"></script>
+    <script type="module" vite-src="~/components/shared/projectArchiveModal.ts"></script>
+    <script type="module" vite-src="~/components/shared/listSearch.ts"></script>
+    <script type="module" vite-src="~/components/shared/adminHeader.ts"></script>
+    
+    <environment include="Development">
+        <link rel="stylesheet" vite-href="~/main.css" asp-append-version="true" />
+    </environment>
+    <environment include="Production">
+        <link rel="stylesheet" vite-href="~/main.ts" asp-append-version="true" />
+    </environment>
 </head>
 <body>
-	<div id="app" class="min-h-screen flex flex-col items-center justify-center gap-8">
-		@RenderBody()
-	</div>
+    @{
+        var path = Context.Request.Path;
+        var isAdminPath = path.StartsWithSegments("/admin");
+        if (path.StartsWithSegments("/admin"))
+        {
+            var map = AdminI18n.CurrentLanguageMap;
+            var lang = AdminI18n.CurrentLanguage;
+            var json = JsonSerializer.Serialize(new { lang = lang, strings = map });
+            <text>
+                <script>window.__AdminI18n = @Html.Raw(json);</script>
+            </text>
+        }
+    }
 
-    @await RenderSectionAsync("Scripts", required: false)
+    <div id="app" class="min-h-screen flex flex-col @(isAdminPath ? "lg:pl-[17rem]" : "")">
+        @RenderBody()
+    </div>
+
+
 </body>
 </html>

@@ -1,24 +1,196 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
 @{
     ViewData["Title"] = "Admin Panel";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", null, true)
+    };
+    var workspaceSlug = WorkspaceContext.CurrentWorkspace?.Id.ToString() ?? string.Empty;
+    var forcePasswordChange = TempData["ForcePasswordChange"] as bool? == true;
 }
 
-<div class="min-h-screen bg-gray-50 px-4 py-10">
-    <div class="mx-auto max-w-5xl">
-        <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
-        <p class="mt-2 text-gray-600">You are logged in as an admin.</p>
+<div class="min-h-screen bg-background font-sans text-text" data-force-password-change="@forcePasswordChange.ToString().ToLowerInvariant()">
+    @await Html.PartialAsync("_AdminHeader")
 
-        <div class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-semibold text-gray-900">Welcome</h2>
-            <p class="mt-2 text-gray-700">
-                This is the admin dashboard entry point.
-            </p>
-            <div class="mt-6 flex items-center justify-end">
-                <a
-                    href="@Url.Action("Projects", "WorkspaceAdmin")"
-                    class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    Manage projects
-                </a>
-            </div>
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-text tracking-tight">@WorkspaceContext.CurrentWorkspace?.Name</h1>
+            <p class="mt-2 text-sm text-text/60" data-i18n="Manage your workspace projects and settings.">Manage your workspace projects and settings.</p>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <a href="@Url.Action("Projects", "WorkspaceAdmin")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text" data-i18n="Projects">Projects</h3>
+                        <p class="text-xs text-text/50 mt-1" data-i18n="Manage projects, topics, and participants">Manage projects, topics, and participants</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Index", "WorkspaceAnalytics")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text" data-i18n="Analytics">Analytics</h3>
+                        <p class="text-xs text-text/50 mt-1" data-i18n="View statistics, charts, and AI summaries of your data">View statistics, charts, and AI summaries of your data</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Dashboard", "WorkspaceAi", new { workspaceSlug = workspaceSlug })" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary/20 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text" data-i18n="AI Settings">AI Settings</h3>
+                        <p class="text-xs text-text/50 mt-1" data-i18n="Monitor costs, manage prompts, and set cost limits">Monitor costs, manage prompts, and set cost limits</p>
+                    </div>
+                </div>
+            </a>
+
+            <a href="@Url.Action("Moderation", "WorkspaceAnalytics")" class="group bg-white rounded-xl border border-secondary/10 shadow-sm p-6 hover:shadow-lg hover:border-primary/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-text">Moderation</h3>
+                        <p class="text-xs text-text/50 mt-1">Review and approve or deny flagged ideas and comments</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </main>
+</div>
+
+<div id="forceChangePasswordModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+        <div class="mb-4">
+            <h3 class="text-xl font-bold text-text">Change password</h3>
+            <p class="mt-1 text-sm text-text/60">You must change your password before continuing.</p>
+        </div>
+
+        <form id="forceChangePasswordForm" asp-controller="AdminProfile" asp-action="ChangePassword" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label for="forceCurrentPassword" class="mb-1 block text-sm font-semibold text-text/80">Current password</label>
+                <div class="relative">
+                    <input id="forceCurrentPassword" name="CurrentPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceCurrentPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="forceNewPassword" class="mb-1 block text-sm font-semibold text-text/80">New password</label>
+                <div class="relative">
+                    <input id="forceNewPassword" name="NewPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceNewPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="forceConfirmPassword" class="mb-1 block text-sm font-semibold text-text/80">Confirm new password</label>
+                <div class="relative">
+                    <input id="forceConfirmPassword" name="ConfirmPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="forceConfirmPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <ul id="forcePasswordChecklist" class="mt-1 space-y-1 text-xs text-accent">
+                <li data-requirement="length" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>At least 6 characters</span>
+                </li>
+                <li data-requirement="lowercase" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Lowercase letter</span>
+                </li>
+                <li data-requirement="uppercase" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Uppercase letter</span>
+                </li>
+                <li data-requirement="digit" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Number</span>
+                </li>
+                <li data-requirement="symbol" class="flex items-center gap-2">
+                    <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                    <span>Symbol</span>
+                </li>
+            </ul>
+
+            <p id="forcePasswordError" class="hidden text-sm font-medium text-accent"></p>
+
+            <div class="mt-6 flex justify-end">
+                <button type="submit"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    Update password
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/passwordVisibilityToggle.ts"></script>
+    <script type="module" vite-src="~/components/shared/forcePasswordChangeModal.ts"></script>
+}

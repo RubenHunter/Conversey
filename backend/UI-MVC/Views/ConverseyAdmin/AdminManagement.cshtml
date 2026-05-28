@@ -1,0 +1,356 @@
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models.Admin
+@model Conversey.UI_MVC.Models.AdminManagement.AdminManagementViewModel
+
+@{
+    ViewData["Title"] = "Admin Management";
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Conversey Admins", null, true)
+    };
+
+    var converseyAdminTableModel = new AdminTableViewModel<ConverseyAdmin>
+    {
+        SectionTitle = "Conversey Admins",
+        TableDescription = "Manage global administrators for the entire Conversey platform",
+        CreateUrl = "#",
+        CreateButtonLabel = "Create new Conversey Admin",
+        CreateButtonId = "openConverseyAdminCreateModal",
+        CreateButtonModalKey = "conversey-admin-create",
+        EmptyState = "No conversey admins found.",
+        RowId = u => u.Id.ToString(),
+        Items = Model.ConverseyAdmins.ToList(),
+        Columns =
+        [
+            new()
+            {
+                Header = "ID",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Id.ToString());
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Email",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Email ?? "-");
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Username",
+                Template = u =>
+                {
+                    var span = new TagBuilder("span");
+                    span.InnerHtml.Append(u.Username ?? "-");
+                    return span;
+                }
+            },
+            new()
+            {
+                Header = "Actions",
+                Template = u =>
+                {
+                    var container = new TagBuilder("div");
+                    container.AddCssClass("flex gap-3");
+
+                    var edit = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-open-conversey-admin-edit-modal"] = "true",
+                            ["data-conversey-admin-id"] = u.Id.ToString(),
+                            ["data-conversey-admin-email"] = u.Email ?? string.Empty,
+                            ["data-conversey-admin-username"] = u.Username ?? string.Empty,
+                            ["data-conversey-admin-phone"] = u.PhoneNumber ?? string.Empty
+                        }
+                    };
+                    edit.AddCssClass("font-semibold text-primary transition hover:text-primary/80");
+                    edit.InnerHtml.Append("Edit");
+
+                    var divider1 = new TagBuilder("p");
+                    divider1.InnerHtml.Append("|");
+
+                    var contact = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-contact-email"] = u.Email ?? string.Empty,
+                            ["title"] = "Send email"
+                        }
+                    };
+                    contact.AddCssClass("contact-admin-btn font-semibold text-emerald-600 transition hover:text-emerald-800");
+                    contact.InnerHtml.Append("Contact");
+
+                    var divider2 = new TagBuilder("p");
+                    divider2.InnerHtml.Append("|");
+
+                    var delete = new TagBuilder("button")
+                    {
+                        Attributes =
+                        {
+                            ["type"] = "button",
+                            ["data-delete-id"] = u.Id.ToString(),
+                            ["data-delete-name"] = u.Email ?? "-",
+                            ["data-delete-endpoint"] = $"/admin/conversey-user/delete/{u.Id}"
+                        }
+                    };
+                    delete.AddCssClass("font-semibold text-accent transition hover:text-accent/80");
+                    delete.InnerHtml.Append("Delete");
+
+                    container.InnerHtml.AppendHtml(edit);
+                    container.InnerHtml.AppendHtml(divider1);
+                    container.InnerHtml.AppendHtml(contact);
+                    container.InnerHtml.AppendHtml(divider2);
+                    container.InnerHtml.AppendHtml(delete);
+
+                    return container;
+                }
+            }
+        ]
+    };
+
+    var createConverseyAdminForm = new AdminFormViewModel<dynamic>
+    {
+        FormItem = new ConverseyAdmin(),
+        FormAction = "CreateConverseyAdmin",
+        SubmitLabel = "Create Admin"
+    };
+
+    var createConverseyAdminViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Create Conversey Admin",
+        ["FormId"] = "converseyAdminCreateForm",
+        ["CloseButtonId"] = "closeConverseyAdminCreateModal",
+        ["FormPostUrl"] = Url.Action("CreateConverseyAdmin", "Admin") ?? "/admin/conversey-admins/new",
+        ["AdminIdInputId"] = "converseyAdminCreateIdInput",
+        ["AdminEmailInputId"] = "converseyAdminCreateEmailInput",
+        ["AdminUsernameInputId"] = "converseyAdminCreateUsernameInput",
+        ["AdminPhoneInputId"] = "converseyAdminCreatePhoneInput",
+        ["AdminServerErrorId"] = "converseyAdminCreateServerError",
+        ["SubmitLabel"] = "Create Admin"
+    };
+
+    var editConverseyAdminActionTemplate = Url.Action("EditConverseyAdmin", "Admin", new { id = "__converseyAdminId__" }) ?? "/admin/conversey-admin/__converseyAdminId__";
+    var editConverseyAdminForm = new AdminFormViewModel<dynamic>
+    {
+        FormItem = new ConverseyAdmin(),
+        FormAction = "EditConverseyAdmin",
+        SubmitLabel = "Save changes"
+    };
+
+    var editConverseyAdminViewData = new ViewDataDictionary(ViewData)
+    {
+        ["ModalTitle"] = "Edit Conversey Admin",
+        ["FormId"] = "converseyAdminEditForm",
+        ["CloseButtonId"] = "closeConverseyAdminEditModal",
+        ["FormActionTemplate"] = editConverseyAdminActionTemplate,
+        ["AdminIdInputId"] = "converseyAdminEditIdInput",
+        ["AdminEmailInputId"] = "converseyAdminEditEmailInput",
+        ["AdminUsernameInputId"] = "converseyAdminEditUsernameInput",
+        ["AdminPhoneInputId"] = "converseyAdminEditPhoneInput",
+        ["AdminServerErrorId"] = "converseyAdminEditServerError",
+        ["SubmitLabel"] = "Save changes"
+    };
+
+    var oneTimePassword = TempData["OneTimePassword"] as string;
+    var oneTimePasswordAdminEmail = TempData["OneTimePasswordAdminEmail"] as string;
+    var emailSent = TempData["EmailSent"] as bool? == true;
+    var showOneTimePassword = !string.IsNullOrWhiteSpace(oneTimePassword) && !string.IsNullOrWhiteSpace(oneTimePasswordAdminEmail);
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="mb-10">
+            <h1 class="text-3xl font-bold text-text tracking-tight">Admin Management</h1>
+            <p class="mt-2 text-sm text-text/60">Manage conversey admins and view all workspace admins.</p>
+        </div>
+
+        <div class="space-y-12">
+            <!-- Conversey Admins -->
+            @await Html.PartialAsync("_AdminTableWithCreate", converseyAdminTableModel)
+
+            <!-- Workspace Admins Grouped by Workspace -->
+            <div>
+                <h2 class="text-2xl font-bold text-text tracking-tight mb-6">Workspace Admins</h2>
+                
+                @if (!Model.WorkspaceAdminsByWorkspace.Any())
+                {
+                    <div class="rounded-2xl border border-secondary/10 bg-white p-6 shadow-sm text-center">
+                        <p class="text-sm text-text/60">No workspace admins found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-6">
+                        @foreach (var group in Model.WorkspaceAdminsByWorkspace)
+                        {
+                            var workspace = group.Key;
+                            var workspaceTableModel = new AdminTableViewModel<WorkspaceAdmin>
+                            {
+                                SectionTitle = workspace.Name,
+                                TableDescription = $"Workspace ID: {workspace.Id.Text}",
+                                CreateButtonLabel = "Manage in Workspace",
+                                CreateUrl = Url.Action("WorkspaceDetails", "ConverseyAdmin", new { id = workspace.Id.Text }),
+                                EmptyState = "No admins.",
+                                RowId = u => u.Id.ToString(),
+                                Items = group.ToList(),
+                                Columns =
+                                [
+                                    new()
+                                    {
+                                        Header = "ID",
+                                        Template = u =>
+                                        {
+                                            var span = new TagBuilder("span");
+                                            span.InnerHtml.Append(u.Id.ToString());
+                                            return span;
+                                        }
+                                    },
+                                    new()
+                                    {
+                                        Header = "Email",
+                                        Template = u =>
+                                        {
+                                            var span = new TagBuilder("span");
+                                            span.InnerHtml.Append(u.Email ?? "-");
+                                            return span;
+                                        }
+                                    },
+                                    new()
+                                    {
+                                        Header = "Username",
+                                        Template = u =>
+                                        {
+                                            var span = new TagBuilder("span");
+                                            span.InnerHtml.Append(u.Username ?? "-");
+                                            return span;
+                                        }
+                                    },
+                                    new()
+                                    {
+                                        Header = "Actions",
+                                        Template = u =>
+                                        {
+                                            var contact = new TagBuilder("button")
+                                            {
+                                                Attributes =
+                                                {
+                                                    ["type"] = "button",
+                                                    ["data-contact-email"] = u.Email ?? string.Empty,
+                                                    ["title"] = "Send email"
+                                                }
+                                            };
+                                            contact.AddCssClass("contact-admin-btn font-semibold text-emerald-600 transition hover:text-emerald-800");
+                                            contact.InnerHtml.Append("Contact");
+                                            return contact;
+                                        }
+                                    }
+                                ]
+                            };
+
+                            <details class="group rounded-2xl border border-secondary/10 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden workspace-accordion"
+                                     data-workspace-accordion>
+                                <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-text">@workspace.Name</h3>
+                                        <p class="mt-1 text-sm text-text/60">@group.Count() admin(s)</p>
+                                    </div>
+                                    <div class="workspace-accordion-chevron rounded-full bg-secondary/10 p-2 text-secondary">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </summary>
+                                <div class="px-6 pb-6 workspace-accordion-content"
+                                     data-workspace-accordion-content>
+                                    @await Html.PartialAsync("_AdminTableWithCreate", workspaceTableModel)
+                                </div>
+                            </details>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="converseyAdminCreateModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("~/Views/Admin/_AdminUserForm.cshtml", createConverseyAdminForm, createConverseyAdminViewData)
+    </div>
+</div>
+
+<div id="converseyAdminEditModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-lg">
+        @await Html.PartialAsync("~/Views/Admin/_AdminUserForm.cshtml", editConverseyAdminForm, editConverseyAdminViewData)
+    </div>
+</div>
+
+@await Html.PartialAsync("_DeleteModal")
+
+@await Html.PartialAsync("~/Views/Shared/_ContactEmailModal.cshtml")
+
+@if (showOneTimePassword)
+{
+    <div id="oneTimePasswordModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-text/45 p-4"
+         data-one-time-password="@oneTimePassword"
+         data-one-time-password-email="@oneTimePasswordAdminEmail">
+        <div class="w-full max-w-lg rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-text">One-time password</h3>
+                <p class="mt-1 text-sm text-text/60">Share this password with the new admin. It will only be shown once.</p>
+            </div>
+            <div class="space-y-4">
+                @if (emailSent)
+                {
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-emerald-700">An email with login instructions has been sent to @oneTimePasswordAdminEmail.</p>
+                    </div>
+                }
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-text/50">Account</p>
+                    <p class="mt-1 text-sm font-semibold text-text">@oneTimePasswordAdminEmail</p>
+                </div>
+                <div class="rounded-xl border border-secondary/15 bg-background/60 px-4 py-3">
+                    <p class="text-xs uppercase tracking-widest text-text/50">Temporary password</p>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <span id="oneTimePasswordValue" class="font-mono text-base font-semibold text-text">@oneTimePassword</span>
+                        <button id="copyOneTimePassword"
+                                type="button"
+                                class="inline-flex items-center gap-2 rounded-lg border border-secondary/20 px-3 py-1.5 text-xs font-semibold text-text/70 transition hover:bg-background">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p id="oneTimePasswordCopied" class="mt-2 hidden text-xs font-semibold text-primary">Copied. Make sure you saved it.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="closeOneTimePasswordModal"
+                        type="button"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    I saved it
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/adminManagementModals.ts"></script>
+}

@@ -58,7 +58,7 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
     }
 
     [Fact]
-    public void CorePipeline_IdeaToResponseToReactionFlow_ShouldPersistAndBeReadable()
+    public async Task CorePipeline_IdeaToResponseToReactionFlow_ShouldPersistAndBeReadable()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
@@ -71,13 +71,13 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
             .Select(topic => topic.Id)
             .First();
-        var ideaSubmission = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Pipeline idea content") switch
+        var ideaSubmission = await ideaManager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Pipeline idea content") switch
         {
             SubmissionResponse.Approved approved => approved,
             _ => throw new InvalidOperationException("Expected approved idea submission.")
         };
 
-        var responseSubmission = ideaManager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, ManagerSeedData.YouthToken, "Pipeline response content") switch
+        var responseSubmission = await ideaManager.AddResponseAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ideaSubmission.Idea.Id, ManagerSeedData.YouthToken, "Pipeline response content") switch
         {
             ResponseSubmissionResponse.Approved approved => approved,
             _ => throw new InvalidOperationException("Expected approved response submission.")
@@ -97,7 +97,7 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
     }
 
     [Fact]
-    public void CorePipeline_SubmitIdea_WhenContentIsFlagged_ShouldReturnPendingWithAlternative()
+    public async Task CorePipeline_SubmitIdea_WhenContentIsFlagged_ShouldReturnPendingWithAlternative()
     {
         _fixture.SetAiModerationBehavior(isAllowed: false, alternative: "Please remove profanity and rewrite respectfully.");
         try
@@ -112,7 +112,7 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
                 .Select(topic => topic.Id)
                 .First();
 
-            var response = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "extreme profanity content");
+            var response = await ideaManager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "extreme profanity content");
 
             var pending = Assert.IsType<SubmissionResponse.Pending>(response);
             Assert.Equal(ModerationStatus.Pending, pending.Idea.Status);
@@ -125,7 +125,7 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
     }
 
     [Fact]
-    public void CorePipeline_AddResponse_WhenYouthIsUnknown_ShouldAutoCreateYouthAndPersistResponse()
+    public async Task CorePipeline_AddResponse_WhenYouthIsUnknown_ShouldAutoCreateYouthAndPersistResponse()
     {
         _fixture.SetAiModerationBehavior(isAllowed: true);
         using var scope = _fixture.CreateScope();
@@ -138,13 +138,13 @@ public class CorePipelineIntegrationTests : IClassFixture<ManagerIntegrationTest
             .Where(topic => EF.Property<Slug>(topic, "ProjectId") == ManagerSeedData.ProjectSlug)
             .Select(topic => topic.Id)
             .First();
-        var seededIdea = ideaManager.SubmitIdea(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Idea for foreign youth rejection") switch
+        var seededIdea = await ideaManager.SubmitIdeaAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, ManagerSeedData.YouthToken, "Idea for foreign youth rejection") switch
         {
             SubmissionResponse.Approved approved => approved,
             _ => throw new InvalidOperationException("Expected approved idea submission.")
         };
 
-        var response = ideaManager.AddResponse(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, seededIdea.Idea.Id, Guid.NewGuid(), "Response by foreign youth");
+        var response = await ideaManager.AddResponseAsync(ManagerSeedData.WorkspaceSlug, ManagerSeedData.ProjectSlug, topicId, seededIdea.Idea.Id, Guid.NewGuid(), "Response by foreign youth");
 
         Assert.True(response is ResponseSubmissionResponse.Approved or ResponseSubmissionResponse.Pending);
     }

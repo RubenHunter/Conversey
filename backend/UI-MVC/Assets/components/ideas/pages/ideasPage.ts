@@ -1,6 +1,7 @@
 // CSS imported globally in main.css
 //import type { RouteParams } from '../../utils/router'
 import { getProject } from '../../../services/projectService'
+import { applyTheme } from '../../../utils/theme'
 import {
     getIdeasContext,
     getOrCreateProjectScopedYouthId,
@@ -16,6 +17,7 @@ import {
     removeResponseReaction,
     updateIdeaResponseAfterSafetyReview,
 } from '../../../services/ideaResponseService'
+import { bindMicButton, createSpeakerButton, getSpeechLanguage, type SpeakerButtonController } from '../../../services/speechService'
 import type { Idea, IdeaTopic } from '../../../models/idea'
 import { resolveInitialIdeasView } from '../utils/initialView'
 import { createIdeaPanelController } from '../components/ideaPanel'
@@ -27,6 +29,7 @@ import { renderIdeasHeader } from "../utils/ideasHeader"
 import {createTopicModalController} from "../components/topicModal";
 import {createIdeasListController} from "../components/ideasListController";
 import {createIdeasSubmitHandler} from "../components/ideasSubmitHandler";
+import { wireBrainstormButton, type BrainstormModalController } from '../../shared/brainstormMode'
 import type { ActiveView } from '../types'
 import { DiscoveryMode, DiscoveryBadgeType, DiscoveryFeed } from '../types'
 import { IdeaAuthorType } from '../../../models/idea'
@@ -61,6 +64,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const t = getSurveyStrings()
     let discoveryRequestToken = 0
     const project = await getProject(params.organizationSlug, params.projectSlug)
+    applyTheme(project.theme)
     const context = await getIdeasContext(params.organizationSlug, params.projectSlug, project)
     const youthToken = getOrCreateProjectScopedYouthId(project.slug)
 
@@ -84,7 +88,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     let discoveryBadgeByIdeaId: ReadonlyMap<number, DiscoveryBadgeType> = new Map()
     let lastScrollTop: number = 0
 
-    const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug })
+    const headerHTML = renderIdeasHeader({ organizationName, organizationSlug: project.organizationSlug, organizationLogo: project.organizationLogo })
 
     container.innerHTML = `
         <div class="ideas-shell h-svh w-full self-stretch overflow-hidden flex flex-col bg-[var(--color-bg)]">
@@ -124,35 +128,41 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     </section>
 
                     <section class="ideas-compose" aria-label="Create idea">
-                        <div class="ideas-compose-head">
+                        <div class="ideas-compose-head max-[450px]:flex-row max-[450px]:items-center max-[450px]:flex-wrap max-[450px]:gap-0 max-[450px]:mb-0">
                             <button id="ideas-topic-trigger" class="ideas-compose-topic-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="topic-modal" aria-label="Select topic">
                                 <span class="ideas-compose-topic-text">
-                                    <span class="ideas-compose-topic-kicker">Topic:</span>
+                                    <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                                     <span id="ideas-topic-trigger-value" class="ideas-compose-topic-value"></span>
                                     <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                                 </span>
                             </button>
-                            <div class="survey-question-title ideas-prompt-title-row">
-                                <span id="ideas-prompt" class="ideas-prompt"></span>
+                            <div class="survey-question-title ideas-prompt-title-row max-[450px]:text-xs">
+                                <span id="ideas-prompt" class="ideas-prompt max-[450px]:text-xs"></span>
+                                <button id="ideas-prompt-speaker" class="survey-speaker-btn"
+                                        title="${t.readAloud}" aria-label="${t.readAloud}" disabled>
+                                    <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm-2.5-9.5v2.06a7 7 0 010 13.88v2.06c4.01-.91 7-4.49 7-8.99s-2.99-8.08-7-8.99z"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                         <div class="survey-textarea-wrapper">
-                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)]" placeholder="Share your idea for this topic..."></textarea>
+                            <textarea id="ideas-textarea" class="survey-textarea max-[370px]:min-h-[calc(var(--spacing-xl)*3.4)] max-[450px]:h-10 max-[450px]:min-h-0 max-[450px]:max-h-10" placeholder="${t.shareIdea}"></textarea>
                             <div class="survey-textarea-actions">
-                                <button id="ideas-magic" class="survey-magic-btn" type="button" title="Answer in Magic Mode (coming soon)">
+                                <button id="ideas-brainstorm" class="survey-brainstorm-btn" type="button" title="${t.brainstormModeTitle}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                                     </svg>
-                                    <span class="survey-magic-btn-text">Magic Mode</span>
+                                    <span class="survey-brainstorm-btn-text">${t.brainstormModeButton}</span>
                                 </button>
-                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="Voice input" title="Voice input (coming soon)">
+                                <button id="ideas-speak" class="survey-mic-btn" type="button" aria-label="${t.voiceInput}" title="${t.voiceInput}">
                                     <svg class="survey-speaker-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <button id="ideas-submit" class="ideas-submit" type="button">Submit Idea</button>
+                        <button id="ideas-submit" class="ideas-submit max-[450px]:py-1 max-[450px]:text-xs" type="button">Submit Idea</button>
                     </section>
                 </div>
                 <button
@@ -165,7 +175,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                     hidden
                 >
                     <span class="ideas-compose-topic-text">
-                        <span class="ideas-compose-topic-kicker">Switch to topic</span>
+                        <span class="ideas-compose-topic-kicker">${t.chooseTopic}</span>
                         <span id="ideas-topic-trigger-floating-value" class="ideas-compose-topic-value"></span>
                         <span class="ideas-compose-topic-chevron" aria-hidden="true">▾</span>
                     </span>
@@ -226,7 +236,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                             </button>
                             <button
                                 id="idea-panel-edit-toggle"
-                                class="survey-magic-btn idea-panel-edit-cta"
+                                class="survey-brainstorm-btn idea-panel-edit-cta"
                                 type="button"
                                 aria-label="${t.editIdea}"
                                 title="${t.editIdea}"
@@ -236,7 +246,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.121 2.121 0 1 1 3L7 19l-4 1 1-4 12.5-12.5z"/>
                                 </svg>
-                                <span class="survey-magic-btn-text">${t.editIdea}</span>
+                                <span class="survey-brainstorm-btn-text">${t.editIdea}</span>
                             </button>
                         </div>
                     </div>
@@ -248,7 +258,9 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="idea-panel-footer">
                 <textarea id="idea-panel-input" class="idea-panel-input" placeholder="${t.writeComment}" rows="2"></textarea>
-                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled>${t.post}</button>
+                <button id="idea-panel-send" class="idea-panel-send" type="button" disabled aria-label="${t.post}">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
             </div>
         </div>
 
@@ -300,14 +312,14 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             </div>
             <div class="modal-body idea-nudge-body">
                 <p id="idea-nudge-context" class="idea-nudge-context"></p>
-                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeStatus}</p>
+                <p id="idea-nudge-status" class="idea-nudge-status">${t.nudgeThinking}</p>
                 <div id="idea-nudge-thread" class="idea-nudge-thread max-[720px]:max-h-[220px]" aria-live="polite"></div>
                 <label class="idea-nudge-input-wrap" for="idea-nudge-input">
                     <span class="idea-nudge-input-label">${t.yourAnswer}</span>
-                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="3" placeholder="${t.answerContinue}..."></textarea>
+                    <textarea id="idea-nudge-input" class="idea-nudge-input" rows="2" placeholder=""></textarea>
                 </label>
             </div>
-            <div class="first-idea-contact-actions idea-nudge-actions">
+            <div class="idea-nudge-actions-wrap">
                 <button id="idea-nudge-action" class="safety-review-btn safety-review-btn--primary" type="button">${t.answerContinue}</button>
             </div>
         </div>
@@ -371,8 +383,19 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
     const textareaWrapper = container.querySelector<HTMLDivElement>('.survey-textarea-wrapper')!
     const textarea = container.querySelector<HTMLTextAreaElement>('#ideas-textarea')!
     const submitBtn = container.querySelector<HTMLButtonElement>('#ideas-submit')!
-    const magicBtn = container.querySelector<HTMLButtonElement>('#ideas-magic')!
+    const brainstormBtn = container.querySelector<HTMLButtonElement>('#ideas-brainstorm')!
     const speakBtn = container.querySelector<HTMLButtonElement>('#ideas-speak')!
+    const promptSpeakerBtn = container.querySelector<HTMLButtonElement>('#ideas-prompt-speaker')!
+    const unbindMic = bindMicButton(speakBtn, textarea, getSpeechLanguage, (text) => {
+        textarea.value = text
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+        submitBtn.disabled = textarea.value.trim().length === 0
+    })
+    const promptSpeaker: SpeakerButtonController = createSpeakerButton(
+        promptSpeakerBtn,
+        () => prompt.textContent ?? '',
+        getSpeechLanguage
+    )
     const panelBackdrop = container.querySelector<HTMLDivElement>('#idea-panel-backdrop')!
     const panelClose = container.querySelector<HTMLButtonElement>('#idea-panel-close')!
     const ideasShell = container.querySelector<HTMLDivElement>('.ideas-shell')!
@@ -385,6 +408,29 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         storageKey: firstIdeaContactStorageKey,
     })
+
+    const brainstormModal: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
+        getQuestionText: () => prompt.textContent ?? '',
+        onResult: (finalText: string) => {
+            if (finalText.trim()) {
+                textarea.value = finalText
+                textarea.dispatchEvent(new Event('input', { bubbles: true }))
+                submitBtn.disabled = textarea.value.trim().length === 0 || activeView.type !== 'topic'
+            }
+        }
+    })
+
+    function getNudgingContext(view: ActiveView) {
+        if (view.type !== 'topic') return null
+        const topic = topics.find((item) => item.id === view.topicId)
+        if (!topic) return null
+        return {
+            projectTitle: project.title,
+            projectDescription: project.description,
+            topicTitle: topic.title,
+            topicPrompt: topic.prompt,
+        }
+    }
 
     function resetIdeasListToTop(): void {
         list.scrollTop = 0
@@ -428,17 +474,17 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             return
         }
 
-        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
-            const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
-            const semanticButtons = categories
-                .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
-                .join('')
-                const categoriesSection = categories.length > 0
-                    ? `<hr class="ideas-discovery-separator" role="separator">
-                       <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
-                       ${semanticButtons}`
-                    : ''
+        const categories = getTopicSemanticCategories(allIdeas, activeView.topicId)
+        const semanticButtons = categories
+            .map((category) => `<button class="ideas-discovery-option" data-semantic-category="${category.replace(/"/g, '&quot;')}" role="menuitem" type="button">${category}</button>`)
+            .join('')
+        const categoriesSection = categories.length > 0
+            ? `<hr class="ideas-discovery-separator" role="separator">
+               <p class="ideas-discovery-section-label">${t.ideaCategories}</p>
+               ${semanticButtons}`
+            : ''
 
+        if (!hasOwnIdeaInTopic(allIdeas, activeView.topicId)) {
             discoveryMenu.innerHTML = `
                 <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.broadSelection}</button>
                 ${categoriesSection}
@@ -450,6 +496,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             <button class="ideas-discovery-option" data-discovery-mode="similar" role="menuitem" type="button">${t.similarIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="different" role="menuitem" type="button">${t.differingIdeas}</button>
             <button class="ideas-discovery-option" data-discovery-mode="all" role="menuitem" type="button">${t.allIdeas}</button>
+            ${categoriesSection}
         `
     }
 
@@ -530,18 +577,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         }, 850)
     }
 
-    function getNudgingContext(view: ActiveView) {
-        if (view.type !== 'topic') return null
-        const topic = topics.find((item) => item.id === view.topicId)
-        if (!topic) return null
-        return {
-            projectTitle: project.title,
-            projectDescription: project.description,
-            topicTitle: topic.title,
-            topicPrompt: topic.prompt,
-        }
-    }
-
     // Create controllers
     const safetyReviewDialog = createSafetyReviewDialogController({root: container})
     const ideaNudgeDialog = createIdeaNudgeDialogController({
@@ -597,6 +632,7 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         root: container,
         topics,
         onSelect: (nextView) => {
+            promptSpeaker.stop()
             activeView = nextView
             if (nextView.type === 'topic') {
                 discoveryMode = DiscoveryMode.All
@@ -625,8 +661,6 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             if (isFlagged) {
                 flaggedIdeaIds.add(idea.id)
             }
-            discoveryMode = DiscoveryMode.All
-            selectedSemanticCategory = null
             showPostPreviewPair = true
             resetPaging()
             discoveryCache.clear()
@@ -673,6 +707,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             listController.cleanup()
         }
 
+        list.classList.toggle('ideas-list--preview', showPostPreviewPair)
+
         // Create new list controller
         listController = createIdeasListController({
             list,
@@ -717,9 +753,10 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
             ideasCompose,
             composeTopic: topicTriggerValue,
             prompt,
+            promptSpeakerBtn,
             textarea,
             submitBtn,
-            magicBtn,
+            brainstormBtn,
             speakBtn,
         })
 
@@ -950,22 +987,25 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
 
     // Cleanup on navigation
     window.addEventListener('app:before-navigate', () => {
+        unbindMic()
+        promptSpeaker.stop()
         listController?.cleanup()
         resizeObserver.disconnect()
         discoveryRequestToken += 1
         document.removeEventListener('keydown', handleKeyDown)
+        brainstormModal.destroy()
         if (copyPulseTimeout !== null) {
             window.clearTimeout(copyPulseTimeout)
         }
     }, { once: false })
 
-    // Magic button focus behavior
+    // Brainstorm button focus behavior
     textarea.addEventListener('focus', () => {
-        magicBtn?.classList.add('survey-magic-btn-focused')
+        brainstormBtn?.classList.add('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('blur', () => {
-        magicBtn?.classList.remove('survey-magic-btn-focused')
+        brainstormBtn?.classList.remove('survey-brainstorm-btn-focused')
     })
 
     textarea.addEventListener('input', () => {
@@ -981,9 +1021,8 @@ export async function renderIdeasPage(container: HTMLElement, params: ProjectCon
         submitBtn.disabled = true
         submitBtn.textContent = 'Checking...'
 
-        void firstIdeaContactDialog.open().then((choice) => {
-            persistContactEmailIfGranted(choice)
-        })
+        const choice = await firstIdeaContactDialog.open()
+        persistContactEmailIfGranted(choice)
 
         try {
             await submitHandler.submit(body, activeView)

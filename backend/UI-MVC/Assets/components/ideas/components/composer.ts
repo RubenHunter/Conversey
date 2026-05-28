@@ -1,4 +1,5 @@
-﻿import type { IdeaTopic } from '../../../models/idea'
+﻿import { getSurveyStrings } from '../../../i18n/survey'
+import type { IdeaTopic } from '../../../models/idea'
 import type { ActiveView } from '../types'
 
 interface RenderComposerParams {
@@ -8,9 +9,10 @@ interface RenderComposerParams {
     ideasCompose: HTMLElement
     composeTopic: HTMLSpanElement
     prompt: HTMLParagraphElement
+    promptSpeakerBtn: HTMLButtonElement
     textarea: HTMLTextAreaElement
     submitBtn: HTMLButtonElement
-    magicBtn: HTMLButtonElement
+    brainstormBtn: HTMLButtonElement
     speakBtn: HTMLButtonElement
 }
 
@@ -21,9 +23,10 @@ export function renderIdeasComposer({
     ideasCompose,
     composeTopic,
     prompt,
+    promptSpeakerBtn,
     textarea,
     submitBtn,
-    magicBtn,
+    brainstormBtn,
     speakBtn,
 }: RenderComposerParams): void {
     const isMyIdeasView = activeView.type === 'my-ideas'
@@ -38,16 +41,19 @@ export function renderIdeasComposer({
         textarea.value = ''
         textarea.disabled = true
         submitBtn.disabled = true
-        magicBtn.disabled = true
+        brainstormBtn.disabled = true
         speakBtn.disabled = true
+        promptSpeakerBtn.disabled = true
         return
     }
 
     composeTopic.textContent = topic.title
-    prompt.textContent = topic.prompt
+    const t = getSurveyStrings()
+    prompt.innerHTML = `<span class="ideas-prompt-prefix">${t.topicQuestionLabel}</span> ${topic.prompt}`
     textarea.disabled = false
     submitBtn.disabled = textarea.value.trim().length === 0
-    magicBtn.disabled = false
+    brainstormBtn.disabled = false
     speakBtn.disabled = false
+    promptSpeakerBtn.disabled = false
 }
 

@@ -20,21 +20,25 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly WorkspaceContext _workspaceContext;
         private readonly ILogger<LoginModel> _logger;
+        private readonly AdminContext _adminContext;
 
         public LoginModel(
-            SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager,
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
             WorkspaceContext workspaceContext,
-            ILogger<LoginModel> logger)
+            ILogger<LoginModel> logger,
+            AdminContext adminContext
+            )
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _workspaceContext = workspaceContext;
             _logger = logger;
+            _adminContext = adminContext;
         }
 
         /// <summary>
@@ -123,7 +127,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 }
 
                 // Check if user is a ConverseyAdmin
-                if (await _userManager.IsInRoleAsync(user, "Admin") && string.IsNullOrEmpty(user.WorkspaceId.Text))
+                if (user is ConverseyAdminUser converseyAdmin)
                 {
                     if (_workspaceContext.CurrentWorkspace == null)
                     {
@@ -132,7 +136,8 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         {
                             await _signInManager.SignInAsync(user, Input.RememberMe);
                             _logger.LogInformation("ConverseyAdmin logged in.");
-                            return LocalRedirect(Url.Content("~/admin/conversey"));
+                            _adminContext.CurrentAdmin = AdminContext.ToDomain(converseyAdmin);
+                            return LocalRedirect(Url.Content("~/admin"));
                         }
                     }
                     else
@@ -142,19 +147,23 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                         return Page();
                     }
+                    
+
                 }
 
                 // Check if user is a WorkspaceAdmin
-                if (await _userManager.IsInRoleAsync(user, "Admin") && !string.IsNullOrEmpty(user.WorkspaceId.Text))
+                if (user is WorkspaceAdminUser workspaceAdmin)
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
                     
-                    // Als we op het hoofddomein zijn (workspace == null), staan we inloggen toe en redirecten we naar het subdomein
-                    if (workspace != null && user.WorkspaceId != workspace.Id)
+                    if (workspace == null || 
+                        workspaceAdmin.Workspace == null ||
+                        string.IsNullOrWhiteSpace(workspaceAdmin.Workspace.Id.Text) ||
+                        workspaceAdmin.Workspace.Id != workspace.Id)
                     {
                         _logger.LogWarning("Workspace mismatch for login attempt.");
                         await _signInManager.SignOutAsync();
-                        ModelState.AddModelError(string.Empty, "Je hebt geen toegang tot deze specifieke omgeving.");
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                         return Page();
                     }
 
@@ -163,12 +172,11 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                     {
                         await _signInManager.SignInAsync(user, Input.RememberMe);
                         _logger.LogInformation("WorkspaceAdmin logged in.");
-                        
-                        // Redirect naar het juiste subdomein als dat nodig is
-                        if (workspace == null) {
-                             return Redirect($"https://{user.WorkspaceId}.conversey.be/admin/workspace");
+                        _adminContext.CurrentAdmin = AdminContext.ToDomain(workspaceAdmin);
+                        if (workspaceAdmin.FirstLogin)
+                        {
+                            TempData["ForcePasswordChange"] = true;
                         }
-                        
                         return LocalRedirect(Url.Content("~/admin/workspace"));
                     }
                 }

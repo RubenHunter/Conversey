@@ -6,7 +6,6 @@ namespace Conversey.DAL.Administration;
 public interface IWorkspaceRepository
 {
     IReadOnlyCollection<Workspace> ReadAllWorkspaces();
-    Workspace ReadWorkspaceBySlug(Slug slug);
     Workspace ReadWorkspaceById(Slug id);
     void CreateWorkspace(Workspace workspace);
     void UpdateWorkspace(Workspace updatedWorkspace);

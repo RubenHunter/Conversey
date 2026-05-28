@@ -27,6 +27,7 @@
         <ProjectReference Include="..\BL\BL.csproj" />
         <ProjectReference Include="..\DAL\DAL.csproj" />
         <ProjectReference Include="..\Domain\Domain.csproj" />
+        <ProjectReference Include="..\UI-MVC\UI-MVC.csproj" />
     </ItemGroup>
 
 </Project>

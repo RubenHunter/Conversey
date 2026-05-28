@@ -1,5 +1,5 @@
-@using Microsoft.AspNetCore.Html
 @model dynamic
+
 
 @{
     var columns = Model.Columns as IEnumerable<dynamic> ?? [];
@@ -8,35 +8,58 @@
     var hasItems = enumerable.Any();
     var objects = columns.ToList();
     var columnCount = objects.Count();
+    var createButtonId = Model.CreateButtonId as string ?? string.Empty;
+    var createButtonModalKey = Model.CreateButtonModalKey as string ?? string.Empty;
+    var createButtonIdValue = string.IsNullOrWhiteSpace(createButtonId) ? null : createButtonId;
+    var createButtonModalKeyValue = string.IsNullOrWhiteSpace(createButtonModalKey) ? null : createButtonModalKey;
+    var tableBodyId = (Model.TableBodyId as string) ?? "workspaceTableBody";
 }
 
-<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-    <div class="overflow-hidden rounded-md border border-gray-200">
+<div class="rounded-2xl border border-text/10 bg-white p-6 shadow-sm">
+    <div class="overflow-hidden rounded-xl border border-text/10">
         <!-- Header -->
-        <div class="flex items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
+        <div class="flex items-center justify-between gap-4 border-b border-text/10 bg-background/70 px-5 py-4">
             <div>
-                <h2 class="text-xl font-semibold text-gray-900">@Model.SectionTitle</h2>
-                <p class="mt-1 text-sm text-gray-600">@Model.TableDescription</p>
+                <h2 class="text-xl font-bold text-text tracking-tight">@Model.SectionTitle</h2>
+                <p class="mt-1 text-sm text-text/60">@Model.TableDescription</p>
             </div>
-            <a
-                href="@Model.CreateUrl"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                aria-label="@Model.CreateButtonLabel"
-                title="@Model.CreateButtonLabel">
-                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z"/>
-                </svg>
-            </a>
+            @if (createButtonModalKeyValue != null)
+            {
+                <button
+                    type="button"
+                    id="@createButtonIdValue"
+                    data-modal-key="@createButtonModalKeyValue"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-primary/25 transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                    aria-label="@Model.CreateButtonLabel"
+                    title="@Model.CreateButtonLabel">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z"/>
+                    </svg>
+                </button>
+            }
+            else
+            {
+                <a
+                    href="@Model.CreateUrl"
+                    id="@createButtonIdValue"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-primary/25 transition hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                    aria-label="@Model.CreateButtonLabel"
+                    title="@Model.CreateButtonLabel">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z"/>
+                    </svg>
+                </a>
+            }
         </div>
 
         <!-- Table -->
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-text/10">
             <!-- Head -->
-            <thead class="bg-gray-50">
+            <thead class="bg-background/80">
                 <tr>
                     @foreach (var col in objects)
                     {
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
+                        <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-text/50">
                             @col.Header
                         </th>
                     }
@@ -44,11 +67,11 @@
             </thead>
             
             <!-- Body -->
-            <tbody class="divide-y divide-gray-100 bg-white">
+            <tbody id="@tableBodyId" class="divide-y divide-text/10 bg-white">
             @if (!hasItems)
             {
                 <tr>
-                    <td colspan="@columnCount" class="px-4 py-10 text-center text-sm text-gray-500">
+                    <td colspan="@columnCount" class="px-5 py-12 text-center text-sm text-text/55">
                         @Model.EmptyState
                     </td>
                 </tr>
@@ -57,10 +80,10 @@
             {
                 @foreach (var item in enumerable)
                 {
-                    <tr data-row-id="@Model.RowId(item)" class="hover:bg-gray-50">
+                    <tr data-row-id="@Model.RowId(item)" class="transition-colors hover:bg-primary/5" data-search-item data-search-text="@Model.RowId(item)">
                         @foreach (var col in objects)
                         {
-                            <td class="px-4 py-3 text-sm text-gray-700">
+                            <td class="px-5 py-3.5 text-sm text-text/80">
                                 @col.Template(item)
                             </td>
                         }

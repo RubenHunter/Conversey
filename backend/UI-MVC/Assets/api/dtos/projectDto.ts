@@ -1,5 +1,18 @@
 type ApiSlugValue = string | { text?: string; Text?: string }
 
+export interface ApiProjectThemeDto {
+    primary?: string
+    Primary?: string
+    secondary?: string
+    Secondary?: string
+    accent?: string
+    Accent?: string
+    preset?: string
+    Preset?: string
+    font?: string
+    Font?: string
+}
+
 export interface ApiTopicDto {
     id?: number
     Id?: number
@@ -21,6 +34,8 @@ export interface ApiProjectDto {
     OrganizationId?: ApiSlugValue
     organizationName?: string
     OrganizationName?: string
+    organizationLogo?: string
+    OrganizationLogo?: string
     name?: string
     Name?: string
     description?: string
@@ -41,4 +56,6 @@ export interface ApiProjectDto {
     Topic?: ApiTopicDto
     topics?: ApiTopicDto[]
     Topics?: ApiTopicDto[]
+    theme?: ApiProjectThemeDto
+    Theme?: ApiProjectThemeDto
 }

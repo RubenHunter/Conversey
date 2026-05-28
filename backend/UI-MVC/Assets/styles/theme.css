@@ -1,20 +1,19 @@
 :root {
-  /* Brand colors */
-  --color-primary: #6C5CE7;
-  --color-primary-hover: #5A4BD1;
-  --color-primary-light: #A29BFE;
-  --color-secondary: #00CEC9;
-  --color-accent: #FD79A8;
+  /* Brand colors — primary/secondary/accent set by @theme in main.css (admin default)
+     or overridden at runtime by applyTheme() for user-facing project pages */
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 80%, black);
+  --color-primary-light: color-mix(in srgb, var(--color-primary) 55%, white);
 
   /* Neutral palette */
   --color-bg: #F8F9FA;
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
-  --color-border-focus: #6C5CE7;
-  --color-text: #1A202C;
+  --color-border-focus: var(--color-primary);
   --color-text-secondary: #718096;
   --color-text-muted: #A0AEC0;
   --color-text-on-primary: #FFFFFF;
+  --color-black: #000000;
+  --color-info: #3b82f6;
 
   /* Feedback colors */
   --color-error: #E53E3E;

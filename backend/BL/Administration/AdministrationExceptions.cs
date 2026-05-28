@@ -18,4 +18,4 @@ public class WorkspaceAdminNotFoundException(Guid workspaceAdminId)
     : NotFoundException($"Workspace {workspaceAdminId}");
     
 public class ConverseyAdminNotFoundException(Guid converseyAdminId)
-    : NotFoundException($"Workspace {converseyAdminId}");
+    : NotFoundException($"ConverseyAdmin {converseyAdminId}");

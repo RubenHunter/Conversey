@@ -174,12 +174,18 @@ export async function assessIdeaNudging(
     const normalizedProjectSlug = normalizeSlugForClient(projectSlug)
     const endpoint = `/workspaces/${workspaceSlug}/projects/${normalizedProjectSlug}/topics/${topicId}/ideas/nudge`
 
+    const truncatedDesc = context.projectDescription
+        ? context.projectDescription.length > 500
+            ? context.projectDescription.slice(0, 500) + '…'
+            : context.projectDescription
+        : ''
+
     const result = await apiFetch<{ isApproved?: boolean; IsApproved?: boolean; question?: string; Question?: string }>(endpoint, {
         method: 'POST',
         body: JSON.stringify({
             ideaText,
             projectTitle: context.projectTitle,
-            projectDescription: context.projectDescription,
+            projectDescription: truncatedDesc,
             topicTitle: context.topicTitle,
             topicPrompt: context.topicPrompt,
             conversation,

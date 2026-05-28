@@ -67,11 +67,11 @@ public class QuestionManager: IQuestionManager
                     SubmitScaleAnswer(scaleQuestion, answerInput, youth);
                     break;
 
-                case ChoiceQuestion<SingleChoice> singleChoiceQuestion:
+                case SingleChoiceQuestion singleChoiceQuestion:
                     SubmitSingleChoiceAnswer(singleChoiceQuestion, answerInput, youth);
                     break;
 
-                case ChoiceQuestion<MultipleChoice> multipleChoiceQuestion:
+                case MultipleChoiceQuestion multipleChoiceQuestion:
                     SubmitMultipleChoiceAnswer(multipleChoiceQuestion, answerInput, youth);
                     break;
 
@@ -81,16 +81,6 @@ public class QuestionManager: IQuestionManager
         }
     }
 
-    public Question GetQuestionById(int questionId)
-    {
-        return _questionRepository.ReadQuestionById(questionId) ?? throw new QuestionNotFoundException(questionId.ToString());
-    }
-
-    public IEnumerable<Question> GetAllQuestions()
-    {
-        return _questionRepository.ReadAllQuestions();
-    }
-
     public Question AddQuestion(Question question)
     {
         Validate(question);
@@ -98,31 +88,17 @@ public class QuestionManager: IQuestionManager
         return question;
     }
 
-    public Answer GetAnswerById(int answerId)
+    public void RemoveQuestionsForProject(Slug workspaceId, Slug projectId)
     {
-        return _questionRepository.ReadAnswerById(answerId) ?? throw new AnswerNotFoundException(answerId.ToString());
+        _ = _projectManager.GetProjectById(workspaceId, projectId);
+        _questionRepository.DeleteAllQuestionsForProject(projectId);
     }
 
-    public Answer AddAnswer(Answer answer)
+    private Answer AddAnswer(Answer answer)
     {
         Validate(answer);
         _questionRepository.CreateAnswer(answer);
         return answer;
-    }
-
-    public Answer ChangeAnswer(Answer answer)
-    {
-        Validate(answer);
-        _questionRepository.UpdateAnswer(answer);
-        return answer;
-    }
-
-    public void RemoveAnswer(int answerId)
-    {
-        if (!_questionRepository.DeleteAnswer(answerId))
-        {
-            throw new AnswerNotFoundException(answerId.ToString());
-        }
     }
 
     private void SubmitScaleAnswer(
@@ -146,7 +122,7 @@ public class QuestionManager: IQuestionManager
     }
 
     private void SubmitSingleChoiceAnswer(
-        ChoiceQuestion<SingleChoice> question,
+        SingleChoiceQuestion question,
         (int QuestionId, int? SelectedOptionId, string OpenTextValue) answerInput,
         Youth youth)
     {
@@ -155,13 +131,13 @@ public class QuestionManager: IQuestionManager
             throw new ValidationException($"Question {answerInput.QuestionId} requires a selected option.");
         }
 
-        var option = _questionRepository.ReadSingleChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
+        var option = _questionRepository.ReadChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
         if (option == null)
         {
             throw new ValidationException($"Selected option {answerInput.SelectedOptionId.Value} is invalid for question {answerInput.QuestionId}.");
         }
 
-        AddAnswer(new Answer<SingleChoice>
+        AddAnswer(new SingleChoiceAnswer
         {
             Value = option,
             Question = question,
@@ -170,7 +146,7 @@ public class QuestionManager: IQuestionManager
     }
 
     private void SubmitMultipleChoiceAnswer(
-        ChoiceQuestion<MultipleChoice> question,
+        MultipleChoiceQuestion question,
         (int QuestionId, int? SelectedOptionId, string OpenTextValue) answerInput,
         Youth youth)
     {
@@ -179,15 +155,15 @@ public class QuestionManager: IQuestionManager
             throw new ValidationException($"Question {answerInput.QuestionId} requires a selected option.");
         }
 
-        var option = _questionRepository.ReadMultipleChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
+        var option = _questionRepository.ReadChoiceByIdForQuestion(answerInput.QuestionId, answerInput.SelectedOptionId.Value);
         if (option == null)
         {
             throw new ValidationException($"Selected option {answerInput.SelectedOptionId.Value} is invalid for question {answerInput.QuestionId}.");
         }
 
-        AddAnswer(new Answer<MultipleChoice>
+        AddAnswer(new MultipleChoiceAnswer
         {
-            Value = option,
+            Value = [option],
             Question = question,
             Youth = youth
         });

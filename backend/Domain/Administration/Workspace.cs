@@ -10,6 +10,11 @@ public class Workspace
     
     [Required]
     public string Name { get; set; }
+    
+    [StringLength(2048)]
+    public string ImageUrl { get; set; }
+
+    public string Logo { get; set; }
 
     public IEnumerable<Project> Projects { get; set; }
 }

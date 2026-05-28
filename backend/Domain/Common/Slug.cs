@@ -8,9 +8,7 @@ public record struct Slug
 {
     public string Text;
 
-    //TODO vraag docent
     public override string ToString() => Text;
-
     
     public static Slug FromName(string name)
     {

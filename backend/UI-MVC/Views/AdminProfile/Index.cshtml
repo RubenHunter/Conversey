@@ -1,0 +1,282 @@
+@using Conversey.BL.Domain.Administration
+@using Conversey.UI_MVC.Models
+@using Conversey.UI_MVC.Resources
+@model Conversey.UI_MVC.Models.Admin.AdminProfileViewModel
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
+@inject IAdminI18nService I18n
+@{
+    var isWorkspaceAdmin = AdminContext.CurrentAdmin is WorkspaceAdmin;
+    var workspaceName = isWorkspaceAdmin
+        ? WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace"
+        : "Conversey";
+
+    ViewData["Title"] = I18n["Profile"];
+    ViewData["WorkspaceName"] = workspaceName;
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        (I18n["Dashboard"], AdminContext.GetDashboardUrl(), false),
+        (I18n["Profile"], null, true)
+    };
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-text tracking-tight">@I18n["Profile settings"]</h1>
+            <p class="mt-2 text-sm text-text/60">@I18n["Update your account details and security settings."]</p>
+        </div>
+
+        @if (TempData["ProfileSaved"] is string savedMessage)
+        {
+            <div class="mb-6 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-primary">
+                @savedMessage
+            </div>
+        }
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <section class="xl:col-span-2 rounded-2xl border border-secondary/10 bg-white p-6 shadow-sm">
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold text-text">@I18n["Account information"]</h2>
+                    <p class="mt-1 text-sm text-text/55">@I18n["Changes apply to this admin account login profile."]</p>
+                </div>
+
+                <form asp-controller="AdminProfile" asp-action="Index" method="post" class="space-y-5">
+                    <div asp-validation-summary="ModelOnly" class="rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent"></div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="md:col-span-2">
+                            <label asp-for="Username" class="mb-2 block text-sm font-semibold text-text/80"></label>
+                            <input asp-for="Username"
+                                   class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text placeholder:text-text/35 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <span asp-validation-for="Username" class="mt-1 block text-sm text-accent"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Email" class="mb-2 block text-sm font-semibold text-text/80"></label>
+                            <input asp-for="Email" type="email"
+                                   class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text placeholder:text-text/35 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <span asp-validation-for="Email" class="mt-1 block text-sm text-accent"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="PhoneNumber" class="mb-2 block text-sm font-semibold text-text/80"></label>
+                            <input asp-for="PhoneNumber" type="tel"
+                                   class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text placeholder:text-text/35 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <span asp-validation-for="PhoneNumber" class="mt-1 block text-sm text-accent"></span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                            @I18n["Save changes"]
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            @if (isWorkspaceAdmin)
+            {
+                <section class="xl:col-span-2 rounded-2xl border border-secondary/10 bg-white p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-bold text-text">@I18n["Workspace settings"]</h2>
+                        <p class="mt-1 text-sm text-text/55">@I18n["Update your workspace name and logo."]</p>
+                    </div>
+
+                    <form asp-controller="AdminProfile" asp-action="Index" method="post" class="space-y-5" id="workspaceSettingsForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Username" value="@Model.Username" />
+                        <input type="hidden" name="Email" value="@Model.Email" />
+                        <input type="hidden" name="PhoneNumber" value="@Model.PhoneNumber" />
+                        <input asp-for="WorkspaceLogo" type="hidden" id="workspaceLogoUrl" />
+
+                        <div class="flex items-start gap-5">
+                            <div class="flex-shrink-0">
+                                <div id="workspaceLogoPreview" class="w-20 h-20 rounded-xl border border-secondary/20 bg-background/40 flex items-center justify-center overflow-hidden">
+                                    @if (!string.IsNullOrWhiteSpace(Model.WorkspaceLogo))
+                                    {
+                                        <img src="@Model.WorkspaceLogo" alt="Workspace logo" class="w-full h-full object-cover" id="workspaceLogoImg" />
+                                    }
+                                    else
+                                    {
+                                        <svg class="w-8 h-8 text-text/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.41a2.25 2.25 0 013.182 0l2.909 2.91m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                    }
+                                </div>
+                                <label for="workspaceLogoFile" class="mt-2 inline-flex cursor-pointer items-center justify-center rounded-lg border border-secondary/20 px-3 py-1 text-xs font-semibold text-text/70 transition hover:bg-background">
+                                    @I18n["Change image"]
+                                </label>
+                                <input type="file" id="workspaceLogoFile" accept="image/*" class="hidden" data-workspace-logo-upload />
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <label class="mb-2 block text-sm font-semibold text-text/80">@I18n["Workspace name"]</label>
+                                <input asp-for="WorkspaceName" type="text"
+                                       class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 text-sm text-text placeholder:text-text/35 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                                <span asp-validation-for="WorkspaceName" class="mt-1 block text-sm text-accent"></span>
+                                <p class="mt-2 text-xs text-text/45">@I18n["Changing the workspace name does not affect the workspace slug."]</p>
+                                <p id="workspaceLogoStatus" class="mt-1 text-xs text-text/55"></p>
+                                <p id="workspaceLogoError" class="mt-1 text-xs text-accent hidden"></p>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit"
+                                    class="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm shadow-primary/20 transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                                @I18n["Save workspace"]
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            }
+
+            <aside class="rounded-2xl border border-secondary/10 bg-white p-6 shadow-sm h-fit">
+                <h2 class="text-lg font-bold text-text">@I18n["Security"]</h2>
+                <p class="mt-2 text-sm text-text/55">
+                    @I18n["Use a strong password with uppercase letters, numbers, and symbols."]
+                </p>
+
+                <button id="openChangePasswordModal"
+                        type="button"
+                        class="mt-6 w-full rounded-xl border border-accent/30 bg-accent/5 px-4 py-2.5 text-sm font-bold text-accent transition hover:bg-accent/10">
+                    @I18n["Change password"]
+                </button>
+
+                <p id="passwordModalInfo"
+                   class="mt-3 hidden rounded-lg border border-secondary/20 bg-background px-3 py-2 text-xs text-text/60"></p>
+            </aside>
+        </div>
+    </main>
+</div>
+
+<div id="changePasswordModal" class="fixed inset-0 hidden items-center justify-center bg-text/45 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-secondary/10 bg-white p-6 shadow-xl">
+        <div class="mb-4">
+            <h3 class="text-xl font-bold text-text">@I18n["Change password"]</h3>
+            <p class="mt-1 text-sm text-text/60">@I18n["Enter your current password and your new password."]</p>
+        </div>
+
+        <form id="changePasswordForm" asp-controller="AdminProfile" asp-action="ChangePassword" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label for="currentPassword" class="mb-1 block text-sm font-semibold text-text/80">@I18n["Current password"]</label>
+                <div class="relative">
+                    <input id="currentPassword" name="CurrentPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="currentPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="newPassword" class="mb-1 block text-sm font-semibold text-text/80">@I18n["New password"]</label>
+                <div class="relative">
+                    <input id="newPassword" name="NewPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="newPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+                <ul id="passwordChecklist" class="mt-3 space-y-1 text-xs text-accent">
+                    <li data-requirement="length" class="flex items-center gap-2">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                        <span>At least 6 characters</span>
+                    </li>
+                    <li data-requirement="lowercase" class="flex items-center gap-2">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                        <span>Lowercase letter</span>
+                    </li>
+                    <li data-requirement="uppercase" class="flex items-center gap-2">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                        <span>Uppercase letter</span>
+                    </li>
+                    <li data-requirement="digit" class="flex items-center gap-2">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                        <span>Number</span>
+                    </li>
+                    <li data-requirement="symbol" class="flex items-center gap-2">
+                        <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
+                        <span>Symbol</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <label for="confirmPassword" class="mb-1 block text-sm font-semibold text-text/80">@I18n["Confirm new password"]</label>
+                <div class="relative">
+                    <input id="confirmPassword" name="ConfirmPassword" type="password" required
+                           class="w-full rounded-xl border border-secondary/20 bg-background/40 px-4 py-2.5 pr-10 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                    <button type="button"
+                            class="absolute inset-y-0 right-0 flex items-center px-3 text-text/50 transition hover:text-text"
+                            data-password-toggle="confirmPassword"
+                            aria-label="Show password">
+                        <svg data-password-icon="show" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <svg data-password-icon="hide" class="hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 1l22 22" />
+                            <path d="M10.6 10.6a3 3 0 0 0 4.24 4.24" />
+                            <path d="M9.88 9.88 7.1 7.1C4.5 8.6 2.8 12 2.8 12s3.5 6 10.2 6c2 0 3.7-.4 5.1-1.1l-2.28-2.28" />
+                            <path d="M14.12 14.12 9.88 9.88" />
+                            <path d="M17 7c-1.5-1-3.3-1.6-5-1.6-1.2 0-2.4.2-3.4.6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <p id="passwordModalError" class="hidden text-sm font-medium text-accent"></p>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="cancelChangePassword" type="button"
+                        class="rounded-xl border border-secondary/20 px-4 py-2 text-sm font-semibold text-text/70 transition hover:bg-background">
+                    @I18n["Cancel"]
+                </button>
+                <button type="submit"
+                        class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+                    @I18n["Update password"]
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="module" vite-src="~/components/shared/adminProfilePasswordModal.ts"></script>
+    <script type="module" vite-src="~/components/shared/passwordVisibilityToggle.ts"></script>
+    @if (isWorkspaceAdmin)
+    {
+        <script type="module" vite-src="~/components/shared/adminProfileWorkspaceLogo.ts"></script>
+    }
+}

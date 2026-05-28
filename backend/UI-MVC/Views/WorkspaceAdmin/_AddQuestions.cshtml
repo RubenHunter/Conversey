@@ -1,0 +1,57 @@
+@model Conversey.UI_MVC.Models.WorkspaceAdmin.ProjectViewModel
+
+<form id="create-project-step2-form">
+    <section class="step-panel">
+        <div class="step-panel-bg"></div>
+        <div class="step-panel-content">
+            <div class="step-panel-header">
+                <div class="space-y-3">
+                    <p class="step-panel-kicker">Survey</p>
+                    <h2 class="step-panel-title">Step 2: Build questions</h2>
+                    <p class="step-panel-subtitle">Create the survey flow, add sections, and fine-tune each prompt before launch.</p>
+                </div>
+                <div class="hidden sm:flex flex-col items-end gap-2">
+                    <div class="step-panel-badge">Step 2</div>
+                    <div class="step-panel-badge-subtitle">Survey builder</div>
+                </div>
+            </div>
+
+            <div id="question-root" class="question-builder">
+                <header class="question-builder-header">
+                    <h3 class="question-builder-title grow">Questions</h3>
+
+                    <menu class="question-builder-actions">
+                        <li>
+                            <button type="button" class="btn" id="create-question-button">
+                                <img src="~/Assets/add.svg" alt="add-icon" class="icon"/>
+                                Add question
+                            </button>
+                        </li>
+
+                        <li>
+                            <button type="button" class="btn" id="create-section-button">
+                                <img src="~/Assets/add_directory.svg" alt="add-directory-icon" class="icon"/>
+                                Add section
+                            </button>
+                        </li>
+
+                        <li>
+                            <button type="button" class="btn btn-danger" id="delete-button">
+                                <img src="~/Assets/trash.svg" alt="trash-icon" class="icon"/>
+                                Delete
+                            </button>
+                        </li>
+
+                        <li>
+                            <input type="checkbox" class="question-modal-checkbox">
+                        </li>
+                    </menu>
+                </header>
+            </div>
+        </div>
+    </section>
+
+    <input type="hidden" asp-for="CreateStep2ViewModel.QuestionsJson" />
+</form>
+
+<script type="module" vite-src="~/components/admin/addquestion/questionStepper.ts"></script>

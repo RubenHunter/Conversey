@@ -14,6 +14,14 @@ export const InteractionType = {
 
 export type InteractionType = (typeof InteractionType)[keyof typeof InteractionType]
 
+export interface ProjectTheme {
+    primary: string
+    secondary: string
+    accent: string
+    preset: string
+    font: string
+}
+
 export interface ProjectTopic {
     id: number
     name: string
@@ -26,6 +34,7 @@ export interface Project {
     slug: string
     organizationSlug: string
     organizationName?: string
+    organizationLogo?: string
     title: string
     description: string
     imageUrl: string
@@ -36,6 +45,7 @@ export interface Project {
     nudgingStrength: number
     topic?: ProjectTopic
     topics?: ProjectTopic[]
+    theme?: ProjectTheme
 }
 
 /* will need changes: like organizationslug and projectslug are just edited version of the titles.

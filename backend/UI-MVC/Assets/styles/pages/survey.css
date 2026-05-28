@@ -1,4 +1,4 @@
-/* Survey Page Styles */
+﻿/* Survey Page Styles */
 /* Shared styles imported via TypeScript */
 
 .survey-header {
@@ -428,7 +428,7 @@
     max-width: calc(var(--spacing-xl) * 40);
     width: calc(100% - var(--spacing-2xl) * 2);
     padding: var(--spacing-xl) var(--spacing-2xl);
-    background: color-mix(in srgb, var(--color-surface) 47%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 58%, transparent);
     border-radius: var(--radius-xl);
     text-align: center;
     backdrop-filter: blur(5px);
@@ -445,7 +445,9 @@
 .survey-hero-description {
     font-size: clamp(var(--font-size-base), 2vw, var(--font-size-lg));
     line-height: 1.6;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
+    font-weight: 500;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .survey-shell.survey-hero-collapsed .survey-hero-image {
@@ -502,7 +504,7 @@
     box-shadow: var(--shadow-lg);
 }
 
-.survey-magic-row {
+.survey-brainstorm-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -549,7 +551,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
+    padding-bottom: clamp(var(--spacing-xl), 5vh, calc(var(--spacing-xl) * 2));
     cursor: pointer;
     border: none;
     background: none;
@@ -562,19 +565,17 @@
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: top center;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background-position: center;
+    transition: transform 0.35s ease;
 }
 
-.layout-picker-bg--classic {
-    background-position: center 30% !important;
-}
+
 /* Dark overlay */
 .layout-picker-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
-    transition: background 0.3s ease;
+    background: rgba(0, 0, 0, 0.50);
+    transition: background 0.2s ease;
 }
 
 /* Hover effects */
@@ -588,6 +589,33 @@
 
 .layout-picker-side:hover .layout-picker-label {
     transform: translateY(-6px);
+}
+
+/* Icon above text */
+.layout-picker-icon-wrap {
+  position: absolute;
+  top: clamp(18%, 32%, 38%);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xl);
+  padding: clamp(8px, 3vw, 28px);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-height: 40%;
+}
+
+.layout-picker-icon {
+  width: clamp(48px, 10vw, 110px);
+  height: clamp(48px, 10vw, 110px);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Text label */
@@ -612,12 +640,12 @@
 }
 
 .layout-picker-label-desc {
-  font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-sm));
-  color: rgba(255, 255, 255, 0.75);
+  font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-base));
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   line-height: 1.5;
-  max-width: 200px;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  max-width: 280px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Vertical divider + OR badge ── */
@@ -704,61 +732,35 @@
     color: var(--color-text-secondary);
 }
 
-/* ── Mobile layout picker ── */
-@media (max-width: 600px) {
-    .layout-picker-body {
-        flex-direction: column;
-    }
+/* Brainstorm Mode Feedback Styles */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
 
-    .layout-picker-side {
-        min-height: 42vh;
-    }
+.brainstorm-feedback {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1000;
+  animation: fadeInOut 3s ease-out forwards;
+}
 
-    .layout-picker-bg {
-        background-size: cover !important;
-        background-position: top center;
-    }
+/* Brainstorm Mode Bubble Removal Animation */
+@keyframes bubbleFadeOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
 
-    .layout-picker-overlay {
-        background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);
-    }
-
-    .layout-picker-side:hover .layout-picker-overlay {
-        background: rgba(0, 0, 0, 0.1);
-    }
-
-    .layout-picker-label {
-        padding: var(--spacing-sm) var(--spacing-md);
-        backdrop-filter: blur(4px);
-        background-color: rgba(0, 0, 0, 0.4);
-        border-radius: var(--radius-xl);
-        margin: 0 var(--spacing-sm) var(--spacing-md);
-    }
-
-    .layout-picker-label-title {
-        font-size: var(--font-size-xl);
-        margin-bottom: 2px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .layout-picker-label-desc {
-        font-size: 11px;
-        max-width: 240px;
-        color: #ffffff;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    .layout-picker-divider {
-        position: relative;
-        left: 0;
-        top: auto;
-        bottom: auto;
-        width: 100%;
-        height: 0;
-        border-left: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.3);
-        justify-content: center;
-        margin: 0;
-        z-index: 20;
-    }
+.brainstorm-bubble-remove {
+  animation: bubbleFadeOut 0.2s ease-out forwards;
 }

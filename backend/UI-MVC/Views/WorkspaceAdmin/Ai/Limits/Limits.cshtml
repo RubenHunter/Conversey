@@ -1,0 +1,166 @@
+@using Conversey.UI_MVC.Models
+@using Conversey.BL.Domain.Administration
+@model Conversey.UI_MVC.Models.WorkspaceAi.WorkspaceAiLimitsViewModel
+@inject AdminContext AdminContext
+@inject WorkspaceContext WorkspaceContext
+@{
+    ViewData["Title"] = "AI Cost Limits";
+    ViewData["WorkspaceName"] = WorkspaceContext.CurrentWorkspace?.Name ?? "Workspace";
+    var workspaceSlug = ViewContext.RouteData.Values["workspaceSlug"]?.ToString() ?? Model.WorkspaceId.ToString();
+    ViewData["Breadcrumbs"] = new (string Label, string? Url, bool IsCurrent)[]
+    {
+        ("Dashboard", "/admin/workspace", false),
+        ("AI Settings", $"/admin/{workspaceSlug}/ai", false),
+        ("Cost Limits", null, true)
+    };
+    var nlBe = System.Globalization.CultureInfo.GetCultureInfo("nl-BE");
+}
+
+<div class="min-h-screen bg-background font-sans text-text">
+    @await Html.PartialAsync("_AdminHeader")
+
+    <main class="p-8 w-full max-w-400 mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-text tracking-tight" data-i18n="Cost Limits">Cost Limits</h1>
+                <p class="mt-1 text-sm text-text/60" data-i18n="Set AI cost limits. When a limit is crossed, AI functions switch to NoopAiManager (no API calls).">Set AI cost limits. When a limit is crossed, AI functions switch to NoopAiManager (no API calls).</p>
+            </div>
+            <a href="@Url.Action("Dashboard", new { workspaceSlug = Model.WorkspaceId })" class="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                <span data-i18n="Back to AI Settings">Back to AI Settings</span>
+            </a>
+        </div>
+
+        @if (Model.WorkspaceLimit != null)
+        {
+            var pct = Model.WorkspaceLimit.LimitAmount > 0 ? Math.Min(100, (Model.CurrentWorkspaceCost / Model.WorkspaceLimit.LimitAmount) * 100) : 0;
+            var overLimit = pct >= 100;
+            <div class="mb-8 bg-white rounded-xl border border-secondary/10 shadow-sm p-6 @(overLimit ? "ring-2 ring-accent/30" : "")">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold text-text" data-i18n="Workspace Limit">Workspace Limit</h2>
+                    @if (overLimit)
+                    {
+                        <span class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 uppercase" data-i18n="Over Limit — AI Disabled">Over Limit — AI Disabled</span>
+                    }
+                    else
+                    {
+                        <span class="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600 uppercase" data-i18n="Active">Active</span>
+                    }
+                </div>
+                <div class="flex items-end justify-between mb-2">
+                    <div>
+                        <span class="text-2xl font-bold text-text">@Model.CurrentWorkspaceCost.ToString("C", nlBe)</span>
+                        <span class="text-sm text-text/40 ml-2">/ @Model.WorkspaceLimit.LimitAmount.ToString("C", nlBe)</span>
+                    </div>
+                    <span class="text-sm font-medium text-text">@pct.ToString("F0")%</span>
+                </div>
+                <div class="w-full bg-background rounded-full h-2">
+                    <div class="@(overLimit ? "bg-accent" : "bg-primary") h-2 rounded-full transition-all" style="width: @pct%"></div>
+                </div>
+                <p class="text-[10px] text-text/40 mt-2">Period: @Model.WorkspaceLimit.PeriodStart.ToString("MMM yyyy")</p>
+            </div>
+        }
+
+        <div class="mb-8 bg-white rounded-xl border border-secondary/10 shadow-sm p-6">
+            <h2 class="text-sm font-semibold text-text mb-4" data-i18n="Set Workspace Limit">Set Workspace Limit</h2>
+            <form asp-action="SaveWorkspaceLimit" asp-route-workspaceSlug="@Model.WorkspaceId" method="post" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                @Html.AntiForgeryToken()
+                @if (Model.WorkspaceLimit != null) { <input type="hidden" name="Id" value="@Model.WorkspaceLimit.Id" /> }
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Limit Amount (EUR)">Limit Amount (EUR)</label>
+                    <input name="LimitAmount" type="number" step="0.01" min="0" value="@(Model.WorkspaceLimit?.LimitAmount.ToString() ?? "10.00")" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Period Start">Period Start</label>
+                    <input name="PeriodStart" type="date" value="@(Model.WorkspaceLimit?.PeriodStart.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Period End">Period End</label>
+                    <input name="PeriodEnd" type="date" value="@(Model.WorkspaceLimit?.PeriodEnd.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.AddMonths(1).ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="@(Model.WorkspaceLimit != null ? "Update Limit" : "Set Limit")">@(Model.WorkspaceLimit != null ? "Update Limit" : "Set Limit")</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl border border-secondary/10 shadow-sm">
+            <div class="px-6 py-4 border-b border-secondary/10">
+                <h2 class="text-sm font-semibold text-text" data-i18n="Project Limits">Project Limits</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-secondary/10 text-sm">
+                    <thead class="bg-background/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Project">Project</th>
+                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Current Cost">Current Cost</th>
+                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Limit">Limit</th>
+                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Usage">Usage</th>
+                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Status">Status</th>
+                            <th class="px-6 py-3 text-right text-[10px] font-bold uppercase text-secondary tracking-wider" data-i18n="Action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-secondary/10">
+                        @foreach (var pl in Model.ProjectLimits)
+                        {
+                            var limitPct = pl.ActiveLimit != null && pl.ActiveLimit.LimitAmount > 0 ? Math.Min(100, (pl.CurrentCost / pl.ActiveLimit.LimitAmount) * 100) : 0;
+                            <tr class="hover:bg-background/30">
+                                <td class="px-6 py-3 text-sm text-text">@pl.ProjectName</td>
+                                <td class="px-6 py-3 text-right text-sm text-text/70">@pl.CurrentCost.ToString("C", nlBe)</td>
+                                <td class="px-6 py-3 text-right text-sm text-text/70">@(pl.ActiveLimit != null ? pl.ActiveLimit.LimitAmount.ToString("C", nlBe) : "—")</td>
+                                <td class="px-6 py-3 text-right text-sm text-text/70">@(pl.ActiveLimit != null ? limitPct.ToString("F0") + "%" : "—")</td>
+                                <td class="px-6 py-3 text-right">
+                                    @if (pl.IsOverLimit)
+                                    {
+                                        <span class="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 uppercase" data-i18n="Over Limit">Over Limit</span>
+                                    }
+                                    else if (pl.ActiveLimit != null && limitPct > 80)
+                                    {
+                                        <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase" data-i18n="Warning">Warning</span>
+                                    }
+                                    else if (pl.ActiveLimit != null)
+                                    {
+                                        <span class="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600 uppercase" data-i18n="OK">OK</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-[10px] text-text/40" data-i18n="No limit">No limit</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-3 text-right">
+                                    <button type="button" class="text-xs text-primary hover:text-primary/80 font-medium" data-project-limit-toggle data-project-id="@pl.ProjectId" data-i18n="@(pl.ActiveLimit != null ? "Edit" : "Set Limit")">
+                                        @(pl.ActiveLimit != null ? "Edit" : "Set Limit")
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr id="limit-form-@pl.ProjectId" class="hidden">
+                                <td colspan="6" class="px-6 py-4 bg-background/30">
+                                    <form asp-action="SaveProjectLimit" asp-route-workspaceSlug="@Model.WorkspaceId" asp-route-projectId="@pl.ProjectId" method="post" class="flex items-end gap-4">
+                                        @Html.AntiForgeryToken()
+                                        @if (pl.ActiveLimit != null) { <input type="hidden" name="Id" value="@pl.ActiveLimit.Id" /> }
+                                        <div class="flex-1">
+                                            <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Limit">Limit</label>
+                                            <input name="LimitAmount" type="number" step="0.01" min="0" value="@(pl.ActiveLimit?.LimitAmount.ToString() ?? "5.00")" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Period Start">Period Start</label>
+                                            <input name="PeriodStart" type="date" value="@(pl.ActiveLimit?.PeriodStart.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="block text-[10px] font-bold uppercase text-secondary tracking-wider mb-1" data-i18n="Period End">Period End</label>
+                                            <input name="PeriodEnd" type="date" value="@(pl.ActiveLimit?.PeriodEnd.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.AddMonths(1).ToString("yyyy-MM-dd"))" class="w-full rounded-lg border border-secondary/20 bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                        </div>
+                                        <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium" data-i18n="Save">Save</button>
+                                        <button type="button" class="px-4 py-2 border border-secondary/20 rounded-lg hover:bg-background transition-colors text-sm font-medium text-text/70" data-project-limit-toggle data-project-id="@pl.ProjectId" data-i18n="Cancel">Cancel</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script type="module" vite-src="~/components/aiWorkspace/limitsPage.ts"></script>

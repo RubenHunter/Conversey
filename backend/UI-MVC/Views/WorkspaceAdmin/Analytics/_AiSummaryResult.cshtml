@@ -1,0 +1,73 @@
+@model Conversey.BL.Analytics.Dto.AiSummaryResponseDto
+
+@if (Model.GeneratedAt.HasValue)
+{
+    var age = DateTime.UtcNow - Model.GeneratedAt.Value;
+    var ageLabel = age.TotalMinutes < 1 ? "just now" :
+        age.TotalMinutes < 60 ? $"{(int)age.TotalMinutes} minutes ago" :
+        age.TotalHours < 24 ? $"{(int)age.TotalHours} hours ago" :
+        $"{(int)age.TotalDays} days ago";
+    <div class="mb-3 text-xs text-accent bg-accent/5 rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Generated @ageLabel &mdash; data may be outdated. Click "Generate Summary" to refresh.</span>
+    </div>
+}
+
+<div class="space-y-4 mt-4">
+    <div class="p-4 bg-background rounded-lg border border-secondary/10">
+        <h3 class="text-sm font-semibold text-secondary mb-2" data-i18n="Overview">Overview</h3>
+        <p class="text-sm">@Model.Overview</p>
+    </div>
+
+    @if (Model.Trends.Count > 0)
+    {
+        <div class="p-4 bg-background rounded-lg border border-secondary/10">
+            <h3 class="text-sm font-semibold text-secondary mb-2" data-i18n="Trends">Trends</h3>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                @foreach (var t in Model.Trends)
+                {
+                    <li>@t</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.MinorityViews.Count > 0)
+    {
+        <div class="p-4 bg-background rounded-lg border border-accent/20">
+            <h3 class="text-sm font-semibold text-accent mb-2" data-i18n="Minority Views">Minority Views</h3>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                @foreach (var v in Model.MinorityViews)
+                {
+                    <li>@v</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.NotableQuotes.Count > 0)
+    {
+        <div class="p-4 bg-background rounded-lg border border-secondary/10">
+            <h3 class="text-sm font-semibold text-secondary mb-2" data-i18n="Notable Quotes">Notable Quotes</h3>
+            <ul class="text-sm space-y-2">
+                @foreach (var q in Model.NotableQuotes)
+                {
+                    <li class="italic border-l-2 border-primary pl-3">"@q"</li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.SuggestedActions.Count > 0)
+    {
+        <div class="p-4 bg-background rounded-lg border border-primary/20">
+            <h3 class="text-sm font-semibold text-primary mb-2" data-i18n="Suggested Actions">Suggested Actions</h3>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                @foreach (var a in Model.SuggestedActions)
+                {
+                    <li>@a</li>
+                }
+            </ul>
+        </div>
+    }
+</div>
