@@ -326,7 +326,9 @@ InitializeDatabase(resetDatabaseOnStart);
 var rateLimitCache = app.Services.GetRequiredService<RateLimitConfigCache>();
 await rateLimitCache.InitializeAsync();
 
-// Configure the HTTP request pipeline.
+// UseForwardedHeaders must be placed at the very beginning of the pipeline
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -336,8 +338,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// UseForwardedHeaders must be placed before other middleware like UseStaticFiles or UseRouting
-app.UseForwardedHeaders();
 
 // Redirect www.conversey.be -> conversey.be to prevent CSRF/cookie domain mismatches
 if (!app.Environment.IsDevelopment())
