@@ -316,7 +316,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Configure the antiforgery cookie to be valid across both www and non-www subdomains
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Domain = ".conversey.be";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
 var app = builder.Build();
+
 
 
 var resetDatabaseOnStart = builder.Configuration.GetValue<bool>("Database:ResetOnStart");
@@ -337,6 +346,23 @@ app.UseHttpsRedirection();
 
 // UseForwardedHeaders must be placed before other middleware like UseStaticFiles or UseRouting
 app.UseForwardedHeaders();
+
+// Redirect www.conversey.be -> conversey.be to prevent CSRF/cookie domain mismatches
+if (!app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        var host = context.Request.Host.Host;
+        if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+        {
+            var canonical = host[4..]; // strip 'www.'
+            var redirectUrl = $"{context.Request.Scheme}://{canonical}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+            context.Response.Redirect(redirectUrl, permanent: true);
+            return;
+        }
+        await next();
+    });
+}
 
 app.UseStaticFiles(new StaticFileOptions
 
