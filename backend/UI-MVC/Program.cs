@@ -329,6 +329,8 @@ await rateLimitCache.InitializeAsync();
 // UseForwardedHeaders must be placed at the very beginning of the pipeline
 app.UseForwardedHeaders();
 
+app.MapGet("/health", () => Results.Ok("Healthy"));
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -398,8 +400,6 @@ if (app.Environment.IsDevelopment())
     app.UseViteDevelopmentServer(useMiddleware: false);
 }
 
-
-app.MapGet("/health", () => Results.Ok("Healthy"));
 
 app.Run();
 
