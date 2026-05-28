@@ -409,12 +409,10 @@ void InitializeDatabase(bool drop)
         var config = services.GetRequiredService<IConfiguration>();
         
         // Create database schema first (including Identity tables)
-        var created = dbCtx.CreateDatabase(drop);
+        dbCtx.CreateDatabase(drop);
         
-        if (created)
-        {
-            DataSeeder.Seed(dbCtx, config);
-        }
+        // Seed initial data (workspaces, projects etc) - idempotent
+        DataSeeder.Seed(dbCtx, config);
 
         // Then seed Identity and Roles (idempotent)
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
