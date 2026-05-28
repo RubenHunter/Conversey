@@ -93,6 +93,14 @@ builder.Services.AddDbContext<ConverseyDbContext>(options =>
         ?? "Host=localhost;Port=5432;Database=devdb;Username=devuser;Password=devpass")
 );
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust all proxies in the cloud environment (GCLB IPs are dynamic)
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -350,7 +358,8 @@ if (!app.Environment.IsDevelopment())
         if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
         {
             var canonical = host[4..]; // strip 'www.'
-            var redirectUrl = $"{context.Request.Scheme}://{canonical}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+            // Always use https for production redirects to avoid loops with GCLB
+            var redirectUrl = $"https://{canonical}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
             context.Response.Redirect(redirectUrl, permanent: true);
             return;
         }
