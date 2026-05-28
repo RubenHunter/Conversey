@@ -483,21 +483,7 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
 {
     var user = userManager.FindByEmailAsync(email).Result;
     
-    // 1. Check for type mismatch (e.g. basic IdentityUser instead of WorkspaceAdminUser)
-    if (user != null)
-    {
-        bool isWrongType = false;
-        if (role == "ConverseyAdmin" && user is not ConverseyAdminUser) isWrongType = true;
-        if (role == "WorkspaceAdmin" && user is not WorkspaceAdminUser) isWrongType = true;
-        
-        if (isWrongType)
-        {
-            userManager.DeleteAsync(user).Wait();
-            user = null;
-        }
-    }
-
-    // 2. Create if missing (or deleted due to mismatch)
+    // 1. Create if missing
     if (user == null)
     {
         if (role == "ConverseyAdmin")
@@ -524,18 +510,23 @@ void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string 
             return;
         }
 
-        userManager.CreateAsync(user, "Test123!").Wait();
+        var result = userManager.CreateAsync(user, "Test123!").Result;
+        if (!result.Succeeded)
+        {
+            // Log error or throw if critical, but don't crash the whole app if possible
+            return;
+        }
     }
     else
     {
-        // 3. Force update properties if it exists but might be stale
+        // 2. If exists, ensure correct properties and password (DO NOT DELETE due to FKs)
         if (user is WorkspaceAdminUser wau && workspace != null)
         {
             wau.Workspace = workspace;
             userManager.UpdateAsync(wau).Wait();
         }
 
-        // 4. Force password reset to ensure consistency
+        // Force password reset to ensure consistency
         var hasPassword = userManager.HasPasswordAsync(user).Result;
         if (hasPassword)
         {
