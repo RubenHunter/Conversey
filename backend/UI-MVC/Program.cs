@@ -105,6 +105,14 @@ builder.Services.AddDataProtection()
     .PersistKeysToDbContext<ConverseyDbContext>()
     .SetApplicationName("Conversey");
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = ".Conversey.Antiforgery";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -122,8 +130,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/logout";
 });
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
+// builder.Services.AddDataProtection()
+//     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
@@ -322,10 +330,11 @@ TypeDescriptor.AddAttributes(
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // Clear known networks and proxies to trust all forwarded headers (common for cloud platforms behind a VPC)
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    // Trust all proxies in the cloud environment (GCLB/Cloudflare IPs are dynamic)
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
+    options.ForwardLimit = null; // Trust all hops
 });
 
 var app = builder.Build();
@@ -497,6 +506,10 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
     dbCtx.Database.ExecuteSqlRaw(
         "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'stad-linden' " +
         "WHERE \"Email\" = 'admin@stad.linden.be' AND \"Discriminator\" != 'WorkspaceAdminUser'");
+    
+    dbCtx.Database.ExecuteSqlRaw(
+        "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'hogeschool-nova' " +
+        "WHERE \"Email\" = 'admin@hogeschool.nova.be' AND \"Discriminator\" != 'WorkspaceAdminUser'");
 }
 
 void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string role, Workspace workspace = null)
