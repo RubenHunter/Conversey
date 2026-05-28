@@ -1,7 +1,4 @@
 @section Scripts
 {
-    @{
-        var jsFile = Manifest.GetValueOrDefault("components/survey/pages/surveyPage.ts", "components/survey/pages/surveyPage.ts");
-    }
-    <script type="module" src="/@jsFile"></script>
+    <vite-script src="components/survey/pages/surveyPage.ts" />
 }
