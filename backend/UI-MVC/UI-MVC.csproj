@@ -72,7 +72,7 @@
 
 
   <!-- Ensure Node environment on Build -->
-  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" !Exists('node_modules') ">
+  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build;PublishBuildAssets" Condition=" '$(SkipClientBuild)' != 'true' And !Exists('node_modules') ">
     <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
@@ -84,7 +84,7 @@
   </Target>
 
   <!-- Build the final assets -->
-  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Release' ">
+  <Target Name="PublishBuildAssets" BeforeTargets="Build" Condition=" '$(SkipClientBuild)' != 'true' And '$(Configuration)' == 'Release' ">
     <!-- Build the final assets -->
     <Exec Command="pnpm run build" />
   </Target>
