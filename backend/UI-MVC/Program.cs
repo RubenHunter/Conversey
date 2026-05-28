@@ -316,14 +316,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Configure the antiforgery cookie to be valid across both www and non-www subdomains
-builder.Services.AddAntiforgery(options =>
-{
-    options.Cookie.Domain = ".conversey.be";
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-});
-
 var app = builder.Build();
 
 
