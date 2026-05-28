@@ -18,32 +18,33 @@ public static class DataSeeder
         // =====================================================
         // Case 1: Hogeschool Nova / Actieplan Mentaal Welzijn
         // =====================================================
-        if (!context.Workspaces.Any(w => w.Id == Slug.FromName("hogeschool-nova")))
+        Workspace hogeschool = context.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("hogeschool-nova"));
+        Project mentaalWelzijnActieplan = context.Projects.FirstOrDefault(p => p.Id == Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"));
+        if (hogeschool == null)
         {
-            var hogeschool = new Workspace
+            hogeschool = new Workspace
             {
                 Name = "Hogeschool Nova"
             };
             hogeschool.Id = Slug.FromName(hogeschool.Name);
+            context.Workspaces.Add(hogeschool);
 
-        var mentaalWelzijnActieplan = new Project
-        {
-            Name = "Actieplan Mentaal Welzijn 2026-2027",
-            Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
-            ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
-            Status = Status.Active,
-            StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
-            NudgingStrength = 3,
-            InteractionForm = InteractionType.UserDefined,
-            Workspace = hogeschool,
-            MinAge = 18,
-            MaxAge = 26
-        };
-        mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
-
-        context.Workspaces.Add(hogeschool);
-        context.Projects.Add(mentaalWelzijnActieplan);
+            mentaalWelzijnActieplan = new Project
+            {
+                Name = "Actieplan Mentaal Welzijn 2026-2027",
+                Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
+                ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
+                Status = Status.Active,
+                StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+                NudgingStrength = 3,
+                InteractionForm = InteractionType.UserDefined,
+                Workspace = hogeschool,
+                MinAge = 18,
+                MaxAge = 26
+            };
+            mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
+            context.Projects.Add(mentaalWelzijnActieplan);
 
         var topics = new List<Topic>
         {
@@ -796,32 +797,33 @@ public static class DataSeeder
         // =====================================================
         // Case 2: Stad Linden / Jong in een Groene Stad
         // =====================================================
-        if (!context.Workspaces.Any(w => w.Id == Slug.FromName("stad-linden")))
+        Workspace stadLinden = context.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("stad-linden"));
+        Project vergroeningEnRecreatiePlan = context.Projects.FirstOrDefault(p => p.Id == Slug.FromName("Jong in een Groene Stad 2026-2028"));
+        if (stadLinden == null)
         {
-            var stadLinden = new Workspace
+            stadLinden = new Workspace
             {
                 Name = "Stad Linden"
             };
             stadLinden.Id = Slug.FromName(stadLinden.Name);
+            context.Workspaces.Add(stadLinden);
 
-        var vergroeningEnRecreatiePlan = new Project
-        {
-            Name = "Jong in een Groene Stad 2026-2028",
-            Description = "Stad Linden betrekt jongeren van 18 tot 30 actief bij keuzes rond vergroening, klimaatmaatregelen en verdeling van stedelijke recreatie.",
-            ImageUrl = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80",
-            Status = Status.Active,
-            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
-            EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
-            NudgingStrength = 4,
-            InteractionForm = InteractionType.UserDefined,
-            Workspace = stadLinden,
-            MinAge = 18,
-            MaxAge = 30
-        };
-        vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
-
-        context.Workspaces.Add(stadLinden);
-        context.Projects.Add(vergroeningEnRecreatiePlan);
+            vergroeningEnRecreatiePlan = new Project
+            {
+                Name = "Jong in een Groene Stad 2026-2028",
+                Description = "Stad Linden betrekt jongeren van 18 tot 30 actief bij keuzes rond vergroening, klimaatmaatregelen en verdeling van stedelijke recreatie.",
+                ImageUrl = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80",
+                Status = Status.Active,
+                StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+                NudgingStrength = 4,
+                InteractionForm = InteractionType.UserDefined,
+                Workspace = stadLinden,
+                MinAge = 18,
+                MaxAge = 30
+            };
+            vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
+            context.Projects.Add(vergroeningEnRecreatiePlan);
 
         var cityTopics = new List<Topic>
         {

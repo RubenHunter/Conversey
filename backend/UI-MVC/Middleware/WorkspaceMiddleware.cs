@@ -36,7 +36,7 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         }
 
         var subdomain = parts.First();
-        var workspace = workspaceRepository.ReadWorkspaceBySlug(Slug.FromName(subdomain));
+        var workspace = workspaceRepository.ReadWorkspaceById(Slug.FromName(subdomain));
 
         if (workspace == null)
         {
