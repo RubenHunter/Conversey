@@ -4,12 +4,8 @@
     </div>
 </div>
 
-@inject Dictionary<string, string> Manifest
 @section Scripts
 {
-    @{
-        var jsFile = Manifest.GetValueOrDefault("components/ideas/pages/ideasPage.ts", "components/ideas/pages/ideasPage.ts");
-    }
-    <script type="module" src="/@jsFile"></script>
+    <vite-script src="components/ideas/pages/ideasPage.ts" />
 }
 
