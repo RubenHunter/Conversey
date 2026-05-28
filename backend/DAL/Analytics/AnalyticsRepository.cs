@@ -1,3 +1,4 @@
+#nullable enable
 using Conversey.BL.Domain.Administration;
 using Conversey.BL.Domain.Ai;
 using Conversey.BL.Domain.Common;
