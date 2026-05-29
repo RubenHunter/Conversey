@@ -13,7 +13,8 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
         var path = context.Request.Path.Value ?? "";
 
         // bypass voor statische bestanden en health check
-        if (path.StartsWith("/health") || 
+        if (path.Equals("/health", StringComparison.OrdinalIgnoreCase) || 
+            path.StartsWith("/health/", StringComparison.OrdinalIgnoreCase) ||
             path.Contains(".") || 
             path.StartsWith("/lib/", StringComparison.OrdinalIgnoreCase) || 
             path.StartsWith("/Assets/", StringComparison.OrdinalIgnoreCase) ||
