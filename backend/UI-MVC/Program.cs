@@ -357,6 +357,14 @@ app.UseForwardedHeaders();
 
 app.MapGet("/health", () => Results.Ok("Healthy"));
 
+app.MapGet("/debug/users", async (ConverseyDbContext db) =>
+{
+    var users = await db.Database.SqlQueryRaw<string>(
+        "SELECT email || '|' || \"Discriminator\" || '|' || COALESCE(\"WorkspaceId\", 'null') FROM \"AspNetUsers\" WHERE email LIKE '%admin%'"
+    ).ToListAsync();
+    return Results.Ok(users);
+});
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
