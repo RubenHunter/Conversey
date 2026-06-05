@@ -140,11 +140,6 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         ?? user;
                 }
 
-                _logger.LogInformation("Login attempt: email={Email}, userType={Type}, workspaceContext={WS}",
-                    Input.Email,
-                    user.GetType().Name,
-                    _workspaceContext.CurrentWorkspace?.Id.Text ?? "null");
-
                 // Check if user is a ConverseyAdmin
                 if (user is ConverseyAdminUser converseyAdmin)
                 {
