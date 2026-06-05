@@ -2,10 +2,11 @@ using Conversey.BL.Domain.Common;
 using Conversey.DAL.Administration;
 using Conversey.UI_MVC.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Conversey.UI_MVC.Middleware;
 
-public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRepository workspaceRepository) : IMiddleware
+public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRepository workspaceRepository, ILogger<WorkspaceMiddleware> logger) : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -26,6 +27,8 @@ public class WorkspaceMiddleware(WorkspaceContext workspaceContext, IWorkspaceRe
             await next(context);
             return;
         }
+
+        logger.LogInformation("WorkspaceMiddleware: host={Host}, path={Path}", host, path);
 
         var parts = host.Split('.');
         
