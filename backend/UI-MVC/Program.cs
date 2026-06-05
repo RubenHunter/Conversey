@@ -518,11 +518,15 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
     // and we want to avoid DeleteAsync due to FK constraints.
     dbCtx.Database.ExecuteSqlRaw(
         "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'stad-linden' " +
-        "WHERE \"Email\" = 'admin@stad.linden.be' AND \"Discriminator\" != 'WorkspaceAdminUser'");
+        "WHERE \"Email\" = 'admin@stad.linden.be'");
     
     dbCtx.Database.ExecuteSqlRaw(
         "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'hogeschool-nova' " +
-        "WHERE \"Email\" = 'admin@hogeschool.nova.be' AND \"Discriminator\" != 'WorkspaceAdminUser'");
+        "WHERE \"Email\" = 'admin@hogeschool.nova.be'");
+
+    dbCtx.Database.ExecuteSqlRaw(
+        "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'ConverseyAdminUser' " +
+        "WHERE \"Email\" = 'admin@conversey.be' AND \"Discriminator\" != 'ConverseyAdminUser'");
 }
 
 void EnsureSeedUser(UserManager<IdentityUser> userManager, string email, string role, Workspace workspace = null)
