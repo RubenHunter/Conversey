@@ -359,10 +359,15 @@ app.MapGet("/health", () => Results.Ok("Healthy"));
 
 app.MapGet("/debug/users", async (ConverseyDbContext db) =>
 {
-    var users = await db.Database.SqlQueryRaw<string>(
-        "SELECT email || '|' || \"Discriminator\" || '|' || COALESCE(\"WorkspaceId\", 'null') FROM \"AspNetUsers\" WHERE email LIKE '%admin%'"
-    ).ToListAsync();
-    return Results.Ok(users);
+    var users = db.WorkspaceAdmins
+        .Include(w => w.Workspace)
+        .Where(u => u.Email != null)
+        .Select(u => new { u.Email, Type = "WorkspaceAdmin", WorkspaceId = u.Workspace != null ? u.Workspace.Id.Text : "null" })
+        .ToList<object>();
+    var admins = db.ConverseyAdmins
+        .Select(u => new { u.Email, Type = "ConverseyAdmin", WorkspaceId = "n/a" })
+        .ToList<object>();
+    return Results.Ok(users.Concat(admins));
 });
 
 if (!app.Environment.IsDevelopment())
