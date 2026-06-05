@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
 {
@@ -25,13 +26,15 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
         private readonly WorkspaceContext _workspaceContext;
         private readonly ILogger<LoginModel> _logger;
         private readonly AdminContext _adminContext;
+        private readonly ConverseyDbContext _dbContext;
 
         public LoginModel(
             SignInManager<IdentityUser> signInManager,
             UserManager<IdentityUser> userManager,
             WorkspaceContext workspaceContext,
             ILogger<LoginModel> logger,
-            AdminContext adminContext
+            AdminContext adminContext,
+            ConverseyDbContext dbContext
             )
         {
             _signInManager = signInManager;
@@ -39,6 +42,7 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
             _workspaceContext = workspaceContext;
             _logger = logger;
             _adminContext = adminContext;
+            _dbContext = dbContext;
         }
 
         /// <summary>
@@ -126,6 +130,21 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                     return Page();
                 }
 
+                // FindByEmailAsync does not eager-load navigation properties.
+                // Reload WorkspaceAdminUser with Workspace included so the workspace check below works.
+                if (user is WorkspaceAdminUser)
+                {
+                    user = await _dbContext.WorkspaceAdmins
+                        .Include(w => w.Workspace)
+                        .FirstOrDefaultAsync(w => w.Email == Input.Email)
+                        ?? user;
+                }
+
+                _logger.LogInformation("Login attempt: email={Email}, userType={Type}, workspaceContext={WS}",
+                    Input.Email,
+                    user.GetType().Name,
+                    _workspaceContext.CurrentWorkspace?.Id.Text ?? "null");
+
                 // Check if user is a ConverseyAdmin
                 if (user is ConverseyAdminUser converseyAdmin)
                 {
@@ -155,9 +174,33 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                 if (user is WorkspaceAdminUser workspaceAdmin)
                 {
                     var workspace = _workspaceContext.CurrentWorkspace;
-                    
-                    if (workspace == null || 
-                        workspaceAdmin.Workspace == null ||
+
+                    // On the root domain: validate credentials and redirect to the correct subdomain
+                    if (workspace == null)
+                    {
+                        var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+                        if (result.Succeeded)
+                        {
+                            var workspaceSlug = workspaceAdmin.Workspace?.Id.Text;
+                            if (string.IsNullOrWhiteSpace(workspaceSlug))
+                            {
+                                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                                return Page();
+                            }
+
+                            // Sign in so the cookie is set, then redirect to the subdomain
+                            await _signInManager.SignInAsync(user, Input.RememberMe);
+                            var host = HttpContext.Request.Host.Host;
+                            var subdomainUrl = $"{HttpContext.Request.Scheme}://{workspaceSlug}.{host}/admin/workspace";
+                            return Redirect(subdomainUrl);
+                        }
+
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+
+                    // On a workspace subdomain: enforce workspace match
+                    if (workspaceAdmin.Workspace == null ||
                         string.IsNullOrWhiteSpace(workspaceAdmin.Workspace.Id.Text) ||
                         workspaceAdmin.Workspace.Id != workspace.Id)
                     {
@@ -167,8 +210,8 @@ namespace Conversey.UI_MVC.Areas.Identity.Pages.Account
                         return Page();
                     }
 
-                    var result = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
-                    if (result.Succeeded)
+                    var signInResult = await _signInManager.CheckPasswordSignInAsync(user, Input.Password, lockoutOnFailure: false);
+                    if (signInResult.Succeeded)
                     {
                         await _signInManager.SignInAsync(user, Input.RememberMe);
                         _logger.LogInformation("WorkspaceAdmin logged in.");
