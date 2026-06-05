@@ -54,8 +54,9 @@ builder.Services.AddRazorPages()
 builder.Services.AddViteServices(options =>
 {
 	options.Server.Port = 4173;
-    options.Server.AutoRun = true;
+    options.Server.AutoRun = builder.Environment.IsDevelopment();
     options.Server.PackageManager = "pnpm";
+    options.Manifest = ".vite/manifest.json";
 });
 
 // Add repositories
@@ -109,7 +110,7 @@ builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = ".Conversey.Antiforgery";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
@@ -128,6 +129,10 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/access-denied";
     options.LogoutPath = "/logout";
+    // Share the auth cookie across all subdomains (e.g. hogeschool-nova.conversey.be)
+    options.Cookie.Domain = builder.Environment.IsDevelopment() ? null : ".conversey.be";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 // builder.Services.AddDataProtection()
