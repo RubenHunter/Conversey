@@ -32,7 +32,7 @@ build-backend:
     - gcloud config set project $GCP_PROJECT_ID
   script:
     - echo "🚀 Start Cloud Build voor de backend..."
-    - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --quiet
+    - gcloud builds submit backend/ --tag europe-west1-docker.pkg.dev/$GCP_PROJECT_ID/conversey-repo/backend:latest --region=europe-west1 --quiet
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
