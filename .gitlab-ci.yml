@@ -111,15 +111,7 @@ deploy-to-cloud:
     - gcloud auth login --cred-file=.gcp-credentials.json
     - gcloud config set project $GCP_PROJECT_ID
   script:
-    - echo "🔄 Nieuw instance template aanmaken en rolling update starten..."
-    - REGION="europe-west1"
-    - ZONE="europe-west1-b"
-    - IMAGE_URL="${REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/conversey-repo/backend:latest"
-    - TEMPLATE_NAME="conversey-template-$(date +%s)"
-    - FULL_CONN=$(gcloud secrets versions access latest --secret="ConnectionStrings__DefaultConnection" --quiet 2>/dev/null || echo "")
-    - MISTRAL_KEY=$(gcloud secrets versions access latest --secret="MISTRAL_API_KEY" --quiet 2>/dev/null || echo "")
-    - BUCKET_NAME="${GCP_PROJECT_ID}-media"
-    - gcloud compute instance-templates create-with-container $TEMPLATE_NAME --container-image=$IMAGE_URL --container-env="ConnectionStrings__Default=${FULL_CONN},AI__Mistral__ApiKey=${MISTRAL_KEY},AI__Provider=Mistral,GoogleCloud__StorageBucket=${BUCKET_NAME},ASPNETCORE_URLS=http://+:8080,COMPlus_EnableHWIntrinsic=0" --tags=http-server --machine-type=e2-medium --project=$GCP_PROJECT_ID --quiet
-    - gcloud compute instance-groups managed rolling-action start-update conversey-mig --version=template=$TEMPLATE_NAME --zone=$ZONE --project=$GCP_PROJECT_ID --quiet
+    - echo "🔄 Rolling update van de Managed Instance Group..."
+    - gcloud compute instance-groups managed rolling-action restart conversey-mig --zone=europe-west1-b --project=$GCP_PROJECT_ID --quiet
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
