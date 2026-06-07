@@ -512,7 +512,21 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
 
     EnsureSeedUser(userManager, "admin@hogeschool.nova.be", "WorkspaceAdmin", hogeschoolNovaWorkspace);
     EnsureSeedUser(userManager, "admin@stad.linden.be", "WorkspaceAdmin", stadLindenWorkspace);
-    
+
+
+    var ipWorkspace = dbCtx.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("integratie-project-j2"));
+    if (ipWorkspace == null)
+    {
+        ipWorkspace = new Workspace
+        {
+            Id = Slug.FromName("integratie-project-j2"),
+            Name = "Integratie Project J2"
+        };
+        dbCtx.Workspaces.Add(ipWorkspace);
+        dbCtx.SaveChanges();
+    }
+    EnsureSeedUser(userManager, "admin@integratieproject.be", "WorkspaceAdmin", ipWorkspace);
+
     // Final check for stad-linden specifically to fix discriminator if it's stale (IDuser vs WSAdminUser)
     // We do this via raw SQL since EF Core doesn't allow changing type of tracked entity easily, 
     // and we want to avoid DeleteAsync due to FK constraints.
@@ -523,6 +537,10 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
     dbCtx.Database.ExecuteSqlRaw(
         "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'hogeschool-nova' " +
         "WHERE \"Email\" = 'admin@hogeschool.nova.be'");
+
+    dbCtx.Database.ExecuteSqlRaw(
+        "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'WorkspaceAdminUser', \"WorkspaceId\" = 'integratie-project-j2' " +
+        "WHERE \"Email\" = 'admin@integratieproject.be'");
 
     dbCtx.Database.ExecuteSqlRaw(
         "UPDATE \"AspNetUsers\" SET \"Discriminator\" = 'ConverseyAdminUser' " +
