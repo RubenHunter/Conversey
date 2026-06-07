@@ -17,8 +17,8 @@ const CLASSIC_SCROLL_ICON = `<svg class="layout-picker-icon" viewBox="0 0 64 64"
   <rect x="21" y="44" width="22" height="2" rx="1" fill="color-mix(in srgb, var(--color-primary) 18%, transparent)" opacity="0.5"/>
 </svg>`
 
-const chatExampleImage = new URL('../../../chat_example.png', import.meta.url).href
-const classicExampleImage = new URL('../../../classic_example.png', import.meta.url).href
+const chatExampleImage = new URL('../../../public/images/chat_example.png', import.meta.url).href
+const classicExampleImage = new URL('../../../public/images/classic_example.png', import.meta.url).href
 
 
 interface ShowLayoutPickerParams {

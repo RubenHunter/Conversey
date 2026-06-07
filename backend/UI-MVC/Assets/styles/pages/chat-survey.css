@@ -977,18 +977,18 @@
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-.chat-shell--ideas-desktop {
+.chat-shell--ideas.chat-shell--ideas-desktop {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto 1fr auto;
 }
 
-.chat-shell--ideas-desktop > .survey-topbar {
+.chat-shell--ideas.chat-shell--ideas-desktop > .survey-topbar {
   grid-column: 1 / -1;
   grid-row: 1;
 }
 
-.chat-shell--ideas-desktop .chat-scroll-area {
+.chat-shell--ideas.chat-shell--ideas-desktop .chat-scroll-area {
   grid-column: 1;
   grid-row: 2;
   flex: none;
@@ -997,14 +997,14 @@
   overflow-y: auto;
 }
 
-.chat-shell--ideas-desktop .chat-input-wrap {
+.chat-shell--ideas.chat-shell--ideas-desktop .chat-input-wrap {
   grid-column: 1;
   grid-row: 3;
   order: unset;
   width: auto;
 }
 
-.chat-shell--ideas-desktop .chat-ideas-area {
+.chat-shell--ideas.chat-shell--ideas-desktop .chat-ideas-area {
   grid-column: 2;
   grid-row: 2 / 4;
   flex: none;
@@ -1020,7 +1020,7 @@
   overflow: hidden;
 }
 
-.chat-shell--ideas-desktop .chat-scroll-bottom {
+.chat-shell--ideas.chat-shell--ideas-desktop .chat-scroll-bottom {
   right: calc(50% + var(--spacing-md));
 }
 

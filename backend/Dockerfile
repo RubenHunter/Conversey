@@ -10,6 +10,7 @@ RUN pnpm install
 
 COPY UI-MVC/ ./
 RUN pnpm run build
+RUN test -f wwwroot/.vite/manifest.json || (echo "ERROR: Vite build failed - manifest.json missing" && exit 1)
 
 # 2. .NET Publish
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build

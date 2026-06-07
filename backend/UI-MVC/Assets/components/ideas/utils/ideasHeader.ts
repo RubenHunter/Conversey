@@ -26,7 +26,7 @@ export function renderIdeasHeader({ organizationName, organizationSlug, organiza
     return `
         <div class="survey-topbar">
             <div class="survey-topbar-left">
-                <div class="survey-topbar-logo"><img src="/Assets/Conversey_logo.png" alt="Conversey" /></div>
+                <div class="survey-topbar-logo"><img src="/images/Conversey_logo.png" alt="Conversey" /></div>
                 <div class="survey-topbar-logo-title max-[440px]:hidden">CONVERSEY</div>
             </div>
             <div class="survey-topbar-right">
