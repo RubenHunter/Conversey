@@ -526,8 +526,6 @@ void SeedIdentity(UserManager<IdentityUser> userManager, RoleManager<IdentityRol
         dbCtx.SaveChanges();
     }
     EnsureSeedUser(userManager, "admin@integratieproject.be", "WorkspaceAdmin", ipWorkspace);
-
-    // Final check for stad-linden specifically to fix discriminator if it's stale (IDuser vs WSAdminUser)
     // We do this via raw SQL since EF Core doesn't allow changing type of tracked entity easily, 
     // and we want to avoid DeleteAsync due to FK constraints.
     dbCtx.Database.ExecuteSqlRaw(
