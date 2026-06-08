@@ -144,20 +144,27 @@ public class ConverseyAdminController(IWorkspaceManager workspaceManager, IAdmin
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadCreateWorkspaceImage(IFormFile imageFile)
     {
-        if (imageFile == null || imageFile.Length == 0)
+        try
         {
-            return BadRequest(new { error = "Please select an image file." });
-        }
+            if (imageFile == null || imageFile.Length == 0)
+            {
+                return BadRequest(new { error = "Please select an image file." });
+            }
 
-        if (string.IsNullOrWhiteSpace(imageFile.ContentType) ||
-            !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(imageFile.ContentType) ||
+                !imageFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { error = "Only image files are allowed." });
+            }
+
+            await using var stream = imageFile.OpenReadStream();
+            var imageUrl = await workspaceManager.UploadWorkspaceImage(stream, imageFile.FileName, imageFile.ContentType);
+            return Json(new { imageUrl });
+        }
+        catch (Exception ex)
         {
-            return BadRequest(new { error = "Only image files are allowed." });
+            return StatusCode(500, new { error = $"Upload failed: {ex.Message}" });
         }
-
-        await using var stream = imageFile.OpenReadStream();
-        var imageUrl = await workspaceManager.UploadWorkspaceImage(stream, imageFile.FileName, imageFile.ContentType);
-        return Json(new { imageUrl });
     }
     
     

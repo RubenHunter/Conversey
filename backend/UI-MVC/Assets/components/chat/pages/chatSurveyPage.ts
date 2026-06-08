@@ -4,7 +4,7 @@ import type { Project } from '../../../models/project'
 import type { ProjectContext } from '../../../main'
 import { getQuestions, submitAnswers } from '../../../services/surveyService'
 import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
-import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from '../../../models/question.ts'
+import { FixedQuestion, OpenQuestion, QuestionType, RangeQuestion } from '../../../models/question.ts'
 import type { QuestionAnswer, QuestionComponent } from '../../survey/components/singleChoiceQuestion'
 import { renderSingleChoiceQuestion } from '../../survey/components/singleChoiceQuestion'
 import { renderMultipleChoiceQuestion } from '../../survey/components/multipleChoiceQuestion'
@@ -30,8 +30,8 @@ import { createIdeasSubmitHandler } from '../../ideas/components/ideasSubmitHand
 import { createFirstIdeaContactDialogController } from '../../ideas/components/firstIdeaContactDialog'
 import { createTopicModalController } from '../../ideas/components/topicModal'
 import { createChatIdeaNudgeFlow } from '../../ideas/components/chatIdeaNudgeFlow'
-import {Idea, IdeaAuthorType} from '../../../models/idea'
-import type {IdeaNudgingContext} from '../../../services/ideaService'
+import { Idea, IdeaAuthorType } from '../../../models/idea'
+import type { IdeaNudgingContext } from '../../../services/ideaService'
 import type { ActiveView, DiscoveryFeed } from '../../ideas/types'
 import { DiscoveryMode, DiscoveryBadgeType } from '../../ideas/types'
 import { createDiscoveryFeed, getTopicSemanticCategories as getTopicSemanticCats } from '../../ideas/utils/ideasDiscovery'
@@ -98,8 +98,9 @@ export async function renderChatSurveyPage(
 
     const chatShell = container.querySelector<HTMLDivElement>('#chat-shell')!
     const cleanupDesktopLayout = bindChatIdeasDesktopLayout(chatShell)
-    if (project.imageUrl) {
-        chatShell.style.setProperty('--project-bg', `url(${project.imageUrl})`);
+    const heroImage = project.imageUrl;
+    if (heroImage) {
+        chatShell.style.setProperty('--project-bg', `url(${heroImage})`);
     } else {
         chatShell.style.setProperty('--project-bg', 'none');
         chatShell.style.backgroundColor = 'white';
@@ -119,10 +120,10 @@ export async function renderChatSurveyPage(
         q.type === QuestionType.SingleChoice
             ? renderSingleChoiceQuestion(q as FixedQuestion, i)
             : q.type === QuestionType.MultipleChoice
-            ? renderMultipleChoiceQuestion(q as FixedQuestion, i)
-            : q.type === QuestionType.Scale
-            ? renderScaleQuestion(q as RangeQuestion, i)
-            : renderOpenTextQuestion(q as OpenQuestion, i),
+                ? renderMultipleChoiceQuestion(q as FixedQuestion, i)
+                : q.type === QuestionType.Scale
+                    ? renderScaleQuestion(q as RangeQuestion, i)
+                    : renderOpenTextQuestion(q as OpenQuestion, i),
     )
 
     const answeredState = new Array<boolean>(questions.length).fill(false)
@@ -132,7 +133,7 @@ export async function renderChatSurveyPage(
     let activeConfirmIndex: number | null = null
     let activeSendHandler: (() => void | Promise<void>) | null = null
     let editingBubble: HTMLElement | null = null
-    let editingPrevSendHandler: (() => void | Promise<void>) | null = null    
+    let editingPrevSendHandler: (() => void | Promise<void>) | null = null
     let handleIdeaSubmit: () => Promise<void> = async () => { return }
 
     const brainstormController: BrainstormModalController = wireBrainstormButton(brainstormBtn, {
@@ -161,7 +162,7 @@ export async function renderChatSurveyPage(
 
     // ===== Edit handler (must be defined early for use in sendOpenTextMessage) =====
     const createEditHandler = (questionIndex: number, bubbleElement: HTMLElement) => () => {
-        
+
         // Cancel any current edit before starting new one
         cancelCurrentEdit()
 
@@ -170,15 +171,15 @@ export async function renderChatSurveyPage(
         chatInput.value = currentText
         chatInput.style.height = 'auto'
         chatInput.style.height = `${Math.min(chatInput.scrollHeight, 120)}px`
-        
+
         // Visual: mark bubble as being edited
         bubbleElement.classList.add('chat-bubble--editing')
-        
+
         // Track editing state
         editingBubble = bubbleElement
         const prevSendHandler = activeSendHandler
         editingPrevSendHandler = prevSendHandler
-        
+
         // Set send handler to save edit back to bubble (no AI response)
         activeSendHandler = () => {
             const newText = chatInput.value.trim()
@@ -186,7 +187,7 @@ export async function renderChatSurveyPage(
                 cancelBubbleEdit(bubbleElement, prevSendHandler)
                 return
             }
-            
+
             // Update bubble display
             bubbleElement.textContent = newText
             bubbleElement.classList.remove('chat-bubble--editing')
@@ -197,48 +198,48 @@ export async function renderChatSurveyPage(
             answeredState[questionIndex] = true
             const qId = questions[questionIndex].id!
             openTextDraftsByQuestionId.set(qId, [newText])
-            
+
             // Update openTextState.messages if editing current active question
             if (openTextState && openTextState.questionIndex === questionIndex) {
                 openTextState.messages = [newText]
             }
-            
+
             updateProgress()
             persistProgress()
-            
+
             // Clear input
             chatInput.value = ''
             chatInput.style.height = 'auto'
             updateSendIcon()
-            
+
             // Restore send handler
             activeSendHandler = prevSendHandler
             if (!prevSendHandler) {
                 deactivateInput()
             }
         }
-        
+
         chatInput.disabled = false
         sendBtn.disabled = false
         brainstormBtn.hidden = false
         updateSendIcon()
-        
+
         // Only show inline confirm for the current active question
         if (openTextState && openTextState.questionIndex === questionIndex) {
             showInlineConfirm(questionIndex)
         }
-        
+
         // Ensure confirm row is not in confirmed state
         const confirmRow = messagesEl.querySelector<HTMLElement>(`[data-confirm-for="${questionIndex}"]`)
         if (confirmRow) {
             confirmRow.classList.remove('chat-confirm-row--confirmed')
         }
-        
+
         setTimeout(() => chatInput.focus(), 50)
     }
     const bubbleSpeakerControllers: SpeakerButtonController[] = []
     let isChatRecording = false
-    
+
     function cancelBubbleEdit(bubbleElement: HTMLElement, prevSendHandler: (() => void | Promise<void>) | null): void {
         bubbleElement.classList.remove('chat-bubble--editing')
         editingBubble = null
@@ -447,42 +448,42 @@ export async function renderChatSurveyPage(
     }
 
     function sendOpenTextMessage(): void {
-         if (!openTextState) return
-         const text = chatInput.value.trim()
-         if (!text) return
- 
-         openTextState.messages.push(text)
-         chatInput.value = ''
-         chatInput.style.height = 'auto'
-         updateSendIcon()
- 
-         // Append bubble with click handler to allow editing
-         const row = document.createElement('div')
-         row.className = 'chat-row chat-row--user'
-         const bubble = document.createElement('div')
-         bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-         bubble.textContent = text
-         
-         // Add click handler for inline editing
-         bubble.addEventListener('click', createEditHandler(openTextState.questionIndex, bubble))
-         
-         row.appendChild(bubble)
-         messagesEl.appendChild(row)
- 
-         openTextState.floatingConfirmRow?.remove()
-         const newRow = createFloatingConfirmRow(openTextState.questionIndex)
-         messagesEl.appendChild(newRow)
-         openTextState.floatingConfirmRow = newRow
-         scrollToBottom()
- 
-         const bundled = openTextState.messages.join('\n\n')
-         components[openTextState.questionIndex].setAnswer(bundled)
-         answeredState[openTextState.questionIndex] = true
-         const questionId = questions[openTextState.questionIndex].id!
-         openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
-         updateProgress()
-         persistProgress()
-     }
+        if (!openTextState) return
+        const text = chatInput.value.trim()
+        if (!text) return
+
+        openTextState.messages.push(text)
+        chatInput.value = ''
+        chatInput.style.height = 'auto'
+        updateSendIcon()
+
+        // Append bubble with click handler to allow editing
+        const row = document.createElement('div')
+        row.className = 'chat-row chat-row--user'
+        const bubble = document.createElement('div')
+        bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+        bubble.textContent = text
+
+        // Add click handler for inline editing
+        bubble.addEventListener('click', createEditHandler(openTextState.questionIndex, bubble))
+
+        row.appendChild(bubble)
+        messagesEl.appendChild(row)
+
+        openTextState.floatingConfirmRow?.remove()
+        const newRow = createFloatingConfirmRow(openTextState.questionIndex)
+        messagesEl.appendChild(newRow)
+        openTextState.floatingConfirmRow = newRow
+        scrollToBottom()
+
+        const bundled = openTextState.messages.join('\n\n')
+        components[openTextState.questionIndex].setAnswer(bundled)
+        answeredState[openTextState.questionIndex] = true
+        const questionId = questions[openTextState.questionIndex].id!
+        openTextDraftsByQuestionId.set(questionId, [...openTextState.messages])
+        updateProgress()
+        persistProgress()
+    }
 
     async function confirmOpenText(index: number): Promise<void> {
         if (!openTextState || openTextState.questionIndex !== index) return
@@ -512,7 +513,7 @@ export async function renderChatSurveyPage(
             } else {
                 openTextDraftsByQuestionId.delete(questionId)
             }
-            
+
             openTextState.floatingConfirmRow?.classList.add('chat-confirm-row--confirmed')
             updateProgress()
             hideInlineConfirm()
@@ -520,7 +521,7 @@ export async function renderChatSurveyPage(
             openTextState = null
             deactivateInput()
             persistProgress(index + 1)
-            
+
             await wait(350)
             if (index < questions.length - 1) {
                 await revealQuestion(index + 1)
@@ -585,52 +586,52 @@ export async function renderChatSurveyPage(
 
     // ===== Input state management =====
     function activateOpenTextInput(questionIndex: number): void {
-         const questionId = questions[questionIndex].id!
-         const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
-         openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
- 
-         if (restoredMessages.length > 0) {
-             // Append restored bubbles with click handlers to allow re-editing
-             restoredMessages.forEach((message) => {
-                 const row = document.createElement('div')
-                 row.className = 'chat-row chat-row--user'
-                 const bubble = document.createElement('div')
-                 bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                 bubble.textContent = message
-                 
-                 // Add click handler for inline editing
-                 bubble.addEventListener('click', createEditHandler(questionIndex, bubble))
-                 
-                 row.appendChild(bubble)
-                 messagesEl.appendChild(row)
-             })
-             
-             const restoredRow = createFloatingConfirmRow(questionIndex)
-             messagesEl.appendChild(restoredRow)
-             openTextState.floatingConfirmRow = restoredRow
-             components[questionIndex].setAnswer(restoredMessages.join('\n\n'))
-             answeredState[questionIndex] = true
-             updateProgress()
-             scrollToBottom()
-         } else {
-             // Show floating confirm row even when empty, for non-required questions
-             const emptyRow = createFloatingConfirmRow(questionIndex)
-             messagesEl.appendChild(emptyRow)
-             openTextState.floatingConfirmRow = emptyRow
-             scrollToBottom()
-         }
- 
-         chatInput.disabled = false
-         chatInput.placeholder = questions[questionIndex].hint?.trim() || t.typeHere
-         chatInput.value = ''
-         chatInput.style.height = 'auto'
-         sendBtn.disabled = false
-         brainstormBtn.hidden = false
-         showInlineConfirm(questionIndex)
-         activeSendHandler = sendOpenTextMessage
-         updateSendIcon()
-         setTimeout(() => chatInput.focus(), 50)
-     }
+        const questionId = questions[questionIndex].id!
+        const restoredMessages = openTextDraftsByQuestionId.get(questionId) ?? []
+        openTextState = { questionIndex, messages: [...restoredMessages], floatingConfirmRow: null }
+
+        if (restoredMessages.length > 0) {
+            // Append restored bubbles with click handlers to allow re-editing
+            restoredMessages.forEach((message) => {
+                const row = document.createElement('div')
+                row.className = 'chat-row chat-row--user'
+                const bubble = document.createElement('div')
+                bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                bubble.textContent = message
+
+                // Add click handler for inline editing
+                bubble.addEventListener('click', createEditHandler(questionIndex, bubble))
+
+                row.appendChild(bubble)
+                messagesEl.appendChild(row)
+            })
+
+            const restoredRow = createFloatingConfirmRow(questionIndex)
+            messagesEl.appendChild(restoredRow)
+            openTextState.floatingConfirmRow = restoredRow
+            components[questionIndex].setAnswer(restoredMessages.join('\n\n'))
+            answeredState[questionIndex] = true
+            updateProgress()
+            scrollToBottom()
+        } else {
+            // Show floating confirm row even when empty, for non-required questions
+            const emptyRow = createFloatingConfirmRow(questionIndex)
+            messagesEl.appendChild(emptyRow)
+            openTextState.floatingConfirmRow = emptyRow
+            scrollToBottom()
+        }
+
+        chatInput.disabled = false
+        chatInput.placeholder = questions[questionIndex].hint?.trim() || t.typeHere
+        chatInput.value = ''
+        chatInput.style.height = 'auto'
+        sendBtn.disabled = false
+        brainstormBtn.hidden = false
+        showInlineConfirm(questionIndex)
+        activeSendHandler = sendOpenTextMessage
+        updateSendIcon()
+        setTimeout(() => chatInput.focus(), 50)
+    }
 
     function activateIdeaInput(placeholder: string, handler: () => void | Promise<void>): void {
         chatInput.disabled = false
@@ -840,32 +841,32 @@ export async function renderChatSurveyPage(
                     projectId: params.projectSlug,
                     answers,
                 })
-                 localStorage.setItem(completedKey, 'true')
-                 clearSurveyProgress(projectSlugKey)
-  
-                 // Lock all survey answers to prevent further editing
-                 for (let i = 0; i <= confirmedUpToIndex && i < components.length; i++) {
-                     components[i].lock()
-                 }
-                 deactivateInput()
-               
-                 submitRow.remove()
- 
-                 const successRow = document.createElement('div')
-                 successRow.className = 'chat-submit-success'
-                 successRow.innerHTML = `
+                localStorage.setItem(completedKey, 'true')
+                clearSurveyProgress(projectSlugKey)
+
+                // Lock all survey answers to prevent further editing
+                for (let i = 0; i <= confirmedUpToIndex && i < components.length; i++) {
+                    components[i].lock()
+                }
+                deactivateInput()
+
+                submitRow.remove()
+
+                const successRow = document.createElement('div')
+                successRow.className = 'chat-submit-success'
+                successRow.innerHTML = `
                      <div class="chat-submit-success-icon">${CHECKMARK_SVG}</div>
                      <p class="chat-submit-success-title">${esc(t.submittedTitle)}</p>
                      <p class="chat-submit-success-sub">${esc(t.submittedSub)}</p>`
-                 messagesEl.appendChild(successRow)
-                 scrollToBottom()
- 
-                 // Save survey history after success message is added and submit button removed
-                 lockSurveyHistory()
- 
-                 await wait(2200)
-                 await enterIdeasPhase()
-             } catch {
+                messagesEl.appendChild(successRow)
+                scrollToBottom()
+
+                // Save survey history after success message is added and submit button removed
+                lockSurveyHistory()
+
+                await wait(2200)
+                await enterIdeasPhase()
+            } catch {
                 btn.disabled = false
                 btn.textContent = t.submitSurvey
                 await appendAiBubble(t.somethingWrong)
@@ -1634,64 +1635,64 @@ export async function renderChatSurveyPage(
                 closeDiscoveryMenu()
                 void renderIdeasList()
 
-                 if (!firstIdeaContactDialog.hasStoredDecision()) {
-                     void firstIdeaContactDialog.open().then((choice) => {
-                         if (choice?.permissionGranted && choice.email) {
-                             void saveYouthContactEmail(
-                                 params.organizationSlug,
-                                 params.projectSlug,
-                                 youthToken,
-                                 choice.email,
-                             )
-                         }
-                     })
-                 }
-             },
-         })
+                if (!firstIdeaContactDialog.hasStoredDecision()) {
+                    void firstIdeaContactDialog.open().then((choice) => {
+                        if (choice?.permissionGranted && choice.email) {
+                            void saveYouthContactEmail(
+                                params.organizationSlug,
+                                params.projectSlug,
+                                youthToken,
+                                choice.email,
+                            )
+                        }
+                    })
+                }
+            },
+        })
 
-         handleIdeaSubmit = async (): Promise<void> => {
-             const text = chatInput.value.trim()
-             if (!text) return
-             if (activeView.type !== 'topic') return
+        handleIdeaSubmit = async (): Promise<void> => {
+            const text = chatInput.value.trim()
+            if (!text) return
+            if (activeView.type !== 'topic') return
 
-             if (chatNudgeFlow.isActive()) {
-                 chatNudgeFlow.submitAnswer(text)
-                 chatInput.value = ''
-                 chatInput.dispatchEvent(new Event('input', { bubbles: true }))
-                 return
-             }
+            if (chatNudgeFlow.isActive()) {
+                chatNudgeFlow.submitAnswer(text)
+                chatInput.value = ''
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+                return
+            }
 
-             chatInput.disabled = true
-             const userBubble = document.createElement('div')
-             userBubble.className = 'chat-row chat-row--user'
-             userBubble.innerHTML = `<div class="chat-bubble chat-bubble--user">${esc(text)}</div>`
-             messagesEl.appendChild(userBubble)
-             scrollToBottom()
+            chatInput.disabled = true
+            const userBubble = document.createElement('div')
+            userBubble.className = 'chat-row chat-row--user'
+            userBubble.innerHTML = `<div class="chat-bubble chat-bubble--user">${esc(text)}</div>`
+            messagesEl.appendChild(userBubble)
+            scrollToBottom()
 
-             chatInput.value = ''
-             chatInput.dispatchEvent(new Event('input', { bubbles: true }))
+            chatInput.value = ''
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }))
 
-              try {
-                  await submitHandler.submit(text, activeView)
-                  await appendAiBubble(t.thanksForIdea)
-                  await wait(400)
-                  // Tell user they can post another or switch topic
-                  await appendAiBubble(t.postIdeaNext, { bubbleClass: 'chat-bubble--topic-switch' })
-                  if (activeView.type === 'topic') {
-                      const currentTopic = topics.find((item) => item.id === (activeView as { type: 'topic'; topicId: number }).topicId)
-                      if (currentTopic) {
-                          const prompt = currentTopic.prompt?.trim()
-                          await appendAiBubble(prompt || t.thoughtsOnTopic.replace('{topicTitle}', currentTopic.title), { prefix: t.topicQuestionLabel })
-                      }
-                  }
-              } catch {
-                  await appendAiBubble(t.somethingWrong)
-              } finally {
-                  chatInput.disabled = false
-                  chatInput.placeholder = t.shareAnother
-                  chatInput.focus()
-              }
-         }
+            try {
+                await submitHandler.submit(text, activeView)
+                await appendAiBubble(t.thanksForIdea)
+                await wait(400)
+                // Tell user they can post another or switch topic
+                await appendAiBubble(t.postIdeaNext, { bubbleClass: 'chat-bubble--topic-switch' })
+                if (activeView.type === 'topic') {
+                    const currentTopic = topics.find((item) => item.id === (activeView as { type: 'topic'; topicId: number }).topicId)
+                    if (currentTopic) {
+                        const prompt = currentTopic.prompt?.trim()
+                        await appendAiBubble(prompt || t.thoughtsOnTopic.replace('{topicTitle}', currentTopic.title), { prefix: t.topicQuestionLabel })
+                    }
+                }
+            } catch {
+                await appendAiBubble(t.somethingWrong)
+            } finally {
+                chatInput.disabled = false
+                chatInput.placeholder = t.shareAnother
+                chatInput.focus()
+            }
+        }
 
         ideasListEl.addEventListener('scroll', () => {
             const isSuppressed = performance.now() < suppressListScrollSyncUntil
@@ -1810,97 +1811,97 @@ export async function renderChatSurveyPage(
             await appendAiBubble(project.description, { animated: false })
         }
 
-         // Quick replay of answered questions (no animation)
-         for (let i = 0; i < resumeAt && i < questions.length; i++) {
-             const q = questions[i]
-             await appendAiBubble(q.text, {
-                 animated: false,
-                 bubbleClass: 'chat-bubble--question-title',
-                 questionNum: i + 1,
-                 required: q.required,
-             })
+        // Quick replay of answered questions (no animation)
+        for (let i = 0; i < resumeAt && i < questions.length; i++) {
+            const q = questions[i]
+            await appendAiBubble(q.text, {
+                animated: false,
+                bubbleClass: 'chat-bubble--question-title',
+                questionNum: i + 1,
+                required: q.required,
+            })
 
-             if (q.type === QuestionType.Open) {
-                 // For open text questions, show as clickable editable bubble(s)
-                 const questionId = questions[i].id!
-                 const drafts = openTextDraftsByQuestionId.get(questionId)
-                 const answer = components[i].getAnswer()
+            if (q.type === QuestionType.Open) {
+                // For open text questions, show as clickable editable bubble(s)
+                const questionId = questions[i].id!
+                const drafts = openTextDraftsByQuestionId.get(questionId)
+                const answer = components[i].getAnswer()
 
-                 if (drafts && drafts.length > 0) {
-                     drafts.forEach((message) => {
-                         const row = document.createElement('div')
-                         row.className = 'chat-row chat-row--user'
-                         const bubble = document.createElement('div')
-                         bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                         bubble.textContent = message
-                         bubble.addEventListener('click', createEditHandler(i, bubble))
-                         row.appendChild(bubble)
-                         messagesEl.appendChild(row)
-                     })
-                 } else {
-                     const displayText = formatAnswerForDisplay(q, answer)
-                     const row = document.createElement('div')
-                     row.className = 'chat-row chat-row--user'
-                     const bubble = document.createElement('div')
-                     bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
-                     bubble.textContent = displayText || '\u200B'
-                     bubble.addEventListener('click', createEditHandler(i, bubble))
-                     row.appendChild(bubble)
-                     messagesEl.appendChild(row)
-                 }
+                if (drafts && drafts.length > 0) {
+                    drafts.forEach((message) => {
+                        const row = document.createElement('div')
+                        row.className = 'chat-row chat-row--user'
+                        const bubble = document.createElement('div')
+                        bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                        bubble.textContent = message
+                        bubble.addEventListener('click', createEditHandler(i, bubble))
+                        row.appendChild(bubble)
+                        messagesEl.appendChild(row)
+                    })
+                } else {
+                    const displayText = formatAnswerForDisplay(q, answer)
+                    const row = document.createElement('div')
+                    row.className = 'chat-row chat-row--user'
+                    const bubble = document.createElement('div')
+                    bubble.className = 'chat-bubble chat-bubble--user chat-bubble--editable'
+                    bubble.textContent = displayText || '\u200B'
+                    bubble.addEventListener('click', createEditHandler(i, bubble))
+                    row.appendChild(bubble)
+                    messagesEl.appendChild(row)
+                }
 
-                 // Show confirmed checkmark row for open text
-                 const confirmRow = document.createElement('div')
-                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                 confirmRow.setAttribute('data-confirm-for', String(i))
-                 confirmRow.innerHTML = `
+                // Show confirmed checkmark row for open text
+                const confirmRow = document.createElement('div')
+                confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                confirmRow.setAttribute('data-confirm-for', String(i))
+                confirmRow.innerHTML = `
                  <div class="chat-confirm-line"></div>
                  <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
                  <div class="chat-confirm-line"></div>`
-                 messagesEl.appendChild(confirmRow)
-             } else {
-                 // For other question types, show the actual question component with answer pre-selected
-                 const block = document.createElement('div')
-                 block.className = 'chat-question-block'
-                 block.setAttribute('data-question-index', String(i))
+                messagesEl.appendChild(confirmRow)
+            } else {
+                // For other question types, show the actual question component with answer pre-selected
+                const block = document.createElement('div')
+                block.className = 'chat-question-block'
+                block.setAttribute('data-question-index', String(i))
 
-                 const answerRegion = document.createElement('div')
-                 answerRegion.className = 'chat-answer-region'
+                const answerRegion = document.createElement('div')
+                answerRegion.className = 'chat-answer-region'
 
-                 const el = components[i].getElement()
-                 el.classList.add('chat-question-component')
-                 answerRegion.appendChild(el)
+                const el = components[i].getElement()
+                el.classList.add('chat-question-component')
+                answerRegion.appendChild(el)
 
-                 const confirmRow = document.createElement('div')
-                 confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
-                 confirmRow.setAttribute('data-confirm-for', String(i))
-                 confirmRow.innerHTML = `
+                const confirmRow = document.createElement('div')
+                confirmRow.className = 'chat-confirm-row chat-confirm-row--confirmed'
+                confirmRow.setAttribute('data-confirm-for', String(i))
+                confirmRow.innerHTML = `
                  <div class="chat-confirm-line"></div>
                  <div class="chat-confirm-btn" aria-hidden="true">${CHECKMARK_SVG}</div>
                  <div class="chat-confirm-line"></div>`
 
-                 block.appendChild(answerRegion)
-                 block.appendChild(confirmRow)
-                 messagesEl.appendChild(block)
+                block.appendChild(answerRegion)
+                block.appendChild(confirmRow)
+                messagesEl.appendChild(block)
 
-                 // Re-apply answer after DOM append so range slider positions correctly
-                 const saved = savedProgress!.answersByQuestionId.get(q.id!)
-                 if (saved !== undefined && saved !== null) {
-                     components[i].setAnswer(saved)
-                 }
-             }
+                // Re-apply answer after DOM append so range slider positions correctly
+                const saved = savedProgress!.answersByQuestionId.get(q.id!)
+                if (saved !== undefined && saved !== null) {
+                    components[i].setAnswer(saved)
+                }
+            }
 
-             scrollToBottom()
-         }
+            scrollToBottom()
+        }
 
-         // Show resume message then continue (outside the replay loop)
-         await appendAiBubble(t.resuming)
+        // Show resume message then continue (outside the replay loop)
+        await appendAiBubble(t.resuming)
 
-         if (resumeAt < questions.length) {
-             await revealQuestion(resumeAt)
-         } else {
-             await showSubmitSection()
-         }
+        if (resumeAt < questions.length) {
+            await revealQuestion(resumeAt)
+        } else {
+            await showSubmitSection()
+        }
     } else {
         if (savedProgress) {
             confirmedUpToIndex = Math.max(0, Math.min(savedProgress.currentQuestionIndex, questions.length))

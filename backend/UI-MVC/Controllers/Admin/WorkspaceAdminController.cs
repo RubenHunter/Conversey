@@ -175,9 +175,16 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
             return BadRequest(new { error = "Only image files are allowed." });
         }
 
-        await using var stream = imageFile.OpenReadStream();
-        var imageUrl = await projectManager.UploadProjectImage(stream, imageFile.FileName, imageFile.ContentType);
-        return Json(new { imageUrl });
+        try
+        {
+            await using var stream = imageFile.OpenReadStream();
+            var imageUrl = await projectManager.UploadProjectImage(stream, imageFile.FileName, imageFile.ContentType);
+            return Json(new { imageUrl });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = $"Upload error: {ex.Message}" });
+        }
     }
 
     [HttpGet("/admin/projects/{id}")]
@@ -306,6 +313,9 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
                 return Conflict(new { error = "Project name already exists. Draft can save, but creation blocked until name unique." });
             }
 
+            var existingProject = !string.IsNullOrWhiteSpace(projectStep1.Slug) ? projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = projectStep1.Slug }) : null;
+            var targetStatus = existingProject?.Status ?? Status.Draft;
+
             var imageUrl = await ResolveProjectImageUrl(projectStep1);
             var project = projectManager.SaveProject(
                 currentWorkspace.Id,
@@ -318,7 +328,7 @@ public class WorkspaceAdminController(Workspace currentWorkspace, IProjectManage
                 projectStep1.NudgingStrength,
                 projectStep1.MinAge,
                 projectStep1.MaxAge,
-                Status.Draft,
+                targetStatus,
                 projectStep1.Slug,
                 new ProjectTheme { Primary = projectStep1.ThemePrimary, Secondary = projectStep1.ThemeSecondary, Accent = projectStep1.ThemeAccent, Preset = projectStep1.ThemePreset, Font = projectStep1.ThemeFont }
             );
@@ -815,18 +825,21 @@ This is an automated message. Please do not reply.";
     {
         if (string.IsNullOrWhiteSpace(projectStep1.Name)) return false;
 
-        var slugText = !string.IsNullOrWhiteSpace(projectStep1.Slug)
-            ? projectStep1.Slug
-            : Slug.FromName(projectStep1.Name).ToString();
-
+        var nameSlug = Slug.FromName(projectStep1.Name).ToString();
+        
         try
         {
-            var existing = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = slugText });
-            return existing.Status != Status.Draft;
+            var existingByName = projectManager.GetProjectById(currentWorkspace.Id, new Slug { Text = nameSlug });
+            
+            // If the project we found by name is NOT the one we are currently editing,
+            // and it's already live (not a draft), then it's a conflict.
+            if (existingByName.Id.Text != projectStep1.Slug && existingByName.Status != Status.Draft)
+            {
+                return true;
+            }
         }
-        catch (NotFoundException)
-        {
-            return false;
-        }
+        catch (NotFoundException) { }
+
+        return false;
     }
 }

@@ -12,7 +12,7 @@ public class Idea
     [Required]
     public string Content { get; set; }
 
-    public string Summary { get; set; }
+    public string? Summary { get; set; }
 
     public DateTime SubmissionDate { get; set; }
     public ModerationStatus Status { get; set; }

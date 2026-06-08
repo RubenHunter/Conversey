@@ -245,6 +245,7 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
             .HasMaxLength(4000);
 
         builder.Property(i => i.Summary)
+            .IsRequired(false)
             .HasMaxLength(1000);
 
         builder.Property(i => i.SemanticCategories)
@@ -271,7 +272,8 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
         builder.HasOne(i => i.Project)
             .WithMany(p => p.ProjectIdeas)
             .HasForeignKey("ProjectId")
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(i => i.Topic)
             .WithMany(t => t.Ideas)
@@ -281,15 +283,18 @@ public class IdeaConfig : IEntityTypeConfiguration<Idea>
         builder.HasOne(i => i.Youth)
             .WithMany(y => y.Ideas)
             .HasForeignKey("YouthToken")
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(i => i.Responses)
             .WithOne(r => r.Idea)
-            .HasForeignKey("IdeaId");
+            .HasForeignKey("IdeaId")
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(i => i.Reactions)
             .WithOne(ir => ir.Idea)
-            .HasForeignKey("IdeaId");
+            .HasForeignKey("IdeaId")
+            .OnDelete(DeleteBehavior.Cascade);
 
         #endregion
     }

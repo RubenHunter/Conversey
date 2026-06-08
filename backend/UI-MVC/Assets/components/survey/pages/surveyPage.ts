@@ -1,22 +1,22 @@
-import {getProject} from '../../../services/projectService'
-import {applyTheme} from '../../../utils/theme'
-import {getQuestions, submitAnswers} from '../../../services/surveyService'
-import type {QuestionAnswer, QuestionComponent} from '../components/singleChoiceQuestion'
-import {renderSingleChoiceQuestion} from '../components/singleChoiceQuestion'
-import {renderMultipleChoiceQuestion} from '../components/multipleChoiceQuestion'
-import {renderOpenTextQuestion} from '../components/openTextQuestion'
-import {renderScaleQuestion} from '../components/scaleQuestion'
-import type {ScrollNav} from '../../shared/scrollNav'
-import {clearSurveyProgress, loadSurveyProgress, saveSurveyProgress} from '../../../services/surveyProgressService'
-import {renderSurveyHeader, createSurveyHeaderController} from '../components/surveyHeader'
-import {navigate, ProjectContext, render} from "../../../main";
-import {InteractionType} from '../../../models/project'
-import {showLayoutPicker} from '../components/layoutPicker'
-import {getSurveyStrings} from '../../../i18n/survey'
-import {renderScrollNav} from '../../shared/scrollNav'
-import {hasAnswer} from '../../chat/utils/chatHelpers'
-import {FixedQuestion, OpenQuestion, QuestionType, RangeQuestion} from "../../../models/question.ts";
-import {ResponseAnswer} from "../../../models/response.ts";
+import { getProject } from '../../../services/projectService'
+import { applyTheme } from '../../../utils/theme'
+import { getQuestions, submitAnswers } from '../../../services/surveyService'
+import type { QuestionAnswer, QuestionComponent } from '../components/singleChoiceQuestion'
+import { renderSingleChoiceQuestion } from '../components/singleChoiceQuestion'
+import { renderMultipleChoiceQuestion } from '../components/multipleChoiceQuestion'
+import { renderOpenTextQuestion } from '../components/openTextQuestion'
+import { renderScaleQuestion } from '../components/scaleQuestion'
+import type { ScrollNav } from '../../shared/scrollNav'
+import { clearSurveyProgress, loadSurveyProgress, saveSurveyProgress } from '../../../services/surveyProgressService'
+import { renderSurveyHeader, createSurveyHeaderController } from '../components/surveyHeader'
+import { navigate, ProjectContext, render } from "../../../main";
+import { InteractionType } from '../../../models/project'
+import { showLayoutPicker } from '../components/layoutPicker'
+import { getSurveyStrings } from '../../../i18n/survey'
+import { renderScrollNav } from '../../shared/scrollNav'
+import { hasAnswer } from '../../chat/utils/chatHelpers'
+import { FixedQuestion, OpenQuestion, QuestionType, RangeQuestion } from "../../../models/question.ts";
+import { ResponseAnswer } from "../../../models/response.ts";
 
 const sessionLayoutCache = new Map<string, typeof InteractionType.Chat | typeof InteractionType.VerticalScroll>()
 
@@ -60,6 +60,8 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
     const organizationName = project.organizationName?.trim() || project.organizationSlug
     const headerHTML = renderSurveyHeader({ organizationName, organizationSlug: project.organizationSlug, organizationLogo: project.organizationLogo })
 
+    const heroImage = project.imageUrl;
+
     let currentQuestionIndex = -1 // Start at -1 to indicate we're at landing page section, not at any question yet
     let scrollNav: ScrollNav | null = null
     let isUserScroll = false // Track whether the scroll was from user or from programmatic navigation
@@ -70,7 +72,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             ${headerHTML}
 
             <section class="survey-hero" id="survey-hero">
-                <img src="${project.imageUrl}" alt="${project.title}" class="survey-hero-image" />
+                <img src="${heroImage}" alt="${project.title}" class="survey-hero-image" />
                 <div class="survey-hero-content lg:top-[28%]">
                     <h1 class="survey-hero-title">${project.title}</h1>
                     <p class="survey-hero-description" id="survey-hero-description">${project.description}</p>
@@ -126,9 +128,9 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
                 ? renderSingleChoiceQuestion(question as FixedQuestion, index)
                 : question.type === QuestionType.MultipleChoice
                     ? renderMultipleChoiceQuestion(question as FixedQuestion, index)
-                : question.type === QuestionType.Scale
-                    ? renderScaleQuestion(question as RangeQuestion, index)
-                    : renderOpenTextQuestion(question as OpenQuestion, index)
+                    : question.type === QuestionType.Scale
+                        ? renderScaleQuestion(question as RangeQuestion, index)
+                        : renderOpenTextQuestion(question as OpenQuestion, index)
 
         questionsContainer.appendChild(component.getElement())
 
@@ -188,7 +190,7 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
         headerController.updateProgress(answeredCount, questions.length)
 
         const isReady = questions.every((q, i) => !q.required || answeredState[i])
-        
+
         actionBar.classList.toggle('survey-ready', isReady)
     }
 
@@ -399,9 +401,9 @@ export async function renderSurveyPage(container: HTMLElement, params: ProjectCo
             if (openTextValue == null || openTextValue === '') return []
             return { questionId: question.id!, openTextValue }
         }).flat()
-        
+
         submitBtn.textContent = t.submitting
-        
+
         try {
             await submitAnswers(params.organizationSlug, params.projectSlug, { projectId: params.projectSlug, answers })
             localStorage.setItem(completedKey, 'true')

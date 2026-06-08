@@ -11,8 +11,9 @@ public class CloudStorageRepository : ICloudStorageRepository
 
      public CloudStorageRepository(IConfiguration config)
      {
-         _bucketName = config["GoogleCloud:BucketName"] 
-                       ?? throw new InvalidOperationException("GoogleCloud:BucketName is missing.");
+         _bucketName = config["GoogleCloud:StorageBucket"] 
+                       ?? config["GoogleCloud:BucketName"]
+                       ?? throw new InvalidOperationException("GoogleCloud Storage bucket name is missing. Check 'GoogleCloud:StorageBucket' context.");
 
          // This single line replaces all the FileStream and ServiceAccount logic.
          // It will automatically find the credentials from the gcloud CLI locally

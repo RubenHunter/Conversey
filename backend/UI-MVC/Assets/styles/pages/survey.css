@@ -136,14 +136,14 @@
 }
 
 .survey-option-label {
-  display: flex;
-  align-items: center;
-  gap: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
-  padding: clamp(var(--spacing-sm), 2vw, var(--font-size-lg));
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  background-color: var(--color-surface);
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
+    padding: clamp(var(--spacing-sm), 2vw, var(--font-size-lg));
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    background-color: var(--color-surface);
 }
 
 .survey-option-label:hover:not(.disabled) {
@@ -345,13 +345,13 @@
 }
 
 .survey-error {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
-  margin-top: var(--spacing-xs);
-  display: none;
-  background-color: color-mix(var(--color-surface) 67%, transparent);
-  border-radius: var(--radius-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-error);
+    margin-top: var(--spacing-xs);
+    display: none;
+    background-color: color-mix(var(--color-surface) 67%, transparent);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .survey-error.show {
@@ -414,6 +414,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 70%;
     position: absolute;
     top: 0;
     left: 0;
@@ -593,59 +594,59 @@
 
 /* Icon above text */
 .layout-picker-icon-wrap {
-  position: absolute;
-  top: clamp(18%, 32%, 38%);
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-xl);
-  padding: clamp(8px, 3vw, 28px);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  max-height: 40%;
+    position: absolute;
+    top: clamp(18%, 32%, 38%);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-xl);
+    padding: clamp(8px, 3vw, 28px);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-height: 40%;
 }
 
 .layout-picker-icon {
-  width: clamp(48px, 10vw, 110px);
-  height: clamp(48px, 10vw, 110px);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
-  max-width: 100%;
-  max-height: 100%;
+    width: clamp(48px, 10vw, 110px);
+    height: clamp(48px, 10vw, 110px);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    max-width: 100%;
+    max-height: 100%;
 }
 
 /* Text label */
 .layout-picker-label {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  transition: transform 0.2s ease;
-  background-color: rgba(0, 0, 0, 0.35);
-  border-radius: var(--radius-lg);
-  padding: clamp(var(--spacing-sm), 2vh, var(--spacing-sm));
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    transition: transform 0.2s ease;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: var(--radius-lg);
+    padding: clamp(var(--spacing-sm), 2vh, var(--spacing-sm));
 }
 
 .layout-picker-label-title {
-  display: block;
-  font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-3xl));
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.3px;
-  margin-bottom: var(--spacing-xs);
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    display: block;
+    font-size: clamp(var(--font-size-xl), 3.5vw, var(--font-size-3xl));
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+    margin-bottom: var(--spacing-xs);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 .layout-picker-label-desc {
-  font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-base));
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0;
-  line-height: 1.5;
-  max-width: 280px;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+    font-size: clamp(var(--font-size-sm), 2vw, var(--font-size-base));
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 280px;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Vertical divider + OR badge ── */
@@ -734,33 +735,55 @@
 
 /* Brainstorm Mode Feedback Styles */
 @keyframes fadeInOut {
-  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    90% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
 }
 
 .brainstorm-feedback {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  z-index: 1000;
-  animation: fadeInOut 3s ease-out forwards;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    animation: fadeInOut 3s ease-out forwards;
 }
 
 /* Brainstorm Mode Bubble Removal Animation */
 @keyframes bubbleFadeOut {
-  0% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.8); }
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
 }
 
 .brainstorm-bubble-remove {
-  animation: bubbleFadeOut 0.2s ease-out forwards;
+    animation: bubbleFadeOut 0.2s ease-out forwards;
 }

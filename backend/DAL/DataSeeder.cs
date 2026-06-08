@@ -18,33 +18,30 @@ public static class DataSeeder
         // =====================================================
         // Case 1: Hogeschool Nova / Actieplan Mentaal Welzijn
         // =====================================================
-        Workspace hogeschool = context.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("hogeschool-nova"));
-        Project mentaalWelzijnActieplan = context.Projects.FirstOrDefault(p => p.Id == Slug.FromName("Actieplan Mentaal Welzijn 2026-2027"));
-        if (hogeschool == null)
+        var hogeschool = new Workspace
         {
-            hogeschool = new Workspace
-            {
-                Name = "Hogeschool Nova"
-            };
-            hogeschool.Id = Slug.FromName(hogeschool.Name);
-            context.Workspaces.Add(hogeschool);
+            Name = "Hogeschool Nova"
+        };
+        hogeschool.Id = Slug.FromName(hogeschool.Name);
 
-            mentaalWelzijnActieplan = new Project
-            {
-                Name = "Actieplan Mentaal Welzijn 2026-2027",
-                Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
-                ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
-                Status = Status.Active,
-                StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
-                NudgingStrength = 3,
-                InteractionForm = InteractionType.UserDefined,
-                Workspace = hogeschool,
-                MinAge = 18,
-                MaxAge = 26
-            };
-            mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
-            context.Projects.Add(mentaalWelzijnActieplan);
+        var mentaalWelzijnActieplan = new Project
+        {
+            Name = "Actieplan Mentaal Welzijn 2026-2027",
+            Description = "Samen met studenten ontwikkelen we een actieplan dat mentaal welzijn versterkt op campus, in lessen en in begeleiding.",
+            ImageUrl = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=80",
+            Status = Status.Active,
+            StartDate = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2027, 6, 30, 0, 0, 0, DateTimeKind.Utc),
+            NudgingStrength = 3,
+            InteractionForm = InteractionType.UserDefined,
+            Workspace = hogeschool,
+            MinAge = 18,
+            MaxAge = 26
+        };
+        mentaalWelzijnActieplan.Id = Slug.FromName(mentaalWelzijnActieplan.Name);
+
+        context.Workspaces.Add(hogeschool);
+        context.Projects.Add(mentaalWelzijnActieplan);
 
         var topics = new List<Topic>
         {
@@ -602,7 +599,6 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(reactions);
-        }
 
         // ---------------------------------------------------------
         // Case 1b: Hogeschool Nova / Digitale Campus Ervaring
@@ -797,33 +793,30 @@ public static class DataSeeder
         // =====================================================
         // Case 2: Stad Linden / Jong in een Groene Stad
         // =====================================================
-        Workspace stadLinden = context.Workspaces.FirstOrDefault(w => w.Id == Slug.FromName("stad-linden"));
-        Project vergroeningEnRecreatiePlan = context.Projects.FirstOrDefault(p => p.Id == Slug.FromName("Jong in een Groene Stad 2026-2028"));
-        if (stadLinden == null)
+        var stadLinden = new Workspace
         {
-            stadLinden = new Workspace
-            {
-                Name = "Stad Linden"
-            };
-            stadLinden.Id = Slug.FromName(stadLinden.Name);
-            context.Workspaces.Add(stadLinden);
+            Name = "Stad Linden"
+        };
+        stadLinden.Id = Slug.FromName(stadLinden.Name);
 
-            vergroeningEnRecreatiePlan = new Project
-            {
-                Name = "Jong in een Groene Stad 2026-2028",
-                Description = "Stad Linden betrekt jongeren van 18 tot 30 actief bij keuzes rond vergroening, klimaatmaatregelen en verdeling van stedelijke recreatie.",
-                ImageUrl = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80",
-                Status = Status.Active,
-                StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
-                NudgingStrength = 4,
-                InteractionForm = InteractionType.UserDefined,
-                Workspace = stadLinden,
-                MinAge = 18,
-                MaxAge = 30
-            };
-            vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
-            context.Projects.Add(vergroeningEnRecreatiePlan);
+        var vergroeningEnRecreatiePlan = new Project
+        {
+            Name = "Jong in een Groene Stad 2026-2028",
+            Description = "Stad Linden betrekt jongeren van 18 tot 30 actief bij keuzes rond vergroening, klimaatmaatregelen en verdeling van stedelijke recreatie.",
+            ImageUrl = "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1600&q=80",
+            Status = Status.Active,
+            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2028, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            NudgingStrength = 4,
+            InteractionForm = InteractionType.UserDefined,
+            Workspace = stadLinden,
+            MinAge = 18,
+            MaxAge = 30
+        };
+        vergroeningEnRecreatiePlan.Id = Slug.FromName(vergroeningEnRecreatiePlan.Name);
+
+        context.Workspaces.Add(stadLinden);
+        context.Projects.Add(vergroeningEnRecreatiePlan);
 
         var cityTopics = new List<Topic>
         {
@@ -1198,7 +1191,6 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(cityReactions);
-        }
 
         // =====================================================
         // Case 3: College Nova / Mental Well-being Action Plan
@@ -1750,6 +1742,1188 @@ public static class DataSeeder
         };
 
         context.ResponseReactions.AddRange(collegeReactions);
+
+        // =====================================================
+        // Case 4: Integratie Project J2 / Eindpresentatie Conversey
+        // =====================================================
+        #region IP
+
+        var ip = new Workspace
+        {
+            Name = "Integratie Project J2"
+        };
+        ip.Id = Slug.FromName(ip.Name);
+        context.Workspaces.Add(ip);
+
+        var presentatie = new Project
+        {
+            Name = "Eindpresentatie",
+            Description = "Het verloop van de eindpresentatie van Conversey.",
+            ImageUrl = "/images/team.jpg",
+            Status = Status.Active,
+            MinAge = 20,
+            MaxAge = 30,
+            StartDate = new DateTime(2026, 6, 7, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2026, 6, 10, 0, 0, 0, DateTimeKind.Utc),
+            InteractionForm = InteractionType.UserDefined,
+            NudgingStrength = 3,
+            Workspace = ip,
+        };
+        presentatie.Id = Slug.FromName(presentatie.Name);
+        context.Projects.Add(presentatie);
+
+        var presentatieTopics = new List<Topic>
+        {
+            new() { Name = "Slides", Context = "Hoe konden de slides beter?", Project = presentatie },
+            new() { Name = "Inhoud", Context = "Welke inhoud miste er in de presentatie?", Project = presentatie },
+            new() { Name = "Communicatie", Context = "Werd alles duidelijk vertelt/gebracht?", Project = presentatie },
+        };
+        context.Topics.AddRange(presentatieTopics);
+
+        var presentatieStudents = new List<Youth>
+        {
+            new() { Id = Guid.Parse("77777777-7777-7777-7777-777777777771"), Email = "stefan@student.ip.be", Project = presentatie },
+            new() { Id = Guid.Parse("77777777-7777-7777-7777-777777777772"), Email = "liese@student.ip.be", Project = presentatie },
+        };
+        context.Youths.AddRange(presentatieStudents);
+
+        var presentatieSurveyOnly = new List<Youth>
+        {
+            new() { Id = Guid.Parse("77777777-7777-7777-7777-777777777781"), Email = "joris@student.ip.be", Project = presentatie },
+            new() { Id = Guid.Parse("77777777-7777-7777-7777-777777777782"), Email = "mara@student.ip.be", Project = presentatie },
+            new() { Id = Guid.Parse("77777777-7777-7777-7777-777777777783"), Email = null, Project = presentatie },
+        };
+        context.Youths.AddRange(presentatieSurveyOnly);
+
+        var presentatieFeatureChoices = new List<Choice>
+        {
+            new() { Text = "Tekst naar spraak" },
+            new() { Text = "De brainstorm modus" },
+            new() { Text = "Het aanmaken van vragenlijsten" },
+            new() { Text = "De analyse van antwoorden" },
+        };
+        var presentatieFeatureQuestion = new MultipleChoiceQuestion
+        {
+            Required = true,
+            Text = "Over welke features van Conversey bent u het benieuwdst?",
+            Project = presentatie,
+            PossibleChoices = presentatieFeatureChoices,
+        };
+
+        var presentatieSlidesChoices = new List<Choice>
+        {
+            new() { Text = "Ja" },
+            new() { Text = "Nee" },
+        };
+        var presentatieSlidesQuestion = new SingleChoiceQuestion
+        {
+            Text = "Vond u de slides professioneel?",
+            Project = presentatie,
+            PossibleChoices = presentatieSlidesChoices,
+        };
+
+        var presentatieScoreQuestion = new ScaleQuestion
+        {
+            Required = true,
+            Text = "Hoeveel geeft u de presentatie op 20?",
+            UpperBound = 20,
+            LowerBound = 0,
+            Project = presentatie,
+        };
+
+        var presentatieUniekQuestion = new OpenQuestion
+        {
+            Required = true,
+            Text = "Wat vindt u dat Conversey uniek maakt?",
+            Project = presentatie,
+        };
+
+        var presentatieQuestions = new List<Question>
+        {
+            presentatieFeatureQuestion,
+            presentatieSlidesQuestion,
+            presentatieScoreQuestion,
+            presentatieUniekQuestion,
+        };
+        context.Questions.AddRange(presentatieQuestions);
+
+        var presentatieAnswers = new List<Answer>
+        {
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieStudents[0], Value = new List<Choice> { presentatieFeatureChoices[0] } },
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieStudents[0], Value = new List<Choice> { presentatieFeatureChoices[2] } },
+            new SingleChoiceAnswer { Question = presentatieSlidesQuestion, Youth = presentatieStudents[0], Value = presentatieSlidesChoices[0] },
+            new Answer<int> { Question = presentatieScoreQuestion, Youth = presentatieStudents[0], Value = 16 },
+            new Answer<string> { Question = presentatieUniekQuestion, Youth = presentatieStudents[0], Value = "De combinatie van spraakherkenning en brainstormfunctionaliteit maakt Conversey anders dan andere tools." },
+
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieStudents[1], Value = new List<Choice> { presentatieFeatureChoices[1] } },
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieStudents[1], Value = new List<Choice> { presentatieFeatureChoices[3] } },
+            new SingleChoiceAnswer { Question = presentatieSlidesQuestion, Youth = presentatieStudents[1], Value = presentatieSlidesChoices[0] },
+            new Answer<int> { Question = presentatieScoreQuestion, Youth = presentatieStudents[1], Value = 14 },
+            new Answer<string> { Question = presentatieUniekQuestion, Youth = presentatieStudents[1], Value = "Dat je gesprekken kan analyseren zonder ze handmatig te moeten transcriberen." },
+
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieSurveyOnly[0], Value = new List<Choice> { presentatieFeatureChoices[0] } },
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieSurveyOnly[0], Value = new List<Choice> { presentatieFeatureChoices[1] } },
+            new SingleChoiceAnswer { Question = presentatieSlidesQuestion, Youth = presentatieSurveyOnly[0], Value = presentatieSlidesChoices[0] },
+            new Answer<int> { Question = presentatieScoreQuestion, Youth = presentatieSurveyOnly[0], Value = 17 },
+            new Answer<string> { Question = presentatieUniekQuestion, Youth = presentatieSurveyOnly[0], Value = "De eenvoud van de interface sprak me aan, niet te veel toeters en bellen." },
+
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieSurveyOnly[1], Value = new List<Choice> { presentatieFeatureChoices[2] } },
+            new SingleChoiceAnswer { Question = presentatieSlidesQuestion, Youth = presentatieSurveyOnly[1], Value = presentatieSlidesChoices[0] },
+            new Answer<int> { Question = presentatieScoreQuestion, Youth = presentatieSurveyOnly[1], Value = 15 },
+            new Answer<string> { Question = presentatieUniekQuestion, Youth = presentatieSurveyOnly[1], Value = "Dat het focust op de Vlaamse context, niet weer een Amerikaanse tool." },
+
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieSurveyOnly[2], Value = new List<Choice> { presentatieFeatureChoices[3] } },
+            new MultipleChoiceAnswer { Question = presentatieFeatureQuestion, Youth = presentatieSurveyOnly[2], Value = new List<Choice> { presentatieFeatureChoices[0] } },
+            new SingleChoiceAnswer { Question = presentatieSlidesQuestion, Youth = presentatieSurveyOnly[2], Value = presentatieSlidesChoices[1] },
+            new Answer<int> { Question = presentatieScoreQuestion, Youth = presentatieSurveyOnly[2], Value = 13 },
+            new Answer<string> { Question = presentatieUniekQuestion, Youth = presentatieSurveyOnly[2], Value = "De belofte om vergaderingen automatisch samen te vatten is iets wat ik nog nergens anders zag." },
+        };
+        context.Answers.AddRange(presentatieAnswers);
+
+        var presentatieIdeas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Er mochten meer bewegende beelden in.",
+                Summary = "Meer animaties",
+                SubmissionDate = now.AddDays(-1),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = presentatie,
+                Topic = presentatieTopics[0],
+                Youth = presentatieStudents[0],
+                SemanticCategories = new[] { "animatie", "gifs" }
+            },
+            new()
+            {
+                Content = "Gebruik andere telefoon voorbeelden. De telefoons die getoond werden waren Windows telefoons. Dit is niet representatief voor het doelpubliek.",
+                Summary = "No Windows phones",
+                SubmissionDate = now.AddDays(-1),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = presentatie,
+                Topic = presentatieTopics[0],
+                Youth = presentatieStudents[1],
+                SemanticCategories = new[] { "telefoon" }
+            },
+            new()
+            {
+                Content = "Het zou leuk zijn als de administratieve kant ook in de presentatie te laten zien zodat echt alles aan bod komt.",
+                Summary = "Administratie is niet aan bod gekomen",
+                SubmissionDate = now.AddDays(-1),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = presentatie,
+                Topic = presentatieTopics[1],
+                Youth = presentatieStudents[1],
+                SemanticCategories = new[] { "admin", "inhoud-gebrek" }
+            },
+            new()
+            {
+                Content = "Meer enthousiasme tijdens de presentatie zou aandacht verbeteren.",
+                Summary = "Meer enthousiasme",
+                SubmissionDate = now.AddDays(-1),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = presentatie,
+                Topic = presentatieTopics[2],
+                Youth = presentatieStudents[1],
+                SemanticCategories = new[] { "enthousiasme" }
+            },
+        };
+        context.Ideas.AddRange(presentatieIdeas);
+
+        var presentatieResponses = new List<IdeaResponse>
+        {
+            new()
+            {
+                Idea = presentatieIdeas[0],
+                Text = "Eens, een korte demo-animatie van de spraakherkenning zou veel duidelijker geweest zijn.",
+                CreatedAt = now.AddHours(2),
+                Youth = presentatieStudents[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = presentatieIdeas[1],
+                Text = "Goed punt. Volgende keer beter opletten dat de demo op realistische hardware draait.",
+                CreatedAt = now.AddHours(4),
+                Youth = presentatieStudents[0],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = presentatieIdeas[2],
+                Text = "De admin-kant is inderdaad belangrijk voor het volledige beeld van de tool.",
+                CreatedAt = now.AddHours(6),
+                Youth = presentatieStudents[0],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = presentatieIdeas[3],
+                Text = "Klopt, soms was de presentator wat monotoon. Meer passie zou de boodschap versterken.",
+                CreatedAt = now.AddHours(8),
+                Youth = presentatieStudents[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+        };
+        context.Responses.AddRange(presentatieResponses);
+
+        var presentatieReactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = presentatieResponses[0], Emoji = "👍", CreatedAt = now.AddHours(3), Youth = presentatieStudents[0] },
+            new() { IdeaResponse = presentatieResponses[1], Emoji = "💡", CreatedAt = now.AddHours(5), Youth = presentatieStudents[1] },
+            new() { IdeaResponse = presentatieResponses[2], Emoji = "✅", CreatedAt = now.AddHours(7), Youth = presentatieStudents[1] },
+            new() { IdeaResponse = presentatieResponses[3], Emoji = "🔥", CreatedAt = now.AddHours(9), Youth = presentatieStudents[0] },
+        };
+        context.ResponseReactions.AddRange(presentatieReactions);
+
+        #endregion
+
+        // =====================================================
+        // Case 5: Integratie Project J2 / Conversey Demo
+        // =====================================================
+        #region IP-Demo
+
+        var demo = new Project
+        {
+            Name = "Conversey Demo",
+            Description = "Demonstratie van Conversey aan potentiële klanten en partners. Verzamel feedback over gebruikservaring en prioritaire features.",
+            ImageUrl = "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80",
+            Status = Status.Active,
+            MinAge = 22,
+            MaxAge = 45,
+            StartDate = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2026, 8, 31, 0, 0, 0, DateTimeKind.Utc),
+            InteractionForm = InteractionType.UserDefined,
+            NudgingStrength = 2,
+            Workspace = ip,
+        };
+        demo.Id = Slug.FromName(demo.Name);
+        context.Projects.Add(demo);
+
+        var demoTopics = new List<Topic>
+        {
+            new() { Name = "Gebruiksvriendelijkheid", Context = "Hoe intuïtief en toegankelijk is de interface van Conversey voor nieuwe gebruikers?", Project = demo },
+            new() { Name = "Functionaliteit", Context = "Welke features ontbreken nog of kunnen beter uitgewerkt worden?", Project = demo },
+            new() { Name = "Prijsmodel", Context = "Is het prijsmodel eerlijk en transparant? Welke betalingsstructuur past het best?", Project = demo },
+            new() { Name = "Integratiemogelijkheden", Context = "Met welke bestaande tools en platformen moet Conversey kunnen samenwerken?", Project = demo },
+            new() { Name = "Ondersteuning", Context = "Welke vorm van onboarding, documentatie en support verwacht u als klant?", Project = demo },
+        };
+        context.Topics.AddRange(demoTopics);
+
+        var demoStudents = new List<Youth>
+        {
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888801"), Email = "bart@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888802"), Email = "sofie@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888803"), Email = "wouter@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888804"), Email = "eline@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888805"), Email = "kasper@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888806"), Email = "hanne@demo.be", Project = demo },
+        };
+        context.Youths.AddRange(demoStudents);
+
+        var demoSurveyOnly = new List<Youth>
+        {
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888810"), Email = "pieter@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888811"), Email = "marieke@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888812"), Email = null, Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888813"), Email = "thomas@demo.be", Project = demo },
+        };
+        context.Youths.AddRange(demoSurveyOnly);
+
+        var demoAanbevelenChoices = new List<Choice>
+        {
+            new() { Text = "Zeer onwaarschijnlijk" },
+            new() { Text = "Onwaarschijnlijk" },
+            new() { Text = "Neutraal" },
+            new() { Text = "Waarschijnlijk" },
+            new() { Text = "Zeer waarschijnlijk" },
+        };
+        var demoAanbevelenQuestion = new SingleChoiceQuestion
+        {
+            Text = "Hoe waarschijnlijk is het dat u Conversey zou aanbevelen aan collega's?",
+            Required = true,
+            Project = demo,
+            PossibleChoices = demoAanbevelenChoices,
+        };
+
+        var demoErvaringQuestion = new ScaleQuestion
+        {
+            Text = "Hoe beoordeelt u de algemene gebruikservaring? (1 = zeer slecht, 10 = uitstekend)",
+            Required = true,
+            LowerBound = 1,
+            UpperBound = 10,
+            Project = demo,
+        };
+
+        var demoFeaturesChoices = new List<Choice>
+        {
+            new() { Text = "Automatische transcriptie" },
+            new() { Text = "Brainstorm modus" },
+            new() { Text = "Vragenlijsten aanmaken" },
+            new() { Text = "Data-analyse dashboard" },
+            new() { Text = "Export naar PDF/Excel" },
+        };
+        var demoFeaturesQuestion = new MultipleChoiceQuestion
+        {
+            Text = "Welke functionaliteiten vindt u het meest waardevol? (meerdere antwoorden mogelijk)",
+            Required = true,
+            Project = demo,
+            PossibleChoices = demoFeaturesChoices,
+        };
+
+        var demoOpenQuestion = new OpenQuestion
+        {
+            Text = "Welke feature of verbetering zou Conversey voor u onmisbaar maken?",
+            Required = false,
+            Project = demo,
+        };
+
+        var demoQuestions = new List<Question>
+        {
+            demoAanbevelenQuestion,
+            demoErvaringQuestion,
+            demoFeaturesQuestion,
+            demoOpenQuestion,
+        };
+        context.Questions.AddRange(demoQuestions);
+
+        var demoAnswers = new List<Answer>
+        {
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[0], Value = demoAanbevelenChoices[3] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[0], Value = 8 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[0], Value = new List<Choice> { demoFeaturesChoices[0] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[0], Value = new List<Choice> { demoFeaturesChoices[2] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[0], Value = "Een mobiele app zou de drempel verlagen om snel feedback te geven na vergaderingen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[1], Value = demoAanbevelenChoices[4] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[1], Value = 9 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[1], Value = new List<Choice> { demoFeaturesChoices[1] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[1], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[1], Value = "Integratie met Microsoft Teams zou voor ons bedrijf een must-have zijn." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[2], Value = demoAanbevelenChoices[2] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[2], Value = 6 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[2], Value = new List<Choice> { demoFeaturesChoices[4] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[2], Value = "De prijs is nog te hoog voor kleinere organisaties. Een startup-tarief zou helpen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[3], Value = demoAanbevelenChoices[4] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[3], Value = 8 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[3], Value = new List<Choice> { demoFeaturesChoices[0] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[3], Value = new List<Choice> { demoFeaturesChoices[1] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[3], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[3], Value = "Meertalige ondersteuning is cruciaal. Nederlands, Frans en Engels moeten foutloos werken." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[4], Value = demoAanbevelenChoices[1] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[4], Value = 5 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[4], Value = new List<Choice> { demoFeaturesChoices[2] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[4], Value = "Het opzetten van een vragenlijst duurt te lang. Meer sjablonen graag." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents[5], Value = demoAanbevelenChoices[3] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents[5], Value = 7 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[5], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents[5], Value = new List<Choice> { demoFeaturesChoices[4] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents[5], Value = "Een API voor ontwikkelaars zodat we Conversey in onze eigen tools kunnen bouwen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoSurveyOnly[0], Value = demoAanbevelenChoices[3] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoSurveyOnly[0], Value = 8 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoSurveyOnly[0], Value = new List<Choice> { demoFeaturesChoices[0] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoSurveyOnly[0], Value = "Automatische samenvattingen van brainstormsessies besparen ons uren werk." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoSurveyOnly[1], Value = demoAanbevelenChoices[2] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoSurveyOnly[1], Value = 4 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoSurveyOnly[1], Value = new List<Choice> { demoFeaturesChoices[1] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoSurveyOnly[1], Value = new List<Choice> { demoFeaturesChoices[2] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoSurveyOnly[1], Value = "De brainstormmodus is verwarrend. Een interactieve tutorial bij eerste gebruik zou helpen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoSurveyOnly[2], Value = demoAanbevelenChoices[4] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoSurveyOnly[2], Value = 9 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoSurveyOnly[2], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoSurveyOnly[2], Value = "Realtime collaboratie tijdens brainstorms, zoals Google Docs, zou fantastisch zijn." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoSurveyOnly[3], Value = demoAanbevelenChoices[0] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoSurveyOnly[3], Value = 3 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoSurveyOnly[3], Value = new List<Choice> { demoFeaturesChoices[4] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoSurveyOnly[3], Value = "Te ingewikkeld. Ik heb een halfuur nodig om een simpele vragenlijst te maken." },
+        };
+        context.Answers.AddRange(demoAnswers);
+
+        var demoIdeas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Voeg een onboarding wizard toe die nieuwe gebruikers stap voor stap door de belangrijkste functionaliteiten leidt.",
+                Summary = "Onboarding wizard voor nieuwe gebruikers",
+                SubmissionDate = now.AddDays(-30),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents[0],
+                SemanticCategories = new[] { "ux", "onboarding", "gebruiksvriendelijkheid" }
+            },
+            new()
+            {
+                Content = "Maak een dark mode beschikbaar. Veel gebruikers werken 's avonds en dan is een licht scherm vermoeiend.",
+                Summary = "Dark mode toevoegen",
+                SubmissionDate = now.AddDays(-28),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents[1],
+                SemanticCategories = new[] { "ux", "toegankelijkheid" }
+            },
+            new()
+            {
+                Content = "Zorg dat de interface met toetsenbord volledig te bedienen is. Dit is essentieel voor power users en toegankelijkheid.",
+                Summary = "Volledige toetsenbordnavigatie",
+                SubmissionDate = now.AddDays(-26),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents[3],
+                SemanticCategories = new[] { "ux", "toegankelijkheid", "power-users" }
+            },
+            new()
+            {
+                Content = "Een realtime samenwerkingsmodus waar meerdere mensen tegelijk aan een vragenlijst kunnen werken zoals in Google Docs.",
+                Summary = "Realtime collaboratie",
+                SubmissionDate = now.AddDays(-25),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents[4],
+                SemanticCategories = new[] { "collaboratie", "functionaliteit" }
+            },
+            new()
+            {
+                Content = "Automatisch gegenereerde woordwolken van open antwoorden om snel trends te spotten in de feedback.",
+                Summary = "Woordwolk visualisatie",
+                SubmissionDate = now.AddDays(-24),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents[5],
+                SemanticCategories = new[] { "visualisatie", "analytics", "functionaliteit" }
+            },
+            new()
+            {
+                Content = "Een gratis tier voor non-profits en onderwijsinstellingen. Dit vergroot het bereik en is maatschappelijk verantwoord.",
+                Summary = "Gratis tier voor non-profits",
+                SubmissionDate = now.AddDays(-22),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[2],
+                Youth = demoStudents[0],
+                SemanticCategories = new[] { "prijsmodel", "non-profit", "maatschappelijk" }
+            },
+            new()
+            {
+                Content = "Bied een pay-per-use model aan voor organisaties die het maar sporadisch nodig hebben, in plaats van alleen maandelijkse abonnementen.",
+                Summary = "Pay-per-use prijsmodel",
+                SubmissionDate = now.AddDays(-20),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[2],
+                Youth = demoStudents[2],
+                SemanticCategories = new[] { "prijsmodel", "flexibiliteit" }
+            },
+            new()
+            {
+                Content = "Integratie met Slack en Microsoft Teams voor naadloze notificaties en het direct delen van resultaten in bestaande kanalen.",
+                Summary = "Slack en Teams integratie",
+                SubmissionDate = now.AddDays(-18),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[3],
+                Youth = demoStudents[3],
+                SemanticCategories = new[] { "integratie", "slack", "teams" }
+            },
+            new()
+            {
+                Content = "Een Zapier/Make connector zodat gebruikers zelf automatisaties kunnen bouwen tussen Conversey en honderden andere tools.",
+                Summary = "Zapier connector",
+                SubmissionDate = now.AddDays(-16),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[3],
+                Youth = demoStudents[5],
+                SemanticCategories = new[] { "integratie", "automatisatie", "no-code" }
+            },
+            new()
+            {
+                Content = "Een uitgebreide kennisbank met video-tutorials per feature. Niet iedereen leert graag via tekst.",
+                Summary = "Video kennisbank",
+                SubmissionDate = now.AddDays(-14),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[4],
+                Youth = demoStudents[1],
+                SemanticCategories = new[] { "ondersteuning", "documentatie", "video" }
+            },
+            new()
+            {
+                Content = "Organiseer maandelijkse live webinars waar gebruikers vragen kunnen stellen en nieuwe features getoond worden.",
+                Summary = "Maandelijkse live webinars",
+                SubmissionDate = now.AddDays(-12),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[4],
+                Youth = demoStudents[4],
+                SemanticCategories = new[] { "ondersteuning", "community", "webinar" }
+            },
+            new()
+            {
+                Content = "Een API-first benadering zodat enterprise klanten Conversey volledig kunnen integreren in hun bestaande systemen zonder UI-afhankelijkheid.",
+                Summary = "API-first architectuur",
+                SubmissionDate = now.AddDays(-10),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[3],
+                Youth = demoStudents[0],
+                SemanticCategories = new[] { "integratie", "api", "enterprise" }
+            },
+            new()
+            {
+                Content = "Kut interface, wat een bagger dit. Je kan er niks mee.",
+                Summary = "Toxische kritiek",
+                SubmissionDate = now.AddDays(-8),
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { HateAndDiscrimination = true },
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents[2],
+                SemanticCategories = Array.Empty<string>()
+            },
+            new()
+            {
+                Content = "Bel gewoon 0477/12.34.56 voor een echt gesprek, dit platform is nutteloos.",
+                Summary = "PII in idee",
+                SubmissionDate = now.AddDays(-6),
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { Pii = true },
+                Project = demo,
+                Topic = demoTopics[4],
+                Youth = demoStudents[5],
+                SemanticCategories = Array.Empty<string>()
+            },
+        };
+        context.Ideas.AddRange(demoIdeas);
+
+        var demoResponses = new List<IdeaResponse>
+        {
+            new()
+            {
+                Idea = demoIdeas[0],
+                Text = "Helemaal mee eens. De eerste indruk is nu wat overweldigend voor nieuwe teamleden.",
+                CreatedAt = now.AddDays(-29).AddHours(3),
+                Youth = demoStudents[4],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[1],
+                Text = "Dark mode is tegenwoordig een basisverwachting, zeker voor een moderne SaaS-tool.",
+                CreatedAt = now.AddDays(-27).AddHours(5),
+                Youth = demoStudents[0],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[3],
+                Text = "Realtime samenwerken is voor ons team een absolute must-have. We willen niet telkens bestanden heen en weer sturen.",
+                CreatedAt = now.AddDays(-24).AddHours(2),
+                Youth = demoStudents[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[5],
+                Text = "Als kleine vzw zouden we hier enorm mee geholpen zijn. We hebben geen budget voor dure tools.",
+                CreatedAt = now.AddDays(-21).AddHours(4),
+                Youth = demoStudents[3],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[7],
+                Text = "Slack is onze primaire communicatietool. Zonder integratie daar valt Conversey buiten onze dagelijkse flow.",
+                CreatedAt = now.AddDays(-17).AddHours(1),
+                Youth = demoStudents[5],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[9],
+                Text = "Video tutorials zijn veel toegankelijker. Een mix van korte how-to's en diepere dives zou ideaal zijn.",
+                CreatedAt = now.AddDays(-13).AddHours(6),
+                Youth = demoStudents[2],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[11],
+                Text = "API-first is de enige manier om enterprise klanten serieus te nemen. Zonder API haken die af.",
+                CreatedAt = now.AddDays(-9).AddHours(3),
+                Youth = demoStudents[4],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas[12],
+                Text = "Hou gewoon je bek en leer de tool gebruiken of rot op.",
+                CreatedAt = now.AddDays(-7).AddHours(2),
+                Youth = demoStudents[1],
+                Status = ModerationStatus.Rejected,
+                ModerationInfo = new ModerationInfo { HateAndDiscrimination = true }
+            },
+        };
+        context.Responses.AddRange(demoResponses);
+
+        var demoReactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = demoResponses[0], Emoji = "👍", CreatedAt = now.AddDays(-29).AddHours(4), Youth = demoStudents[1] },
+            new() { IdeaResponse = demoResponses[0], Emoji = "💡", CreatedAt = now.AddDays(-29).AddHours(5), Youth = demoStudents[5] },
+            new() { IdeaResponse = demoResponses[1], Emoji = "🔥", CreatedAt = now.AddDays(-27).AddHours(6), Youth = demoStudents[2] },
+            new() { IdeaResponse = demoResponses[2], Emoji = "🙌", CreatedAt = now.AddDays(-24).AddHours(3), Youth = demoStudents[0] },
+            new() { IdeaResponse = demoResponses[2], Emoji = "✅", CreatedAt = now.AddDays(-24).AddHours(4), Youth = demoStudents[4] },
+            new() { IdeaResponse = demoResponses[3], Emoji = "❤️", CreatedAt = now.AddDays(-21).AddHours(5), Youth = demoStudents[5] },
+            new() { IdeaResponse = demoResponses[4], Emoji = "🎯", CreatedAt = now.AddDays(-17).AddHours(2), Youth = demoStudents[3] },
+            new() { IdeaResponse = demoResponses[5], Emoji = "👏", CreatedAt = now.AddDays(-13).AddHours(7), Youth = demoStudents[1] },
+            new() { IdeaResponse = demoResponses[6], Emoji = "💯", CreatedAt = now.AddDays(-9).AddHours(4), Youth = demoStudents[0] },
+            new() { IdeaResponse = demoResponses[6], Emoji = "🧠", CreatedAt = now.AddDays(-9).AddHours(5), Youth = demoStudents[2] },
+            new() { IdeaResponse = demoResponses[7], Emoji = "😢", CreatedAt = now.AddDays(-7).AddHours(3), Youth = demoStudents[4] },
+        };
+        context.ResponseReactions.AddRange(demoReactions);
+
+        // --- Additional data spread over time for richer analytics graphs ---
+
+        var demoStudents2 = new List<Youth>
+        {
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888820"), Email = "laura@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888821"), Email = "robin@demo.be", Project = demo },
+        };
+        context.Youths.AddRange(demoStudents2);
+
+        var demoIdeas2 = new List<Idea>
+        {
+            new()
+            {
+                Content = "Automatische reminders sturen naar deelnemers die hun vragenlijst nog niet hebben ingevuld. Dit verhoogt de response rate aanzienlijk zonder manueel op te volgen.",
+                Summary = "Automatische reminders",
+                SubmissionDate = now.AddDays(-85),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents2[0],
+                SemanticCategories = new[] { "ux", "automatisatie", "engagement" }
+            },
+            new()
+            {
+                Content = "Meertalige interface in Nederlands, Frans, Engels en Duits. Als internationaal bedrijf hebben we dit echt nodig voor onze teams in verschillende landen.",
+                Summary = "Meertalige interface",
+                SubmissionDate = now.AddDays(-75),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[0],
+                Youth = demoStudents2[1],
+                SemanticCategories = new[] { "ux", "meertalig", "internationaal" }
+            },
+            new()
+            {
+                Content = "Een template bibliotheek met vooraf gemaakte vragenlijsten per sector zoals HR, marketing, onderwijs en gezondheidszorg. Dit versnelt het opzetten van projecten enorm.",
+                Summary = "Sector template bibliotheek",
+                SubmissionDate = now.AddDays(-65),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents[3],
+                SemanticCategories = new[] { "functionaliteit", "templates", "onboarding" }
+            },
+            new()
+            {
+                Content = "Bulk import van vragen via CSV of Excel. Handmatig 50 vragen ingeven is te tijdrovend. Een import functie zou veel tijd besparen bij het opzetten van grote vragenlijsten.",
+                Summary = "Bulk import CSV/Excel",
+                SubmissionDate = now.AddDays(-55),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents2[0],
+                SemanticCategories = new[] { "functionaliteit", "import", "efficiëntie" }
+            },
+            new()
+            {
+                Content = "Custom branding en white-label optie voor consultancy bureaus die de tool onder eigen naam willen aanbieden aan hun klanten. Dit opent een volledig nieuwe markt.",
+                Summary = "White-label branding",
+                SubmissionDate = now.AddDays(-45),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[2],
+                Youth = demoStudents[0],
+                SemanticCategories = new[] { "prijsmodel", "white-label", "consultancy" }
+            },
+            new()
+            {
+                Content = "Single Sign-On integratie met Microsoft Entra ID, Google Workspace en Okta. Voor enterprise klanten is dit een basisvereiste voor security compliance.",
+                Summary = "Single Sign-On (SSO)",
+                SubmissionDate = now.AddDays(-35),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[3],
+                Youth = demoStudents2[1],
+                SemanticCategories = new[] { "integratie", "enterprise", "security" }
+            },
+            new()
+            {
+                Content = "Een offline modus voor veldonderzoek waar geen internet beschikbaar is. Data wordt lokaal opgeslagen en gesynchroniseerd zodra er weer verbinding is.",
+                Summary = "Offline modus",
+                SubmissionDate = now.AddDays(-15),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents[5],
+                SemanticCategories = new[] { "functionaliteit", "offline", "mobiel" }
+            },
+            new()
+            {
+                Content = "AI-suggesties voor vervolgvragen op basis van eerdere antwoorden. Dit maakt vragenlijsten dynamischer en levert diepere inzichten op zonder extra werk voor de opsteller.",
+                Summary = "AI-suggesties voor vragen",
+                SubmissionDate = now.AddDays(-5),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo,
+                Topic = demoTopics[1],
+                Youth = demoStudents2[0],
+                SemanticCategories = new[] { "functionaliteit", "ai", "dynamisch" }
+            },
+        };
+        context.Ideas.AddRange(demoIdeas2);
+
+        var demoResponses2 = new List<IdeaResponse>
+        {
+            new()
+            {
+                Idea = demoIdeas2[0],
+                Text = "Automatische reminders zouden de response rate enorm verhogen. Nu moeten we telkens manueel mensen achterna zitten.",
+                CreatedAt = now.AddDays(-84).AddHours(5),
+                Youth = demoStudents[4],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[1],
+                Text = "Meertaligheid is een vereiste voor onze diverse teams in Brussel. Nederlands, Frans en Engels zijn het minimum.",
+                CreatedAt = now.AddDays(-73).AddHours(3),
+                Youth = demoStudents[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[2],
+                Text = "Templates per sector zouden de drempel verlagen. Een HR-template met veelgestelde vragen over werktevredenheid is een no-brainer.",
+                CreatedAt = now.AddDays(-63).AddHours(7),
+                Youth = demoStudents2[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[3],
+                Text = "Bulk import via Excel bespaart ons dagen werk bij migratie van oude surveysystemen. Essentieel voor adoptie.",
+                CreatedAt = now.AddDays(-53).AddHours(2),
+                Youth = demoStudents[2],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[4],
+                Text = "White-label optie maakt het voor ons als consultancy bureau interessant om Conversey aan te bevelen bij klanten.",
+                CreatedAt = now.AddDays(-43).AddHours(6),
+                Youth = demoStudents2[0],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[5],
+                Text = "SSO is voor enterprise security een absolute vereiste. Zonder dit kunnen we het niet uitrollen binnen ons bedrijf.",
+                CreatedAt = now.AddDays(-33).AddHours(4),
+                Youth = demoStudents[3],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[6],
+                Text = "Offline modus is perfect voor veldonderzoek en evenementen waar wifi onbetrouwbaar is. Goed idee!",
+                CreatedAt = now.AddDays(-13).AddHours(8),
+                Youth = demoStudents[0],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+            new()
+            {
+                Idea = demoIdeas2[7],
+                Text = "AI-suggesties zouden de tool echt next-level maken. Dynamische vragenlijsten die zich aanpassen aan de respondent zijn de toekomst.",
+                CreatedAt = now.AddDays(-3).AddHours(1),
+                Youth = demoStudents2[1],
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo()
+            },
+        };
+        context.Responses.AddRange(demoResponses2);
+
+        var demoReactions2 = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = demoResponses2[0], Emoji = "👍", CreatedAt = now.AddDays(-83).AddHours(1), Youth = demoStudents2[1] },
+            new() { IdeaResponse = demoResponses2[1], Emoji = "🌍", CreatedAt = now.AddDays(-72).AddHours(5), Youth = demoStudents[0] },
+            new() { IdeaResponse = demoResponses2[1], Emoji = "💡", CreatedAt = now.AddDays(-72).AddHours(7), Youth = demoStudents2[0] },
+            new() { IdeaResponse = demoResponses2[2], Emoji = "🔥", CreatedAt = now.AddDays(-62).AddHours(3), Youth = demoStudents[5] },
+            new() { IdeaResponse = demoResponses2[3], Emoji = "🙌", CreatedAt = now.AddDays(-52).AddHours(4), Youth = demoStudents2[0] },
+            new() { IdeaResponse = demoResponses2[3], Emoji = "✅", CreatedAt = now.AddDays(-52).AddHours(6), Youth = demoStudents[1] },
+            new() { IdeaResponse = demoResponses2[4], Emoji = "💼", CreatedAt = now.AddDays(-42).AddHours(8), Youth = demoStudents[0] },
+            new() { IdeaResponse = demoResponses2[5], Emoji = "🔒", CreatedAt = now.AddDays(-32).AddHours(2), Youth = demoStudents2[1] },
+            new() { IdeaResponse = demoResponses2[5], Emoji = "🎯", CreatedAt = now.AddDays(-32).AddHours(5), Youth = demoStudents[4] },
+            new() { IdeaResponse = demoResponses2[6], Emoji = "💯", CreatedAt = now.AddDays(-12).AddHours(3), Youth = demoStudents2[0] },
+            new() { IdeaResponse = demoResponses2[7], Emoji = "🧠", CreatedAt = now.AddDays(-2).AddHours(6), Youth = demoStudents[3] },
+            new() { IdeaResponse = demoResponses2[7], Emoji = "🚀", CreatedAt = now.AddDays(-2).AddHours(9), Youth = demoStudents2[0] },
+        };
+        context.ResponseReactions.AddRange(demoReactions2);
+
+        // --- More answers from new youth for richer survey charts ---
+        var demoAnswers2 = new List<Answer>
+        {
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents2[0], Value = demoAanbevelenChoices[3] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents2[0], Value = 7 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents2[0], Value = new List<Choice> { demoFeaturesChoices[0] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents2[0], Value = new List<Choice> { demoFeaturesChoices[1] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents2[0], Value = "Een overzichtelijk dashboard met response rates per project zou het beheer vereenvoudigen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents2[1], Value = demoAanbevelenChoices[1] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents2[1], Value = 2 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents2[1], Value = new List<Choice> { demoFeaturesChoices[4] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents2[1], Value = "Zonder SSO en betere security features is dit niet bruikbaar in een enterprise omgeving." },
+        };
+        context.Answers.AddRange(demoAnswers2);
+
+        // --- Clustered ideas creating wave pattern for time graph ---
+        var demoStudents3 = new List<Youth>
+        {
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888830"), Email = "dries@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888831"), Email = "fien@demo.be", Project = demo },
+            new() { Id = Guid.Parse("88888888-8888-8888-8888-888888888832"), Email = null, Project = demo },
+        };
+        context.Youths.AddRange(demoStudents3);
+
+        var demoAnswers3 = new List<Answer>
+        {
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents3[0], Value = demoAanbevelenChoices[4] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents3[0], Value = 10 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents3[0], Value = new List<Choice> { demoFeaturesChoices[1] } },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents3[0], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents3[0], Value = "Dit is precies wat we zochten. De combinatie van brainstorm en analyse is uniek." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents3[1], Value = demoAanbevelenChoices[2] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents3[1], Value = 5 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents3[1], Value = new List<Choice> { demoFeaturesChoices[2] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents3[1], Value = "De mobiele ervaring moet beter. Op telefoon is het nu moeilijk om vragenlijsten in te vullen." },
+
+            new SingleChoiceAnswer { Question = demoAanbevelenQuestion, Youth = demoStudents3[2], Value = demoAanbevelenChoices[3] },
+            new Answer<int> { Question = demoErvaringQuestion, Youth = demoStudents3[2], Value = 6 },
+            new MultipleChoiceAnswer { Question = demoFeaturesQuestion, Youth = demoStudents3[2], Value = new List<Choice> { demoFeaturesChoices[3] } },
+            new Answer<string> { Question = demoOpenQuestion, Youth = demoStudents3[2], Value = "Meer visuele rapportagemogelijkheden zoals heatmaps en trendlijnen zouden waardevol zijn." },
+        };
+        context.Answers.AddRange(demoAnswers3);
+
+        // === PEAK 1: Initial excitement (days -100 to -95) ===
+        var batch1Ideas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Een interactieve product tour bij eerste login die de belangrijkste features demonstreert in plaats van een statische handleiding.",
+                Summary = "Interactieve product tour",
+                SubmissionDate = now.AddDays(-100),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[0], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "ux", "onboarding" }
+            },
+            new()
+            {
+                Content = "Aanpasbare dashboards per gebruiker zodat iedereen de metrics ziet die voor hun rol relevant zijn.",
+                Summary = "Aanpasbare dashboards",
+                SubmissionDate = now.AddDays(-99),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[0], Youth = demoStudents3[1],
+                SemanticCategories = new[] { "ux", "dashboard" }
+            },
+            new()
+            {
+                Content = "Integreer met Google Calendar om automatisch feedbackmomenten in te plannen na vergaderingen.",
+                Summary = "Google Calendar integratie",
+                SubmissionDate = now.AddDays(-97),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[3], Youth = demoStudents[2],
+                SemanticCategories = new[] { "integratie", "calendar" }
+            },
+            new()
+            {
+                Content = "Een publieke roadmap waar gebruikers kunnen stemmen op gewenste features. Geeft transparantie en betrokkenheid.",
+                Summary = "Publieke feature roadmap",
+                SubmissionDate = now.AddDays(-95),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[4], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "community", "transparantie" }
+            },
+        };
+        context.Ideas.AddRange(batch1Ideas);
+
+        var batch1Responses = new List<IdeaResponse>
+        {
+            new() { Idea = batch1Ideas[0], Text = "Een tour is veel effectiever dan documentatie lezen. Goed idee.", CreatedAt = now.AddDays(-99).AddHours(4), Youth = demoStudents2[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch1Ideas[2], Text = "Calendar integratie zou onze feedback-workflow volledig automatiseren.", CreatedAt = now.AddDays(-96).AddHours(2), Youth = demoStudents3[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch1Ideas[3], Text = "Een roadmap bouwt vertrouwen. Laat zien dat er echt naar feedback geluisterd wordt.", CreatedAt = now.AddDays(-94).AddHours(6), Youth = demoStudents[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+        };
+        context.Responses.AddRange(batch1Responses);
+
+        var batch1Reactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = batch1Responses[0], Emoji = "🔥", CreatedAt = now.AddDays(-99).AddHours(6), Youth = demoStudents3[0] },
+            new() { IdeaResponse = batch1Responses[0], Emoji = "💡", CreatedAt = now.AddDays(-98).AddHours(3), Youth = demoStudents[0] },
+            new() { IdeaResponse = batch1Responses[1], Emoji = "👍", CreatedAt = now.AddDays(-96).AddHours(5), Youth = demoStudents2[0] },
+            new() { IdeaResponse = batch1Responses[2], Emoji = "🙌", CreatedAt = now.AddDays(-94).AddHours(8), Youth = demoStudents3[1] },
+        };
+        context.ResponseReactions.AddRange(batch1Reactions);
+
+        // === PEAK 2: After feature demo (days -62 to -58) ===
+        var batch2Ideas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Conditionele logica in vragenlijsten: toon vervolgvragen op basis van eerdere antwoorden. Maakt surveys veel slimmer.",
+                Summary = "Conditionele vragenlogica",
+                SubmissionDate = now.AddDays(-62),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "functionaliteit", "survey" }
+            },
+            new()
+            {
+                Content = "Real-time rapportage tijdens het invullen: zie live hoe antwoorden binnenkomen met animaties.",
+                Summary = "Live rapportage",
+                SubmissionDate = now.AddDays(-61),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents3[1],
+                SemanticCategories = new[] { "functionaliteit", "real-time" }
+            },
+            new()
+            {
+                Content = "Samenwerkingsfunctionaliteit waarbij teamleden vragenlijsten kunnen reviewen en goedkeuren voor publicatie.",
+                Summary = "Review workflow",
+                SubmissionDate = now.AddDays(-60),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents[4],
+                SemanticCategories = new[] { "collaboratie", "workflow" }
+            },
+            new()
+            {
+                Content = "Een jaarlijks vast bedrag in plaats van per-gebruiker pricing. Voor organisaties met veel occasionele gebruikers is dit voordeliger.",
+                Summary = "Flat-fee pricing model",
+                SubmissionDate = now.AddDays(-59),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[2], Youth = demoStudents[1],
+                SemanticCategories = new[] { "prijsmodel", "enterprise" }
+            },
+            new()
+            {
+                Content = "Een NPS (Net Promoter Score) module als standaard vraagtype. Dit is een veelgebruikte metric die nu ontbreekt.",
+                Summary = "NPS vraagtype",
+                SubmissionDate = now.AddDays(-58),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "functionaliteit", "nps", "survey" }
+            },
+        };
+        context.Ideas.AddRange(batch2Ideas);
+
+        var batch2Responses = new List<IdeaResponse>
+        {
+            new() { Idea = batch2Ideas[0], Text = "Conditionele logica is essentieel voor professionele surveys. Dit mist enorm.", CreatedAt = now.AddDays(-61).AddHours(8), Youth = demoStudents[3], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch2Ideas[1], Text = "Live dashboards zouden ook goed zijn voor presentaties aan stakeholders.", CreatedAt = now.AddDays(-60).AddHours(3), Youth = demoStudents2[0], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch2Ideas[2], Text = "Een review-stap voorkomt fouten in vragenlijsten die al naar klanten gestuurd zijn.", CreatedAt = now.AddDays(-59).AddHours(5), Youth = demoStudents3[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch2Ideas[4], Text = "NPS is de standaard in onze sector. Zonder dit moeten we een aparte tool gebruiken.", CreatedAt = now.AddDays(-57).AddHours(2), Youth = demoStudents[0], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+        };
+        context.Responses.AddRange(batch2Responses);
+
+        var batch2Reactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = batch2Responses[0], Emoji = "🎯", CreatedAt = now.AddDays(-61).AddHours(9), Youth = demoStudents[5] },
+            new() { IdeaResponse = batch2Responses[0], Emoji = "💯", CreatedAt = now.AddDays(-61).AddHours(10), Youth = demoStudents3[0] },
+            new() { IdeaResponse = batch2Responses[1], Emoji = "📊", CreatedAt = now.AddDays(-60).AddHours(5), Youth = demoStudents[2] },
+            new() { IdeaResponse = batch2Responses[2], Emoji = "✅", CreatedAt = now.AddDays(-59).AddHours(7), Youth = demoStudents[4] },
+            new() { IdeaResponse = batch2Responses[3], Emoji = "🔥", CreatedAt = now.AddDays(-57).AddHours(3), Youth = demoStudents3[1] },
+        };
+        context.ResponseReactions.AddRange(batch2Reactions);
+
+        // === PEAK 3: Mid-project surge (days -28 to -24) ===
+        var batch3Ideas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Anonieme feedback modus zodat respondenten eerlijker durven te zijn zonder angst voor repercussies.",
+                Summary = "Anonieme feedback modus",
+                SubmissionDate = now.AddDays(-28),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents3[1],
+                SemanticCategories = new[] { "privacy", "functionaliteit" }
+            },
+            new()
+            {
+                Content = "Automatische sentimentanalyse op open antwoorden met visuele weergave van positief/neutraal/negatief.",
+                Summary = "Sentimentanalyse",
+                SubmissionDate = now.AddDays(-27),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[1], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "ai", "analytics" }
+            },
+            new()
+            {
+                Content = "Een ingebouwde vertaalfunctie voor vragenlijsten. Scheelt enorm veel werk voor internationale teams.",
+                Summary = "Ingebouwde vertaling",
+                SubmissionDate = now.AddDays(-26),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[0], Youth = demoStudents[3],
+                SemanticCategories = new[] { "ux", "meertalig" }
+            },
+            new()
+            {
+                Content = "Een educatieve prijs voor scholen en universiteiten met onbeperkt gebruik voor een vast laag bedrag per jaar.",
+                Summary = "Educatief prijsmodel",
+                SubmissionDate = now.AddDays(-25),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[2], Youth = demoStudents3[1],
+                SemanticCategories = new[] { "prijsmodel", "onderwijs" }
+            },
+            new()
+            {
+                Content = "Integratie met CRM-systemen zoals Salesforce en HubSpot om feedback automatisch aan klantprofielen te koppelen.",
+                Summary = "CRM integratie",
+                SubmissionDate = now.AddDays(-24),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[3], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "integratie", "crm", "enterprise" }
+            },
+        };
+        context.Ideas.AddRange(batch3Ideas);
+
+        var batch3Responses = new List<IdeaResponse>
+        {
+            new() { Idea = batch3Ideas[0], Text = "Anonimiteit is cruciaal voor eerlijke feedback over gevoelige onderwerpen zoals werksfeer.", CreatedAt = now.AddDays(-27).AddHours(6), Youth = demoStudents2[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch3Ideas[1], Text = "Sentimentanalyse bespaart uren handmatig lezen van open antwoorden. Must-have.", CreatedAt = now.AddDays(-26).AddHours(4), Youth = demoStudents[1], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch3Ideas[2], Text = "Vertaling is een gamechanger. Nu moeten we alles handmatig vertalen voor onze Franse en Duitse kantoren.", CreatedAt = now.AddDays(-25).AddHours(9), Youth = demoStudents3[0], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch3Ideas[4], Text = "CRM-koppeling zou onze customer success workflow compleet maken.", CreatedAt = now.AddDays(-23).AddHours(2), Youth = demoStudents[5], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+        };
+        context.Responses.AddRange(batch3Responses);
+
+        var batch3Reactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = batch3Responses[0], Emoji = "🔒", CreatedAt = now.AddDays(-27).AddHours(8), Youth = demoStudents[0] },
+            new() { IdeaResponse = batch3Responses[1], Emoji = "🧠", CreatedAt = now.AddDays(-26).AddHours(6), Youth = demoStudents3[1] },
+            new() { IdeaResponse = batch3Responses[1], Emoji = "💯", CreatedAt = now.AddDays(-26).AddHours(7), Youth = demoStudents2[0] },
+            new() { IdeaResponse = batch3Responses[2], Emoji = "🌍", CreatedAt = now.AddDays(-25).AddHours(10), Youth = demoStudents[4] },
+            new() { IdeaResponse = batch3Responses[3], Emoji = "🎯", CreatedAt = now.AddDays(-23).AddHours(3), Youth = demoStudents3[0] },
+        };
+        context.ResponseReactions.AddRange(batch3Reactions);
+
+        // === Recent tail (days -3 to -1) ===
+        var batch4Ideas = new List<Idea>
+        {
+            new()
+            {
+                Content = "Wekelijkse automatische samenvatting per project via e-mail met de belangrijkste trends en nieuwe inzichten.",
+                Summary = "Wekelijkse e-mail samenvatting",
+                SubmissionDate = now.AddDays(-3),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[4], Youth = demoStudents3[1],
+                SemanticCategories = new[] { "ondersteuning", "notificaties" }
+            },
+            new()
+            {
+                Content = "Een mobile-first herontwerp van de vragenlijst-invulervaring. Op smartphone is het nu te klein en onhandig.",
+                Summary = "Mobile-first redesign",
+                SubmissionDate = now.AddDays(-2),
+                Status = ModerationStatus.Approved,
+                ModerationInfo = new ModerationInfo(),
+                Project = demo, Topic = demoTopics[0], Youth = demoStudents3[0],
+                SemanticCategories = new[] { "ux", "mobiel" }
+            },
+        };
+        context.Ideas.AddRange(batch4Ideas);
+
+        var batch4Responses = new List<IdeaResponse>
+        {
+            new() { Idea = batch4Ideas[0], Text = "Een wekelijkse mail voorkomt dat ik vergeet in te loggen om resultaten te checken.", CreatedAt = now.AddDays(-2).AddHours(5), Youth = demoStudents[2], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+            new() { Idea = batch4Ideas[1], Text = "Eens, 80% van onze respondenten vult vragenlijsten in op mobiel. Dit moet prioriteit krijgen.", CreatedAt = now.AddDays(-1).AddHours(3), Youth = demoStudents2[0], Status = ModerationStatus.Approved, ModerationInfo = new ModerationInfo() },
+        };
+        context.Responses.AddRange(batch4Responses);
+
+        var batch4Reactions = new List<ResponseReaction>
+        {
+            new() { IdeaResponse = batch4Responses[0], Emoji = "📧", CreatedAt = now.AddDays(-2).AddHours(6), Youth = demoStudents3[0] },
+            new() { IdeaResponse = batch4Responses[1], Emoji = "📱", CreatedAt = now.AddDays(-1).AddHours(4), Youth = demoStudents[4] },
+            new() { IdeaResponse = batch4Responses[1], Emoji = "🔥", CreatedAt = now.AddDays(-1).AddHours(5), Youth = demoStudents3[1] },
+        };
+        context.ResponseReactions.AddRange(batch4Reactions);
+
+        #endregion
 
         SeedAiPrompts(context, now);
         SeedAiRateLimits(context, now);

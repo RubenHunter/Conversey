@@ -45,6 +45,13 @@ public class IdeasController : ControllerBase
         {
             return NotFound(e.Message);
         }
+        catch (Exception e)
+        {
+            // Log de fout en geef details terug voor debugging inclusief InnerException
+            var fullMessage = e.InnerException != null ? $"{e.Message} (INNER: {e.InnerException.Message})" : e.Message;
+            Console.WriteLine($"[IdeasController] CRITICAL ERROR: {fullMessage}");
+            return StatusCode(500, new { error = fullMessage, stack = e.StackTrace });
+        }
     }
 
     [HttpPost("nudge")]
