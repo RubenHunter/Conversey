@@ -23,7 +23,7 @@
 
         <!-- Kept bg-white for the card to pop against the bg-background -->
         <section class="bg-white rounded-lg shadow-md p-10 m-5 border border-secondary/20">
-            <form id="account" method="post">
+            <form id="account" method="post" asp-route-returnUrl="@Model.ReturnUrl">
                 <h2 class="text-xl font-semibold mb-4 text-text">Use a local account to log in.</h2>
                 <hr class="mb-4 border-background" />
                 

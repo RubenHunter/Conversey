@@ -110,8 +110,9 @@ builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = ".Conversey.Antiforgery";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Better to specify Always in prod
     options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.Domain = builder.Environment.IsDevelopment() ? null : ".conversey.be";
 });
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
